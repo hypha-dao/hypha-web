@@ -74,6 +74,23 @@ export const PROPOSAL_CATALOG: Record<string, ProposalCatalogEntry> = {
     ],
   }),
 
+  space_context: entry({
+    key: 'space_context',
+    documentLabel: 'Space Context',
+    templateSegment: 'ratify-context',
+    createPath: 'agreements/create/ratify-context',
+    summary:
+      'Ratify Space Context section drafts through the usual Agreements vote.',
+    source: 'create_proposal',
+    prepareStrategy: 'navigation_only',
+    onChain: true,
+    requiredFields: [],
+    optionalFields: [],
+    discoveryIntro:
+      'Open the Context ratification form. Members pick drafted sections; the proposal body is pre-filled from those Markdown drafts.',
+    doNotUse: ['Inventing a separate voting system outside Agreements'],
+  }),
+
   change_voting_method: entry({
     key: 'change_voting_method',
     documentLabel: 'Voting Method',

@@ -22,10 +22,15 @@ import { EnergySectionSkeleton } from './energy/loading-skeletons';
 
 const TAB_VALUES = ['overview', 'flows', 'ownership', 'credits'] as const;
 
-export const SpaceEnergySection = () => {
+export type SpaceEnergySectionProps = {
+  /** Slug of the Space whose energy data is shown. */
+  spaceSlug: string;
+};
+
+export const SpaceEnergySection = ({ spaceSlug }: SpaceEnergySectionProps) => {
   const t = useTranslations('Energy.tabs');
   const tOverview = useTranslations('Energy.overview');
-  const { data, isLoading } = useSpaceEnergy();
+  const { data, isLoading } = useSpaceEnergy(spaceSlug);
   const [tab, setTab] = React.useState<string>('overview');
 
   // Start telemetry with the overview so the Production tab and the consumer
@@ -34,8 +39,12 @@ export const SpaceEnergySection = () => {
     enabled: Boolean(data?.enabled),
     refreshInterval: 0,
   };
-  useSpaceEnergyTelemetry(PRODUCTION_DEFAULT_TIMEFRAME, prefetchTelemetry);
-  useSpaceEnergyTelemetry('30d', prefetchTelemetry);
+  useSpaceEnergyTelemetry(
+    PRODUCTION_DEFAULT_TIMEFRAME,
+    spaceSlug,
+    prefetchTelemetry,
+  );
+  useSpaceEnergyTelemetry('30d', spaceSlug, prefetchTelemetry);
 
   const memberAddresses = React.useMemo(
     () =>
@@ -125,16 +134,18 @@ export const SpaceEnergySection = () => {
 
         <TabsContent value="overview" className="mt-6">
           <EnergyOverviewTab
+            spaceSlug={spaceSlug}
             data={data}
             people={people}
             peopleLoading={peopleLoading}
           />
         </TabsContent>
         <TabsContent value="flows" className="mt-6">
-          <ProductionConsumptionTab data={data} />
+          <ProductionConsumptionTab data={data} spaceSlug={spaceSlug} />
         </TabsContent>
         <TabsContent value="ownership" className="mt-6">
           <OwnershipTab
+            spaceSlug={spaceSlug}
             data={data}
             people={people}
             peopleLoading={peopleLoading}
@@ -142,6 +153,7 @@ export const SpaceEnergySection = () => {
         </TabsContent>
         <TabsContent value="credits" className="mt-6">
           <CreditsTab
+            spaceSlug={spaceSlug}
             data={data}
             people={people}
             peopleLoading={peopleLoading}

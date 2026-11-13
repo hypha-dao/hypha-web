@@ -1,7 +1,6 @@
 export * from './button-copy-user-id';
 export * from './button-profile.connected';
 export * from './button-profile';
-export * from './button-signin-mobile';
 export * from './edit-person-section';
 export * from './eth-address';
 export * from './export-embedded-wallet-button';
@@ -12,7 +11,11 @@ export * from './member-space-icons';
 export * from './members-section';
 export * from './space-invite-arrival';
 export * from './person-avatar';
-export { presenceRank, readMemberPresence } from './member-presence';
+export {
+  presenceRank,
+  readMemberPresence,
+  resolveRegisteredPresence,
+} from './member-presence';
 export { PresenceDot } from './presence-dot';
 export { useMemberPresence } from './use-member-presence';
 export {

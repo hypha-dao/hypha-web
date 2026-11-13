@@ -11,11 +11,15 @@ import {
 import {
   coherences,
   documents,
+  spaceContextSections,
+  spaceQuests,
   spaces,
 } from '@hypha-platform/storage-postgres';
 
 import { web3Client } from '../../common/server/web3-rpc/client';
 import type { DbConfig } from '../../common/server/types';
+import { proposalIdsWithdrawn } from '../../governance/server/proposal-ids-withdrawn';
+import { sectionTitleFromRow } from '../../space-context/server/map-row';
 import { getMemberSpaces } from '../../space/client/web3/dao-space-factory/get-member-spaces';
 import {
   labelInboxSpaces,
@@ -52,14 +56,40 @@ export type MessageInboxProposalLabel = {
   rootTitle: string;
 };
 
+/** Context section (Mission, Vision, …) whose discussion room exists. */
+export type MessageInboxContextSectionLabel = {
+  roomId: string;
+  sectionKey: string;
+  title: string;
+  spaceSlug: string;
+  spaceTitle: string;
+  rootSlug: string;
+  rootTitle: string;
+};
+
+/** Quest channel opened when the Quest proposal passed. */
+export type MessageInboxQuestLabel = {
+  roomId: string;
+  title: string;
+  slug: string;
+  spaceSlug: string;
+  spaceTitle: string;
+  rootSlug: string;
+  rootTitle: string;
+};
+
 export type MessageInboxContext = {
   spaces: MessageInboxSpaceLabel[];
   signals: MessageInboxSignalLabel[];
   proposals: MessageInboxProposalLabel[];
+  contexts: MessageInboxContextSectionLabel[];
+  quests: MessageInboxQuestLabel[];
 };
 
 const SIGNAL_LABEL_LIMIT = 400;
 const PROPOSAL_LABEL_LIMIT = 400;
+const CONTEXT_LABEL_LIMIT = 400;
+const QUEST_LABEL_LIMIT = 400;
 /** Every signal that emails or pushes this member. Do not drop one of these. */
 const NOTIFIED_SIGNAL_LIMIT = 1000;
 const MEMBER_SPACES_TIMEOUT_MS = 8_000;
@@ -70,6 +100,7 @@ type SpaceRow = {
   title: string | null;
   parentId: number | null;
   chatRoomId: string | null;
+  logoUrl: string | null;
 };
 
 type SignalRow = {
@@ -91,6 +122,7 @@ function toNode(space: SpaceRow): MessageInboxSpaceNode | null {
     title,
     parentId: space.parentId,
     chatRoomId: space.chatRoomId?.trim() || null,
+    logoUrl: space.logoUrl?.trim() || null,
   };
 }
 
@@ -154,6 +186,7 @@ async function chainMemberSpaceRows(
       title: spaces.title,
       parentId: spaces.parentId,
       chatRoomId: spaces.chatRoomId,
+      logoUrl: spaces.logoUrl,
     })
     .from(spaces)
     .where(and(inArray(spaces.web3SpaceId, ids), eq(spaces.isArchived, false)));
@@ -181,7 +214,10 @@ function openSignalFilter() {
  *
  * Spaces are the ones this wallet is a member of. Signals are the ones
  * that notify this member, plus other signals in those spaces so a team
- * thread can still be named. Proposals are the open votes in those spaces.
+ * thread can still be named. Proposals are the open votes in those spaces
+ * that have not been withdrawn — a withdrawn proposal room stays out of
+ * Messages even when it still has comments. Contexts are the section rooms
+ * in those spaces; Messages lists one only after someone has written in it.
  * Joining a room is not enough.
  */
 export async function getMessageInboxContext(
@@ -243,6 +279,7 @@ export async function getMessageInboxContext(
         title: spaces.title,
         parentId: spaces.parentId,
         chatRoomId: spaces.chatRoomId,
+        logoUrl: spaces.logoUrl,
       })
       .from(spaces)
       .where(inArray(spaces.id, [...extraSpaceIds]));
@@ -263,6 +300,7 @@ export async function getMessageInboxContext(
         title: spaces.title,
         parentId: spaces.parentId,
         chatRoomId: spaces.chatRoomId,
+        logoUrl: spaces.logoUrl,
       })
       .from(spaces)
       .where(inArray(spaces.id, pending));
@@ -305,6 +343,7 @@ export async function getMessageInboxContext(
             title: documents.title,
             slug: documents.slug,
             spaceId: documents.spaceId,
+            web3ProposalId: documents.web3ProposalId,
           })
           .from(documents)
           .where(
@@ -317,16 +356,129 @@ export async function getMessageInboxContext(
           .orderBy(desc(documents.updatedAt))
           .limit(PROPOSAL_LABEL_LIMIT);
 
+  const withdrawnProposalIds = await proposalIdsWithdrawn(
+    proposalRows.flatMap((row) =>
+      row.web3ProposalId != null ? [row.web3ProposalId] : [],
+    ),
+  ).catch((error) => {
+    console.error(
+      '[message-inbox-context] withdrawn proposals unavailable',
+      error instanceof Error ? error.message : 'unknown',
+    );
+    return new Set<number>();
+  });
+
   const seenProposalRooms = new Set<string>();
   const proposals = proposalRows.flatMap((row) => {
     const roomId = row.chatRoomId?.trim();
     const slug = row.slug?.trim();
     const title = row.title?.trim();
     const space = row.spaceId == null ? null : byId.get(row.spaceId);
-    if (!roomId || !slug || !title || !space || seenProposalRooms.has(roomId)) {
+    if (
+      !roomId ||
+      !slug ||
+      !title ||
+      !space ||
+      seenProposalRooms.has(roomId) ||
+      (row.web3ProposalId != null &&
+        withdrawnProposalIds.has(row.web3ProposalId))
+    ) {
       return [];
     }
     seenProposalRooms.add(roomId);
+    return [
+      {
+        roomId,
+        title,
+        slug,
+        spaceSlug: space.slug,
+        spaceTitle: space.title,
+        rootSlug: space.rootSlug,
+        rootTitle: space.rootTitle,
+      },
+    ];
+  });
+
+  const contextRows =
+    spaceIds.length === 0
+      ? []
+      : await db
+          .select({
+            chatRoomId: spaceContextSections.chatRoomId,
+            sectionKey: spaceContextSections.sectionKey,
+            title: spaceContextSections.title,
+            spaceId: spaceContextSections.spaceId,
+          })
+          .from(spaceContextSections)
+          .where(
+            and(
+              isNotNull(spaceContextSections.chatRoomId),
+              isNull(spaceContextSections.removedAt),
+              inArray(spaceContextSections.spaceId, spaceIds),
+            ),
+          )
+          .orderBy(desc(spaceContextSections.updatedAt))
+          .limit(CONTEXT_LABEL_LIMIT);
+
+  const seenContextRooms = new Set<string>();
+  const contexts = contextRows.flatMap((row) => {
+    const roomId = row.chatRoomId?.trim();
+    const sectionKey = row.sectionKey?.trim();
+    const space = byId.get(row.spaceId);
+    if (!roomId || !sectionKey || !space || seenContextRooms.has(roomId)) {
+      return [];
+    }
+    seenContextRooms.add(roomId);
+    return [
+      {
+        roomId,
+        sectionKey,
+        title: sectionTitleFromRow(row),
+        spaceSlug: space.slug,
+        spaceTitle: space.title,
+        rootSlug: space.rootSlug,
+        rootTitle: space.rootTitle,
+      },
+    ];
+  });
+
+  const questRows =
+    spaceIds.length === 0
+      ? []
+      : await db
+          .select({
+            chatRoomId: spaceQuests.chatRoomId,
+            name: spaceQuests.name,
+            slug: spaceQuests.slug,
+            spaceId: spaceQuests.spaceId,
+          })
+          .from(spaceQuests)
+          .where(
+            and(
+              isNotNull(spaceQuests.chatRoomId),
+              inArray(spaceQuests.spaceId, spaceIds),
+            ),
+          )
+          .orderBy(desc(spaceQuests.updatedAt))
+          .limit(QUEST_LABEL_LIMIT);
+
+  const seenQuestRooms = new Set<string>();
+  const quests = questRows.flatMap((row) => {
+    const roomId = row.chatRoomId?.trim();
+    const slug = row.slug?.trim();
+    const title = row.name?.trim();
+    const space = byId.get(row.spaceId);
+    if (
+      !roomId ||
+      roomId.startsWith('provisioning:') ||
+      !slug ||
+      !title ||
+      !space ||
+      seenQuestRooms.has(roomId)
+    ) {
+      return [];
+    }
+    seenQuestRooms.add(roomId);
     return [
       {
         roomId,
@@ -361,5 +513,5 @@ export async function getMessageInboxContext(
     ];
   });
 
-  return { spaces: memberSpaces, signals, proposals };
+  return { spaces: memberSpaces, signals, proposals, contexts, quests };
 }

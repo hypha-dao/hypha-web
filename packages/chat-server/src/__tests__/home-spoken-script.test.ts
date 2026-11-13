@@ -88,7 +88,38 @@ describe('homeTurnShouldStop', () => {
     ).toBe(true);
   });
 
-  it('stops after three tries so a stuck line cannot loop', () => {
+  it('keeps going after a card when the first speech line is cut off', () => {
+    expect(
+      homeTurnShouldStop([
+        {
+          text: '',
+          toolCalls: [{ toolName: 'show_member_home_item' }],
+        },
+        {
+          text: 'Alex, you raised a signal in Hypha Platform about what it would take',
+        },
+      ]),
+    ).toBe(false);
+  });
+
+  it('allows a second repair after the card before giving up on a cut-off', () => {
+    expect(
+      homeTurnShouldStop([
+        {
+          text: '',
+          toolCalls: [{ toolName: 'show_member_home_item' }],
+        },
+        {
+          text: 'Alex, you raised a signal in Hypha Platform about what it would take',
+        },
+        {
+          text: 'Alex, you raised a signal in Hypha Platform about what it would take to ship',
+        },
+      ]),
+    ).toBe(false);
+  });
+
+  it('stops after three spoken tries so a stuck line cannot loop', () => {
     expect(
       homeTurnShouldStop([
         { text: 'It points to' },

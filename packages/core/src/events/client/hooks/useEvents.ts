@@ -43,7 +43,11 @@ export const useEvents = ({
   } = useSWR<Event[]>(endpoint, (endpoint: string | URL | Request) =>
     fetch(endpoint).then(async (res) => {
       if (!res.ok) {
-        throw new Error(`Failed to fetch events: ${res.statusText}`);
+        // `status` lets a caller (e.g. the SWR provider) skip retrying 4xx.
+        throw Object.assign(
+          new Error(`Failed to fetch events: ${res.statusText}`),
+          { status: res.status },
+        );
       }
       const rawEvents: EventResponse[] = await res.json();
       return rawEvents.map((event) => ({

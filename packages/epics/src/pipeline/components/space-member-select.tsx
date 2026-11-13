@@ -137,6 +137,22 @@ export function SpaceMemberSelect(props: SpaceMemberSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
 
+  // A modal popover inside a modal dialog shares one body pointer-events
+  // lock. Escape that dismisses both in the same key leaves that lock on.
+  // Close only the menu here, before the dialog's document listener runs.
+  React.useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+      setSearchTerm('');
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [open]);
+
   const options = React.useMemo(
     () => toMemberOptions(members, unknownLabel),
     [members, unknownLabel],

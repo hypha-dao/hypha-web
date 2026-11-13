@@ -1,6 +1,13 @@
 'use client';
 
-import { createContext, useCallback, useContext, useState } from 'react';
+import type { SpaceContextSectionKey } from '@hypha-platform/core/client';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 /**
  * Shared panel context type used by both AI and Human panel triggers.
@@ -56,11 +63,67 @@ export type FocusedSpaceChat = {
   description: string | null;
 };
 
-/** Peer in a person-to-person room — drives space icons in the chat header. */
+/** Peer in a person-to-person room — drives the chat header avatar. */
 export type CoherencePeerPerson = {
   slug: string;
   address?: string | null;
   id?: number;
+};
+
+/**
+ * Non-DM channel opened from Messages. Distinguishes space / ecosystem /
+ * network headers from person-to-person chats that also use an empty slug.
+ */
+export type CoherenceOpenedChannel =
+  | 'space'
+  | 'space-public'
+  | 'ecosystem'
+  | 'network'
+  | 'signal'
+  | 'quest'
+  | 'proposal'
+  | 'context';
+
+export type OpenCoherenceChatOptions = {
+  public?: boolean;
+  peerPerson?: CoherencePeerPerson | null;
+  channel?: CoherenceOpenedChannel | null;
+  /** Context section whose room this is, so its section agent answers. */
+  contextSectionKey?: SpaceContextSectionKey | null;
+};
+
+/** Space Context section shown in the right panel in place of a chat. */
+export type SpaceContextPanelSection = {
+  spaceSlug: string;
+  sectionKey: SpaceContextSectionKey;
+};
+
+export type SpaceQuestDraftChatMessage = {
+  id: string;
+  role: 'user' | 'member';
+  text: string;
+  timestamp: Date;
+  senderName?: string;
+  senderMatrixId?: string;
+  avatarUrl?: string;
+  agentSpecialistId?: string;
+};
+
+/** Quest draft chat shown in the right panel while creating a quest. */
+export type SpaceQuestDraftPanelSession = {
+  spaceSlug: string;
+  questTitle: string;
+  messages: SpaceQuestDraftChatMessage[];
+  input: string;
+  onInputChange: (next: string) => void;
+  onSend: () => void;
+  onQuickPrompt?: (prompt: string) => void;
+  isAgentTyping?: boolean;
+  /**
+   * Quest Helper is a 1:1 coach. The create flow and the saved-quest
+   * helper set this. Discussion refine leaves it unset and stays AI Agents.
+   */
+  coach?: 'quest-helper';
 };
 
 export type HumanChatPanelContextValue = {
@@ -89,15 +152,36 @@ export type HumanChatPanelContextValue = {
   coherencePublic: boolean;
   /** Person on the other side of a direct chat (when known). */
   coherencePeerPerson: CoherencePeerPerson | null;
+  /** Set when opening a non-DM channel from Messages. */
+  coherenceChannel: CoherenceOpenedChannel | null;
+  /** Set with `coherenceChannel: 'context'` for a Context section room. */
+  coherenceContextSectionKey: SpaceContextSectionKey | null;
   openCoherenceChat: (
     roomId: string | null,
     title: string,
     slug: string,
     description?: string | null,
     spaceSlug?: string | null,
-    options?: { public?: boolean; peerPerson?: CoherencePeerPerson | null },
+    options?: OpenCoherenceChatOptions,
   ) => void;
   closeCoherenceChat: () => void;
+  /** True while the layout renders the right panel on this route. */
+  panelAvailable: boolean;
+  setPanelAvailable: (available: boolean) => void;
+  spaceContextSection: SpaceContextPanelSection | null;
+  /** Opens the right panel on a Space Context section (detail + discussion). */
+  openSpaceContextSection: (section: SpaceContextPanelSection) => void;
+  closeSpaceContextSection: () => void;
+  spaceQuestDraft: SpaceQuestDraftPanelSession | null;
+  setSpaceQuestDraft: (session: SpaceQuestDraftPanelSession | null) => void;
+  /**
+   * The create-quest helper session can stay loaded without being shown.
+   * The create flow's quest chat button sets this. A saved quest's Open
+   * discussion opens that quest's room and leaves this false.
+   */
+  questChatRequested: boolean;
+  requestQuestChat: () => void;
+  dismissQuestChat: () => void;
 };
 
 const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
@@ -117,8 +201,20 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   coherenceSpaceSlug: null,
   coherencePublic: false,
   coherencePeerPerson: null,
+  coherenceChannel: null,
+  coherenceContextSectionKey: null,
   openCoherenceChat: () => {},
   closeCoherenceChat: () => {},
+  panelAvailable: false,
+  setPanelAvailable: () => {},
+  spaceContextSection: null,
+  openSpaceContextSection: () => {},
+  closeSpaceContextSection: () => {},
+  spaceQuestDraft: null,
+  setSpaceQuestDraft: () => {},
+  questChatRequested: false,
+  requestQuestChat: () => {},
+  dismissQuestChat: () => {},
 });
 
 /**
@@ -150,9 +246,40 @@ export function HumanChatPanelProvider({
   const [coherencePublic, setCoherencePublic] = useState(false);
   const [coherencePeerPerson, setCoherencePeerPerson] =
     useState<CoherencePeerPerson | null>(null);
+  const [coherenceChannel, setCoherenceChannel] =
+    useState<CoherenceOpenedChannel | null>(null);
+  const [coherenceContextSectionKey, setCoherenceContextSectionKey] =
+    useState<SpaceContextSectionKey | null>(null);
   const [unreadMentionCount, setUnreadMentionCountState] = useState(0);
   const [focusedSpaceChat, setFocusedSpaceChatState] =
     useState<FocusedSpaceChat | null>(null);
+  const [panelAvailable, setPanelAvailable] = useState(false);
+  const [spaceContextSection, setSpaceContextSection] =
+    useState<SpaceContextPanelSection | null>(null);
+  const [spaceQuestDraft, setSpaceQuestDraft] =
+    useState<SpaceQuestDraftPanelSession | null>(null);
+  const [questChatRequested, setQuestChatRequested] = useState(false);
+
+  useEffect(() => {
+    if (!open) setSpaceContextSection(null);
+  }, [open]);
+
+  const openSpaceContextSection = useCallback(
+    (section: SpaceContextPanelSection) => {
+      setSpaceContextSection((prev) =>
+        prev?.spaceSlug === section.spaceSlug &&
+        prev.sectionKey === section.sectionKey
+          ? prev
+          : section,
+      );
+      setOpen(true);
+    },
+    [setOpen],
+  );
+
+  const closeSpaceContextSection = useCallback(() => {
+    setSpaceContextSection(null);
+  }, []);
 
   const setUnreadMentionCount = useCallback((count: number) => {
     const next = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
@@ -183,7 +310,7 @@ export function HumanChatPanelProvider({
       slug: string,
       description?: string | null,
       spaceSlug?: string | null,
-      options?: { public?: boolean; peerPerson?: CoherencePeerPerson | null },
+      options?: OpenCoherenceChatOptions,
     ) => {
       setCoherenceRoomId(roomId);
       setCoherenceTitle(title);
@@ -191,6 +318,12 @@ export function HumanChatPanelProvider({
       setCoherenceDescription(description?.trim() ? description.trim() : null);
       setCoherenceSpaceSlug(spaceSlug?.trim() ? spaceSlug.trim() : null);
       setCoherencePublic(Boolean(options?.public));
+      setCoherenceChannel(options?.channel ?? null);
+      setCoherenceContextSectionKey(
+        options?.channel === 'context'
+          ? options.contextSectionKey ?? null
+          : null,
+      );
       const peerSlug = options?.peerPerson?.slug?.trim() ?? '';
       const peerAddress = options?.peerPerson?.address?.trim() || null;
       const peerId =
@@ -207,6 +340,9 @@ export function HumanChatPanelProvider({
           : null,
       );
       setMode('coherence');
+      setSpaceContextSection(null);
+      // A real room replaces the quest helper. This does not create a room.
+      setQuestChatRequested(false);
       // Idempotently open the sidebar — avoids race condition with toggle()
       setOpen(true);
     },
@@ -222,6 +358,8 @@ export function HumanChatPanelProvider({
     setCoherenceSpaceSlug(null);
     setCoherencePublic(false);
     setCoherencePeerPerson(null);
+    setCoherenceChannel(null);
+    setCoherenceContextSectionKey(null);
   }, []);
 
   const openHumanChatPanel = useCallback(() => {
@@ -229,8 +367,18 @@ export function HumanChatPanelProvider({
   }, [setOpen]);
 
   const closeHumanChatPanel = useCallback(() => {
+    setQuestChatRequested(false);
     setOpen(false);
   }, [setOpen]);
+
+  const requestQuestChat = useCallback(() => {
+    setQuestChatRequested(true);
+    setOpen(true);
+  }, [setOpen]);
+
+  const dismissQuestChat = useCallback(() => {
+    setQuestChatRequested(false);
+  }, []);
 
   return (
     <HumanChatPanelContext.Provider
@@ -251,8 +399,20 @@ export function HumanChatPanelProvider({
         coherenceSpaceSlug,
         coherencePublic,
         coherencePeerPerson,
+        coherenceChannel,
+        coherenceContextSectionKey,
         openCoherenceChat,
         closeCoherenceChat,
+        panelAvailable,
+        setPanelAvailable,
+        spaceContextSection,
+        openSpaceContextSection,
+        closeSpaceContextSection,
+        spaceQuestDraft,
+        setSpaceQuestDraft,
+        questChatRequested,
+        requestQuestChat,
+        dismissQuestChat,
       }}
     >
       {children}

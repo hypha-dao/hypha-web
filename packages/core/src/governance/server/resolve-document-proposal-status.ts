@@ -17,12 +17,13 @@ export type ProposalOutcomeSets = {
  */
 export async function fetchProposalOutcomeSetsForSpace(
   web3SpaceId: number,
+  options?: { blockTag?: 'safe' | 'latest' },
 ): Promise<ProposalOutcomeSets | null> {
   const spaceId = BigInt(web3SpaceId);
   try {
     const [proposalsResult, withdrawnResult] = await web3Client.multicall({
       allowFailure: false,
-      blockTag: 'safe',
+      blockTag: options?.blockTag ?? 'safe',
       contracts: [
         getSpaceProposals({ spaceId }),
         getWithdrawnProposalsBySpace({ spaceId }),

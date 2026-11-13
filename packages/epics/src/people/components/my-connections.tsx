@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -13,6 +14,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import useSWR from 'swr';
+import { useAuthentication } from '@hypha-platform/authentication';
 import {
   ClientEvent,
   Direction,
@@ -35,6 +37,7 @@ import {
   countCommaSeparatedNames,
   isArchivedGroupRoom,
   isGroupCreateContent,
+  isSpaceContextSectionKey,
   peopleConversationKindForListing,
   readCreateContent,
   resolveConversationCacheEntry,
@@ -52,16 +55,18 @@ import {
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
 import { listBoundChatRoomIdsAmongAction } from '@hypha-platform/core/matrix/server/actions';
-import { Badge, Button } from '@hypha-platform/ui';
+import { Badge, Button, Image } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
   ArrowUpRight,
+  BookOpen,
   ChevronLeft,
   Circle,
   FileText,
   Globe,
   Globe2,
   Radio,
+  Scroll,
   Search,
   Target,
   Users,
@@ -69,6 +74,7 @@ import {
 } from 'lucide-react';
 
 import { countIncomingUnreadMessages } from '../../common/human-chat-panel/conversation-unread-count';
+import { playMessageReceiveSoundForEvent } from '../../common/human-chat-panel/message-receive-sound';
 import { contentMentionsMatrixUser } from '../../../../core/src/matrix/mentions';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { scrollMainColumnTo } from '../../common/main-column-scroll';
@@ -96,6 +102,7 @@ import {
   membersForGroupPicker,
   conversationsVisibleInSection,
   enrichSearchMembers,
+  messagesInboxEmptyStillLoading,
   messagesPeopleListReady,
   isPeopleListGroup,
   isRememberedBoundChatRoom,
@@ -112,6 +119,7 @@ import {
   applyResolvedPeerTitles,
   conversationPeerSubs,
   mergeDirectoryPeople,
+  fetchMessageDirectorySearch,
   personRowsFromDmRooms,
   nextSelectedMembers,
   resolvedMatrixIdsForGroup,
@@ -124,6 +132,7 @@ import {
   readRememberedDirectRoom,
   suggestConnections,
   supersededDirectRoomIds,
+  peopleMatchingSearch,
   type ConnectionSuggestion,
   type ConversationRow,
   type GroupFace,
@@ -134,9 +143,11 @@ import { MessagesInboxFilters } from './messages-inbox-filters';
 import {
   channelRowsFromSnapshots,
   directInboxPlace,
+  inboxCoherenceSlug,
   inboxContextHref,
   inboxContextLine,
   inboxFilterCounts,
+  isInboxDirectConversation,
   inboxListWindow,
   INBOX_LIST_PAGE,
   isInboxFilter,
@@ -147,14 +158,42 @@ import {
   type InboxFilter,
   type JoinedChannelSnapshot,
 } from './messages-inbox';
-import { type PresenceLevel } from './member-presence';
+import { GroupFaces } from './group-faces';
+import { MemberHomeMark } from './member-home-mark';
 import { PersonAvatar } from './person-avatar';
-import { useMemberPresence } from './use-member-presence';
 
 /** Matches the first page returned for the home. Each click asks for one more. */
 const CONNECTIONS_PAGE = 12;
 /** Suggestions look past the first page, up to the intelligence cap. */
 const SUGGESTION_POOL = 120;
+/** Same client budget as Home — past the server 12s race, before the function limit. */
+const HOME_INTELLIGENCE_TIMEOUT_MS = 20_000;
+
+/** Privy access tokens are JWTs; `sub` is the member id (`did:privy:…`). */
+function readJwtSubject(token: string): string | null {
+  const payload = token.split('.')[1];
+  if (!payload) return null;
+  try {
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = normalized.length % 4;
+    const padded = pad ? `${normalized}${'='.repeat(4 - pad)}` : normalized;
+    const parsed = JSON.parse(atob(padded)) as { sub?: unknown };
+    return typeof parsed.sub === 'string' && parsed.sub.trim()
+      ? parsed.sub.trim()
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function sameMemberHome(
+  left: MemberIntelligence | null | undefined,
+  right: MemberIntelligence | null | undefined,
+) {
+  if (left === right) return true;
+  if (left == null || right == null) return left == null && right == null;
+  return JSON.stringify(left) === JSON.stringify(right);
+}
 
 type ConnectionPerson = MemberIntelligence['connections'][number];
 type ConnectionMemberRow = MemberRow<ConnectionPerson>;
@@ -1184,12 +1223,21 @@ function onConversationState(event: MatrixEvent) {
 }
 
 function onConversationTimeline(
-  _event: MatrixEvent,
+  event: MatrixEvent,
   room?: Room,
   toStartOfTimeline?: boolean,
+  _removed?: boolean,
+  data?: { liveEvent?: boolean },
 ) {
   if (toStartOfTimeline) return;
   refreshConversationRoom(room);
+  // Notification chime for new messages in any room — not only the open chat.
+  // History / sync catch-up sets liveEvent=false; opening a thread must stay silent.
+  playMessageReceiveSoundForEvent(event, conversationClient?.getUserId(), {
+    toStartOfTimeline,
+    liveEvent: data?.liveEvent,
+    room,
+  });
 }
 
 function onConversationReceipt(_event: MatrixEvent, room?: Room) {
@@ -1203,7 +1251,14 @@ function onConversationMembership(room?: Room) {
 function onConversationDecrypted(event: MatrixEvent) {
   const roomId = event.getRoomId();
   if (!roomId || !conversationClient) return;
-  refreshConversationRoom(conversationClient.getRoom(roomId) ?? undefined);
+  const room = conversationClient.getRoom(roomId) ?? undefined;
+  refreshConversationRoom(room);
+  // Encrypted live messages become RoomMessage only after decrypt.
+  // requireRecent: opening a room must not chime for old ciphertext catch-up.
+  playMessageReceiveSoundForEvent(event, conversationClient.getUserId(), {
+    room,
+    requireRecent: true,
+  });
 }
 
 function onConversationSignals() {
@@ -1497,6 +1552,8 @@ const INBOX_CHANNEL_TYPES = new Set<string>([
   HYPHA_ROOM_TYPES.spacePublic,
   HYPHA_ROOM_TYPES.signal,
   HYPHA_ROOM_TYPES.proposal,
+  HYPHA_ROOM_TYPES.context,
+  HYPHA_ROOM_TYPES.quest,
   HYPHA_ROOM_TYPES.ecosystem,
   HYPHA_ROOM_TYPES.network,
 ]);
@@ -1507,6 +1564,7 @@ const EMPTY_INBOX_CONTEXT: InboxContext = {
   spaces: [],
   signals: [],
   proposals: [],
+  contexts: [],
 };
 
 function roomAliases(room: Room): string[] {
@@ -1805,7 +1863,54 @@ export function MyConnections({
   const tChat = useTranslations('MemberHome');
   const tCommon = useTranslations('Common');
   const locale = useLocale();
+  const { user } = useAuthentication();
   const { jwt } = useJwt();
+  const memberId = user?.id ?? null;
+  const jwtSubject = jwt ? readJwtSubject(jwt) : null;
+  const jwtRef = useRef(jwt);
+  const jwtOwnerRef = useRef<string | null>(null);
+  const keepHomeKey = useRef(false);
+  // Same ownership gate as Home so Messages reuses the shell/full SWR cache.
+  if (jwt && jwtSubject && memberId && jwtSubject === memberId) {
+    jwtRef.current = jwt;
+    jwtOwnerRef.current = jwtSubject;
+    keepHomeKey.current = true;
+  }
+  useLayoutEffect(() => {
+    if (!jwt || !jwtSubject || !memberId || jwtSubject !== memberId) return;
+    jwtRef.current = jwt;
+    jwtOwnerRef.current = jwtSubject;
+    keepHomeKey.current = true;
+  }, [jwt, jwtSubject, memberId]);
+  const tokenOwner = jwtSubject ?? jwtOwnerRef.current;
+  const homeKeyReady =
+    Boolean(memberId) &&
+    Boolean(tokenOwner) &&
+    tokenOwner === memberId &&
+    (Boolean(jwt) || keepHomeKey.current);
+  const fetchHome = useCallback(
+    async (scope: 'shell' | 'full') => {
+      const token = jwtRef.current;
+      if (!token || jwtOwnerRef.current !== memberId) {
+        throw new Error('Access token not ready');
+      }
+      const url =
+        scope === 'shell'
+          ? '/api/v1/people/me/intelligence?scope=shell'
+          : '/api/v1/people/me/intelligence';
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(HOME_INTELLIGENCE_TIMEOUT_MS),
+      });
+      if (response.status === 404) return null;
+      if (!response.ok) {
+        throw new Error('Failed to load home');
+      }
+      return (await response.json()) as MemberIntelligence;
+    },
+    [memberId],
+  );
   const {
     client,
     isMatrixAvailable,
@@ -1823,6 +1928,11 @@ export function MyConnections({
   const debugRooms = searchParams.get('debugRooms') === '1';
   const openedDirectChatRef = useRef<string | null>(null);
   const openChatRef = useRef<MemberHomeOpenChat | null>(null);
+  /** After a filter tap, open the first row once the filtered list is ready. */
+  const pendingSelectFirstInboxRef = useRef(false);
+  const openInboxRowRef = useRef<
+    ((row: ConnectionMemberRow) => void | Promise<void>) | null
+  >(null);
   const inboxFiltersRef = useRef<HTMLDivElement | null>(null);
   const chainFilterScroll = useChainScrollAtEdge();
   const setInboxFiltersRef = useCallback(
@@ -1838,13 +1948,13 @@ export function MyConnections({
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<ConversationRow[]>([]);
   const [channels, setChannels] = useState<JoinedChannelSnapshot[]>([]);
-  const [inboxFilter, setInboxFilter] = useState<InboxFilter>('all');
+  // Direct skips the all-channels merge on open (faster first paint).
+  const [inboxFilter, setInboxFilter] = useState<InboxFilter>('direct');
   const [inboxVisibleCount, setInboxVisibleCount] = useState(INBOX_LIST_PAGE);
   /** Below the side-by-side layout, a channel tap replaces the menu with its messages. */
   const [inboxChannelOpen, setInboxChannelOpen] = useState(false);
   const [synced, setSynced] = useState(false);
   const [initialSyncComplete, setInitialSyncComplete] = useState(false);
-  const [rowsPending, setRowsPending] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedById, setSelectedById] = useState<
     Map<number, ConnectionMemberRow>
@@ -1864,18 +1974,39 @@ export function MyConnections({
   const fullDirectoryRequested = useRef(false);
 
   const [listSettled, setListSettled] = useState(false);
-  const { data: home, isLoading: homeLoading } =
-    useSWR<MemberIntelligence | null>(
-      jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
-      async ([url, token]) => {
-        const response = await fetch(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!response.ok) return null;
-        return (await response.json()) as MemberIntelligence;
-      },
-    );
-  const homeLoaded = !jwt || home !== undefined || !homeLoading;
+  // Same SWR keys as Home so a prior /home visit fills this without refetch.
+  // Shell + full run in parallel here; Direct list does not wait on either.
+  const { data: shell } = useSWR<MemberIntelligence | null>(
+    homeKeyReady
+      ? (['/api/v1/people/me/intelligence', memberId, 'shell'] as const)
+      : null,
+    () => fetchHome('shell'),
+    {
+      revalidateOnFocus: false,
+      refreshInterval: 0,
+      keepPreviousData: false,
+      isPaused: () => !jwtRef.current || jwtOwnerRef.current !== memberId,
+      compare: sameMemberHome,
+    },
+  );
+  const { data: full, error: fullError } = useSWR<MemberIntelligence | null>(
+    homeKeyReady
+      ? (['/api/v1/people/me/intelligence', memberId, 'full'] as const)
+      : null,
+    () => fetchHome('full'),
+    {
+      revalidateOnFocus: false,
+      refreshInterval: 0,
+      keepPreviousData: false,
+      isPaused: () => !jwtRef.current || jwtOwnerRef.current !== memberId,
+      compare: sameMemberHome,
+    },
+  );
+  const homeRaw = full === undefined ? shell : full;
+  const home =
+    homeRaw?.partial && fullError
+      ? { ...homeRaw, partial: false }
+      : homeRaw ?? null;
   const { data: inboxContext } = useSWR<InboxContext>(
     section === 'messages' && jwt
       ? ['/api/v1/people/me/message-inbox-context', jwt]
@@ -2034,18 +2165,11 @@ export function MyConnections({
       setSearching(true);
       void (async () => {
         try {
-          const response = await fetch(
-            `/api/v1/people/me/intelligence?q=${encodeURIComponent(term)}`,
-            {
-              headers: { Authorization: `Bearer ${jwt}` },
-              signal: controller.signal,
-            },
-          );
-          if (!response.ok) return;
-          const body = (await response.json()) as MemberIntelligence;
-          if (!controller.signal.aborted) {
-            setSearchDirectory(body.connections ?? []);
-          }
+          const result = await fetchMessageDirectorySearch(term, {
+            headers: { Authorization: `Bearer ${jwt}` },
+            signal: controller.signal,
+          });
+          if (!controller.signal.aborted) setSearchDirectory(result.people);
         } catch (error) {
           if (error instanceof DOMException && error.name === 'AbortError') {
             return;
@@ -2125,7 +2249,6 @@ export function MyConnections({
       setChannels([]);
       setSynced(false);
       setInitialSyncComplete(false);
-      setRowsPending(true);
       setListSettled(false);
       return;
     }
@@ -2139,7 +2262,14 @@ export function MyConnections({
         return sameChannelSnapshots(current, next) ? current : next;
       });
       const state = client.getSyncState();
-      if (state === SyncState.Prepared || state === SyncState.Syncing) {
+      // Catchup is the IndexedDB restore path — treat it like Syncing so an
+      // empty store can leave the skeleton once initial sync finishes. Rooms
+      // already in the store paint earlier via hasMatrixConversations.
+      if (
+        state === SyncState.Prepared ||
+        state === SyncState.Syncing ||
+        state === SyncState.Catchup
+      ) {
         setSynced(true);
       }
       if (
@@ -2149,7 +2279,6 @@ export function MyConnections({
       ) {
         setInitialSyncComplete(true);
       }
-      setRowsPending(conversationRowsPending(client));
     });
   }, [client]);
 
@@ -2188,12 +2317,6 @@ export function MyConnections({
     ],
   );
 
-  const memberPersonIds = useMemo(
-    () => members.map((row) => row.person.id),
-    [members],
-  );
-  const { presenceById } = useMemberPresence(memberPersonIds);
-
   const reachOut = useMemo(() => {
     if (!synced) return [];
     const newcomers: NewcomerCandidate[] = [];
@@ -2222,22 +2345,69 @@ export function MyConnections({
       STALE_CONNECTION_MS,
     );
   }, [home?.networkSignals, members, synced]);
+  /** Suggestions search: start a chat with anyone matching the name, even with no thread yet. */
+  const suggestionCards = useMemo((): ConnectionSuggestion[] => {
+    if (!needle) return reachOut;
+    const selfId = home?.person.id ?? null;
+    const hits = peopleMatchingSearch(
+      directoryPeople,
+      searchDirectory,
+      needle,
+    ).filter((person) => person.id > 0 && person.id !== selfId);
+    return hits.map((person) => {
+      const name =
+        [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+        person.nickname?.trim() ||
+        t('someone');
+      const existing = members.find((row) => row.person.id === person.id);
+      return {
+        key: `search-${person.id}`,
+        kind: 'meet' as const,
+        name,
+        avatarUrl: person.avatarUrl ?? undefined,
+        roomId: existing?.roomId ?? null,
+        lastTs: existing
+          ? connectionActivityTs(existing.lastTs, existing.preview)
+          : null,
+        person: {
+          id: person.id,
+          slug: person.slug,
+          name: person.name,
+          surname: person.surname,
+          nickname: person.nickname,
+          avatarUrl: person.avatarUrl,
+        },
+        sharedSpaceCount: person.sharedSpaceCount ?? 0,
+        spaceTitle: null,
+      };
+    });
+  }, [
+    directoryPeople,
+    home?.person.id,
+    members,
+    needle,
+    reachOut,
+    searchDirectory,
+    t,
+  ]);
   const reachOutIds = useMemo(
-    () => reachOut.map((card) => card.person.id),
-    [reachOut],
+    () => suggestionCards.map((card) => card.person.id),
+    [suggestionCards],
   );
 
-  const titlesLoading =
-    !listSettled && (peopleBySubLoading || (peerSubs.length > 0 && !jwt));
+  // Keep pending titles visible while peer profiles load — do not tie this to
+  // listSettled, or an early PEOPLE AROUND paint drops everyone as titlePending.
+  const titlesLoading = peopleBySubLoading || (peerSubs.length > 0 && !jwt);
+  const hasMatrixConversations =
+    rows.some((row) => row.kind === 'person' || row.kind === 'group') ||
+    channels.length > 0 ||
+    pendingGroups.length > 0;
   const dataReady = messagesPeopleListReady({
     isMatrixAvailable,
     isConnecting,
     synced,
     initialSyncComplete,
-    rowsPending,
-    homeLoaded,
-    matrixIdsLoading,
-    peopleBySubLoading,
+    hasMatrixConversations,
   });
   useEffect(() => {
     if (dataReady && isMatrixAvailable) setListSettled(true);
@@ -2455,11 +2625,17 @@ export function MyConnections({
     return mentionNames;
   }, [channels, client, directoryPeople, peopleBySub, personIdToMatrixUserId]);
   const inboxView = useMemo(() => {
-    const direct = people.map((row) =>
+    const directAll = people.map((row) =>
       row.inbox
         ? row
         : { ...row, inbox: directInboxPlace(peopleInboxKind(row)) },
     );
+    // Joined DMs/groups only — directory people without a room are not
+    // conversations and must not make Direct/All read "12" by default.
+    const directConversations = directAll.filter(isInboxDirectConversation);
+    // Search and the group picker still need roomless directory rows.
+    const directForList =
+      picking || needle.length > 0 ? directAll : directConversations;
     const channelRows =
       section === 'messages' && !picking
         ? conversationsMatchingSearch(
@@ -2481,7 +2657,7 @@ export function MyConnections({
           )
         : [];
     const counts = inboxFilterCounts([
-      ...direct.map((row) => ({
+      ...directConversations.map((row) => ({
         kind: row.inbox?.kind ?? 'dm',
         unread: row.unread,
       })),
@@ -2490,11 +2666,14 @@ export function MyConnections({
       ),
     ]);
     if (section !== 'messages' || picking || inboxFilter === 'direct') {
-      return { rows: direct, counts };
+      return { rows: directForList, counts };
     }
     if (inboxFilter === 'all') {
       return {
-        rows: sortConversationsByLastMessage([...direct, ...channelRows]),
+        rows: sortConversationsByLastMessage([
+          ...directForList,
+          ...channelRows,
+        ]),
         counts,
       };
     }
@@ -2527,6 +2706,7 @@ export function MyConnections({
       setSelectedById(new Map());
       setQuery('');
     }
+    pendingSelectFirstInboxRef.current = next !== inboxFilter;
     setInboxFilter(next);
     setInboxVisibleCount(INBOX_LIST_PAGE);
     setInboxChannelOpen(true);
@@ -2536,6 +2716,26 @@ export function MyConnections({
       // The choice still applies for this visit.
     }
   }
+
+  // Desktop / iPad (lg+): select the first conversation in the new filter so
+  // the side-by-side chat panel matches the list. Mobile stays on the list —
+  // auto-opening would skip the list and jump into fullscreen chat.
+  useEffect(() => {
+    if (!pendingSelectFirstInboxRef.current) return;
+    if (section !== 'messages' || picking) return;
+    if (
+      typeof window === 'undefined' ||
+      !window.matchMedia('(min-width: 64rem)').matches
+    ) {
+      pendingSelectFirstInboxRef.current = false;
+      return;
+    }
+    const first = inboxView.rows[0];
+    if (!first) return;
+    pendingSelectFirstInboxRef.current = false;
+    void openInboxRowRef.current?.(first);
+  }, [inboxFilter, inboxView.rows, picking, section]);
+
   // Newest chats stay first, so a new message lands in this first screen.
   // Filter badges and the nav count still use every row, including ones
   // waiting until the list scrolls to the end.
@@ -2548,6 +2748,16 @@ export function MyConnections({
     : section === 'messages' && !picking
     ? inboxView.rows
     : people;
+  // Store paint can ready the list via a channel while Direct still has no
+  // rows — keep the skeleton until initial sync before claiming empty.
+  const messagesEmptyPending =
+    section === 'messages' &&
+    !picking &&
+    !needle &&
+    messagesInboxEmptyStillLoading({
+      shownRowCount: shownRows.length,
+      initialSyncComplete,
+    });
   const missingChannelPreviewIds = useMemo(() => {
     if (section !== 'messages' || picking) return [] as string[];
     return shownRows
@@ -2730,10 +2940,19 @@ export function MyConnections({
       openCoherenceChat(
         row.roomId,
         row.name,
-        row.inbox.signalSlug ?? '',
+        inboxCoherenceSlug(row.inbox),
         null,
         spaceSlug,
-        { public: row.inbox.kind === 'space-public' },
+        {
+          public: row.inbox.kind === 'space-public',
+          channel: row.inbox.kind,
+          contextSectionKey:
+            row.inbox.kind === 'context' &&
+            row.inbox.contextSectionKey &&
+            isSpaceContextSectionKey(row.inbox.contextSectionKey)
+              ? row.inbox.contextSectionKey
+              : null,
+        },
       );
       return;
     }
@@ -2775,6 +2994,7 @@ export function MyConnections({
       avatarUrl: row.person.avatarUrl,
     });
   }
+  openInboxRowRef.current = openMember;
 
   const groupMemberIds = resolvedMatrixIdsForGroup(
     selectedPeople,
@@ -2879,13 +3099,33 @@ export function MyConnections({
       {section === 'suggestions' ? (
         <section className="flex flex-col gap-3" aria-label={t('reachOut')}>
           <p className="text-2 text-muted-foreground">{t('suggestSentence')}</p>
-          {reachOut.length === 0 ? (
+          <label className="relative min-w-0 w-full">
+            <span className="sr-only">{t('searchMembers')}</span>
+            <Search
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
+              strokeWidth={1.5}
+              aria-hidden
+            />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') return;
+                event.stopPropagation();
+              }}
+              placeholder={t('searchMembers')}
+              className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-foreground focus-visible:ring-0"
+            />
+          </label>
+          {searching && needle ? (
+            <p className="text-2 text-muted-foreground">{t('loading')}</p>
+          ) : suggestionCards.length === 0 ? (
             <p className="text-2 text-muted-foreground">
-              {t('suggestionsEmpty')}
+              {needle ? t('noMembersMatchSearch') : t('suggestionsEmpty')}
             </p>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {reachOut.map((card) => (
+              {suggestionCards.map((card) => (
                 <button
                   key={card.key}
                   type="button"
@@ -2903,12 +3143,18 @@ export function MyConnections({
                     {card.name}
                   </span>
                   <span className="text-1 text-foreground">
-                    {card.kind === 'reconnect'
+                    {needle
+                      ? t('startConversation')
+                      : card.kind === 'reconnect'
                       ? t('longTimeNoSee')
                       : t('worthMeeting')}
                   </span>
                   <span className="w-full truncate text-1 text-muted-foreground">
-                    {card.kind === 'reconnect'
+                    {needle
+                      ? card.lastTs
+                        ? formatWhen(card.lastTs, locale, t('justNow'))
+                        : t('noMessage')
+                      : card.kind === 'reconnect'
                       ? card.lastTs
                         ? formatWhen(card.lastTs, locale, t('justNow'))
                         : t('noMessage')
@@ -3154,7 +3400,7 @@ export function MyConnections({
               ) : null}
 
               <div className="flex min-h-0 flex-1 flex-col gap-3">
-                {listLoading ? (
+                {listLoading || messagesEmptyPending ? (
                   <MemberListSkeleton
                     title={
                       section === 'archived' ? t('tabs.archived') : t('people')
@@ -3164,6 +3410,7 @@ export function MyConnections({
                 ) : null}
 
                 {!listLoading &&
+                !messagesEmptyPending &&
                 section === 'archived' &&
                 isMatrixAvailable &&
                 people.length === 0 &&
@@ -3174,17 +3421,18 @@ export function MyConnections({
                 ) : null}
 
                 {!listLoading &&
+                !messagesEmptyPending &&
                 section !== 'archived' &&
                 isMatrixAvailable &&
-                home != null &&
                 shownRows.length === 0 &&
-                !searching ? (
+                !searching &&
+                // Direct/Messages empty is Matrix-driven. Suggestions wait for
+                // intelligence so "reach out" does not flash empty then fill.
+                (section === 'messages' || home != null) ? (
                   <p className="text-2 text-muted-foreground">
                     {needle
-                      ? picking
+                      ? picking || section === 'messages'
                         ? t('noMembersMatchSearch')
-                        : section === 'messages'
-                        ? t('noMessagesMatch')
                         : t('noMatches')
                       : showChannelTags && inboxFilter !== 'direct'
                       ? t('inbox.empty')
@@ -3192,12 +3440,14 @@ export function MyConnections({
                   </p>
                 ) : null}
 
-                {!listLoading && shownRows.length > 0 ? (
+                {!listLoading &&
+                !messagesEmptyPending &&
+                shownRows.length > 0 ? (
                   <MemberList
                     title={listTitle}
                     rows={shownRows}
                     showChannelTags={showChannelTags}
-                    presenceById={presenceById}
+                    personIdToMatrixUserId={personIdToMatrixUserId}
                     locale={locale}
                     justNow={t('justNow')}
                     noMessage={t('noMessage')}
@@ -3263,41 +3513,51 @@ export function MyConnections({
   );
 }
 
-function GroupFaces({ faces }: { faces: GroupFace[] }) {
-  const shown = faces.slice(0, 2);
-  return (
-    <span className="relative block h-10 w-10 shrink-0" aria-hidden>
-      {shown.map((face, index) => (
-        <span
-          key={`${face.name}-${index}`}
-          className={cn(
-            'absolute block size-[22px] overflow-hidden rounded-full bg-neutral-3 ring-2 ring-background group-hover/row:ring-accent-2 group-data-[active=true]/row:ring-accent-2',
-            index === 0 ? 'top-0 left-0' : 'right-0 bottom-0',
-          )}
-        >
-          {face.avatarUrl ? (
-            <img
-              src={face.avatarUrl}
-              alt=""
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <span className="flex h-full w-full items-center justify-center text-[10px] font-medium text-neutral-11">
-              {face.name.replace(/^@/, '').trim().charAt(0).toUpperCase() ||
-                '?'}
-            </span>
-          )}
-        </span>
-      ))}
-    </span>
-  );
-}
-
 const MEMBER_LIST_SKELETON_ROWS = 6;
+const INBOX_FILTER_SKELETON_ROWS = 6;
 
 export function MessagesPeopleListSkeleton() {
   const t = useTranslations('Connections');
   return <MemberListSkeleton title={t('people')} loadingLabel={t('loading')} />;
+}
+
+/**
+ * Full Messages shell while auth / Suspense resolve — filters + list — so the
+ * page title does not sit alone on a white canvas for a frame.
+ */
+export function MessagesInboxShellSkeleton() {
+  const t = useTranslations('Connections');
+  const loadingLabel = t('loading');
+  return (
+    <div
+      className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 lg:flex-row lg:items-start lg:gap-6"
+      role="status"
+      aria-busy="true"
+      aria-label={loadingLabel}
+      data-testid="messages-inbox-shell-loader"
+    >
+      <div
+        className="hidden w-full shrink-0 overflow-hidden rounded-none border border-border bg-background lg:block lg:w-80"
+        aria-hidden
+      >
+        {Array.from({ length: INBOX_FILTER_SKELETON_ROWS }, (_, index) => (
+          <div
+            key={index}
+            className="flex items-start gap-3 border-b border-border px-4 py-4 last:border-b-0"
+          >
+            <span className="mt-0.5 size-4 shrink-0 animate-pulse rounded-sm bg-neutral-5" />
+            <span className="min-w-0 flex-1">
+              <span className="block h-4 w-28 max-w-[70%] animate-pulse rounded-sm bg-neutral-5" />
+              <span className="mt-2 block h-3 w-40 max-w-full animate-pulse rounded-sm bg-neutral-5" />
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="min-h-0 min-w-0 flex-1">
+        <MemberListSkeleton title={t('people')} loadingLabel={loadingLabel} />
+      </div>
+    </div>
+  );
 }
 
 function MemberListSkeleton({
@@ -3340,7 +3600,9 @@ const CHANNEL_MARK_ICONS: Partial<Record<InboxChannelKind, typeof Circle>> = {
   space: Circle,
   'space-public': Globe,
   signal: Radio,
+  quest: Scroll,
   proposal: FileText,
+  context: BookOpen,
   ecosystem: Target,
   network: Globe2,
 };
@@ -3353,6 +3615,7 @@ const SIGNAL_TYPE_KEYS = new Set([
   'Tension',
   'Risk',
   'Action',
+  'Bug',
   'Impact',
   'Trend',
   'Proposal',
@@ -3370,8 +3633,12 @@ function channelTagKey(kind: InboxChannelKind) {
       return 'inbox.tagSpacePublic';
     case 'signal':
       return 'inbox.tagSignal';
+    case 'quest':
+      return 'inbox.tagQuest';
     case 'proposal':
       return 'inbox.tagProposal';
+    case 'context':
+      return 'inbox.tagContext';
     case 'ecosystem':
       return 'inbox.tagEcosystem';
     case 'network':
@@ -3382,7 +3649,7 @@ function channelTagKey(kind: InboxChannelKind) {
 function MemberList({
   title,
   rows,
-  presenceById,
+  personIdToMatrixUserId,
   locale,
   justNow,
   noMessage,
@@ -3404,7 +3671,7 @@ function MemberList({
 }: {
   title: string;
   rows: ConnectionMemberRow[];
-  presenceById: ReadonlyMap<number, PresenceLevel>;
+  personIdToMatrixUserId: Readonly<Record<number, string>>;
   locale: string;
   justNow: string;
   noMessage: string;
@@ -3474,7 +3741,6 @@ function MemberList({
               { roomId: activeRoomId, personId: activePersonId },
               openLookup,
             );
-          const presence = presenceById.get(row.person.id) ?? 'offline';
           const ChannelIcon = row.inbox
             ? CHANNEL_MARK_ICONS[row.inbox.kind]
             : undefined;
@@ -3528,18 +3794,36 @@ function MemberList({
                   </span>
                 ) : null}
                 {showChannelTags && ChannelIcon ? (
-                  <span className="relative grid size-10 shrink-0 place-items-center border border-foreground text-foreground">
-                    <ChannelIcon
-                      className="size-4"
-                      strokeWidth={1.5}
-                      aria-hidden
-                    />
+                  <span className="relative size-10 shrink-0">
+                    <span className="grid size-full place-items-center overflow-hidden rounded-full border border-border bg-background text-foreground">
+                      {row.inbox?.kind === 'network' ? (
+                        <MemberHomeMark className="h-6 w-6" />
+                      ) : row.logoUrl?.trim() ? (
+                        <Image
+                          className="aspect-square h-full w-full object-cover"
+                          width={40}
+                          height={40}
+                          src={row.logoUrl.trim()}
+                          alt=""
+                          aria-hidden
+                        />
+                      ) : (
+                        // Quiet mark — never the legacy Hypha placeholder
+                        // (that flashed for a frame when logoUrl was late).
+                        <span
+                          className="block size-full bg-neutral-5"
+                          aria-hidden
+                        />
+                      )}
+                    </span>
                     {contextHref ? (
-                      <ArrowUpRight
-                        className="pointer-events-none absolute top-px right-px size-2.5"
-                        strokeWidth={1.75}
-                        aria-hidden
-                      />
+                      <span className="pointer-events-none absolute top-0 right-0 grid size-3.5 place-items-center rounded-bl-md bg-background text-foreground">
+                        <ArrowUpRight
+                          className="size-2.5"
+                          strokeWidth={1.75}
+                          aria-hidden
+                        />
+                      </span>
                     ) : null}
                   </span>
                 ) : row.faces && row.faces.length > 0 ? (
@@ -3551,7 +3835,13 @@ function MemberList({
                     avatarSrc={row.avatarUrl}
                     userName={row.name}
                     personId={row.person.id}
-                    presence={presence}
+                    matrixUserId={
+                      personIdToMatrixUserId[row.person.id] ??
+                      openLookup?.rooms?.find(
+                        (room) => room.roomId === row.roomId,
+                      )?.otherUserId ??
+                      undefined
+                    }
                   />
                 )}
                 <span className="min-w-0 flex-1 pr-2">

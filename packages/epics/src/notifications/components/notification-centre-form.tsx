@@ -48,14 +48,21 @@ export type NotificationCentreFormProps = {
   subscribed?: boolean;
   /** This browser can receive push right now (permission granted and opted in). */
   pushActive?: boolean;
+  /** The browser SDK has reported this browser's push state. False keeps that one switch on a skeleton. */
+  pushStateReady?: boolean;
+  /** The SDK cannot run in this browser: the push switch is disabled with an explanation. */
+  pushUnavailable?: boolean;
   subscribe: () => Promise<void>;
   unsubscribe: () => Promise<void>;
   /** Asks for browser permission and opts this browser in; resolves to whether push is now on. */
   enableBrowserPush: () => Promise<boolean>;
   configuration?: NotificationConfiguration;
+  /** Resolves to whether the settings were saved; the panel only closes on success. */
   saveConfigurations: (
     configuration: NotificationConfiguration,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
+  /** Fetches the stored settings again after a failed load. */
+  reloadSettings?: () => Promise<void>;
 };
 
 function getSwitch(value: boolean): YesNo {
@@ -183,11 +190,14 @@ export const NotificationCentreForm = ({
   error,
   subscribed,
   pushActive,
+  pushStateReady = true,
+  pushUnavailable = false,
   subscribe,
   unsubscribe,
   enableBrowserPush,
   configuration,
   saveConfigurations,
+  reloadSettings,
 }: NotificationCentreFormProps) => {
   const tNotificationCentre = useTranslations('NotificationCentre');
   const tModalAside = useTranslations('ModalAside');
@@ -231,7 +241,7 @@ export const NotificationCentreForm = ({
 
   const handleSubmit = React.useCallback(
     async (values: NotificationCentreFormValues) => {
-      await saveConfigurations({
+      const saved = await saveConfigurations({
         browserNotifications: parseSwitch(values.browserNotifications),
         emailNotifications: parseSwitch(values.emailNotifications),
         subscriptions: values.subscriptions.map((subscription) => {
@@ -241,6 +251,8 @@ export const NotificationCentreForm = ({
           };
         }),
       });
+      // Keep the panel (and the edits) open when the save failed, so the error is seen.
+      if (!saved) return;
       if (onClose) onClose();
       else router.push(closeUrl);
     },
@@ -289,7 +301,15 @@ export const NotificationCentreForm = ({
     },
     [form, enableBrowserPush],
   );
-  const preferencesDisabled = !subscribed;
+  // The stored settings come from the server: until they arrive, show a skeleton rather than the
+  // form's all-on defaults (which would flash and then jump to the real values).
+  const settingsLoading = Boolean(person) && !configuration && !error;
+  // Never offer to save defaults the server didn't confirm (e.g. after a failed load).
+  const settingsUnavailable = Boolean(person) && !configuration;
+  const preferencesDisabled = !subscribed || settingsUnavailable;
+  // Loading failed: the only action is to fetch again (the button never saves in this state).
+  const canRetryLoad =
+    settingsUnavailable && Boolean(error) && Boolean(reloadSettings);
   const isDirty = form.formState.isDirty;
 
   const { fields: subscriptions } = useFieldArray({
@@ -360,7 +380,11 @@ export const NotificationCentreForm = ({
           className="space-y-8"
         >
           <div className="flex flex-col gap-6">
-            <Skeleton width="100%" height="64px" loading={isLoading}>
+            <Skeleton
+              width="100%"
+              height="64px"
+              loading={isLoading || settingsLoading}
+            >
               <GeneralSetting
                 id="notificationsSubscribed"
                 icon={<Bell className="size-5" />}
@@ -371,122 +395,143 @@ export const NotificationCentreForm = ({
                     : tNotificationCentre('subscribe.unsubscribedDescription')
                 }
                 checked={Boolean(subscribed)}
-                disabled={isLoading || subscribePending}
+                disabled={isLoading || settingsLoading || subscribePending}
                 onCheckedChange={handleSubscribeToggle}
               />
             </Skeleton>
             {error && <FormMessage>{error}</FormMessage>}
-            <fieldset
-              disabled={preferencesDisabled}
-              className={cn(
-                'm-0 flex min-w-0 flex-col gap-6 border-0 p-0',
-                preferencesDisabled && 'pointer-events-none opacity-60',
-              )}
-            >
-              <div className="flex flex-col border-t border-border pt-4">
-                <h3 className="text-1 font-semibold uppercase tracking-[0.12em] text-neutral-10">
-                  {tNotificationCentre('channels.title')}
-                </h3>
-                <FormField
-                  control={form.control}
-                  name="emailNotifications"
-                  render={({ field }) => (
-                    <GeneralSetting
-                      id="emailNotifications"
-                      icon={<Mail className="size-5" />}
-                      title={tNotificationCentre('channels.emailNotifications')}
-                      description={
-                        notificationEmail
-                          ? optionalText(
-                              'channels.emailDescription',
-                              `Sent to ${notificationEmail}.`,
-                              { email: notificationEmail },
-                            )
-                          : optionalText(
-                              'channels.emailDescriptionNoAddress',
-                              'Sent to your account email.',
-                            )
-                      }
-                      checked={field.value === 'yes'}
-                      disabled={preferencesDisabled}
-                      onCheckedChange={(checked) =>
-                        form.setValue(field.name, getSwitch(checked), {
-                          shouldDirty: true,
-                        })
-                      }
-                    />
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="browserNotifications"
-                  render={({ field }) => (
-                    <GeneralSetting
-                      id="browserNotifications"
-                      icon={<MonitorSmartphone className="size-5" />}
-                      title={tNotificationCentre(
-                        'channels.browserNotifications',
-                      )}
-                      description={optionalText(
-                        'channels.browserDescription',
-                        'Alerts on this browser or device. Turn it on in each browser you use.',
-                      )}
-                      checked={field.value === 'yes'}
-                      disabled={preferencesDisabled || pushPending}
-                      onCheckedChange={handleBrowserToggle}
-                    />
-                  )}
-                />
-              </div>
-
-              <h3 className="-mb-2 border-t border-border pt-4 text-1 font-semibold uppercase tracking-[0.12em] text-neutral-10">
-                {tNotificationCentre('subscriptions.title')}
-              </h3>
-              {NOTIFICATION_SUBSCRIPTION_SECTIONS.map((section) => (
-                <SettingsCard
-                  key={section.id}
-                  title={optionalText(
-                    `subscriptions.sections.${section.id}`,
-                    section.title,
-                  )}
-                >
-                  {subscriptions.map((field, index) => {
-                    if (field.group !== section.id) return null;
-                    return (
-                      <FormField
-                        key={field.id}
-                        control={form.control}
-                        name={`subscriptions.${index}`}
-                        render={({
-                          field: { name, value: subscription, onChange },
-                        }) => {
-                          const localizedSubscription =
-                            subscriptionTextMap[subscription.tagName];
-                          return (
-                            <SettingsRow
-                              id={`${name.replace('.', '_')}_checked`}
-                              title={
-                                localizedSubscription?.title ??
-                                subscription.title
-                              }
-                              description={
-                                localizedSubscription?.description ??
-                                subscription.description
-                              }
-                              checked={subscription.tagValue}
-                              disabled={preferencesDisabled}
-                              onCheckedChange={(value) =>
-                                onChange({ ...subscription, tagValue: value })
-                              }
-                            />
-                          );
-                        }}
+            <Skeleton width="100%" height="480px" loading={settingsUnavailable}>
+              <fieldset
+                disabled={preferencesDisabled}
+                className={cn(
+                  'm-0 flex min-w-0 flex-col gap-6 border-0 p-0',
+                  preferencesDisabled && 'pointer-events-none opacity-60',
+                )}
+              >
+                <div className="flex flex-col border-t border-border pt-4">
+                  <h3 className="text-1 font-semibold uppercase tracking-[0.12em] text-neutral-10">
+                    {tNotificationCentre('channels.title')}
+                  </h3>
+                  <FormField
+                    control={form.control}
+                    name="emailNotifications"
+                    render={({ field }) => (
+                      <GeneralSetting
+                        id="emailNotifications"
+                        icon={<Mail className="size-5" />}
+                        title={tNotificationCentre(
+                          'channels.emailNotifications',
+                        )}
+                        description={
+                          notificationEmail
+                            ? optionalText(
+                                'channels.emailDescription',
+                                `Sent to ${notificationEmail}.`,
+                                { email: notificationEmail },
+                              )
+                            : optionalText(
+                                'channels.emailDescriptionNoAddress',
+                                'Sent to your account email.',
+                              )
+                        }
+                        checked={field.value === 'yes'}
+                        disabled={preferencesDisabled}
+                        onCheckedChange={(checked) =>
+                          form.setValue(field.name, getSwitch(checked), {
+                            shouldDirty: true,
+                          })
+                        }
                       />
-                    );
-                  })}
-                </SettingsCard>
-              ))}
-            </fieldset>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="browserNotifications"
+                    render={({ field }) => (
+                      <Skeleton
+                        width="100%"
+                        height="64px"
+                        loading={!pushStateReady && !pushUnavailable}
+                      >
+                        <GeneralSetting
+                          id="browserNotifications"
+                          icon={<MonitorSmartphone className="size-5" />}
+                          title={tNotificationCentre(
+                            'channels.browserNotifications',
+                          )}
+                          description={
+                            pushUnavailable
+                              ? optionalText(
+                                  'channels.browserUnavailable',
+                                  'Push notifications can’t be turned on in this browser or device.',
+                                )
+                              : optionalText(
+                                  'channels.browserDescription',
+                                  'Alerts on this browser or device. Turn it on in each browser you use.',
+                                )
+                          }
+                          checked={!pushUnavailable && field.value === 'yes'}
+                          disabled={
+                            preferencesDisabled ||
+                            pushPending ||
+                            pushUnavailable
+                          }
+                          onCheckedChange={handleBrowserToggle}
+                        />
+                      </Skeleton>
+                    )}
+                  />
+                </div>
+
+                <h3 className="-mb-2 border-t border-border pt-4 text-1 font-semibold uppercase tracking-[0.12em] text-neutral-10">
+                  {tNotificationCentre('subscriptions.title')}
+                </h3>
+                {NOTIFICATION_SUBSCRIPTION_SECTIONS.map((section) => (
+                  <SettingsCard
+                    key={section.id}
+                    title={optionalText(
+                      `subscriptions.sections.${section.id}`,
+                      section.title,
+                    )}
+                  >
+                    {subscriptions.map((field, index) => {
+                      if (field.group !== section.id) return null;
+                      return (
+                        <FormField
+                          key={field.id}
+                          control={form.control}
+                          name={`subscriptions.${index}`}
+                          render={({
+                            field: { name, value: subscription, onChange },
+                          }) => {
+                            const localizedSubscription =
+                              subscriptionTextMap[subscription.tagName];
+                            return (
+                              <SettingsRow
+                                id={`${name.replace('.', '_')}_checked`}
+                                title={
+                                  localizedSubscription?.title ??
+                                  subscription.title
+                                }
+                                description={
+                                  localizedSubscription?.description ??
+                                  subscription.description
+                                }
+                                checked={subscription.tagValue}
+                                disabled={preferencesDisabled}
+                                onCheckedChange={(value) =>
+                                  onChange({ ...subscription, tagValue: value })
+                                }
+                              />
+                            );
+                          }}
+                        />
+                      );
+                    })}
+                  </SettingsCard>
+                ))}
+              </fieldset>
+            </Skeleton>
             <div className="sticky bottom-0 z-[5] -mx-4 -mb-4 border-t border-border/90 bg-background-2 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:-mx-7 lg:-mb-7 lg:px-7">
               <div className="flex items-center justify-end gap-3">
                 {isDirty && (
@@ -498,11 +543,15 @@ export const NotificationCentreForm = ({
                   </span>
                 )}
                 <Button
-                  type="submit"
+                  type={canRetryLoad ? 'button' : 'submit'}
+                  onClick={canRetryLoad ? () => reloadSettings?.() : undefined}
                   variant="default"
                   className="rounded-lg justify-start text-white w-fit"
                   disabled={
-                    isLoading || preferencesDisabled || (!isDirty && !error)
+                    isLoading ||
+                    settingsLoading ||
+                    (!canRetryLoad &&
+                      (preferencesDisabled || (!isDirty && !error)))
                   }
                 >
                   {error

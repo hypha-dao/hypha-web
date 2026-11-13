@@ -3,8 +3,6 @@
 import React from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { usePathname } from 'next/navigation';
-import { getDhoSpaceSlugFromPathname } from '../../common/get-dho-space-slug-from-pathname';
 import type { Timeframe } from '../components/assets/energy/dummy-data';
 
 /** Server-side telemetry period. Superset of the chart `Timeframe` toggle values. */
@@ -178,21 +176,17 @@ function startTelemetryRequest(
 
 export const useSpaceEnergyTelemetry = (
   period: TelemetryPeriod,
+  spaceSlug: string | undefined,
   {
     enabled = true,
     refreshInterval = 60_000,
   }: { enabled?: boolean; refreshInterval?: number } = {},
 ) => {
-  const pathname = usePathname();
-  const spaceSlug = React.useMemo(
-    () => getDhoSpaceSlugFromPathname(pathname),
-    [pathname],
-  );
   const { getAccessToken, isLoading: isAuthLoading } = useAuthentication();
   const { mutate: mutateCache } = useSWRConfig();
 
   const endpoint = React.useMemo(() => {
-    if (!enabled || isAuthLoading || !spaceSlug) return null;
+    if (!enabled || isAuthLoading || !spaceSlug?.trim()) return null;
     return `/api/v1/spaces/${encodeURIComponent(
       spaceSlug,
     )}/energy/telemetry?period=${encodeURIComponent(period)}`;

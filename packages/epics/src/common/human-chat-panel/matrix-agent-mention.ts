@@ -27,6 +27,16 @@ export function matrixAgentSkills(
   ];
 }
 
+/**
+ * The single AI Agents picker row, not a person and not a section specialist.
+ * `displayLabel` is the chip text the composer inserts ("AI Agents").
+ */
+export function isAgentMentionPick(
+  member: Pick<ChatMentionCandidate, 'rowKey' | 'agentIcon' | 'displayLabel'>,
+): boolean {
+  return member.rowKey === 'agent' || member.agentIcon != null;
+}
+
 /** Keep one AI Agents row at the top of the @ picker. Skills are chosen after it. */
 export function withMatrixAgentMention(
   candidates: ChatMentionCandidate[],
@@ -97,7 +107,9 @@ export type MatrixAgentRoomContext = {
   kind:
     | 'proposal'
     | 'signal'
+    | 'quest'
     | 'space'
+    | 'space_context'
     | 'ecosystem'
     | 'public'
     | 'network'
@@ -107,6 +119,10 @@ export type MatrixAgentRoomContext = {
   documentTitle?: string | null;
   signalSlug?: string | null;
   signalTitle?: string | null;
+  questSlug?: string | null;
+  questTitle?: string | null;
+  /** Context section whose agent was mentioned (`space_context` rooms). */
+  sectionKey?: string | null;
 };
 
 /** Ask the server to answer if the latest room message @mentions AI Agents. */
@@ -139,6 +155,9 @@ export function requestMatrixAgentReply({
           documentTitle: context.documentTitle?.trim() || null,
           signalSlug: context.signalSlug?.trim() || null,
           signalTitle: context.signalTitle?.trim() || null,
+          questSlug: context.questSlug?.trim() || null,
+          questTitle: context.questTitle?.trim() || null,
+          sectionKey: context.sectionKey?.trim() || null,
         }
       : null,
   });

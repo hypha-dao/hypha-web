@@ -6,9 +6,11 @@ import {
   channelHasRecentActivity,
   channelIsRelevantToMember,
   channelRowsFromSnapshots,
+  inboxCoherenceSlug,
   inboxContextHref,
   inboxContextLine,
   inboxFilterCounts,
+  isInboxDirectConversation,
   inboxListWindow,
   INBOX_LIST_PAGE,
   inboxKindForRoomType,
@@ -26,6 +28,7 @@ const context: InboxContext = {
       title: 'Hypha Platform',
       parentId: 1,
       chatRoomId: '!space:hs',
+      logoUrl: null,
       rootSlug: 'hypha',
       rootTitle: 'Hypha',
     },
@@ -80,6 +83,58 @@ describe('messages inbox filters', () => {
     expect(isInboxChannelKind('dm')).toBe(false);
   });
 
+  it('lists quest channels under Spaces and their own Quests filter', () => {
+    expect(inboxKindForRoomType('io.hypha.room.quest')).toBe('quest');
+    expect(rowMatchesInboxFilter('quest', 'quests')).toBe(true);
+    expect(rowMatchesInboxFilter('quest', 'spaces')).toBe(true);
+    expect(rowMatchesInboxFilter('quest', 'signals')).toBe(false);
+    expect(rowMatchesInboxFilter('signal', 'quests')).toBe(false);
+
+    const rows = channelRowsFromSnapshots(
+      [
+        {
+          roomId: '!quest:hs',
+          roomType: 'io.hypha.room.quest',
+          name: 'Quest room',
+          aliases: [],
+          preview: 'Quest accepted — channel opened',
+          mine: false,
+          lastTs: recent,
+          unread: 1,
+        },
+        {
+          roomId: '!other-quest:hs',
+          roomType: 'io.hypha.room.quest',
+          name: 'Another space quest',
+          aliases: [],
+          preview: 'hello',
+          mine: false,
+          lastTs: recent,
+          unread: 0,
+        },
+      ],
+      {
+        ...context,
+        quests: [
+          {
+            roomId: '!quest:hs',
+            title: 'Onboarding matcher',
+            slug: 'onboarding-matcher',
+            spaceSlug: 'hypha-platform',
+            spaceTitle: 'Hypha Platform',
+            rootSlug: 'hypha',
+            rootTitle: 'Hypha',
+          },
+        ],
+      },
+      'Network',
+      now,
+    );
+    expect(rows.map((row) => [row.roomId, row.name, row.inbox.kind])).toEqual([
+      ['!quest:hs', 'Onboarding matcher', 'quest'],
+    ]);
+  });
+
   it('counts each conversation once per matching filter', () => {
     const counts = inboxFilterCounts([
       { kind: 'dm', unread: 2 },
@@ -91,6 +146,12 @@ describe('messages inbox filters', () => {
     expect(counts.signals).toEqual({ total: 1, unread: 1 });
     expect(counts.spaces).toEqual({ total: 1, unread: 1 });
     expect(counts.network).toEqual({ total: 1, unread: 0 });
+  });
+
+  it('treats only joined rooms as Direct conversations for totals', () => {
+    expect(isInboxDirectConversation({ roomId: '!dm:hs' })).toBe(true);
+    expect(isInboxDirectConversation({ roomId: null })).toBe(false);
+    expect(isInboxDirectConversation({ roomId: '  ' })).toBe(false);
   });
 
   it('keeps unread totals when the painted list is only the first screen', () => {
@@ -168,6 +229,55 @@ describe('messages inbox context', () => {
     expect(row?.name).toBe('Roadmap page');
     expect(row?.inbox.kind).toBe('signal');
     expect(row?.person.id).toBeLessThan(0);
+  });
+
+  it('hides a withdrawn proposal chat even when it still has comments', () => {
+    // Server drops withdrawn ids from context.proposals; the room type alone
+    // must not keep it in Spaces → Proposals (or All).
+    const withoutWithdrawn = {
+      ...context,
+      proposals: [] as InboxContext['proposals'],
+    };
+    const rows = channelRowsFromSnapshots(
+      [
+        {
+          roomId: '!withdrawn:hs',
+          roomType: 'io.hypha.room.proposal',
+          name: 'Genesis IP Contribution',
+          aliases: [],
+          preview: 'still talking here',
+          mine: false,
+          lastTs: recent,
+          unread: 3,
+        },
+      ],
+      withoutWithdrawn,
+      'Network',
+      now,
+    );
+    expect(rows).toEqual([]);
+    expect(
+      channelIsRelevantToMember(
+        { roomId: '!withdrawn:hs', onSignalTeam: false },
+        {
+          kind: 'proposal',
+          spaceTitle: 'Hypha Platform',
+          spaceSlug: 'hypha-platform',
+          ecosystemTitle: 'Hypha',
+          ecosystemSlug: 'hypha',
+          signalTitle: null,
+          signalType: null,
+          signalSlug: null,
+          questTitle: null,
+          questSlug: null,
+          proposalTitle: 'Genesis IP Contribution',
+          proposalSlug: 'genesis-ip',
+          contextSectionKey: null,
+          contextSectionTitle: null,
+        },
+        withoutWithdrawn,
+      ),
+    ).toBe(false);
   });
 
   it('shows a proposal chat only to a member who can vote on it', () => {
@@ -310,6 +420,107 @@ describe('messages inbox context', () => {
     );
     expect(row?.roomId).toBe('!unread-proposal:hs');
     expect(row?.unread).toBe(2);
+  });
+
+  describe('Context section chats', () => {
+    const sectionContext: InboxContext = {
+      ...context,
+      contexts: [
+        {
+          roomId: '!mission:hs',
+          sectionKey: 'mission',
+          title: 'Mission',
+          spaceSlug: 'hypha-platform',
+          spaceTitle: 'Hypha Platform',
+          rootSlug: 'hypha',
+          rootTitle: 'Hypha',
+        },
+        {
+          roomId: '!vision:hs',
+          sectionKey: 'vision',
+          title: 'Vision',
+          spaceSlug: 'hypha-platform',
+          spaceTitle: 'Hypha Platform',
+          rootSlug: 'hypha',
+          rootTitle: 'Hypha',
+        },
+      ],
+    };
+    const snapshot = (
+      roomId: string,
+      preview: string,
+      unread: number,
+      lastTs: number | null = recent,
+    ) => ({
+      roomId,
+      roomType: 'io.hypha.room.context',
+      name: 'Mission · Hypha Platform',
+      aliases: [],
+      preview,
+      mine: false,
+      lastTs,
+      unread,
+    });
+
+    it('lists a started section discussion under Spaces → Context', () => {
+      expect(inboxKindForRoomType('io.hypha.room.context')).toBe('context');
+      expect(rowMatchesInboxFilter('context', 'context')).toBe(true);
+      expect(rowMatchesInboxFilter('context', 'spaces')).toBe(true);
+      expect(rowMatchesInboxFilter('context', 'rooms')).toBe(false);
+      expect(rowMatchesInboxFilter('context', 'proposals')).toBe(false);
+
+      const [row] = channelRowsFromSnapshots(
+        [snapshot('!mission:hs', 'What is our purpose?', 1, quiet)],
+        sectionContext,
+        'Network',
+        now,
+      );
+      expect(row?.name).toBe('Mission');
+      expect(row?.inbox.kind).toBe('context');
+      expect(row?.unread).toBe(1);
+      expect(inboxContextLine(row!.inbox, null)).toBe('Hypha Platform · Hypha');
+      expect(inboxContextHref('en', row?.inbox)).toBe(
+        '/en/dho/hypha-platform/context?section=mission',
+      );
+      expect(
+        inboxFilterCounts([{ kind: row!.inbox.kind, unread: row!.unread }])
+          .context,
+      ).toEqual({
+        total: 1,
+        unread: 1,
+      });
+    });
+
+    it('hides a section room nobody has written in yet', () => {
+      const rows = channelRowsFromSnapshots(
+        [snapshot('!vision:hs', '', 0)],
+        sectionContext,
+        'Network',
+        now,
+      );
+      expect(rows).toEqual([]);
+    });
+
+    it('keeps an unread section chat while its preview is still loading', () => {
+      const [row] = channelRowsFromSnapshots(
+        [snapshot('!vision:hs', '', 3)],
+        sectionContext,
+        'Network',
+        now,
+      );
+      expect(row?.roomId).toBe('!vision:hs');
+      expect(row?.unread).toBe(3);
+    });
+
+    it('hides section rooms of spaces the member is not in', () => {
+      const rows = channelRowsFromSnapshots(
+        [snapshot('!elsewhere:hs', 'hello', 2)],
+        sectionContext,
+        'Network',
+        now,
+      );
+      expect(rows).toEqual([]);
+    });
   });
 
   it('hides a signal the member is not on and has not been notified about', () => {
@@ -511,6 +722,7 @@ describe('messages inbox context', () => {
           title: 'Hypha',
           parentId: null,
           chatRoomId: '!hypha-space:hs',
+          logoUrl: null,
           rootSlug: 'hypha',
           rootTitle: 'Hypha',
         },
@@ -581,8 +793,12 @@ describe('inboxContextHref', () => {
     signalTitle: 'Roadmap page',
     signalType: 'Need',
     signalSlug: 'roadmap-page',
+    questTitle: 'Onboarding matcher',
+    questSlug: 'onboarding-matcher',
     proposalTitle: 'Garden vote',
     proposalSlug: 'garden-vote',
+    contextSectionKey: 'mission',
+    contextSectionTitle: 'Mission',
   };
 
   it('opens a signal, a space room, an ecosystem the member can enter, and the network', () => {
@@ -605,9 +821,21 @@ describe('inboxContextHref', () => {
         spaceSlug: null,
         ecosystemSlug: null,
       }),
-    ).toBe('/en/network');
+    ).toBe('/en/network?spaceChat=network');
     expect(inboxContextHref('en', { ...place, kind: 'proposal' })).toBe(
       '/en/dho/hypha-platform/agreements/proposal/garden-vote',
+    );
+    expect(inboxContextHref('en', { ...place, kind: 'context' })).toBe(
+      '/en/dho/hypha-platform/context?section=mission',
+    );
+    expect(inboxContextHref('en', { ...place, kind: 'quest' })).toBe(
+      '/en/dho/hypha-platform/quests/onboarding-matcher',
+    );
+    expect(inboxCoherenceSlug({ ...place, kind: 'quest' })).toBe(
+      'onboarding-matcher',
+    );
+    expect(inboxCoherenceSlug({ ...place, kind: 'signal' })).toBe(
+      'roadmap-page',
     );
   });
 

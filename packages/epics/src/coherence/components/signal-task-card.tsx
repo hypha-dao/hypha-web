@@ -187,7 +187,6 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
       }
       className={cn(
         'craft-card-interactive group relative flex flex-col',
-        !isActive && 'dark:bg-background-5',
         signalCardActiveClass(isActive),
         onClick && 'cursor-pointer',
         draggable && 'cursor-grab active:cursor-grabbing',
@@ -245,7 +244,6 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
                 >
                   <SignalCardActions
                     signal={signal}
-                    refresh={refresh}
                     className="shrink-0 rounded-none border border-border/70 bg-background-2 shadow-none"
                   />
                 </div>
@@ -307,7 +305,6 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
                   slug={signal.slug}
                   upvotes={signal.upvotes}
                   refresh={refresh}
-                  disabled={Boolean(signal.archived)}
                 />
                 {hasValidDue ? (
                   <span

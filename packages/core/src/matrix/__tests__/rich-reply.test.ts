@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import type * as MatrixSdk from 'matrix-js-sdk';
 
 import {
   buildRichReplyPlainBody,
   firstLineForReplyPreview,
   isLocalProvisionalEventId,
+  messageFromRoomMessageEvent,
   stripMatrixReplyFallback,
   truncateForPreview,
 } from '../rich-reply';
@@ -70,5 +72,108 @@ describe('buildRichReplyPlainBody', () => {
     const out = buildRichReplyPlainBody('@u:h', parent, 'world');
     expect(out).toContain('> <@u:h> hello');
     expect(out).not.toContain('> <@u:h> > <@a:b> hi');
+  });
+});
+
+describe('messageFromRoomMessageEvent edited', () => {
+  function makeTextEvent(opts: {
+    replacingEventId?: string;
+    /** Local-echo replace attached before the edit event has a final id. */
+    hasReplacingEvent?: boolean;
+    body?: string;
+  }): MatrixSdk.MatrixEvent {
+    return {
+      getId: () => '$msg:example.com',
+      getSender: () => '@you:example.com',
+      getTs: () => 1_700_000_000_000,
+      getContent: () => ({
+        msgtype: 'm.text',
+        body: opts.body ?? 'Hello',
+      }),
+      getWireContent: () => ({
+        msgtype: 'm.text',
+        body: opts.body ?? 'Hello',
+      }),
+      replacingEventId: () => opts.replacingEventId,
+      replacingEvent: () =>
+        opts.hasReplacingEvent || opts.replacingEventId
+          ? ({
+              getId: () => opts.replacingEventId ?? null,
+            } as MatrixSdk.MatrixEvent)
+          : null,
+    } as unknown as MatrixSdk.MatrixEvent;
+  }
+
+  it('marks a replaced root as edited', () => {
+    const client = {
+      getRoom: () => null,
+    } as unknown as MatrixSdk.MatrixClient;
+    const message = messageFromRoomMessageEvent(
+      client,
+      '!room:example.com',
+      makeTextEvent({ replacingEventId: '$edit:example.com', body: 'Updated' }),
+      false,
+    );
+    expect(message.edited).toBe(true);
+    expect(message.content).toBe('Updated');
+  });
+
+  it('marks local-echo edits as edited when the replace id is not final yet', () => {
+    const client = {
+      getRoom: () => null,
+    } as unknown as MatrixSdk.MatrixClient;
+    const message = messageFromRoomMessageEvent(
+      client,
+      '!room:example.com',
+      makeTextEvent({ hasReplacingEvent: true, body: 'Updated' }),
+      false,
+    );
+    expect(message.edited).toBe(true);
+  });
+
+  it('labels a quest-helper stamp as the helper and leaves an unmarked bot event alone', () => {
+    const client = {
+      getRoom: () => null,
+    } as unknown as MatrixSdk.MatrixClient;
+    const stamped = messageFromRoomMessageEvent(
+      client,
+      '!room:example.com',
+      {
+        ...makeTextEvent({
+          body: 'Quest accepted · Fri, Nov 6, 2026 — channel opened\nParticipants: Ada',
+        }),
+        getContent: () => ({
+          msgtype: 'm.text',
+          body: 'Quest accepted · Fri, Nov 6, 2026 — channel opened\nParticipants: Ada',
+          'org.hypha.quest_helper': 'quest-helper',
+        }),
+      } as unknown as MatrixSdk.MatrixEvent,
+      false,
+    );
+    expect(stamped.agentSpecialistId).toBe('quest-helper');
+    expect(stamped.content).toContain('Quest accepted');
+    expect(stamped.content).toContain('Participants: Ada');
+    const historical = messageFromRoomMessageEvent(
+      client,
+      '!room:example.com',
+      makeTextEvent({
+        body: 'Quest accepted · Fri, Nov 6, 2026 — channel opened',
+      }),
+      false,
+    );
+    expect(historical.agentSpecialistId).toBeUndefined();
+  });
+
+  it('omits edited when there is no replacement', () => {
+    const client = {
+      getRoom: () => null,
+    } as unknown as MatrixSdk.MatrixClient;
+    const message = messageFromRoomMessageEvent(
+      client,
+      '!room:example.com',
+      makeTextEvent({}),
+      false,
+    );
+    expect(message.edited).toBeUndefined();
   });
 });

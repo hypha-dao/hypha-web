@@ -17,6 +17,7 @@ export const relayEcosystemSignalInputSchema = z
         'Tension',
         'Risk',
         'Action',
+        'Bug',
         'Impact',
         'Trend',
         'Proposal',

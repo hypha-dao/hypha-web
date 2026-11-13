@@ -645,7 +645,83 @@
       "when": 1784000000022,
       "tag": "0091_document_chat_room_id",
       "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1784000000023,
+      "tag": "0092_space_context",
+      "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1784000000024,
+      "tag": "0093_space_context_chat_room",
+      "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1784000000025,
+      "tag": "0094_space_context_ratified_markdown",
+      "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1784000000026,
+      "tag": "0095_space_context_section_changes",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1784000000027,
+      "tag": "0096_space_context_section_title_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1784000000028,
+      "tag": "0097_signal_vote_direction",
+      "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1784000000029,
+      "tag": "0098_space_quests",
+      "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1784000000030,
+      "tag": "0099_purge_legacy_seeded_quests",
+      "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1784000000031,
+      "tag": "0100_purge_legacy_seeded_quests_failsafe",
+      "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1784000000032,
+      "tag": "0101_space_quest_drafts",
+      "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1784000000033,
+      "tag": "0102_space_quest_deliverables_enabled",
+      "breakpoints": true
     }
   ]
 }
-

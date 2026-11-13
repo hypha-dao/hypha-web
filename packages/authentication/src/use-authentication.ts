@@ -6,8 +6,9 @@ import { useSetActiveWallet } from '@privy-io/wagmi';
 import { useRouter } from 'next/navigation';
 import { saveAuthReturnPath } from './auth-return-path';
 import { clearOnboardingWalletSessionActive } from './onboarding-wallet-session';
+import { AnonymousAuthContext, useAnonymousAuthentication } from './anonymous';
 
-export function useAuthentication() {
+function usePrivyAuthentication() {
   const {
     user: privyUser,
     authenticated,
@@ -106,6 +107,8 @@ export function useAuthentication() {
   }, [exportWallet, isEmbeddedWallet]);
 
   return {
+    /** A visitor can sign in here (always true under the Privy provider). */
+    canLogin: true,
     isAuthenticated: authenticated,
     isLoading: !ready,
     isEmbeddedWallet,
@@ -119,4 +122,18 @@ export function useAuthentication() {
     exportWallet: handleExportWallet,
     isModalOpen,
   };
+}
+
+/**
+ * Authentication state for the current tree. Under `AnonymousAuthProvider`
+ * (the white-label tree, which mounts no Privy) it is always signed out; under
+ * `AuthProvider` it is the Privy-backed state.
+ *
+ * The branch depends on a context set once by a root layout, so it never
+ * changes for the lifetime of a mounted tree and the hook order is stable.
+ */
+export function useAuthentication(): ReturnType<typeof usePrivyAuthentication> {
+  const anonymous = React.useContext(AnonymousAuthContext);
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return anonymous ? useAnonymousAuthentication() : usePrivyAuthentication();
 }

@@ -535,13 +535,19 @@ export function listSpaceAttentionLead(
 
 /**
  * A discussion is still a conversation. A proposal is a decision only while
- * it has a chain vote that has not closed and this member has not voted.
- * An agreement, or a proposal row with no chain id, has nothing left to decide.
+ * it has a chain vote that has not closed, has not been withdrawn, and this
+ * member has not voted. An agreement, or a proposal row with no chain id, has
+ * nothing left to decide.
  */
 function proposalStillOpen(
   proposal: MemberIntelligence['proposals'][number] | null | undefined,
 ): proposal is MemberIntelligence['proposals'][number] {
-  if (!proposal?.slug || proposal.memberHasVoted || proposal.expired) {
+  if (
+    !proposal?.slug ||
+    proposal.memberHasVoted ||
+    proposal.expired ||
+    proposal.withdrawn
+  ) {
     return false;
   }
   const state = proposal.state?.trim().toLowerCase();
@@ -1833,7 +1839,7 @@ const DIRECT_PHRASES: Record<MemberHomeDirectAsk, readonly string[]> = {
     'send tokens til noen',
     'испрати токени на некого',
   ],
-  decision: ['what needs a decision'],
+  decision: ['what needs a decision', 'where is my voice needed'],
   useful: ['where can i be useful', 'i am on my home'],
 };
 
@@ -2097,16 +2103,10 @@ export function memberHomeDirectReply(
       ? open.find((item) => item.slug === listedOpen.targetSlug)
       : open[0];
     if (chosen) {
-      return {
-        ask,
-        widget: null,
-        item: { kind: 'proposal', slug: chosen.slug },
-        line: {
-          key: 'decisionOpen',
-          title: chosen.title.trim(),
-          space: chosen.spaceTitle.trim(),
-        },
-      };
+      // Open decisions are a conversation, not a title dump
+      // ("Deliverable Contribution — X is open in Y"). Same as useful:
+      // the model briefs the person and the need.
+      return null;
     }
     const listed = notes[0];
     if (listed) {

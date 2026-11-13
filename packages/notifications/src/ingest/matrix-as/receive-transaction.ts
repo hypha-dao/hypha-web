@@ -37,6 +37,21 @@ export async function receiveTransaction(
   const events = Array.isArray(body.events) ? body.events : [];
 
   for (const raw of events) {
+    if (
+      raw.type === 'm.room.redaction' &&
+      raw.room_id?.trim() &&
+      deps.onSignalDiscussion
+    ) {
+      try {
+        await deps.onSignalDiscussion(raw.room_id.trim());
+      } catch (error) {
+        logger.warn('[matrix-as] signal discussion count was not updated', {
+          roomId: raw.room_id,
+          error,
+        });
+      }
+    }
+
     const parsed = parseMessageEvent(raw);
     if (!parsed) {
       result.ignored += 1;
@@ -46,7 +61,13 @@ export async function receiveTransaction(
     const outcome = await ingestParsedMessage(
       parsed,
       { txnId },
-      { db: deps.db, dispatch: deps.dispatch, botUserIds, logger },
+      {
+        db: deps.db,
+        dispatch: deps.dispatch,
+        botUserIds,
+        logger,
+        onSignalDiscussion: deps.onSignalDiscussion,
+      },
     );
 
     switch (outcome) {

@@ -103,24 +103,61 @@ export type PatchCoherenceTaskBySlugInput = {
   slug: string;
 } & PatchCoherenceTaskInput;
 
+/** One person holds one row. `up` is the historical default. */
+export type SignalVoteDirection = 'up' | 'down';
+
 export type CoherenceUpvoter = {
   personId: number;
   name: string | null;
   avatarUrl: string | null;
   /** Raw voting power units (wei-scale for token sources, whole votes for 1m1v). */
   votingPower: string;
+  /** Missing on older payloads; treat as an upvote. */
+  direction?: SignalVoteDirection;
 };
 
 export type CoherenceUpvoteSummary = {
-  /** Sum of all upvote voting power in raw units. */
+  /**
+   * Net voting power in raw units: upvotes minus downvotes.
+   * Existing rows are upvotes, so an all-up signal matches the old sum.
+   */
   totalVotingPower: string;
+  /** People who voted up. */
   upvoteCount: number;
+  /** People who voted down. */
+  downvoteCount: number;
+  /** Positive raw power cast up, before the net. */
+  upVotingPower: string;
+  /** Positive raw power cast down, before the net. */
+  downVotingPower: string;
+  /** Upvoters minus downvoters. Rankings and the count cell use this. */
+  netVoteCount: number;
   /** Display decimals of the voting power source (0 for 1m1v, 18 for token/voice). */
   tokenDecimals: number;
-  /** Voters ordered by voting power, highest first (capped). */
+  /** Voters ordered by voting power, highest first. */
   voters: CoherenceUpvoter[];
-  /** The requesting user's own upvote, when authenticated. */
-  myUpvote: { votingPower: string; maxVotingPower: string } | null;
+  /** The requesting user's own vote, when authenticated. */
+  myUpvote: {
+    votingPower: string;
+    maxVotingPower: string;
+    /** Missing on older payloads; treat as an upvote. */
+    direction?: SignalVoteDirection;
+  } | null;
+  /**
+   * Net support inside each trailing window, all voters (not capped).
+   * A vote counts from the last time its direction was written.
+   */
+  recentUpvotes?: Record<SignalRecentWindow, SignalWindowUpvotes>;
+};
+
+/** Trailing windows: past hour, 24 hours, 7, 30 and 365 days. */
+export type SignalRecentWindow = 'now' | 'today' | 'week' | 'month' | 'year';
+
+export type SignalWindowUpvotes = {
+  /** Net voting power in raw units (up minus down). */
+  votingPower: string;
+  /** Upvoters minus downvoters. */
+  voters: number;
 };
 
 export type Coherence = {

@@ -541,7 +541,10 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
 
   it('keeps the floating dock outside the screen-share capture root', () => {
     const layout = readFileSync(
-      resolve(__dirname, '../../../../../../apps/web/src/app/layout.tsx'),
+      resolve(
+        __dirname,
+        '../../../../../../apps/web/src/app/(main)/layout.tsx',
+      ),
       'utf8',
     );
     const panelEnd = layout.indexOf('</PanelWrapLayout>');

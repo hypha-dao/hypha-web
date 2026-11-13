@@ -1,6 +1,6 @@
 'use client';
 
-import { Document } from '@hypha-platform/core/client';
+import { Document, fetchJson } from '@hypha-platform/core/client';
 import React from 'react';
 import useSWR, { mutate } from 'swr';
 
@@ -19,7 +19,7 @@ export const useDocumentBySlug = (
   );
   const { data: document, isLoading } = useSWR(
     [endpoint],
-    ([endpoint]) => fetch(endpoint).then((res) => res.json()),
+    ([endpoint]) => fetchJson<Document>(endpoint, undefined, 'document'),
     {
       revalidateOnFocus: true,
       refreshInterval: 10000,

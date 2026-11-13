@@ -1,6 +1,8 @@
 import {
   Alchemy,
+  activateSpaceQuestByDocumentId,
   linkDeployedTokenForProposal,
+  ratifySpaceContextSectionsByDocumentId,
 } from '@hypha-platform/core/server';
 import { daoProposalsImplementationAbi } from '@hypha-platform/core/generated';
 import { db } from '@hypha-platform/storage-postgres';
@@ -80,6 +82,49 @@ export const POST = proposalExecutedSigningKey
               'Failed to link deployed token for proposal:',
               reason,
             ),
+          );
+
+        const contextUpdates = events.map(async (event) => {
+          const proposalId = toSafeProposalId(event.args.proposalId);
+          if (proposalId === undefined) return;
+          const updated = await ratifySpaceContextSectionsByDocumentId(
+            { web3ProposalId: proposalId },
+            { db },
+          );
+          if (updated > 0) {
+            console.info(
+              `Ratified ${updated} Space Context section(s) for proposal ${proposalId}.`,
+            );
+          }
+        });
+
+        (await Promise.allSettled(contextUpdates))
+          .filter((res) => res.status === 'rejected')
+          .forEach(({ reason }) =>
+            console.error(
+              'Failed to ratify Space Context sections for proposal:',
+              reason,
+            ),
+          );
+
+        const questUpdates = events.map(async (event) => {
+          const proposalId = toSafeProposalId(event.args.proposalId);
+          if (proposalId === undefined) return;
+          const activated = await activateSpaceQuestByDocumentId(
+            { web3ProposalId: proposalId },
+            { db },
+          );
+          if (activated > 0) {
+            console.info(
+              `Activated ${activated} Quest(s) for proposal ${proposalId}.`,
+            );
+          }
+        });
+
+        (await Promise.allSettled(questUpdates))
+          .filter((res) => res.status === 'rejected')
+          .forEach(({ reason }) =>
+            console.error('Failed to activate Quest for proposal:', reason),
           );
       },
     )

@@ -20,18 +20,13 @@ import { Locale } from '@hypha-platform/i18n';
 import { Empty } from '../../common';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { useCanUpdateSignalTasks } from '../hooks/use-can-update-signal-tasks';
-import {
-  SIGNAL_PROVISIONING_NOTICE_EVENT,
-  SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
-} from '../constants';
+import { useSignalProvisioningNotice } from '../hooks/use-signal-provisioning-notice';
 import { SignalBoardView } from './signal-board-view';
 import { SignalSwimlaneView } from './signal-swimlane-view';
 import { SignalListView } from './signal-list-view';
 import { SignalGrid } from './signal-grid';
 import { SignalSectionSkeleton } from './signal-section-skeleton';
 import { SignalCreateFab } from './signal-create-fab';
-
-const SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS = 8000;
 
 export type SignalViewMode = 'board' | 'swimlane' | 'list' | 'grid';
 
@@ -59,9 +54,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
 }) => {
   const t = useTranslations('CoherenceTab');
   const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
-  const [provisioningNoticeLines, setProvisioningNoticeLines] = React.useState<
-    string[]
-  >([]);
+  const provisioningNoticeLines = useSignalProvisioningNotice();
 
   const { isAuthenticated, isLoading: isAuthLoading } = useAuthentication();
   const { workflow, error: workflowError } = useSignalWorkflow(spaceSlug);
@@ -79,48 +72,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
   const resolvedWorkflow = workflow ?? DEFAULT_SIGNAL_WORKFLOW;
 
   const filteredSignals = signals;
-
-  const readProvisioningNotice = React.useCallback(() => {
-    const rawNotice = sessionStorage.getItem(
-      SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
-    );
-    if (!rawNotice) return;
-    sessionStorage.removeItem(SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY);
-    try {
-      const parsed = JSON.parse(rawNotice);
-      if (!Array.isArray(parsed)) return;
-      const lines = parsed.filter(
-        (line): line is string =>
-          typeof line === 'string' && line.trim().length > 0,
-      );
-      if (lines.length > 0) setProvisioningNoticeLines(lines);
-    } catch (error) {
-      console.warn('Failed to parse signal provisioning notice:', error);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    readProvisioningNotice();
-    window.addEventListener(
-      SIGNAL_PROVISIONING_NOTICE_EVENT,
-      readProvisioningNotice,
-    );
-    return () => {
-      window.removeEventListener(
-        SIGNAL_PROVISIONING_NOTICE_EVENT,
-        readProvisioningNotice,
-      );
-    };
-  }, [readProvisioningNotice]);
-
-  React.useEffect(() => {
-    if (provisioningNoticeLines.length === 0) return;
-    const timer = window.setTimeout(
-      () => setProvisioningNoticeLines([]),
-      SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS,
-    );
-    return () => window.clearTimeout(timer);
-  }, [provisioningNoticeLines]);
 
   const patchAndRefresh = React.useCallback(
     async (

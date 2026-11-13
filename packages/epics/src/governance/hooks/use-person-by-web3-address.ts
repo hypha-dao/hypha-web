@@ -2,7 +2,7 @@
 
 import React from 'react';
 import useSWR from 'swr';
-import { useJwt, Person } from '@hypha-platform/core/client';
+import { useJwt, Person, fetchJson } from '@hypha-platform/core/client';
 
 type UsePersonByWeb3AddressReturn = {
   person?: Person | null;
@@ -25,12 +25,16 @@ export const usePersonByWeb3Address = (
   const { data: person, isLoading } = useSWR(
     address ? [endpoint, jwt] : null,
     ([endpoint]) =>
-      fetch(endpoint, {
-        headers: {
-          ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
-          'Content-Type': 'application/json',
+      fetchJson<Person | null>(
+        endpoint,
+        {
+          headers: {
+            ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
+            'Content-Type': 'application/json',
+          },
         },
-      }).then((res) => res.json()),
+        'person',
+      ),
   );
 
   return { person, isLoading };

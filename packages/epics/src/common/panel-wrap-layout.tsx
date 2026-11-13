@@ -36,6 +36,7 @@ import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname'
 import { isInteractiveCreatePath } from './get-path-function';
 import {
   isNetworkAiPath,
+  isNetworkPath,
   showsHumanChatIcon,
   useIsNetworkContext,
   useIsSpaceContext,
@@ -135,20 +136,33 @@ function useMutuallyExclusivePanels(): boolean {
 function HumanChatDeepLinkOpener() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { openHumanChatPanel } = useHumanChatPanel();
+  const { openHumanChatPanel, closeSpaceContextSection } = useHumanChatPanel();
   const spaceChatDeepLink = searchParams?.get('spaceChat')?.trim() ?? null;
   const signalDeepLink = searchParams?.get('signal')?.trim() ?? null;
 
   useEffect(() => {
+    const opensNetworkChat =
+      spaceChatDeepLink === 'network' && isNetworkPath(pathname);
     const opensSpaceChat =
       spaceChatDeepLink === 'space' ||
       spaceChatDeepLink === 'ecosystem' ||
       spaceChatDeepLink === 'public';
     const opensSignal = Boolean(signalDeepLink);
+    if (opensNetworkChat) {
+      openHumanChatPanel();
+      return;
+    }
     if (!opensSpaceChat && !opensSignal) return;
     if (!getDhoSpaceSlugFromPathname(pathname)) return;
+    closeSpaceContextSection();
     openHumanChatPanel();
-  }, [pathname, spaceChatDeepLink, signalDeepLink, openHumanChatPanel]);
+  }, [
+    pathname,
+    spaceChatDeepLink,
+    signalDeepLink,
+    openHumanChatPanel,
+    closeSpaceContextSection,
+  ]);
 
   return null;
 }
@@ -436,6 +450,7 @@ export function PanelWrapLayout({
     open: rightOpen,
     openHumanChatPanel,
     closeHumanChatPanel,
+    setPanelAvailable,
   } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
   const isNetwork = useIsNetworkContext();
@@ -446,6 +461,11 @@ export function PanelWrapLayout({
   // The chat icon is on home, connections, my spaces, my wallet, a space, and the network.
   const showHumanChat = showsHumanChatIcon(pathname, isSpace, isNetwork);
   const effectiveRight = showHumanChat ? right : undefined;
+  const rightPanelAvailable = Boolean(effectiveRight);
+
+  useEffect(() => {
+    setPanelAvailable(rightPanelAvailable);
+  }, [rightPanelAvailable, setPanelAvailable]);
 
   // Close when the route leaves home, connections, my spaces, my wallet, a space, or the network. Does not run again
   // if something opens the panel while already outside a space and then

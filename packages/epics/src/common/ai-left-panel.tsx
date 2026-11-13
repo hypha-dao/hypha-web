@@ -527,7 +527,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     false,
   );
   const { person: me } = useMe();
-  const { data: spaceEnergyData } = useSpaceEnergy();
+  const { data: spaceEnergyData } = useSpaceEnergy(spaceSlugFromPath);
   const activeSpaceName =
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
   const activeSpaceChatRoomId = activeSpaces?.[0]?.chatRoomId?.trim() || null;
@@ -650,6 +650,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         | 'energy'
         | 'rewards'
         | 'memory'
+        | 'context'
         | 'wallet',
     ) => {
       if (!spaceSlug) return false;
@@ -675,6 +676,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           return tCommon('overview');
         case 'agreements':
           return tCommon('Agreements');
+        case 'quests':
+          return tCommon('quests');
         case 'members':
           return tCommon('Members');
         case 'treasury':
@@ -691,6 +694,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           return tTreasury('rewardsSection.title');
         case 'memory':
           return tCoherence('spaceMemory');
+        case 'context':
+          return tCommon('context');
         case 'ecosystem-navigation':
           return tSelectNavigation('ecosystem');
         default:

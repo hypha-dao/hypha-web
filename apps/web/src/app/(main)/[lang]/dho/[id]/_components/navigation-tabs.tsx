@@ -1,0 +1,211 @@
+'use client';
+
+import * as React from 'react';
+import { Locale } from '@hypha-platform/i18n';
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+} from '@hypha-platform/ui';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { ChevronDown } from 'lucide-react';
+import { cn } from '@hypha-platform/ui-utils';
+import {
+  SPACE_SECTION_NAV_ICONS,
+  buildSpaceSectionNavItems,
+  getActiveTabFromPath,
+  partitionSpaceSectionNavForTabs,
+  type SpaceSectionNavKey,
+  useAiPanel,
+  useSpaceEnergy,
+} from '@hypha-platform/epics';
+import { useSpaceBySlug } from '@hypha-platform/core/client';
+
+export function NavigationTabs({
+  lang,
+  id,
+  coherenceEnabled = false,
+  memoryEnabled = false,
+}: {
+  lang: Locale;
+  id: string;
+  /** When true, show the Coherence tab (from `getEnableCoherence()` on the server). */
+  coherenceEnabled?: boolean;
+  memoryEnabled?: boolean;
+}) {
+  const t = useTranslations('Common');
+  const tNav = useTranslations('SelectNavigationAction');
+  const tTreasury = useTranslations('TreasuryTab');
+  const tCoherence = useTranslations('CoherenceTab');
+  const { open: aiPanelOpen } = useAiPanel();
+  const pathname = usePathname();
+  const activeTab = React.useMemo(
+    () => getActiveTabFromPath(pathname),
+    [pathname],
+  );
+  const { data: spaceEnergy } = useSpaceEnergy(id);
+  const { space } = useSpaceBySlug(id);
+
+  const labelFor = React.useCallback(
+    (key: SpaceSectionNavKey): string => {
+      switch (key) {
+        case 'overview':
+          return t('overview');
+        case 'agreements':
+          return t('Agreements');
+        case 'quests':
+          return t('quests');
+        case 'members':
+          return t('Members');
+        case 'treasury':
+          return t('Treasury');
+        case 'calendar':
+          return t('Calendar');
+        case 'coherence':
+          return t('Signals');
+        case 'pipeline':
+          return t('Pipeline');
+        case 'energy':
+          return t('Energy');
+        case 'rewards':
+          return tTreasury('rewardsSection.title');
+        case 'memory':
+          return tCoherence('spaceMemory');
+        case 'context':
+          return t('context');
+        case 'ecosystem-navigation':
+          return tNav('ecosystem');
+        default:
+          return key;
+      }
+    },
+    [t, tNav, tTreasury, tCoherence],
+  );
+
+  const items = React.useMemo(
+    () =>
+      buildSpaceSectionNavItems({
+        lang,
+        spaceSlug: id,
+        pathname,
+        pipelineEnabled: Boolean(space?.pipelineEnabled),
+        energyEnabled: Boolean(spaceEnergy?.enabled),
+        coherenceEnabled,
+        memoryEnabled,
+      }),
+    [
+      coherenceEnabled,
+      id,
+      lang,
+      memoryEnabled,
+      pathname,
+      space?.pipelineEnabled,
+      spaceEnergy?.enabled,
+    ],
+  );
+
+  // Primary tabs stay fixed. An active More screen is selected in the menu.
+  const { primary, more } = React.useMemo(
+    () => partitionSpaceSectionNavForTabs(items),
+    [items],
+  );
+  // Banking is under Treasury — highlight Treasury on /banking routes.
+  const stripActiveTab = activeTab === 'banking' ? 'treasury' : activeTab;
+  const tabsValue = primary.some((item) => item.key === stripActiveTab)
+    ? stripActiveTab
+    : '';
+
+  // The persistent icon rail is the desktop section switcher, including
+  // while the AI conversation is open. Below md that rail is not on screen,
+  // so this strip stays the switcher while the conversation sheet is open.
+  if (!aiPanelOpen) {
+    return null;
+  }
+
+  return (
+    <Tabs value={tabsValue} className="mt-4 w-full min-w-0 md:hidden">
+      <div
+        className={cn(
+          'mb-3 w-full min-w-0 overflow-x-auto overflow-y-visible overscroll-x-contain py-2',
+          'touch-pan-x touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+        )}
+      >
+        {/* Fill the column. Each label keeps its width (`min-w-max`) so a
+            narrower column scrolls this row instead of clipping or spilling
+            into the sticky badge. No scroll parallax — that jumped shortcut tabs. */}
+        <TabsList className="flex h-10 w-full min-w-max gap-0.5">
+          {primary.map(({ key, href }) => {
+            const Icon = SPACE_SECTION_NAV_ICONS[key];
+            return (
+              <TabsTrigger asChild key={key} value={key} variant="ghost">
+                <Link
+                  href={href}
+                  scroll={false}
+                  className="flex min-w-max flex-1 items-center justify-center gap-1.5 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25]"
+                >
+                  <Icon className="craft-icon" strokeWidth={1.25} aria-hidden />
+                  {labelFor(key)}
+                </Link>
+              </TabsTrigger>
+            );
+          })}
+          {more.length > 0 ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  colorVariant="neutral"
+                  className="h-10 shrink-0 gap-1 rounded-none px-3 text-[11px] font-semibold uppercase tracking-[0.12em]"
+                  aria-label={t('moreNav')}
+                >
+                  {t('moreNav')}
+                  <ChevronDown
+                    className="craft-icon"
+                    strokeWidth={1.25}
+                    aria-hidden
+                  />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-48">
+                {more.map(({ key, href, active }) => {
+                  const Icon = SPACE_SECTION_NAV_ICONS[key];
+                  return (
+                    <DropdownMenuItem key={key} asChild>
+                      <Link
+                        href={href}
+                        scroll={false}
+                        aria-current={active ? 'page' : undefined}
+                        className={cn(
+                          'flex cursor-pointer items-center gap-2',
+                          // Space accent mirrors a light-mode ramp to `:root`; accent-3/12
+                          // pairs wash out in dark mode. Tint + foreground matches AI nav.
+                          active &&
+                            'text-foreground data-[highlighted]:text-foreground',
+                        )}
+                      >
+                        <Icon
+                          className="craft-icon"
+                          strokeWidth={1.25}
+                          aria-hidden
+                        />
+                        {labelFor(key)}
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
+        </TabsList>
+      </div>
+    </Tabs>
+  );
+}

@@ -79,7 +79,17 @@ import { MemberHomeOnboardingCards } from './member-home-onboarding-cards';
 import { generatedVisualsFromParts } from '../../common/onboarding-visual-assets';
 import { useOnboardingSpaceSignature } from '../../common/use-onboarding-space-signature';
 import { MemberHomeMark } from './member-home-mark';
-import { memberHomeReplyReady } from './member-home-phase';
+import {
+  memberHomeReplyReady,
+  memberHomeShouldStartArrival,
+  memberHomeShowArrivalMask,
+  memberHomeThreadHasVisibleContent,
+} from './member-home-phase';
+import {
+  homeAssistantScript,
+  straightforwardHomeText,
+  stripLeakedToolMarkup,
+} from './member-home-chat-text';
 import { HomeWave } from './member-home-wave';
 import { MemberHomeThreadCard } from './member-home-thread-card';
 import { PersonAvatar } from './person-avatar';
@@ -525,92 +535,6 @@ function homeTextIsOneLine(text: string) {
 export const HOME_CHAT_COLUMN =
   'mx-auto w-full min-w-0 lg:max-w-[min(75%,75vw,72rem)]';
 
-/** Compare lines after a lead-in so "Next up: …" and "…" count as one line. */
-function homeSentenceKey(sentence: string) {
-  return sentence
-    .toLowerCase()
-    .replace(/^(?:next up|up next)\s*:\s*/u, '')
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function repeatsHomeSentence(sentence: string, earlier: string[]) {
-  const key = homeSentenceKey(sentence);
-  if (key.length < 24) return false;
-  return earlier.some((previous) => {
-    const other = homeSentenceKey(previous);
-    if (other.length < 24) return false;
-    return key === other || key.includes(other) || other.includes(key);
-  });
-}
-
-/** A model that cannot call a tool sometimes prints the call. Never show that. */
-function stripLeakedToolMarkup(text: string) {
-  return text
-    .replace(/<\s*\|?\s*DSML\b[\s\S]*?<\s*\/\s*\|?\s*DSML\b[^>]*>/gi, ' ')
-    .replace(/<\s*\|?\s*DSML\b[\s\S]*$/gi, ' ')
-    .replace(/<\/?\s*\|[^>\n]*>/g, ' ')
-    .replace(/<\/?(?:tool_call|invoke|parameter|function_call)\b[^>]*>/gi, ' ')
-    .replace(/[ \t]{2,}/g, ' ')
-    .trim();
-}
-
-function looksLikeToolLeak(sentence: string) {
-  return /DSML|invoke\s+name\s*=|parameter\s+name\s*=|get_people_by_space_slug|show_member_home_item|<\s*\|/i.test(
-    sentence,
-  );
-}
-
-/** A decision stays with the member. Drop narration and any ask for their choice. */
-function straightforwardHomeText(text: string) {
-  const steers = (sentence: string) =>
-    /i['’]ll show you|here(?:'|’)s the proposal|here is the proposal|the proposal titled|if you approve|your approval|can you review|do you approve|would you approve|would you like to approve|what would you like to decide|want to take a look|i(?:'’)?ve approved|\bi approved\b|\bi have approved\b|\bi accepted\b|i(?:'’)?ve accepted|\bi voted\b|you can now see the message|think about it|approval is required|to proceed with|how (?:will|would) you vote|let me know if you|^sure[.!]?$/i.test(
-      sentence,
-    );
-  const sentences = stripLeakedToolMarkup(text)
-    .replace(/\*\*/g, '')
-    .split(/\n+/)
-    .flatMap((paragraph) => paragraph.split(/(?<=[.!?])\s+/))
-    .map((sentence) => sentence.trim())
-    .filter((sentence) => sentence.length > 0);
-  // A sentence still arriving has no ending mark. Hiding it as soon as it
-  // starts to look like narration blanks the bubble, then the next sentence
-  // mounts it again. A second step often repeats the line it just finished.
-  const kept: string[] = [];
-  const cleaned = sentences
-    .filter((sentence, index) => {
-      const stillArriving =
-        index === sentences.length - 1 && !/[.!?]$/.test(sentence);
-      if (looksLikeToolLeak(sentence)) return false;
-      if (!stillArriving && steers(sentence)) return false;
-      if (repeatsHomeSentence(sentence, kept)) return false;
-      kept.push(sentence);
-      return true;
-    })
-    .join(' ')
-    .trim();
-  return cleaned;
-}
-
-/**
- * Chat bubble and spoken voice must share one script. Board copy replaces a
- * catalogue dump. Speech prep that waits for a full sentence hides the line
- * and then shows it again, so the bubble keeps this text as it arrives.
- */
-function homeAssistantScript(input: {
-  displayText: string;
-  stripDecisionCue?: boolean;
-}) {
-  const base = input.displayText.trim();
-  if (!input.stripDecisionCue) return base;
-  // Dropping the cue can leave a dangling dash from "…decision — You can…"
-  return base
-    .replace(/You can now decide on the proposal card\.?/gi, '')
-    .replace(/\s*[-—–:]\s*$/u, '')
-    .trim();
-}
-
 const HOME_LINK = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g;
 
 function homeMessageNodes(text: string): ReactNode[] {
@@ -734,6 +658,8 @@ export function MemberHomeChat({
   const [widgets, setWidgets] = useState<HomeWidget[]>([]);
   const opened = useRef(false);
   const startedTalk = useRef(false);
+  /** One late kick when thread items arrive after first paint with an empty screen. */
+  const lateArrivalKicked = useRef(false);
   const pendingStart = useRef<
     | { kind: 'return'; text: string }
     | {
@@ -1244,17 +1170,19 @@ export function MemberHomeChat({
         rawText && !listAsk
           ? homeItemForMessage(cardItems, message, intelligence)
           : null;
+      const streamingThis = isStreaming && message.id === lastMessage?.id;
       const cleaned = rawText
         ? homeAssistantScript({
             displayText: board
               ? t('boardInstead', { space: board.title })
-              : straightforwardHomeText(rawText),
+              : straightforwardHomeText(rawText, {
+                  streaming: streamingThis,
+                }),
             stripDecisionCue: Boolean(
               spokenItem && spokenItem.action !== 'decision',
             ),
           })
         : '';
-      const streamingThis = isStreaming && message.id === lastMessage?.id;
       const script =
         cleaned ||
         (!streamingThis && listAsk === 'people'
@@ -1316,10 +1244,10 @@ export function MemberHomeChat({
     captureMicrophone: micOn,
     // The left panel is the Home speaker while its sound is on.
     speakReplies: soundOn && !leftPanelVoice,
-    // Match LIVE: Realtime marin reads the finished reply. Exact-speech TTS
-    // (speakDisplayedText) and early lead-in change rhythm and tone.
+    // Exact TTS of the bubble. Realtime relay was inventing meta like
+    // "Request completed" instead of reading the chat reply.
     speakEarlyLeadIn: false,
-    speakDisplayedText: false,
+    speakDisplayedText: true,
     isStreaming,
     // Speak as soon as the bubble has words — do not wait on the card tool.
     lastAssistantText: holdVoice ? '' : lastAssistantText,
@@ -1394,27 +1322,39 @@ export function MemberHomeChat({
     opened.current = true;
     bindHomePerson(intelligence.person.slug);
     const stored = readHomeThread();
+    // Orphan hidden arrivals (interrupted stream) are not visible content —
+    // clear them so we can greet again instead of freezing the card mask.
+    const usableStored = memberHomeThreadHasVisibleContent(stored)
+      ? stored
+      : [];
+    if (usableStored.length === 0 && stored.length > 0) {
+      writeHomeThread([]);
+    }
     const returned = consumeHomeReturn();
     const now = Date.now();
     const lastSeen = readHomeLastSeen();
     const welcome = shouldWelcomeHomeReturn(now, lastSeen);
     const part = homePartOfDay(new Date(now));
-    if (stored.length > 0) setMessages(stored);
+    if (usableStored.length > 0) setMessages(usableStored);
     if (returned != null) {
       pendingStart.current = {
         kind: 'return',
         text: homeReturnText(returned),
       };
-    } else if (!memberHomeTalkIsResting(stored) && welcome) {
-      // After login or ~2h away: welcome them back (or greet on first open).
-      // Returning from an action uses consumeHomeReturn above. Remounts within
-      // the window do not re-send — last-seen blocks the spam.
-      const visit =
-        lastSeen == null ? ('first_open' as const) : ('welcome_back' as const);
-      if (visit === 'welcome_back' || threadItems.length > 0) {
+    } else {
+      // Empty screen + work waiting must still arrive inside the 2h window.
+      // Returning from an action uses consumeHomeReturn above.
+      const start = memberHomeShouldStartArrival({
+        hasVisibleContent: usableStored.length > 0,
+        talkResting: memberHomeTalkIsResting(usableStored),
+        welcome,
+        threadItemCount: threadItems.length,
+        lastSeen,
+      });
+      if (start) {
         pendingStart.current = {
           kind: 'arrival',
-          visit,
+          visit: start.visit,
           partOfDay: part,
         };
       }
@@ -1438,9 +1378,12 @@ export function MemberHomeChat({
     pendingStart.current = null;
     if (!pending) return;
     if (pending.kind === 'return') {
+      lateArrivalKicked.current = true;
       void send(pending.text, true);
       return;
     }
+    // Open already queued an arrival — do not also late-kick the same empty screen.
+    lateArrivalKicked.current = true;
     homeVisitCue.current = {
       visit: pending.visit,
       partOfDay: pending.partOfDay,
@@ -1459,6 +1402,29 @@ export function MemberHomeChat({
         : t('homeArrival');
     void send(ask, true);
   }, [send, t, voiceHydrated]);
+
+  // Shell → full intelligence can land thread items after open already ran
+  // with an empty walk. Kick one arrival so the card mask is not idle forever.
+  useEffect(() => {
+    if (!voiceHydrated || !opened.current || !startedTalk.current) return;
+    if (lateArrivalKicked.current || pendingStart.current) return;
+    if (isStreaming) return;
+    if (threadItems.length === 0) return;
+    if (memberHomeThreadHasVisibleContent(homeMessages)) return;
+    if (memberHomeTalkIsResting(homeMessages)) return;
+    lateArrivalKicked.current = true;
+    const part = homePartOfDay(new Date());
+    homeVisitCue.current = { visit: 'welcome_back', partOfDay: part };
+    const whenKey =
+      part === 'morning'
+        ? 'homeWhenMorning'
+        : part === 'afternoon'
+        ? 'homeWhenAfternoon'
+        : part === 'evening'
+        ? 'homeWhenEvening'
+        : 'homeWhenNight';
+    void send(t('homeWelcomeBackAsk', { when: t(whenKey) }), true);
+  }, [homeMessages, isStreaming, send, t, threadItems.length, voiceHydrated]);
 
   useEffect(() => {
     const fromMessages = memberHomeItemMemory(threadItems, homeMessages);
@@ -1674,17 +1640,11 @@ export function MemberHomeChat({
       : orientation === 'investor'
       ? t('firstPromptAskInvestor')
       : t('firstPromptAskMember');
-  const showArrivalMask = useMemo(() => {
-    if (freshStart) return false;
-    if (error) return false;
-    if (liveReplyPending) return true;
-    const hasVisible = homeMessages.some((message) => {
-      if (message.metadata?.homeArrival) return false;
-      if (message.role === 'user') return true;
-      return Boolean(messageText(message));
-    });
-    return !hasVisible;
-  }, [error, freshStart, homeMessages, liveReplyPending]);
+  const showArrivalMask = memberHomeShowArrivalMask({
+    freshStart,
+    hasError: Boolean(error),
+    liveReplyPending,
+  });
 
   for (const message of homeMessages) {
     if (seenMotionIds.current.has(message.id)) continue;

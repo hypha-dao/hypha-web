@@ -1,8 +1,39 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { middleware as i18nMiddleware } from '@hypha-platform/i18n';
+import { middleware as i18nMiddleware, routing } from '@hypha-platform/i18n';
+import {
+  cspMediaSrcSources,
+  matrixHomeserverOrigin,
+  parseCspImageHosts,
+} from '@hypha-platform/core/csp';
 import { matrixTurnConnectSourcesFromEnv } from './lib/matrix-connect-src';
+import {
+  API_PREFIX,
+  DENY_FRAMING,
+  HOST_FRAMING,
+  INTERNAL_NOT_FOUND_PATH,
+  WL_AUTH_HEADER,
+  WL_CLIENT_HEADER,
+  WL_LOCALE_COOKIE,
+  WL_MODE_HEADER,
+  WL_NOT_FOUND_HEADER,
+  WL_SPACE_HEADER,
+  apiRequestHeaders,
+  embedFraming,
+  getWhiteLabelConfig,
+  isMappedHost,
+  localeForPath,
+  resolve,
+  privyHostOrigins,
+  serializeAuthConfig,
+  stripWhiteLabelHeaders,
+  withPrivyHostOrigins,
+  type FramingPolicy,
+} from './lib/white-label';
 
-const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
+/** Header next-intl reads to pick the request locale. */
+const INTL_LOCALE_HEADER = 'X-NEXT-INTL-LOCALE';
+
+const IMAGE_HOSTS = parseCspImageHosts(process.env.NEXT_PUBLIC_IMAGE_HOSTS);
 const CONNECT_SOURCES =
   process.env.NEXT_PUBLIC_CONNECT_SOURCES?.split(', ') ?? [];
 
@@ -37,22 +68,27 @@ const OPENAI_REALTIME_CONNECT_SOURCES =
 
 /** Origin of `NEXT_PUBLIC_MATRIX_HOMESERVER_URL` for CSP (timeline MXC → HTTP). */
 function matrixHomeserverImgSrc(): string {
-  const raw = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL?.trim();
-  if (!raw) return '';
-  try {
-    const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
-    const u = new URL(withProtocol);
-    return `${u.protocol}//${u.host}`;
-  } catch {
-    return '';
-  }
+  return matrixHomeserverOrigin(process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL);
 }
 
-function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
+function applyCsp(
+  response: NextResponse,
+  request: NextRequest,
+  framing: FramingPolicy = DENY_FRAMING,
+  /** Extra Privy origins of a mapped host (its own cookie host), exact, per request. */
+  extraPrivyOrigins: readonly string[] = [],
+): NextResponse {
   if (
     process.env.NODE_ENV === 'development' &&
     process.env.ENABLE_LOCALHOST_CSP !== 'true'
   ) {
+    // Local dev has no CSP, but a framed response still carries its allowlist.
+    if (framing.frameAncestors !== DENY_FRAMING.frameAncestors) {
+      response.headers.set(
+        'Content-Security-Policy',
+        `frame-ancestors ${framing.frameAncestors};`,
+      );
+    }
     return response;
   }
 
@@ -68,17 +104,15 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
     'https://*.ggpht.com',
     ...IMAGE_HOSTS.map((host) => `https://${host}`),
   ].join(' ');
-  /** `<video>` / `<audio>` use `media-src`; if unset, `default-src` blocks cross-origin Matrix clips. */
-  const mediaSrc = [
-    "'self'",
-    'data:',
-    'blob:',
-    UPLOADTHING_UFS_HOST,
-    'https://utfs.io',
-    'https://*.utfs.io',
-    ...(matrixImg ? [matrixImg] : []),
-    ...IMAGE_HOSTS.map((host) => `https://${host}`),
-  ].join(' ');
+  /**
+   * `<video>` / `<audio>` use `media-src`; if unset, `default-src` blocks
+   * cross-origin Matrix clips. The signal composer checks video links against
+   * this same list.
+   */
+  const mediaSrc = cspMediaSrcSources({
+    imageHosts: IMAGE_HOSTS,
+    matrixOrigin: matrixImg,
+  }).join(' ');
   const localChainRpc =
     process.env.NODE_ENV !== 'production'
       ? [
@@ -120,7 +154,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
       `object-src 'self' blob: ${UPLOADTHING_FILE_HOSTS}`,
       "base-uri 'self'",
       "form-action 'self' https://auth.privy.io https://privy.hypha.earth https://accounts.google.com",
-      "frame-ancestors 'none'",
+      `frame-ancestors ${framing.frameAncestors}`,
       `child-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org ${SIGNAL_VIDEO_FRAME_HOSTS} ${UPLOADTHING_FILE_HOSTS}`,
       `frame-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://vercel.live https://docs.google.com https://drive.google.com ${SIGNAL_VIDEO_FRAME_HOSTS} ${UPLOADTHING_FILE_HOSTS}`,
       `connect-src 'self' ${connectSrc}`,
@@ -129,7 +163,10 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
       "manifest-src 'self'",
     ].join(';') + ';';
 
-  response.headers.set('Content-Security-Policy', cspHeaderValue);
+  response.headers.set(
+    'Content-Security-Policy',
+    withPrivyHostOrigins(cspHeaderValue, extraPrivyOrigins),
+  );
   response.headers.set(
     'Permissions-Policy',
     'camera=(self), microphone=(self), display-capture=(self)',
@@ -138,20 +175,147 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
   return response;
 }
 
+/**
+ * Framing is set per response (it used to be a static rule in next.config):
+ * the main app, unknown hosts and the internal tree get `DENY`; `/embed` gets
+ * none and relies on CSP `frame-ancestors` for its Space's origins.
+ */
+function applyFramingHeaders(
+  response: NextResponse,
+  framing: FramingPolicy,
+): NextResponse {
+  if (framing.xFrameOptions) {
+    response.headers.set('X-Frame-Options', framing.xFrameOptions);
+  } else {
+    response.headers.delete('X-Frame-Options');
+  }
+  return response;
+}
+
 export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const isApi =
+    pathname === `/${API_PREFIX}` || pathname.startsWith(`/${API_PREFIX}/`);
+  const host = request.headers.get('host');
+  const config = getWhiteLabelConfig();
+
+  // White label: the resolver decides, this function only applies it.
+  const whiteLabelOptions = {
+    locales: routing.locales,
+    defaultLocale: routing.defaultLocale,
+    acceptLanguage: request.headers.get('accept-language'),
+    localeCookie: request.cookies.get(WL_LOCALE_COOKIE)?.value ?? null,
+    method: request.method,
+  };
+  const decision = resolve(host, pathname, config, whiteLabelOptions);
+
+  if (decision.kind === 'api-allow') {
+    // A read a mapped host may call: the route runs, and learns the host's
+    // Space from the header (inbound copies dropped first).
+    return NextResponse.next({
+      request: {
+        headers: apiRequestHeaders(request.headers, decision.spaceSlug),
+      },
+    });
+  }
+
+  if (decision.kind === 'rewrite') {
+    const headers = stripWhiteLabelHeaders(request.headers);
+    headers.set(WL_SPACE_HEADER, decision.spaceSlug);
+    headers.set(WL_MODE_HEADER, decision.mode);
+    headers.set(INTL_LOCALE_HEADER, decision.locale);
+    if (decision.mode === 'host') {
+      headers.set(WL_CLIENT_HEADER, decision.clientId);
+      if (decision.authConfig) {
+        headers.set(WL_AUTH_HEADER, serializeAuthConfig(decision.authConfig));
+      }
+    }
+    const url = request.nextUrl.clone();
+    url.pathname = decision.pathname;
+    const framing =
+      decision.mode === 'host'
+        ? HOST_FRAMING
+        : embedFraming(decision.framingOrigins);
+    const rewrite = NextResponse.rewrite(url, { request: { headers } });
+    // The locale may come from Accept-Language (and, on a host, the cookie):
+    // caches must not share it.
+    rewrite.headers.append(
+      'Vary',
+      decision.mode === 'host' ? 'Accept-Language, Cookie' : 'Accept-Language',
+    );
+    if (
+      decision.mode === 'host' &&
+      decision.localeFromPath &&
+      whiteLabelOptions.localeCookie !== decision.locale
+    ) {
+      // First party on a host: remember the language the visitor chose.
+      rewrite.cookies.set(WL_LOCALE_COOKIE, decision.locale, {
+        path: '/',
+        sameSite: 'lax',
+        secure: request.nextUrl.protocol === 'https:',
+        maxAge: 60 * 60 * 24 * 365,
+      });
+    }
+    return applyFramingHeaders(
+      applyCsp(
+        rewrite,
+        request,
+        framing,
+        decision.mode === 'host' ? privyHostOrigins(decision.authConfig) : [],
+      ),
+      framing,
+    );
+  }
+
+  if (decision.kind === 'not-found') {
+    // An API path is answered here: no page, no body.
+    if (isApi) {
+      return new NextResponse(null, {
+        status: 404,
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    }
+    // Unmatched internal path plus a marker: global-not-found renders the bare shell.
+    const headers = stripWhiteLabelHeaders(request.headers);
+    headers.set(WL_NOT_FOUND_HEADER, '1');
+    headers.set(
+      INTL_LOCALE_HEADER,
+      localeForPath(pathname, whiteLabelOptions, isMappedHost(config, host)),
+    );
+    const url = request.nextUrl.clone();
+    url.pathname = INTERNAL_NOT_FOUND_PATH;
+    url.search = '';
+    return applyFramingHeaders(
+      applyCsp(NextResponse.rewrite(url, { request: { headers } }), request),
+      DENY_FRAMING,
+    );
+  }
+
+  // Main host (or feature off): `/api` behaves as before the matcher included
+  // it, except that the internal white-label headers are dropped so a caller
+  // can never smuggle them to a route (and none is set: no Space header means
+  // "main app").
+  if (isApi) {
+    return NextResponse.next({
+      request: { headers: apiRequestHeaders(request.headers) },
+    });
+  }
+
   const response = i18nMiddleware(request);
 
   if (response.status === 301 || response.status === 302) {
-    return response;
+    return applyFramingHeaders(response, DENY_FRAMING);
   }
 
-  return applyCsp(response, request);
+  return applyFramingHeaders(applyCsp(response, request), DENY_FRAMING);
 }
 
 export const config = {
   matcher: [
+    // `/api` is included so a mapped host can be narrowed (allowlist in
+    // lib/white-label); on the main host the middleware returns `next()` for it.
     // `_matrix` — inbound Matrix Application Service transaction pushes (#2483).
     // Rewritten in next.config to /api/matrix/appservice; must skip i18n + CSP here.
-    '/((?!api|_matrix|signin|placeholder|icon|brand|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_matrix|placeholder|icon|brand|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
   ],
 };

@@ -51,7 +51,7 @@ import {
 import { isTransientMatrixNetworkError } from '../matrix-network-errors';
 
 import { isScreenshareTakeoverEvent } from '../hooks/screenshare-takeover';
-import { isCallEphemeralRoomMessageEvent } from '../hooks/call-reactions';
+import { isHiddenHumanChatRoomMessage } from '../../human-chat-timeline-message';
 import { isAutoJoinGroupInvite } from '../../group-room';
 import type { HyphaRoomType } from '../../room-types';
 import {
@@ -62,12 +62,7 @@ import {
   ensureNetworkChatRoomAction,
   ensurePublicChatRoomAction,
 } from '../../server/actions';
-import {
-  parseSignalTeamNoticeFromWireContent,
-  shouldIncludeSignalTeamNoticeInChatTimeline,
-} from '../../signal-team-events';
 
-const CALL_CAPTURE_NOTICE_TYPE = 'io.hypha.call_capture_notice.v1';
 /** Sentinel refresh token so matrix-js-sdk v40 invokes Hypha token rotation. */
 const HYPHA_MATRIX_REFRESH_TOKEN = 'hypha-managed-refresh';
 
@@ -90,30 +85,6 @@ function retryMatrixClientSync(client: MatrixSdk.MatrixClient): void {
   if (typeof clientWithRetry.retryImmediately === 'function') {
     clientWithRetry.retryImmediately();
   }
-}
-
-function isCallCaptureNoticeEvent(event: MatrixSdk.MatrixEvent): boolean {
-  if (event.getType() !== MatrixSdk.EventType.RoomMessage) return false;
-  const content = event.getContent() as {
-    [CALL_CAPTURE_NOTICE_TYPE]?: boolean;
-  };
-  return content[CALL_CAPTURE_NOTICE_TYPE] === true;
-}
-
-function isHiddenHumanChatRoomMessage(event: MatrixSdk.MatrixEvent): boolean {
-  if (event.getType() !== MatrixSdk.EventType.RoomMessage) return false;
-  if (isCallCaptureNoticeEvent(event)) return true;
-  if (isCallEphemeralRoomMessageEvent(event)) return true;
-  const content = event.getContent() as Record<string, unknown>;
-  const body = typeof content.body === 'string' ? content.body : '';
-  const signalTeamNotice = parseSignalTeamNoticeFromWireContent(content, body);
-  if (
-    signalTeamNotice &&
-    !shouldIncludeSignalTeamNoticeInChatTimeline(signalTeamNotice)
-  ) {
-    return true;
-  }
-  return false;
 }
 
 /** Keep this session online on every sync. A one-off presence update is dropped. */
@@ -584,12 +555,15 @@ interface MatrixContextType {
   ) => Promise<{ roomId: string }>;
   /**
    * Join these people into an existing group room. Invite-only rooms stay
-   * invisible until the bot puppet-accepts each member.
+   * invisible until the bot puppet-accepts each member. Resolves to the IDs
+   * that could not be joined. An aborted `signal` stops before the next join
+   * with `SendMessageCancelledError`.
    */
   ensureRoomMembers: (
     roomId: string,
     matrixUserIds: readonly string[],
-  ) => Promise<void>;
+    options?: { pruneAbsent?: boolean; signal?: AbortSignal },
+  ) => Promise<string[]>;
   /** Join the single network-wide room, creating it on first use. */
   ensureNetworkRoom: () => Promise<{ roomId: string }>;
   /** Join this ecosystem’s shared room (not the root space member room). */
@@ -706,6 +680,19 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       try {
         setClientInitFailed(false);
         const { accessToken, userId, homeserverUrl, deviceId } = matrixToken;
+        /**
+         * Persist the Matrix store across reloads so Messages can paint from
+         * IndexedDB rooms before live sync reaches Prepared. List-only — room
+         * open still uses join + store membership checks.
+         */
+        const indexedDbStore =
+          typeof globalThis.indexedDB !== 'undefined'
+            ? new MatrixSdk.IndexedDBStore({
+                indexedDB: globalThis.indexedDB,
+                localStorage: globalThis.localStorage,
+                dbName: `hypha-matrix-${userId}`,
+              })
+            : undefined;
         // Voice and video (group calls): keep VoIP enabled; TURN/ICE for WebRTC. See
         // docs/requirements/voice-video-call-implementation-spec.md §2.1
         const matrixClient = MatrixSdk.createClient({
@@ -713,6 +700,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           accessToken,
           userId,
           deviceId,
+          ...(indexedDbStore ? { store: indexedDbStore } : {}),
           refreshToken: HYPHA_MATRIX_REFRESH_TOKEN,
           tokenRefreshFunction: async () => {
             const refreshed = await fetchHyphaMatrixAccessToken(() =>
@@ -734,14 +722,26 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           iceCandidatePoolSize: matrixWebRtcIceCandidatePoolSizeFromEnv(),
         });
 
-        await matrixClient.startClient();
+        if (indexedDbStore) {
+          try {
+            await indexedDbStore.startup();
+          } catch (error) {
+            console.warn(
+              '[MatrixProvider] IndexedDB store startup failed; continuing with memory sync:',
+              error,
+            );
+          }
+        }
+
+        await matrixClient.startClient({ initialSyncLimit: 10 });
         startedClient = matrixClient;
 
         /** Warm TURN credentials before the first call join (reduces ICE stall). */
         void evaluateMatrixTurnReadiness(matrixClient).catch(() => undefined);
 
-        await markMatrixPresenceOnline(matrixClient);
-
+        // Expose the client before presence RTTs so Messages can attach/sync.
+        // Presence still runs; a brief offline/away flash is preferable to
+        // holding the whole inbox behind /presence.
         clientRef.current = matrixClient;
         setClient(matrixClient);
         setActiveMatrixUserId(userId);
@@ -749,6 +749,12 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         setIsAuthenticated(true);
         setConnectionStatus('connected');
         setConnectionRetryFailed(false);
+        void markMatrixPresenceOnline(matrixClient).catch((error) => {
+          console.warn(
+            '[MatrixProvider] Failed to mark presence online after start:',
+            error,
+          );
+        });
       } catch (error) {
         console.error('Failed to initialize Matrix client:', error);
         if (startedClient) {
@@ -818,7 +824,16 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     if (!existingClient) {
       return;
     }
+    const store = existingClient.store;
     existingClient.stopClient();
+    if (
+      store &&
+      typeof (store as { destroy?: () => Promise<void> }).destroy === 'function'
+    ) {
+      void (store as { destroy: () => Promise<void> })
+        .destroy()
+        .catch(() => undefined);
+    }
     registeredRoomListenersRef.current = [];
     setRegisteredRoomListeners([]);
     clientRef.current = null;
@@ -1217,18 +1232,47 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   );
 
   const ensureRoomMembers = React.useCallback(
-    async (roomId: string, matrixUserIds: readonly string[]) => {
-      if (!client) return;
+    async (
+      roomId: string,
+      matrixUserIds: readonly string[],
+      options?: { pruneAbsent?: boolean; signal?: AbortSignal },
+    ): Promise<string[]> => {
+      if (!client) return [...matrixUserIds];
       const trimmedRoomId = roomId.trim();
-      if (!trimmedRoomId) return;
+      if (!trimmedRoomId) return [...matrixUserIds];
       const selfId = client.getUserId();
       const botId = process.env.NEXT_PUBLIC_MATRIX_BOT_USER_ID?.trim() || null;
       const room = client.getRoom(trimmedRoomId);
       const ids = new Set<string>();
+      const allowed = new Set(matrixUserIds.map((id) => id.trim()));
+      if (selfId) allowed.add(selfId);
+      if (botId) allowed.add(botId);
       for (const matrixUserId of matrixUserIds) {
         const id = matrixUserId.trim();
         if (!id || id === selfId || id === botId) continue;
         ids.add(id);
+      }
+      if (options?.pruneAbsent && room) {
+        for (const member of room.getMembers()) {
+          const id = member.userId?.trim();
+          if (!id || allowed.has(id)) continue;
+          if (member.membership !== 'join' && member.membership !== 'invite') {
+            continue;
+          }
+          try {
+            await client.kick(
+              trimmedRoomId,
+              id,
+              'No longer a member of this space',
+            );
+          } catch (error) {
+            console.warn(
+              '[Matrix] Failed to remove a former space member:',
+              trimmedRoomId,
+              error instanceof Error ? error.message : error,
+            );
+          }
+        }
       }
       // A space room publishes an alias. Only a group chat should pull in
       // people who are still sitting on an invite.
@@ -1237,16 +1281,21 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           const id = member.userId?.trim();
           if (!id || id === selfId || id === botId) continue;
           if (member.membership !== 'invite') continue;
+          if (options?.pruneAbsent && !allowed.has(id)) continue;
           ids.add(id);
         }
       }
+      const failed: string[] = [];
       for (const matrixUserId of ids) {
+        throwIfAborted(options?.signal);
         try {
-          await ensureMemberJoinedRoomAction({
+          const { joined } = await ensureMemberJoinedRoomAction({
             roomId: trimmedRoomId,
             matrixUserId,
           });
+          if (!joined) failed.push(matrixUserId);
         } catch (error) {
+          failed.push(matrixUserId);
           console.warn(
             '[Matrix] Failed to include a group member:',
             trimmedRoomId,
@@ -1254,6 +1303,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           );
         }
       }
+      return failed;
     },
     [client],
   );
@@ -2590,7 +2640,7 @@ const noopMatrixContext: MatrixContextType = {
   ensureDirectRoom: async () => {
     throw new Error('Matrix unavailable');
   },
-  ensureRoomMembers: async () => {},
+  ensureRoomMembers: async (_roomId, matrixUserIds) => [...matrixUserIds],
   ensureNetworkRoom: async () => {
     throw new Error('Matrix unavailable');
   },

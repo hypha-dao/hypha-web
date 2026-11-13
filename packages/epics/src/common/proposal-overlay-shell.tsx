@@ -188,7 +188,20 @@ export function ProposalOverlayShell({
               panel.scrollTop = 0;
               panel.focus({ preventScroll: true });
             }}
-            onInteractOutside={(e) => e.preventDefault()}
+            onInteractOutside={(event) => {
+              // Composer attach / emoji / selects portal to body. Blocking those
+              // pointer events makes discussion tools feel read-only.
+              const target = event.target;
+              if (
+                target instanceof Element &&
+                target.closest(
+                  '[data-radix-popper-content-wrapper], [role="listbox"], [data-testid="hypha-emoji-picker-panel"]',
+                )
+              ) {
+                return;
+              }
+              event.preventDefault();
+            }}
             onEscapeKeyDown={(e) => e.preventDefault()}
             className={cn(
               elevated ? 'z-[43]' : 'z-[41]',

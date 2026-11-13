@@ -2,6 +2,7 @@ import 'server-only';
 
 import { web3Client } from '../../../common/server/web3-rpc/client';
 import { getSpaceDetails } from '../../../space/shared/web3/get-space-details';
+import { ONE_MEMBER_ONE_VOTE_SOURCE } from '../../signal-voting';
 
 /**
  * VotingPowerDirectory — resolves a voting power source id to its contract,
@@ -35,9 +36,6 @@ const votingPowerSourceAbi = [
     outputs: [{ type: 'uint256' }],
   },
 ] as const;
-
-/** Source 2 (SpaceVotingPower, 1 member = 1 vote) counts votes as plain integers. */
-const ONE_MEMBER_ONE_VOTE_SOURCE = 2;
 
 export type MemberVotingPower = {
   votingPower: bigint;
@@ -78,6 +76,7 @@ export async function getMemberVotingPower({
   return {
     votingPower,
     votingPowerSource,
+    // One member, one vote counts plain integers; token sources are wei-scale.
     tokenDecimals: votingPowerSource === ONE_MEMBER_ONE_VOTE_SOURCE ? 0 : 18,
   };
 }

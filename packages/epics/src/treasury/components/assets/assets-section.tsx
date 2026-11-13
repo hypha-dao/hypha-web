@@ -54,7 +54,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
     visibleCount,
   } = useAssetsSection();
 
-  const { isAuthenticated } = useAuthentication();
+  const { isAuthenticated, canLogin } = useAuthentication();
 
   const isDisabled = !(isAuthenticated && (isMember || isDelegate));
   const tooltipMessage = !isAuthenticated
@@ -85,44 +85,46 @@ export const AssetsSection: FC<AssetSectionProps> = ({
           <span className="whitespace-nowrap">{tTreasury('hideSmall')}</span>
         </label>
       </div>
-      <div className="flex w-full items-center justify-end gap-2 lg:w-auto lg:shrink-0">
-        {isDisabled ? (
-          <Button
-            colorVariant="accent"
-            variant="outline"
-            disabled
-            title={tooltipMessage || ''}
-          >
-            <RadiobuttonIcon />
-            {tTreasury('newToken')}
-          </Button>
-        ) : (
-          <Button
-            asChild
-            colorVariant="accent"
-            variant="outline"
-            title={tooltipMessage || ''}
-          >
-            <Link
-              href={`${basePath}/create/issue-new-token?hideBack=true`}
-              scroll={false}
+      {canLogin ? (
+        <div className="flex w-full items-center justify-end gap-2 lg:w-auto lg:shrink-0">
+          {isDisabled ? (
+            <Button
+              colorVariant="accent"
+              variant="outline"
+              disabled
+              title={tooltipMessage || ''}
             >
               <RadiobuttonIcon />
               {tTreasury('newToken')}
-            </Link>
-          </Button>
-        )}
+            </Button>
+          ) : (
+            <Button
+              asChild
+              colorVariant="accent"
+              variant="outline"
+              title={tooltipMessage || ''}
+            >
+              <Link
+                href={`${basePath}/create/issue-new-token?hideBack=true`}
+                scroll={false}
+              >
+                <RadiobuttonIcon />
+                {tTreasury('newToken')}
+              </Link>
+            </Button>
+          )}
 
-        <Button
-          className={cn(isDisabled && 'cursor-not-allowed')}
-          title={tooltipMessage || ''}
-          onClick={fundWallet}
-          disabled={isDisabled}
-        >
-          <CopyIcon />
-          {tTreasury('depositFunds')}
-        </Button>
-      </div>
+          <Button
+            className={cn(isDisabled && 'cursor-not-allowed')}
+            title={tooltipMessage || ''}
+            onClick={fundWallet}
+            disabled={isDisabled}
+          >
+            <CopyIcon />
+            {tTreasury('depositFunds')}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 

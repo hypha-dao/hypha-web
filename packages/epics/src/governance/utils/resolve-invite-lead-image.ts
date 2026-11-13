@@ -1,8 +1,7 @@
 /**
- * Invite / join-request proposals skip the agreement form that defaults
- * `leadImage` to the space banner. Prefer the document's own image when set;
- * otherwise use the hosting space banner so Invite cards don't fall back to
- * the generic Hypha document placeholder.
+ * Invite and Quest proposals skip a document lead image. Prefer the
+ * document's own image when set; otherwise use the hosting space banner
+ * so those cards don't fall back to the generic Hypha document placeholder.
  */
 export function resolveInviteLeadImage({
   leadImage,
@@ -18,9 +17,12 @@ export function resolveInviteLeadImage({
   const existing = leadImage?.trim();
   if (existing) return existing;
 
-  const isInvite =
-    label === 'Invite' || title === 'Invite Member' || title === 'Invite Space';
-  if (!isInvite) return undefined;
+  const usesSpaceBanner =
+    label === 'Invite' ||
+    label === 'Quest' ||
+    title === 'Invite Member' ||
+    title === 'Invite Space';
+  if (!usesSpaceBanner) return undefined;
 
   const spaceImage = spaceLeadImage?.trim();
   return spaceImage || undefined;

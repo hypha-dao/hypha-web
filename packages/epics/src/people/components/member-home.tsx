@@ -58,7 +58,10 @@ import { MemberHomeMark } from './member-home-mark';
 import { HomeWave } from './member-home-wave';
 import { PersonRoleBadge } from './person-badges';
 import { MemberHomeInviteBanners } from './member-home-invite-banner';
-import { MemberHomeClosest } from './member-home-closest';
+import {
+  MemberHomeClosest,
+  MemberHomeClosestSkeleton,
+} from './member-home-closest';
 import {
   MemberHomePeople,
   type MemberHomeOpenChat,
@@ -519,27 +522,11 @@ export function MemberHome({
                     {unavailable}
                   </div>
                 ) : home == null ? (
-                  <div className="mt-2 flex gap-2" aria-hidden>
-                    {Array.from({ length: 5 }, (_, index) => (
-                      <HomePulse
-                        key={index}
-                        className="h-8 w-8 rounded-full"
-                        delayMs={index * 70}
-                      />
-                    ))}
-                  </div>
+                  <MemberHomeClosestSkeleton />
                 ) : (
                   <>
                     {home.partial ? (
-                      <div className="mt-2 flex gap-2" aria-hidden>
-                        {Array.from({ length: 5 }, (_, index) => (
-                          <HomePulse
-                            key={index}
-                            className="h-8 w-8 rounded-full"
-                            delayMs={index * 70}
-                          />
-                        ))}
-                      </div>
+                      <MemberHomeClosestSkeleton />
                     ) : (
                       <MemberHomeClosest
                         lang={lang}
@@ -927,7 +914,7 @@ function CardSkeleton({
 
 /** The center column, drawn as the pieces that will land there. */
 function ChatSkeleton() {
-  const t = useTranslations('MemberHome');
+  // Chip widths mirror the five suggestion asks (useful / space / people / …).
   const chipWidths = [148, 132, 156, 168, 112];
   return (
     <div className="flex min-h-0 flex-1 flex-col" aria-busy="true">
@@ -939,10 +926,12 @@ function ChatSkeleton() {
           )}
         >
           <ArrivalShape />
-          <Tile title={t('useful')} busy>
-            <CardSkeleton lines={3} />
-          </Tile>
-          <div className="narrow-scrollbar -mx-1 flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto px-1 pt-1">
+        </div>
+      </div>
+      <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pt-2 pb-3')}>
+        {/* Same place as live chips: above the composer, not in the scroll. */}
+        <div className="px-5 pb-2 md:px-4">
+          <div className="narrow-scrollbar flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto">
             {chipWidths.map((width, index) => (
               <HomePulse
                 key={width}
@@ -953,14 +942,15 @@ function ChatSkeleton() {
             ))}
           </div>
         </div>
-      </div>
-      <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pt-2 pb-3')}>
-        <div className="mx-5 flex h-[4.5rem] items-end gap-2 border border-border px-3 py-3 md:mx-4">
-          <HomePulse className="h-8 w-8 shrink-0" />
-          <HomePulse className="h-8 w-8 shrink-0" delayMs={40} />
-          <HomePulse className="h-8 w-8 shrink-0" delayMs={80} />
-          <HomePulse className="mb-1 h-3 min-w-0 flex-1" delayMs={120} />
-          <HomePulse className="h-8 w-8 shrink-0" delayMs={160} />
+        {/* AiPanelChatBar panel: 36px icon wells + text line. */}
+        <div className="mx-5 border border-border bg-background md:mx-4">
+          <div className="flex min-w-0 items-center gap-2 px-2 pt-0 pb-2.5">
+            <HomePulse className="h-9 w-9 shrink-0" />
+            <HomePulse className="h-9 w-9 shrink-0" delayMs={40} />
+            <HomePulse className="h-9 w-9 shrink-0" delayMs={80} />
+            <HomePulse className="h-3 min-w-0 flex-1" delayMs={120} />
+            <HomePulse className="h-9 w-9 shrink-0" delayMs={160} />
+          </div>
         </div>
       </div>
     </div>

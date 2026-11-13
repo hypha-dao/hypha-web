@@ -39,6 +39,7 @@ import {
   applyCoherenceUpvoteRemoval,
 } from './apply-coherence-upvote';
 import type { CoherenceUpvoteSummary } from '../types';
+import { getMemberVotingPower } from './web3/get-member-voting-power';
 import { findPersonsBySlug } from '../../people/server/queries';
 import { findSpaceBySlug } from '../../space/server/queries';
 import { newlyMentionedSlugs } from '../signal-mentions';
@@ -46,7 +47,10 @@ import {
   dueAtHasChanged,
   newlyAssignedPersonIds,
 } from '../signal-notification-triggers';
-import { creatorIdForAuthenticatedCreate } from '../signal-creator';
+import {
+  creatorIdForAuthenticatedCreate,
+  isSignalCreator,
+} from '../signal-creator';
 import {
   getSignalAssignedNotifier,
   getSignalLifecycleNotifier,
@@ -54,6 +58,26 @@ import {
   type SignalLifecycleKind,
   type SignalLifecycleNotifierInput,
 } from './signal-assigned-notifier';
+
+async function assertSignalCreator({
+  slug,
+  requesterPersonId,
+  action,
+}: {
+  slug: string;
+  requesterPersonId: number;
+  action: 'edit' | 'delete';
+}) {
+  const [row] = await db
+    .select({ creatorId: coherences.creatorId })
+    .from(coherences)
+    .where(eq(coherences.slug, slug))
+    .limit(1);
+  if (!row) throw new Error(`Coherence not found for slug="${slug}"`);
+  if (!isSignalCreator({ viewerPersonId: requesterPersonId, ...row })) {
+    throw new Error(`Only the signal creator can ${action} this signal`);
+  }
+}
 
 async function assertSignalWorkflowAccess({
   spaceId,
@@ -248,10 +272,10 @@ export async function deleteCoherenceBySlugAction(
       'Could not resolve authenticated user for delete coherence',
     );
   }
-  await assertCoherenceSpacePanelAuth({
+  await assertSignalCreator({
     slug: data.slug,
-    authToken,
     requesterPersonId: self.id,
+    action: 'delete',
   });
   return deleteCoherenceBySlug(
     { slug: data.slug, requesterPersonId: self.id },
@@ -287,10 +311,10 @@ export async function updateCoherenceSignalBySlugAction(
       'Could not resolve authenticated user for update coherence signal',
     );
   }
-  await assertCoherenceSpacePanelAuth({
+  await assertSignalCreator({
     slug: validated.slug,
-    authToken,
     requesterPersonId: self.id,
+    action: 'edit',
   });
 
   const [previousRow] = await db
@@ -494,7 +518,13 @@ export async function upvoteCoherenceAction(
   {
     slug,
     votingPowerPercent = 100,
-  }: { slug: string; votingPowerPercent?: number },
+    direction,
+  }: {
+    slug: string;
+    votingPowerPercent?: number;
+    /** Omitted means an upvote. */
+    direction?: 'up' | 'down';
+  },
   { authToken }: { authToken?: string },
 ): Promise<CoherenceUpvoteSummary> {
   const { self, coherence } = await resolveCoherenceUpvoteContext({
@@ -510,7 +540,7 @@ export async function upvoteCoherenceAction(
   });
 
   return applyCoherenceUpvote(
-    { coherence, actor: self, votingPowerPercent },
+    { coherence, actor: self, votingPowerPercent, direction },
     { db },
   );
 }
@@ -533,6 +563,27 @@ export async function removeCoherenceUpvoteAction(
   });
 
   return applyCoherenceUpvoteRemoval({ coherence, actor: self }, { db });
+}
+
+/**
+ * The caller's current voting power in a space, from the same on-chain source
+ * a signal upvote snapshots. Null when it cannot be resolved (signed out, no
+ * linked wallet, or the space is not on-chain).
+ */
+export async function getMySignalVotingPowerAction(
+  { spaceSlug }: { spaceSlug: string },
+  { authToken }: { authToken?: string },
+): Promise<{ votingPower: string; tokenDecimals: number } | null> {
+  if (!authToken) return null;
+  const self = await findSelf({ db: getDb({ authToken }) });
+  if (!self?.address) return null;
+  const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
+  if (space?.web3SpaceId == null) return null;
+  const { votingPower, tokenDecimals } = await getMemberVotingPower({
+    memberAddress: self.address as `0x${string}`,
+    web3SpaceId: space.web3SpaceId,
+  });
+  return { votingPower: votingPower.toString(), tokenDecimals };
 }
 
 export async function getSignalWorkflowConfigAction(

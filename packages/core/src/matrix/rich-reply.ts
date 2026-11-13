@@ -4,6 +4,7 @@ import { EventType, MatrixEventEvent, RelationType } from 'matrix-js-sdk';
 import type * as MatrixSdk from 'matrix-js-sdk';
 
 import { isAiSpecialistId } from '../people/ai-specialist-routing';
+import { QUEST_HELPER_AUTHOR_ID } from '../space-quests/constants';
 import type { Message, MessageMediaBundleItem } from './types';
 import { parseMentionUserIdsFromWireContent } from './mentions';
 import {
@@ -26,6 +27,12 @@ export const HYPHA_MEDIA_BUNDLE_FIELD = 'org.hypha.media_bundle';
 /** Specialist id on an AI Agents reply. One catalog id, not a second Matrix user. */
 export const HYPHA_AGENT_SPECIALIST_FIELD = 'org.hypha.agent_specialist';
 
+/**
+ * Marks one room message as the Quest Helper. The Matrix sender stays the
+ * org bot; the chat shows {@link QUEST_HELPER_AUTHOR_ID} instead of AI Agents.
+ */
+export const HYPHA_QUEST_HELPER_FIELD = 'org.hypha.quest_helper';
+
 export type HyphaMediaBundleItemWire = {
   msgtype: 'm.file' | 'm.image' | 'm.audio';
   url: string;
@@ -47,6 +54,10 @@ function readAgentSpecialistId(
 ): string | undefined {
   const raw = content[HYPHA_AGENT_SPECIALIST_FIELD];
   return typeof raw === 'string' && isAiSpecialistId(raw) ? raw : undefined;
+}
+
+function readQuestHelperAuthor(content: Record<string, unknown>): boolean {
+  return content[HYPHA_QUEST_HELPER_FIELD] === QUEST_HELPER_AUTHOR_ID;
 }
 
 /** Single-line reply excerpt (Discord-style): first line only, then optional char cap. */
@@ -307,7 +318,9 @@ export function messageFromRoomMessageEvent(
     [key: string]: unknown;
   };
   const mentionedUserIds = parseMentionUserIdsFromWireContent(content);
-  const agentSpecialistId = readAgentSpecialistId(content);
+  const agentSpecialistId =
+    readAgentSpecialistId(content) ??
+    (readQuestHelperAuthor(content) ? QUEST_HELPER_AUTHOR_ID : undefined);
   const msgtypeRaw = content.msgtype;
   const isMedia =
     msgtypeRaw === 'm.file' ||
@@ -395,6 +408,10 @@ export function messageFromRoomMessageEvent(
     throw new Error('Matrix room message event missing id or sender');
   }
 
+  // Prefer replacingEvent() so local-echo edits (id not final yet) still
+  // count as edited; replacingEventId() alone can be empty until sync.
+  const edited = Boolean(event.replacingEventId() || event.replacingEvent());
+
   if (isMedia) {
     const spoilerVal = content[HYPHA_SPOILER_FIELD];
     const mxcUrl =
@@ -466,10 +483,12 @@ export function messageFromRoomMessageEvent(
     return {
       id,
       sender,
+      sendAcknowledged: event.status == null,
       msgtype: msgtypeRaw as Message['msgtype'],
       content: rawBody,
       formattedContentHtml,
       timestamp: new Date(event.getTs()),
+      ...(edited ? { edited: true } : {}),
       pinned,
       inReplyToEventId: replyToId,
       inReplyToSender,
@@ -497,9 +516,11 @@ export function messageFromRoomMessageEvent(
   return {
     id,
     sender,
+    sendAcknowledged: event.status == null,
     content: displayBody,
     formattedContentHtml,
     timestamp: new Date(event.getTs()),
+    ...(edited ? { edited: true } : {}),
     pinned,
     inReplyToEventId: replyToId,
     inReplyToSender,

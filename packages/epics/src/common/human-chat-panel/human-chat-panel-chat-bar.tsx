@@ -11,6 +11,7 @@ import {
 } from 'react';
 import {
   Bold,
+  BookOpen,
   Italic,
   Strikethrough,
   Code,
@@ -33,6 +34,13 @@ import {
   AudioLines,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import {
+  CHAT_COMPOSER_ACTIONS_CLASS,
+  CHAT_COMPOSER_FIELD_CLASS,
+  CHAT_COMPOSER_INPUT_CLASS,
+  CHAT_COMPOSER_INPUT_SHELL_CLASS,
+  CHAT_COMPOSER_ROOT_CLASS,
+} from './composer-field';
 
 import {
   DropdownMenu,
@@ -83,9 +91,11 @@ import {
 } from './human-chat-panel-voice-audio-row';
 import { HumanChatMentionCandidateRow } from './human-chat-mention-candidate-row';
 import { formatComposerMentionToken } from './human-chat-display-mention';
+import { isAgentMentionPick } from './matrix-agent-mention';
 import { mentionCandidateMatchRank } from './human-chat-mention-search';
 import { resolveReplyPreviewAuthorLookup } from './reply-preview-author';
 import { useResolvedMentionCandidateLabel } from './use-resolved-mention-candidate-label';
+import { useAgentMentionLabel } from './agent-mention-label-context';
 import { ComposerAttachGoogleDriveMenuItem } from '../composer';
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
@@ -264,10 +274,11 @@ export type ChatDraftEditSlot = {
   spoiler?: boolean;
 };
 
-/** Mycelium mark in the network room, or the space logo in a space room. */
+/** Mycelium mark in the network room, space logo in a space room, book in Context. */
 export type ChatMentionAgentIcon =
   | { kind: 'network' }
-  | { kind: 'space'; logoUrl?: string | null };
+  | { kind: 'space'; logoUrl?: string | null }
+  | { kind: 'context' };
 
 /** Matrix room member for `@` autocomplete (MXID + display label). */
 export type ChatMentionCandidate = {
@@ -290,7 +301,7 @@ export type ChatMentionCandidate = {
    * row, so the picker does not list one agent per skill.
    */
   skills?: readonly { id: string; prompt: string }[];
-  /** Mycelium in a network room, or the space logo in a space room. */
+  /** Network mycelium, space logo, or the Context book. */
   agentIcon?: ChatMentionAgentIcon;
 };
 
@@ -588,6 +599,13 @@ function AgentSkillMentionIcon({ icon }: { icon?: ChatMentionAgentIcon }) {
       </span>
     );
   }
+  if (icon?.kind === 'context') {
+    return (
+      <span className="grid size-6 shrink-0 place-items-center border border-border/70 text-foreground">
+        <BookOpen className="size-3.5" strokeWidth={1.25} aria-hidden />
+      </span>
+    );
+  }
   return <MemberHomeMark className="h-6 w-6" />;
 }
 
@@ -656,12 +674,13 @@ export function HumanChatPanelChatBar({
   composerLockedMessage,
 }: HumanChatPanelChatBarProps) {
   const t = useTranslations('HumanChatPanel');
+  const agentMentionLabel = useAgentMentionLabel();
 
   const membershipAvailable =
     mentionPickerEnabled ?? mentionCandidates.length > 0;
   const atMentionInteractable = !composerLocked && membershipAvailable;
   const mentionButtonTitle = composerLocked
-    ? composerLockedMessage || t('signalTeamInteractionRestricted')
+    ? composerLockedMessage || t('mention')
     : !membershipAvailable
     ? t('mentionNoMembers')
     : t('mention');
@@ -976,14 +995,22 @@ export function HumanChatPanelChatBar({
       const tok = atTokenRef.current;
       if (!el || !tok) return;
       const prompt = member.prompt?.trim();
-      const labelForMerge = prompt
+      // The agent row stays "AI Agents" after insert. A resolved person or
+      // section-specialist name must not replace the picker label.
+      const agentPick = isAgentMentionPick(member);
+      const resolvedLabel = agentPick ? undefined : resolvedComposerLabel;
+      const labelForMerge = agentPick
         ? member.displayLabel
-        : resolvedComposerLabel?.trim() || member.displayLabel;
-      const labelForToken = prompt
+        : prompt
+        ? member.displayLabel
+        : resolvedLabel?.trim() || member.displayLabel;
+      const labelForToken = agentPick
         ? getMentionComposerLabel?.(member, member.displayLabel) ??
           member.displayLabel
-        : getMentionComposerLabel?.(member, resolvedComposerLabel) ??
-          labelForMerge;
+        : prompt
+        ? getMentionComposerLabel?.(member, member.displayLabel) ??
+          member.displayLabel
+        : getMentionComposerLabel?.(member, resolvedLabel) ?? labelForMerge;
       const token = formatComposerMentionToken(labelForToken);
       const insertion = prompt ? `${token}${prompt} ` : token;
       onMergeMentionDisplayLabel?.(member.userId, labelForMerge);
@@ -1805,15 +1832,16 @@ export function HumanChatPanelChatBar({
 
   return (
     <div
-      className="flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pt-2"
+      className={CHAT_COMPOSER_ROOT_CLASS}
       style={{ paddingBottom: composerBottomPadding(keyboardInset) }}
     >
       <div
         ref={composerShellRef}
+        data-testid="chat-composer-field"
         onKeyDownCapture={handleComposerShellKeyDownCapture}
         className={cn(
-          'relative flex min-w-0 flex-col bg-transparent shadow-none',
-          isComposerDropActive && 'bg-foreground/5',
+          CHAT_COMPOSER_FIELD_CLASS,
+          isComposerDropActive && 'border-foreground bg-foreground/5',
         )}
         onDragEnter={(e) => {
           if (!e.dataTransfer?.types.includes('Files')) {
@@ -2143,7 +2171,7 @@ export function HumanChatPanelChatBar({
                     isYou={replyPreview.isYou}
                     youLabel={t('you')}
                     unknownMemberLabel={t('unknownMember')}
-                    agentMentionLabel={t('agentMentionLabel')}
+                    agentMentionLabel={agentMentionLabel}
                   />
                 </span>
                 <span className="text-muted-foreground"> — </span>
@@ -2259,7 +2287,7 @@ export function HumanChatPanelChatBar({
           highlights, but its wrap/scroll did not match the caret. Text and caret
           now live on one element; it grows to COMPOSER_INPUT_MAX_PX then scrolls.
         */}
-        <div className="relative isolate min-h-[36px] min-w-0 max-h-[160px] w-full overflow-hidden rounded-sm">
+        <div className={CHAT_COMPOSER_INPUT_SHELL_CLASS}>
           <textarea
             ref={textareaRef}
             value={value}
@@ -2308,8 +2336,9 @@ export function HumanChatPanelChatBar({
             placeholder={placeholder ?? defaultPlaceholder}
             rows={1}
             className={cn(
-              'relative z-[1] box-border block min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
-              'overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words bg-transparent px-3 py-2 text-[16px] leading-5',
+              CHAT_COMPOSER_INPUT_CLASS,
+              'relative z-[1] block min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
+              'overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words text-[16px] leading-5',
               'text-foreground caret-foreground',
               'placeholder:text-muted-foreground focus:outline-none',
             )}
@@ -2317,7 +2346,7 @@ export function HumanChatPanelChatBar({
           />
         </div>
 
-        <div className="flex min-w-0 flex-col gap-1 px-2 pb-2.5 pt-0">
+        <div className={CHAT_COMPOSER_ACTIONS_CLASS}>
           {(voiceError || attachError) && (
             <p role="alert" className="text-xs text-destructive">
               {voiceError ?? attachError}

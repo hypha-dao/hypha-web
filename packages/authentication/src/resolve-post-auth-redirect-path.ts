@@ -16,6 +16,7 @@ const VALID_DHO_TABS = new Set([
   'banking',
   'rewards',
   'memory',
+  'context',
 ]);
 
 const DHO_SPACE_SLUG_FROM_PATH = /^\/[^/]+\/dho\/([^/]+)/;

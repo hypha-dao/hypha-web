@@ -13,8 +13,9 @@ import { BasePage } from './base.page';
  * Architecture (from docs/plans/coherence-chat-panel-plan.md):
  * - Clicking a signal card calls openCoherenceChat() + sidebar.setOpen(true)
  * - Panel header shows conversation title + ArrowLeft back button (coherence mode)
- * - Clicking back / closing panel resets to 'space' mode
- * - Panel header shows default "Chat" title in space mode
+ * - Clicking back on a signal closes the panel. It does not leave the
+ *   space room open. The top-right chat icon opens space channels again.
+ * - Closing the panel another way, then reopening it, shows space chat.
  *
  * Signal cards in authenticated state are wrapped in <button> elements by
  * SignalGrid when onSignalClick callback is provided — no <Link> navigation.
@@ -41,7 +42,8 @@ export class CoherenceChatPanelPage extends BasePage {
    * Back button in panel header (coherence mode only).
    * Rendered as a <button> with aria-label from i18n key "backToSpaceChat".
    * Expected aria-label: "Back to space chat"
-   * Clicking calls closeCoherenceChat() → resets to space mode.
+   * Clicking closes the panel on a space signal. It does not switch the
+   * open panel to the space room.
    */
   readonly backButton: Locator;
 

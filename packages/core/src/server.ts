@@ -22,6 +22,10 @@ export * from './events/server';
 export * from './transaction/server';
 export * from './coherence/server';
 export {
+  backfillSignalDiscussionCounts,
+  recountSignalDiscussionByRoomId,
+} from './coherence/server/recount-signal-discussion';
+export {
   patchCoherenceTaskBySlugAction,
   getSignalWorkflowConfigAction,
   updateSignalWorkflowConfigAction,
@@ -51,6 +55,10 @@ export * from './schedule/server';
 export * from './schedule';
 export * from './pipeline/server';
 export * from './pipeline';
+export * from './space-context/server';
+export * from './space-context';
+export * from './space-quests/server';
+export * from './space-quests';
 export * from './matrix/server';
 export * from './matrix/types';
 export * from './energy/server';

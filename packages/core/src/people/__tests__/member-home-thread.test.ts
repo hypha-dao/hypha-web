@@ -212,6 +212,14 @@ describe('listMemberHomeThreadItems', () => {
     expect(items.map((item) => item.slug)).toEqual(['define-products']);
   });
 
+  it('leaves out a withdrawn proposal even when the chain vote still looks open', () => {
+    const items = listMemberHomeThreadItems({
+      ...home,
+      proposals: [{ ...home.proposals[0]!, withdrawn: true }],
+    });
+    expect(items.map((item) => item.slug)).toEqual(['define-products']);
+  });
+
   it('drops an item from the waiting list once the member clears it', () => {
     const items = listMemberHomeThreadItems(home);
     const open = memberHomeItemsStillWaiting(items, {
@@ -1497,18 +1505,8 @@ describe('memberHomeBoardDestination', () => {
 });
 
 describe('memberHomeDirectReply', () => {
-  it('names the open decision instead of an empty queue', () => {
-    const reply = memberHomeDirectReply(home, 'What needs a decision?');
-    expect(reply).toMatchObject({
-      ask: 'decision',
-      widget: null,
-      item: { kind: 'proposal', slug: 'invite-member' },
-      line: {
-        key: 'decisionOpen',
-        title: 'Invite Member',
-        space: 'Hypha Pollinate',
-      },
-    });
+  it('lets the model brief an open decision instead of dumping the title', () => {
+    expect(memberHomeDirectReply(home, 'What needs a decision?')).toBeNull();
   });
 
   it('names the notification when that decision is not waiting on a vote', () => {

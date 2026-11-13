@@ -7,7 +7,11 @@ import {
   UpdateCoherenceInput,
   UpdateCoherenceSignalInput,
 } from '../types';
-import { coherences, memberships } from '@hypha-platform/storage-postgres';
+import {
+  coherences,
+  memberships,
+  spaces,
+} from '@hypha-platform/storage-postgres';
 import { and, eq } from 'drizzle-orm';
 import {
   assertValidBoard,
@@ -30,7 +34,8 @@ import {
   attachCoherenceCapitals,
   writeCoherenceCapitals,
 } from '../../network/capital-columns';
-import { omitCreatorId } from '../signal-creator';
+import { pickCoherenceUpdateFields } from '../coherence-update-fields';
+import { signalSlugMatchesSpaceSlug } from '../signal-slug';
 
 export async function assertCanEditCoherence(
   { slug, requesterPersonId }: { slug: string; requesterPersonId: number },
@@ -134,6 +139,18 @@ export const createCoherence = async (
     throw new Error('spaceId is required to create coherence');
   }
   const slug = maybeSlug || `coh-${uuidv4().slice(0, 8)}`;
+  if (spaceId != null) {
+    const [space] = await db
+      .select({ slug: spaces.slug })
+      .from(spaces)
+      .where(eq(spaces.id, spaceId))
+      .limit(1);
+    if (signalSlugMatchesSpaceSlug(slug, space?.slug)) {
+      throw new Error(
+        `Cannot create a signal whose slug matches its space slug "${space?.slug?.trim()}"`,
+      );
+    }
+  }
   const priority = maybePriority ?? 'medium';
   // Owner resolution: the explicit assignees, else the creator.
   // System-created signals have no creatorId and start unassigned.
@@ -202,9 +219,13 @@ export const updateCoherenceBySlug = async (
       `Multiple coherences found for slug="${slug}", expected exactly one`,
     );
   }
+  const fields = pickCoherenceUpdateFields(rest);
+  if (Object.keys(fields).length === 0) {
+    throw new Error(`No coherence fields to update for slug="${slug}"`);
+  }
   const [updatedCoherence] = await db
     .update(coherences)
-    .set({ ...omitCreatorId(rest) })
+    .set(fields)
     .where(eq(coherences.id, existing[0]!.id))
     .returning();
 

@@ -205,7 +205,7 @@ export function MobileTabBar({
 
   const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
   const { space } = useSpaceBySlug(spaceSlug ?? '');
-  const { data: spaceEnergy } = useSpaceEnergy();
+  const { data: spaceEnergy } = useSpaceEnergy(spaceSlug);
   const networkRoute = isNetworkPath(pathname);
   const secondLevel = useMemo((): Array<{
     key: string;
@@ -263,6 +263,8 @@ export function MobileTabBar({
             return tCommon('overview');
           case 'agreements':
             return tCommon('Agreements');
+          case 'quests':
+            return tCommon('quests');
           case 'members':
             return tCommon('Members');
           case 'treasury':
@@ -279,6 +281,8 @@ export function MobileTabBar({
             return tTreasury('rewardsSection.title');
           case 'memory':
             return tCoherence('spaceMemory');
+          case 'context':
+            return tCommon('context');
           default:
             return key;
         }

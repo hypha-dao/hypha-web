@@ -53,6 +53,8 @@ type HumanChatPanelMembersProps = {
   currentUserMatrixId?: string | null;
   /** Specialists already called in this room, first call first. */
   calledSpecialistIds?: readonly string[];
+  /** Quest rooms say participants. Other rooms keep the shared members copy. */
+  rosterCopy?: 'participants';
 };
 
 export function HumanChatPanelMembers({
@@ -64,6 +66,7 @@ export function HumanChatPanelMembers({
   inOurCallSession = false,
   currentUserMatrixId,
   calledSpecialistIds: calledIds = [],
+  rosterCopy,
 }: HumanChatPanelMembersProps) {
   const t = useTranslations('HumanChatPanel');
   const tCoherence = useTranslations('CoherenceTab');
@@ -264,13 +267,21 @@ export function HumanChatPanelMembers({
         </div>
       )}
       <div className="px-1 pb-2 text-xs font-medium text-muted-foreground">
-        {t('membersCount', {
-          count: totalCount,
-          online: onlineCount,
-        })}
+        {rosterCopy === 'participants'
+          ? `${totalCount} ${
+              totalCount === 1 ? 'participant' : 'participants'
+            } · ${onlineCount} online`
+          : t('membersCount', {
+              count: totalCount,
+              online: onlineCount,
+            })}
       </div>
       <label className="relative mb-2 min-w-0">
-        <span className="sr-only">{t('membersSearch')}</span>
+        <span className="sr-only">
+          {rosterCopy === 'participants'
+            ? 'Search participants'
+            : t('membersSearch')}
+        </span>
         <Search
           className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-9"
           strokeWidth={1.5}
@@ -283,7 +294,11 @@ export function HumanChatPanelMembers({
             if (event.key === 'Escape') return;
             event.stopPropagation();
           }}
-          placeholder={t('membersSearch')}
+          placeholder={
+            rosterCopy === 'participants'
+              ? 'Search participants'
+              : t('membersSearch')
+          }
           data-testid="chat-panel-members-search"
           className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
         />

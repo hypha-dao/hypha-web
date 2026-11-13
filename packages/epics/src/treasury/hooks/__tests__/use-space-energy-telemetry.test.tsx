@@ -4,13 +4,11 @@ import { act, renderHook } from '@testing-library/react';
 import { SWRConfig } from 'swr';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const nav = vi.hoisted(() => ({ pathname: '/en/dho/space-a/energy' }));
 const auth = vi.hoisted(() => ({
   getAccessToken: (): Promise<string | null> => Promise.resolve('token'),
   isLoading: false,
 }));
 
-vi.mock('next/navigation', () => ({ usePathname: () => nav.pathname }));
 vi.mock('@hypha-platform/authentication', () => ({
   useAuthentication: () => ({
     getAccessToken: auth.getAccessToken,
@@ -111,10 +109,10 @@ describe('useSpaceEnergyTelemetry', () => {
   });
 
   it('leaves loading after the soft timeout, then shows the late result', async () => {
-    nav.pathname = '/en/dho/slow-space/energy';
-    const { result } = renderHook(() => useSpaceEnergyTelemetry('30d'), {
-      wrapper,
-    });
+    const { result } = renderHook(
+      () => useSpaceEnergyTelemetry('30d', 'slow-space'),
+      { wrapper },
+    );
     await advance(0);
     expect(pending).toHaveLength(1);
     expect(result.current.isLoading).toBe(true);
@@ -134,9 +132,11 @@ describe('useSpaceEnergyTelemetry', () => {
   });
 
   it('skips the soft-timeout retry once the late result has arrived', async () => {
-    nav.pathname = '/en/dho/late-retry-space/energy';
     const { result } = renderHook(
-      () => useSpaceEnergyTelemetry('30d', { refreshInterval: 0 }),
+      () =>
+        useSpaceEnergyTelemetry('30d', 'late-retry-space', {
+          refreshInterval: 0,
+        }),
       { wrapper },
     );
     await advance(25_000);
@@ -153,9 +153,10 @@ describe('useSpaceEnergyTelemetry', () => {
   });
 
   it('sends the request without a token when Privy stalls', async () => {
-    nav.pathname = '/en/dho/stalled-auth/energy';
     auth.getAccessToken = () => new Promise<string | null>(() => undefined);
-    renderHook(() => useSpaceEnergyTelemetry('7d'), { wrapper });
+    renderHook(() => useSpaceEnergyTelemetry('7d', 'stalled-auth'), {
+      wrapper,
+    });
 
     await advance(4_000);
     expect(pending).toHaveLength(0);
@@ -166,12 +167,12 @@ describe('useSpaceEnergyTelemetry', () => {
   });
 
   it('retries a 401 once with the token that arrives after the stall', async () => {
-    nav.pathname = '/en/dho/restricted-space/energy';
     const token = deferred<string | null>();
     auth.getAccessToken = () => token.promise;
-    const { result } = renderHook(() => useSpaceEnergyTelemetry('7d'), {
-      wrapper,
-    });
+    const { result } = renderHook(
+      () => useSpaceEnergyTelemetry('7d', 'restricted-space'),
+      { wrapper },
+    );
 
     await advance(5_000);
     expect(pending).toHaveLength(1);
@@ -199,12 +200,14 @@ describe('useSpaceEnergyTelemetry', () => {
   });
 
   it('asks for a token again and retries once when a null-token request gets 401', async () => {
-    nav.pathname = '/en/dho/restricted-null-token/energy';
     const tokens: (string | null)[] = [null, 'fresh-token'];
     let tokenCalls = 0;
     auth.getAccessToken = () => Promise.resolve(tokens[tokenCalls++] ?? null);
     const { result } = renderHook(
-      () => useSpaceEnergyTelemetry('7d', { refreshInterval: 0 }),
+      () =>
+        useSpaceEnergyTelemetry('7d', 'restricted-null-token', {
+          refreshInterval: 0,
+        }),
       { wrapper },
     );
 
@@ -228,14 +231,16 @@ describe('useSpaceEnergyTelemetry', () => {
   });
 
   it('surfaces the 401 when a second token request still returns null', async () => {
-    nav.pathname = '/en/dho/restricted-logged-out/energy';
     let tokenCalls = 0;
     auth.getAccessToken = () => {
       tokenCalls++;
       return Promise.resolve(null);
     };
     const { result } = renderHook(
-      () => useSpaceEnergyTelemetry('7d', { refreshInterval: 0 }),
+      () =>
+        useSpaceEnergyTelemetry('7d', 'restricted-logged-out', {
+          refreshInterval: 0,
+        }),
       { wrapper },
     );
 
@@ -251,11 +256,11 @@ describe('useSpaceEnergyTelemetry', () => {
   });
 
   it('does not refetch when a late token arrives after an anonymous success', async () => {
-    nav.pathname = '/en/dho/public-space/energy';
     const token = deferred<string | null>();
     auth.getAccessToken = () => token.promise;
     const { result } = renderHook(
-      () => useSpaceEnergyTelemetry('7d', { refreshInterval: 0 }),
+      () =>
+        useSpaceEnergyTelemetry('7d', 'public-space', { refreshInterval: 0 }),
       { wrapper },
     );
 
@@ -274,10 +279,10 @@ describe('useSpaceEnergyTelemetry', () => {
   });
 
   it('retries a server error and replaces the error with data', async () => {
-    nav.pathname = '/en/dho/cold-space/energy';
-    const { result } = renderHook(() => useSpaceEnergyTelemetry('7d'), {
-      wrapper,
-    });
+    const { result } = renderHook(
+      () => useSpaceEnergyTelemetry('7d', 'cold-space'),
+      { wrapper },
+    );
     await advance(0);
     await act(async () => {
       pending[0]!.resolve({ error: 'Failed' }, 500);
@@ -298,9 +303,9 @@ describe('useSpaceEnergyTelemetry', () => {
   });
 
   it('does not retry a forbidden response', async () => {
-    nav.pathname = '/en/dho/private-space/energy';
     const { result } = renderHook(
-      () => useSpaceEnergyTelemetry('7d', { refreshInterval: 0 }),
+      () =>
+        useSpaceEnergyTelemetry('7d', 'private-space', { refreshInterval: 0 }),
       { wrapper },
     );
     await advance(0);
@@ -314,10 +319,10 @@ describe('useSpaceEnergyTelemetry', () => {
   });
 
   it('hard-aborts a hung request after 60s', async () => {
-    nav.pathname = '/en/dho/hung-space/energy';
-    const { result } = renderHook(() => useSpaceEnergyTelemetry('30d'), {
-      wrapper,
-    });
+    const { result } = renderHook(
+      () => useSpaceEnergyTelemetry('30d', 'hung-space'),
+      { wrapper },
+    );
     await advance(0);
     const request = pending[0]!;
 
@@ -331,9 +336,9 @@ describe('useSpaceEnergyTelemetry', () => {
   });
 
   it('aborts the request when the period changes or the hook unmounts', async () => {
-    nav.pathname = '/en/dho/switch-space/energy';
     const { rerender, unmount } = renderHook(
-      ({ period }: { period: '7d' | '30d' }) => useSpaceEnergyTelemetry(period),
+      ({ period }: { period: '7d' | '30d' }) =>
+        useSpaceEnergyTelemetry(period, 'switch-space'),
       { wrapper, initialProps: { period: '30d' } },
     );
     await advance(0);
@@ -352,10 +357,12 @@ describe('useSpaceEnergyTelemetry', () => {
   });
 
   it('does not request while disabled', async () => {
-    nav.pathname = '/en/dho/disabled-space/energy';
     const { rerender } = renderHook(
       ({ enabled }: { enabled: boolean }) =>
-        useSpaceEnergyTelemetry('7d', { enabled, refreshInterval: 0 }),
+        useSpaceEnergyTelemetry('7d', 'disabled-space', {
+          enabled,
+          refreshInterval: 0,
+        }),
       { wrapper, initialProps: { enabled: false } },
     );
     await advance(0);
@@ -367,10 +374,12 @@ describe('useSpaceEnergyTelemetry', () => {
   });
 
   it('does not request telemetry while authentication is loading', async () => {
-    nav.pathname = '/en/dho/auth-loading-space/energy';
     auth.isLoading = true;
     const { rerender } = renderHook(
-      () => useSpaceEnergyTelemetry('7d', { refreshInterval: 0 }),
+      () =>
+        useSpaceEnergyTelemetry('7d', 'auth-loading-space', {
+          refreshInterval: 0,
+        }),
       { wrapper },
     );
     await advance(0);
@@ -383,11 +392,13 @@ describe('useSpaceEnergyTelemetry', () => {
   });
 
   it('keeps a shared request alive while another subscriber is mounted', async () => {
-    nav.pathname = '/en/dho/shared-space/energy';
-    const first = renderHook(() => useSpaceEnergyTelemetry('30d'), {
+    const first = renderHook(
+      () => useSpaceEnergyTelemetry('30d', 'shared-space'),
+      { wrapper },
+    );
+    renderHook(() => useSpaceEnergyTelemetry('30d', 'shared-space'), {
       wrapper,
     });
-    renderHook(() => useSpaceEnergyTelemetry('30d'), { wrapper });
     await advance(0);
     expect(pending).toHaveLength(1);
     const request = pending[0]!;
@@ -398,13 +409,14 @@ describe('useSpaceEnergyTelemetry', () => {
   });
 
   it('aborts a shared request after its last subscriber unmounts', async () => {
-    nav.pathname = '/en/dho/shared-cancel-space/energy';
-    const first = renderHook(() => useSpaceEnergyTelemetry('30d'), {
-      wrapper,
-    });
-    const second = renderHook(() => useSpaceEnergyTelemetry('30d'), {
-      wrapper,
-    });
+    const first = renderHook(
+      () => useSpaceEnergyTelemetry('30d', 'shared-cancel-space'),
+      { wrapper },
+    );
+    const second = renderHook(
+      () => useSpaceEnergyTelemetry('30d', 'shared-cancel-space'),
+      { wrapper },
+    );
     await advance(0);
     expect(pending).toHaveLength(1);
     const request = pending[0]!;

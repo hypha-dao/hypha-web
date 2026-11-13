@@ -1,0 +1,913 @@
+import type { QuestStewardStep } from './constants';
+
+const PENDING_SECTION_LABEL: Record<QuestStewardStep, string> = {
+  goal: 'Goal',
+  scope: 'Scope',
+  success: 'Success criteria',
+  milestones: 'Milestones',
+  members: 'Participants',
+  lead: 'Lead',
+  targetDate: 'Target date',
+  rewards: 'Quest Reward',
+  name: 'Title',
+};
+
+/**
+ * The app owns this sentence. It is shown whenever an older suggestion
+ * stays actionable, whatever the model wrote.
+ */
+export function questPendingYesNotice(step: QuestStewardStep): string {
+  const section = PENDING_SECTION_LABEL[step];
+  return `The ${section} suggestion is still waiting on a yes. Yes applies that ${section} suggestion and nothing else.`;
+}
+
+export type QuestDraftTarget = {
+  /** Section this message is allowed to write. */
+  step: QuestStewardStep;
+  /** Asked to fill every section. Write nothing and stay put. */
+  bulk: boolean;
+};
+
+const SECTION_NAME =
+  '(scope\\s+in|scope\\s+out|success\\s+criteria|in[-\\s]?scope|out[-\\s]of[-\\s]?scope|milestones?|participants?|members?|target\\s+date|quest\\s+rewards?|rewards?|quest\\s+name|scope|success(?!\\s+[A-Za-z])|lead|goal|name|title)';
+
+/**
+ * A section address, not a sentence that happens to use a section word.
+ * "Focus only on Scope" and "update the members" name the field.
+ * "We update members every week" and "Write success stories" do not:
+ * the write/update verbs have to take "the" field, and bare "success"
+ * cannot swallow a following word such as "stories".
+ */
+const NAMED_SECTION = new RegExp(
+  `(?:focus(?:\\s+only)?\\s+on|only\\s+on|help(?:\\s+me)?\\s+with(?:\\s+the)?|tighten(?:\\s+the)?|just(?:\\s+the)?|(?:draft|fill|write|update|revise)\\s+the\\s+|(?:improve|rewrite|reword|evaluate)\\s+the\\s+|(?:propose|suggest)\\s+(?:(?:a|an|the|these|this)\\s+)?)\\s*(?:the\\s+)?${SECTION_NAME}\\b`,
+  'i',
+);
+
+const SECTION_LABEL = new RegExp(
+  `\\b${SECTION_NAME}\\s+section(?:\\s+only)?\\b`,
+  'i',
+);
+
+/** "Now let's define the scope" — name the section without writing it. */
+const SECTION_NAV = new RegExp(
+  `\\b(?:define|talk about|work on|move on to|start on|cover)\\s+(?:the\\s+)?${SECTION_NAME}\\b|\\bwhat(?: is|['\\u2019]s)\\b[\\s\\S]{0,40}\\b${SECTION_NAME}\\b`,
+  'i',
+);
+
+/** "Please propose these as Milestones" — the section is named, not implied. */
+const ADDRESSED_SECTION = new RegExp(
+  `\\b(?:as|into)\\s+(?:the\\s+)?${SECTION_NAME}\\b`,
+  'i',
+);
+
+/**
+ * A command that starts the message or a sentence, with an optional "please".
+ * The section has to be followed by to, a colon, or a quote. "Members use
+ * rewards within 7 days" is content, and "put that in the Goal" is approval.
+ */
+const COMMANDED_SECTION = new RegExp(
+  `(?:^|[.!?]\\s+|\\n\\s*)(?:please\\s+)?(?:put|set|update|change|write|add|use)\\s+(?:in(?:to)?|on|for|as|to)?\\s*(?:the\\s+)?${SECTION_NAME}\\b(?=\\s*(?:to\\b|:|["“]))`,
+  'i',
+);
+
+const MILESTONE_COUNT = 'one|two|three|four|five|six|seven|eight|nine|ten|\\d+';
+
+const MILESTONE_MONTH =
+  'January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec';
+
+function stepFromSectionName(raw: string): QuestStewardStep | null {
+  const name = raw.toLowerCase().replace(/\s+/g, ' ').trim();
+  if (name.includes('scope')) return 'scope';
+  if (name.includes('success')) return 'success';
+  if (name.includes('milestone')) return 'milestones';
+  if (name.includes('member')) return 'members';
+  if (name.includes('target date')) return 'targetDate';
+  if (name.includes('reward')) return 'rewards';
+  if (name.includes('name') || name.includes('title')) return 'name';
+  if (name === 'lead') return 'lead';
+  if (name.includes('goal')) return 'goal';
+  return null;
+}
+
+/**
+ * "milestone editing" and "reward display" name the work inside a section.
+ * They are not a request to draft Milestones or Rewards. A section word
+ * followed by another word is that kind of content, unless it is the
+ * section the member asked to draft or propose, or list glue such as
+ * "and" or "criteria".
+ */
+function isContentNounUse(
+  text: string,
+  index: number,
+  length: number,
+): boolean {
+  const next = /^\s+([A-Za-z]+)/.exec(text.slice(index + length));
+  if (!next) return false;
+  if (/^(?:and|or|section|criteria|date)$/i.test(next[1] ?? '')) return false;
+  const before = text.slice(0, index);
+  return !/(?:\b(?:draft|suggest|propose|write|generate|fill(?:\s+in|\s+out)?|update|revise|rewrite|reword))\s+(?:(?:a|an|the|these|this|some|my|our)\s+)?$/i.test(
+    before,
+  );
+}
+
+function hasRequestedSection(text: string, pattern: RegExp): boolean {
+  const flags = pattern.flags.includes('g')
+    ? pattern.flags
+    : `${pattern.flags}g`;
+  const re = new RegExp(pattern.source, flags);
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(text)) !== null) {
+    if (!isContentNounUse(text, match.index, match[0].length)) return true;
+    if (match[0].length === 0) break;
+  }
+  return false;
+}
+
+function mentionsSeveralSections(text: string): boolean {
+  let count = 0;
+  if (hasRequestedSection(text, /\bscope\b/i)) count += 1;
+  if (hasRequestedSection(text, /\b(?:success|criteria)\b/i)) count += 1;
+  if (hasRequestedSection(text, /\bmilestones?\b/i)) count += 1;
+  if (hasRequestedSection(text, /\b(?:members?|participants?)\b/i)) count += 1;
+  if (hasRequestedSection(text, /\brewards?\b/i)) count += 1;
+  return count >= 2;
+}
+
+/**
+ * The value of one explicit section command.
+ * "write all" or "sections" inside that value is content.
+ * Words outside it can still make the message a multi-section request.
+ */
+function commandedPayloadSpan(
+  text: string,
+): { start: number; end: number } | null {
+  const match = COMMANDED_SECTION.exec(text);
+  if (!match || match.index == null) return null;
+  let i = match.index + match[0].length;
+  while (isJsWhitespace(text[i])) i += 1;
+  const to =
+    text[i]?.toLowerCase() === 't' &&
+    text[i + 1]?.toLowerCase() === 'o' &&
+    !isAsciiWord(text[i + 2]);
+  if (to) {
+    i += 2;
+    while (isJsWhitespace(text[i])) i += 1;
+  }
+  const opener = text[i];
+  if (opener === '"' || opener === '“') {
+    const closer = opener === '“' ? '”' : '"';
+    const endQuote = text.indexOf(closer, i + 1);
+    if (endQuote < 0) return null;
+    if (!text.slice(i + 1, endQuote).trim()) return null;
+    return { start: i, end: endQuote + 1 };
+  }
+  if (text[i] === ':') {
+    i += 1;
+    while (isJsWhitespace(text[i])) i += 1;
+  }
+  if (i >= text.length) return null;
+  const end = unquotedCommandEnd(text, i);
+  if (!text.slice(i, end).trim()) return null;
+  return { start: i, end };
+}
+
+/**
+ * A period inside "e.g." or "i.e." is not the end of the command.
+ * The window is fixed, so the check stays linear.
+ */
+const ABBREVIATION_PERIOD = [
+  'e.g.',
+  'i.e.',
+  'etc.',
+  'u.s.',
+  'u.k.',
+  'mr.',
+  'mrs.',
+  'ms.',
+  'dr.',
+  'vs.',
+  'jr.',
+  'sr.',
+  'inc.',
+];
+
+function periodClosesAbbreviation(text: string, dot: number): boolean {
+  if (text[dot] !== '.') return false;
+  const window = text.slice(Math.max(0, dot - 7), dot + 1).toLowerCase();
+  for (const abbr of ABBREVIATION_PERIOD) {
+    if (!window.endsWith(abbr)) continue;
+    const at = dot + 1 - abbr.length;
+    if (at > 0 && isAsciiWord(text[at - 1])) continue;
+    return true;
+  }
+  return false;
+}
+
+function startsNewSentence(text: string, index: number): boolean {
+  let i = index;
+  while (isJsWhitespace(text[i])) i += 1;
+  const ch = text[i];
+  if (!ch) return false;
+  if (ch >= 'A' && ch <= 'Z') return true;
+  return (
+    matchWordAt(text, i, 'draft') != null ||
+    matchWordAt(text, i, 'write') != null ||
+    matchWordAt(text, i, 'set') != null ||
+    matchWordAt(text, i, 'put') != null ||
+    matchWordAt(text, i, 'update') != null ||
+    matchWordAt(text, i, 'change') != null ||
+    matchWordAt(text, i, 'add') != null ||
+    matchWordAt(text, i, 'use') != null
+  );
+}
+
+/** End of an unquoted command value. Quotes and abbreviations stay inside it. */
+function unquotedCommandEnd(text: string, from: number): number {
+  let quote: '"' | '”' | null = null;
+  for (let j = from; j < text.length; j += 1) {
+    const ch = text[j];
+    if (quote) {
+      if (ch !== quote) continue;
+      const endedSentence =
+        text[j - 1] === '.' || text[j - 1] === '!' || text[j - 1] === '?';
+      quote = null;
+      if (endedSentence && startsNewSentence(text, j + 1)) return j + 1;
+      continue;
+    }
+    if (ch === '"') {
+      quote = '"';
+      continue;
+    }
+    if (ch === '“') {
+      quote = '”';
+      continue;
+    }
+    if (
+      (ch === '.' || ch === '!' || ch === '?') &&
+      (j + 1 >= text.length || isJsWhitespace(text[j + 1])) &&
+      !periodClosesAbbreviation(text, j)
+    ) {
+      return j + 1;
+    }
+  }
+  return text.length;
+}
+
+function bulkFromDraftSignals(text: string): boolean {
+  const lower = text.toLowerCase();
+  const asksToDraft =
+    /\b(draft|suggest|propose|auto[- ]?fill|fill(?:\s+in|\s+out)?|generate|write)\b/.test(
+      lower,
+    );
+  if (!asksToDraft) return false;
+  if (
+    /\b(everything|all sections|all of the sections|every section|the whole quest|all of it|the rest|sections)\b/.test(
+      lower,
+    )
+  ) {
+    return true;
+  }
+  if (/\b(draft|fill|generate|suggest|propose|write)\s+all\b/.test(lower)) {
+    return true;
+  }
+  if (/\bonly\b/.test(lower) || /\bfocus\b/.test(lower)) return false;
+  // One scope boundary is the Scope section. Words inside it, such as
+  // "milestone editing", are not a request to draft another section.
+  // A preamble that names several sections stays a bulk request.
+  if (scopeBoundaryLists(text)) return false;
+  // "Draft the goal and the scope" names Goal. A sentence that merely
+  // contains the noun "draft" and the word "goal" does not.
+  if (draftRequestNamesGoalAndAnother(text)) return true;
+  // One labeled payload is that section, unless a preamble already named
+  // several sections. Words inside the payload ("milestone editing" on an
+  // in-scope line) are not a second section.
+  const labeled = labeledSectionMatch(text);
+  if (labeled && !mentionsSeveralSections(text.slice(0, labeled.index))) {
+    return false;
+  }
+  return mentionsSeveralSections(lower);
+}
+
+function draftRequestNamesGoalAndAnother(text: string): boolean {
+  if (!/\bgoals?\b/i.test(text)) return false;
+  if (!sectionsMentioned(text).some((step) => step !== 'goal')) return false;
+  return /\b(?:draft|suggest|propose|generate|write|fill(?:\s+in|\s+out)?)\s+(?:the\s+)?(?:goals?|scopes?|success(?:\s+criteria)?|milestones?|participants?|members?|rewards?)\b/i.test(
+    text,
+  );
+}
+
+function hasDraftVerb(text: string): boolean {
+  return /\b(?:draft|suggest|propose|auto[- ]?fill|fill(?:\s+in|\s+out)?|generate|write)\b/i.test(
+    text,
+  );
+}
+
+/**
+ * "Please propose these success criteria …: <criteria that mention in-scope>".
+ * The colon value is that one section. A preamble that already names several
+ * sections, or a later sentence that drafts another, stays a bulk request.
+ */
+function namedProposalContentSpan(
+  text: string,
+): { start: number; end: number } | null {
+  const colon = text.indexOf(':');
+  if (colon < 0) return null;
+  const prefix = text.slice(0, colon);
+  if (!hasDraftVerb(prefix) || mentionsSeveralSections(prefix)) return null;
+  if (sectionsMentioned(prefix).length !== 1) return null;
+  const start = skipWhitespace(text, colon + 1);
+  if (start >= text.length) return null;
+  const end = unquotedCommandEnd(text, start);
+  if (!text.slice(start, end).trim()) return null;
+  return { start, end };
+}
+
+/** Words outside a quoted command. The value itself is not a second request. */
+function textOutsideCommandedPayload(text: string): string {
+  const payload = commandedPayloadSpan(text);
+  if (!payload) return text;
+  return `${text.slice(0, payload.start)} ${text.slice(payload.end)}`.trim();
+}
+
+function suffixDraftsAnotherSection(suffix: string): boolean {
+  const text = suffix.trim();
+  if (!text || !hasDraftVerb(text)) return false;
+  return sectionsMentioned(text).length > 0 || mentionsSeveralSections(text);
+}
+
+/** A later "Draft the milestones" is a second section, not part of the quote. */
+function suffixDraftsDifferentSection(
+  suffix: string,
+  commanded: QuestStewardStep | null,
+): boolean {
+  if (!suffixDraftsAnotherSection(suffix) || !commanded) return false;
+  return sectionsMentioned(suffix).some((step) => step !== commanded);
+}
+
+/** "Draft everything" or "draft the scope, success criteria, and milestones". */
+export function isBulkQuestDraftRequest(text: string): boolean {
+  const payload = commandedPayloadSpan(text);
+  if (payload && payload.end > payload.start) {
+    // Judge the words before and after the value on their own. Joining them
+    // back together would hide a later sentence inside the same command.
+    // A later sentence that drafts a different section is still several.
+    const commandedName = COMMANDED_SECTION.exec(text)?.[1];
+    const commanded = commandedName ? stepFromSectionName(commandedName) : null;
+    return (
+      isBulkQuestDraftRequest(text.slice(0, payload.start)) ||
+      isBulkQuestDraftRequest(text.slice(payload.end)) ||
+      suffixDraftsDifferentSection(text.slice(payload.end), commanded)
+    );
+  }
+  const proposal = namedProposalContentSpan(text);
+  if (proposal) {
+    return (
+      isBulkQuestDraftRequest(text.slice(0, proposal.start)) ||
+      isBulkQuestDraftRequest(text.slice(proposal.end)) ||
+      suffixDraftsAnotherSection(text.slice(proposal.end))
+    );
+  }
+  return bulkFromDraftSignals(text) || questRevisionNamesSeveralSections(text);
+}
+
+/** JavaScript `\s`, matched per character so a long run cannot backtrack. */
+function isJsWhitespace(ch: string | undefined): boolean {
+  if (!ch) return false;
+  const code = ch.charCodeAt(0);
+  return (
+    code === 0x09 ||
+    code === 0x0a ||
+    code === 0x0b ||
+    code === 0x0c ||
+    code === 0x0d ||
+    code === 0x20 ||
+    code === 0x00a0 ||
+    code === 0x1680 ||
+    (code >= 0x2000 && code <= 0x200a) ||
+    code === 0x2028 ||
+    code === 0x2029 ||
+    code === 0x202f ||
+    code === 0x205f ||
+    code === 0x3000 ||
+    code === 0xfeff
+  );
+}
+
+/** ASCII `\w`, which is what an un-flagged `\b` uses. */
+function isAsciiWord(ch: string | undefined): boolean {
+  if (!ch) return false;
+  const code = ch.charCodeAt(0);
+  return (
+    (code >= 48 && code <= 57) ||
+    (code >= 65 && code <= 90) ||
+    (code >= 97 && code <= 122) ||
+    code === 95
+  );
+}
+
+function skipWhitespace(text: string, index: number): number {
+  let i = index;
+  while (isJsWhitespace(text[i])) i += 1;
+  return i;
+}
+
+function matchWordAt(text: string, index: number, word: string): number | null {
+  if (index < 0 || isAsciiWord(text[index - 1])) return null;
+  for (let i = 0; i < word.length; i += 1) {
+    const ch = text[index + i];
+    if (!ch) return null;
+    const folded =
+      ch >= 'A' && ch <= 'Z' ? String.fromCharCode(ch.charCodeAt(0) + 32) : ch;
+    if (folded !== word[i]) return null;
+  }
+  if (isAsciiWord(text[index + word.length])) return null;
+  return index + word.length;
+}
+
+/** Optional whitespace, one colon, optional whitespace. */
+function skipOptionalColon(text: string, index: number): number {
+  let i = skipWhitespace(text, index);
+  if (text[i] === ':') i = skipWhitespace(text, i + 1);
+  return i;
+}
+
+function findSeparatedWords(
+  text: string,
+  from: number,
+  words: readonly string[],
+): { start: number; end: number } | null {
+  const first = words[0];
+  if (!first) return null;
+  for (let i = from; i < text.length; i += 1) {
+    const afterFirst = matchWordAt(text, i, first);
+    if (afterFirst == null || !isJsWhitespace(text[afterFirst])) continue;
+    let cursor = skipWhitespace(text, afterFirst);
+    let matched = true;
+    for (let w = 1; w < words.length; w += 1) {
+      const after = matchWordAt(text, cursor, words[w]!);
+      if (after == null) {
+        matched = false;
+        break;
+      }
+      const needsGap = w < words.length - 1;
+      if (needsGap && !isJsWhitespace(text[after])) {
+        matched = false;
+        break;
+      }
+      cursor = needsGap ? skipWhitespace(text, after) : after;
+    }
+    if (matched) return { start: i, end: cursor };
+  }
+  return null;
+}
+
+function trimJs(value: string): string {
+  let start = 0;
+  let end = value.length;
+  while (start < end && isJsWhitespace(value[start])) start += 1;
+  while (end > start && isJsWhitespace(value[end - 1])) end -= 1;
+  return value.slice(start, end);
+}
+
+/** Drop a trailing `\s*(?:;\s*)?` that sits against "out of scope". */
+function withoutScopeSeparator(value: string): string {
+  let end = value.length;
+  while (end > 0 && isJsWhitespace(value[end - 1])) end -= 1;
+  if (value[end - 1] === ';') {
+    end -= 1;
+    while (end > 0 && isJsWhitespace(value[end - 1])) end -= 1;
+  }
+  return value.slice(0, end);
+}
+
+function stripTrailing(
+  value: string,
+  isExtra: (ch: string) => boolean,
+): string {
+  const trimmed = trimJs(value);
+  let end = trimmed.length;
+  while (end > 0) {
+    const ch = trimmed[end - 1]!;
+    if (!isJsWhitespace(ch) && !isExtra(ch)) break;
+    end -= 1;
+  }
+  return trimJs(trimmed.slice(0, end));
+}
+
+/**
+ * "in scope … out of scope …", with or without colons.
+ * Null when the words before that pair already name several sections.
+ * Scanned forward: repeated spaces or tabs stay linear.
+ */
+export function scopeBoundaryLists(
+  text: string,
+): { scopeIn: string; scopeOut: string } | null {
+  const opening = findSeparatedWords(text, 0, ['in', 'scope']);
+  if (!opening) return null;
+  if (mentionsSeveralSections(text.slice(0, opening.start))) return null;
+  const contentFrom = skipOptionalColon(text, opening.end);
+  const closing = findSeparatedWords(text, contentFrom, ['out', 'of', 'scope']);
+  if (!closing) return null;
+  const scopeIn = stripTrailing(
+    withoutScopeSeparator(text.slice(contentFrom, closing.start)),
+    (ch) => ch === ';',
+  );
+  const scopeOut = stripTrailing(
+    text.slice(skipOptionalColon(text, closing.end)),
+    (ch) => ch === '.' || ch === '!',
+  );
+  if (!scopeIn || !scopeOut) return null;
+  return { scopeIn, scopeOut };
+}
+
+function explicitSectionName(text: string): string | undefined {
+  return (
+    NAMED_SECTION.exec(text)?.[1] ??
+    COMMANDED_SECTION.exec(text)?.[1] ??
+    SECTION_LABEL.exec(text)?.[1] ??
+    SECTION_NAV.exec(text)?.[1] ??
+    ADDRESSED_SECTION.exec(text)?.[1]
+  );
+}
+
+/**
+ * A field label, not a passing mention: "In scope:", "Success criteria:", "Lead:".
+ * The earliest label wins when a message names more than one section.
+ */
+const LABELED_SECTION_PATTERNS: ReadonlyArray<{
+  pattern: RegExp;
+  step: QuestStewardStep;
+}> = [
+  {
+    pattern:
+      /\b(?:in[-\s]+scope|out[-\s]+of[-\s]+scope|scope[-\s]+in|scope[-\s]+out)\s*:/i,
+    step: 'scope',
+  },
+  {
+    pattern: /(?:^|[\n.;])\s*in\s*:\s*\S[\s\S]*?(?:^|[\n.;])\s*out\s*:/i,
+    step: 'scope',
+  },
+  {
+    pattern: /(?:^|[\n.])\s*success(?:\s+criteria)?\s*:/i,
+    step: 'success',
+  },
+  {
+    pattern: /(?:^|[\n.])\s*milestones?\s*:/i,
+    step: 'milestones',
+  },
+  {
+    pattern: /(?:^|[\n.])\s*(?:members?|participants?)\s*:/i,
+    step: 'members',
+  },
+  {
+    pattern: /(?:^|[\n.])\s*lead\s*:/i,
+    step: 'lead',
+  },
+  {
+    pattern: /(?:^|[\n.])\s*target(?:\s+date)?\s*:/i,
+    step: 'targetDate',
+  },
+  {
+    pattern: /(?:^|[\n.])\s*(?:quest\s+)?rewards?\s*:/i,
+    step: 'rewards',
+  },
+  {
+    pattern: /(?:^|[\n.])\s*goal\s*:/i,
+    step: 'goal',
+  },
+  {
+    pattern: /(?:^|[\n.])\s*(?:quest\s+name|quest\s+title|name|title)\s*:/i,
+    step: 'name',
+  },
+];
+
+/** The section a labeled payload is for, or null when the message has no field label. */
+export function labeledQuestDraftSection(
+  text: string,
+): QuestStewardStep | null {
+  return labeledSectionStep(text);
+}
+
+function labeledSectionMatch(
+  text: string,
+): { index: number; step: QuestStewardStep } | null {
+  let best: { index: number; step: QuestStewardStep } | null = null;
+  for (const { pattern, step } of LABELED_SECTION_PATTERNS) {
+    const match = pattern.exec(text);
+    if (match == null) continue;
+    if (!best || match.index < best.index) {
+      best = { index: match.index, step };
+    }
+  }
+  return best;
+}
+
+function labeledSectionStep(text: string): QuestStewardStep | null {
+  return labeledSectionMatch(text)?.step ?? null;
+}
+
+function lineHasCalendarDate(line: string): boolean {
+  return new RegExp(
+    `\\b\\d{1,2}\\s*(?:${MILESTONE_MONTH})\\s*\\d{4}\\b|\\b(?:${MILESTONE_MONTH})\\s*\\d{1,2},?\\s*\\d{4}\\b|\\b\\d{4}-\\d{2}-\\d{2}\\b`,
+    'i',
+  ).test(line);
+}
+
+/**
+ * A milestone list, not a passing mention of the word.
+ * "Exactly 3 milestones: M1 …", two M-labels, or dash lines of title - date - owner.
+ */
+function messageTargetsMilestones(text: string): boolean {
+  if ((text.match(/\bM\d+\b/gi) ?? []).length >= 2) return true;
+  if (
+    new RegExp(
+      `\\b(?:exactly|only|just)\\s+(?:${MILESTONE_COUNT})\\s+milestones?\\b|\\b(?:${MILESTONE_COUNT})\\s+milestones?\\s*:|^\\s*milestones?\\s*:`,
+      'im',
+    ).test(text)
+  ) {
+    return true;
+  }
+  const datedDashLines = text
+    .split(/\n+|;\s*/)
+    .map((line) => line.trim())
+    .filter((line) => /\s[-–—]\s/.test(line) && lineHasCalendarDate(line));
+  return datedDashLines.length >= 2;
+}
+
+function asksToReviseWording(text: string): boolean {
+  return (
+    /\b(?:rewrite|reword|revise|rephrase|shorten|tighten)\b/i.test(text) ||
+    /\bshorter\s+version\b/i.test(text) ||
+    /\bmake\s+(?:it|this|that|the\s+[a-z]+)\s+shorter\b/i.test(text) ||
+    /\b(?:drop|remove|cut)\s+the\s+word\b/i.test(text) ||
+    /\b(?:remove|drop|cut)\s+(?:the\s+)?(?:first\s+|last\s+|that\s+|this\s+)?(?:bullet|line|item)\b/i.test(
+      text,
+    ) ||
+    /\b(?:propose|suggest)\b[\s\S]{0,80}\b(?:shorter|revised|rewritten|reworded|wording|version)\b/i.test(
+      text,
+    )
+  );
+}
+
+function droppedWord(text: string): string | null {
+  return (
+    /\b(?:drop|remove|cut)\s+the\s+word\s+([a-z][a-z-]*)\b/i
+      .exec(text)?.[1]
+      ?.toLowerCase() ?? null
+  );
+}
+
+function sectionIsDroppedWord(
+  step: QuestStewardStep,
+  word: string | null,
+): boolean {
+  if (!word) return false;
+  if (step === 'lead') return word === 'lead';
+  if (step === 'goal') return word === 'goal';
+  if (step === 'scope') return word === 'scope';
+  if (step === 'name') return word === 'name' || word === 'title';
+  if (step === 'members') return word === 'member' || word === 'members';
+  if (step === 'milestones') {
+    return word === 'milestone' || word === 'milestones';
+  }
+  if (step === 'rewards') return word === 'reward' || word === 'rewards';
+  if (step === 'success') return word === 'success' || word === 'criteria';
+  if (step === 'targetDate') return word === 'date';
+  return false;
+}
+
+function sectionsMentioned(text: string): QuestStewardStep[] {
+  const found: QuestStewardStep[] = [];
+  const pattern = new RegExp(`\\b(${SECTION_NAME})\\b`, 'gi');
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(text)) !== null) {
+    const step = stepFromSectionName(match[1] ?? '');
+    if (step && !found.includes(step)) found.push(step);
+    if (match[0].length === 0) break;
+  }
+  return found;
+}
+
+/**
+ * The one section a natural revision may propose. A named section wins.
+ * "Make it shorter" continues the suggestion already waiting. Several
+ * named sections are not one revision.
+ */
+export function questWordingRevisionStep(
+  message: string,
+  pendingStep: QuestStewardStep | null,
+): QuestStewardStep | null {
+  const text = textOutsideCommandedPayload(message.trim());
+  if (!text || !asksToReviseWording(text)) return null;
+  const ignored = droppedWord(text);
+  const named = sectionsMentioned(text).filter(
+    (step) => !sectionIsDroppedWord(step, ignored),
+  );
+  if (named.length > 1) return null;
+  if (named.length === 1) return named[0] ?? null;
+  return pendingStep;
+}
+
+const EDIT_REQUEST_VERB =
+  '(?:add(?:ing)?|put(?:ting)?|set(?:ting)?|updat(?:e|ing)|chang(?:e|ing)|includ(?:e|ing)|append(?:ing)?|insert(?:ing)?|remov(?:e|ing)|drop(?:ping)?|mov(?:e|ing)|reorder(?:ing)?|propos(?:e|ing)|suggest(?:ing)?)';
+
+/**
+ * An edit that names one section, including "Add \"…\" to Scope In".
+ * The section after to/into/on/for wins. A bare "add lead scoring" does not.
+ * A question and a request to fill every section do not.
+ */
+export function questEditRequestSection(
+  message: string,
+): QuestStewardStep | null {
+  const text = message.trim();
+  if (!text || /[?？]\s*$/.test(text) || isBulkQuestDraftRequest(text)) {
+    return null;
+  }
+  const targeted = new RegExp(
+    `\\b${EDIT_REQUEST_VERB}\\b[\\s\\S]{0,200}?\\b(?:to|into|on|for|under)\\s+(?:the\\s+)?(${SECTION_NAME})\\b`,
+    'i',
+  ).exec(text);
+  const direct = new RegExp(
+    `\\b${EDIT_REQUEST_VERB}\\s+(?:in(?:to)?|on|for|as|to)?\\s*(?:the\\s+)?(${SECTION_NAME})\\b(?=\\s*(?:to\\b|:|["“]))`,
+    'i',
+  ).exec(text);
+  const raw = targeted?.[1] ?? direct?.[1];
+  return raw ? stepFromSectionName(raw) : null;
+}
+
+/**
+ * A proposal or revision of one section. The first model call must file
+ * that section with the tool. A question, a coaching opener, and a
+ * multi-section request do not.
+ */
+export function questDraftMessageRequiresTool(
+  message: string,
+  pendingStep: QuestStewardStep | null,
+): boolean {
+  const text = message.trim();
+  if (!text || isBulkQuestDraftRequest(text)) return false;
+  if (/[?？]\s*$/.test(text)) return false;
+  if (questEditRequestSection(text)) return true;
+  if (labeledQuestDraftSection(text)) return true;
+  if (questWordingRevisionStep(text, pendingStep)) return true;
+  return /\b(?:draft|suggest|propose|write|fill(?:\s+in|\s+out)?|generate)\b/i.test(
+    text,
+  );
+}
+
+export function questRevisionNamesSeveralSections(message: string): boolean {
+  const text = textOutsideCommandedPayload(message.trim());
+  if (!asksToReviseWording(text)) return false;
+  const ignored = droppedWord(text);
+  return (
+    sectionsMentioned(text).filter(
+      (step) => !sectionIsDroppedWord(step, ignored),
+    ).length > 1
+  );
+}
+
+/**
+ * The section a new-quest message may write.
+ * A named section or a labeled payload wins over the tracker, which may
+ * already have moved on. Milestone-shaped content does too.
+ * A bulk "draft everything" request writes no section.
+ */
+export function resolveQuestDraftTarget(
+  message: string,
+  currentStep: QuestStewardStep,
+): QuestDraftTarget {
+  const text = message.trim();
+  if (!text) return { step: currentStep, bulk: false };
+  if (
+    isBulkQuestDraftRequest(text) ||
+    questRevisionNamesSeveralSections(text)
+  ) {
+    return { step: currentStep, bulk: true };
+  }
+  const edit = questEditRequestSection(text);
+  if (edit) return { step: edit, bulk: false };
+  const proposal = namedProposalContentSpan(text);
+  if (proposal) {
+    const named = sectionsMentioned(text.slice(0, proposal.start));
+    const step = named.length === 1 ? named[0] : null;
+    if (step) return { step, bulk: false };
+  }
+  const revised = questWordingRevisionStep(text, null);
+  if (revised) return { step: revised, bulk: false };
+  if (scopeBoundaryLists(text)) return { step: 'scope', bulk: false };
+  const named = explicitSectionName(text);
+  const namedStep = named ? stepFromSectionName(named) : null;
+  if (namedStep) return { step: namedStep, bulk: false };
+  const labeled = labeledSectionStep(text);
+  if (labeled) return { step: labeled, bulk: false };
+  if (messageTargetsMilestones(text)) {
+    return { step: 'milestones', bulk: false };
+  }
+  return { step: currentStep, bulk: false };
+}
+
+/**
+ * Section the model may propose on this turn. A follow-up that revises the
+ * waiting suggestion stays on that section after the tracker has moved on.
+ */
+export function questDraftCoachedStep(
+  message: string,
+  currentStep: QuestStewardStep,
+  pendingStep: QuestStewardStep | null,
+): QuestDraftTarget {
+  const target = resolveQuestDraftTarget(message, currentStep);
+  if (target.bulk) return target;
+  const revision = questWordingRevisionStep(message, pendingStep);
+  if (revision) return { step: revision, bulk: false };
+  return target;
+}
+
+const QUEST_STEP_PATCH_KEYS: Record<QuestStewardStep, readonly string[]> = {
+  goal: ['goal'],
+  scope: ['scopeIn', 'scopeOut'],
+  success: ['successCriteriaBullets'],
+  milestones: ['milestones'],
+  members: ['members'],
+  lead: ['leadName'],
+  targetDate: ['targetDate'],
+  rewards: ['rewards'],
+  name: ['name'],
+};
+
+/**
+ * An existing quest is saved only for an explicit edit: a command verb, a
+ * section, and the text to store (to, a colon, or a quote). A question, a
+ * request to improve, or a sentence that merely starts with "add" stays in
+ * the chat, the same way a Context section agent answers without calling
+ * save_section_draft.
+ */
+const QUEST_EDIT_QUESTION =
+  /^(?:do you|does |is |are |can you|could you|would you|what |how |why |should )/i;
+
+export function questExistingTurnMayPersist(message: string): boolean {
+  const text = message.trim();
+  if (!text || text.endsWith('?')) return false;
+  if (QUEST_EDIT_QUESTION.test(text)) return false;
+  return COMMANDED_SECTION.test(text);
+}
+
+/**
+ * The one section an existing-quest command may save.
+ * The words inside the quoted text do not make it a bulk draft.
+ */
+export function existingQuestEditSection(
+  message: string,
+): QuestStewardStep | null {
+  if (!questExistingTurnMayPersist(message)) return null;
+  const named = COMMANDED_SECTION.exec(message.trim())?.[1];
+  return named ? stepFromSectionName(named) : null;
+}
+
+function patchFieldHasValue(value: unknown): boolean {
+  if (value == null) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+}
+
+/**
+ * The one section present on a tool patch, or null when it is empty or
+ * mixes two sections.
+ */
+export function questDraftPatchSection(
+  patch: object | null | undefined,
+): QuestStewardStep | null {
+  if (!patch) return null;
+  const record = patch as Record<string, unknown>;
+  const steps = new Set<QuestStewardStep>();
+  for (const step of Object.keys(QUEST_STEP_PATCH_KEYS) as QuestStewardStep[]) {
+    if (
+      QUEST_STEP_PATCH_KEYS[step].some((key) => patchFieldHasValue(record[key]))
+    ) {
+      steps.add(step);
+    }
+  }
+  if (steps.size !== 1) return null;
+  return [...steps][0] ?? null;
+}
+
+/**
+ * Keep only the fields for the section the Quest Helper is coaching.
+ * A goal answer must not also write scope, milestones, or rewards.
+ */
+export function limitQuestPatchToStep<T extends object>(
+  patch: T,
+  step: QuestStewardStep,
+): Partial<T> {
+  const allowed = new Set<string>(QUEST_STEP_PATCH_KEYS[step]);
+  const next: Partial<T> = {};
+  for (const key of Object.keys(patch) as (keyof T)[]) {
+    if (!allowed.has(key as string)) continue;
+    const value = patch[key];
+    if (value == null) continue;
+    if (typeof value === 'string' && value.trim().length === 0) continue;
+    if (Array.isArray(value) && value.length === 0) continue;
+    next[key] = value;
+  }
+  return next;
+}

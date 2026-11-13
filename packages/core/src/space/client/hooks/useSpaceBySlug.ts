@@ -3,6 +3,7 @@
 import { Space } from '@hypha-platform/core/client';
 import React from 'react';
 import useSWR from 'swr';
+import { fetchJson } from '../../../common/fetch-json';
 
 type UseSpaceBySlugReturn = {
   space?: Space;
@@ -16,7 +17,7 @@ export const useSpaceBySlug = (spaceSlug: string): UseSpaceBySlugReturn => {
   );
   const { data: space, isLoading } = useSWR(
     spaceSlug ? endpoint : null,
-    (endpoint) => fetch(endpoint).then((res) => res.json()),
+    (endpoint) => fetchJson<Space>(endpoint, undefined, 'space'),
   );
   return { space, isLoading };
 };

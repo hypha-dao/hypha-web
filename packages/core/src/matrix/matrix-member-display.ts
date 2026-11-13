@@ -121,15 +121,22 @@ export function pickUserVisibleMemberLabel(
   return null;
 }
 
-/** Hypha profile or Matrix display name, then a shortened id. */
+/**
+ * Hypha profile or Matrix display name, then a shortened id.
+ * Bridged Privy locals stay hidden — return empty so callers can show
+ * "Unknown member" instead of `@prod_privy…`.
+ */
 export function visibleMatrixMemberName(
   matrixUserId: string,
   ...candidates: Array<string | undefined | null>
 ): string {
-  return (
-    pickUserVisibleMemberLabel(matrixUserId, ...candidates) ??
-    shortenMatrixIdForDisplay(matrixUserId)
-  );
+  const picked = pickUserVisibleMemberLabel(matrixUserId, ...candidates);
+  if (picked) return picked;
+  const shortened = shortenMatrixIdForDisplay(matrixUserId);
+  if (needsHyphaProfileResolutionForMatrixLabel(shortened)) {
+    return '';
+  }
+  return shortened;
 }
 
 /** Matrix `m.room.member` displayname can mirror the ugly localpart — treat as absent. */

@@ -42,6 +42,19 @@ import { integrationClients } from './integration-client';
 import { integrationGrants } from './integration-grant';
 import { notificationProcessedEvents } from './notification-processed-events';
 import { spaceMemberInvites } from './space-member-invite';
+import {
+  spaceContextAgentMemories,
+  spaceContextSectionMessages,
+  spaceContextSections,
+} from './space-context';
+import {
+  spaceQuests,
+  spaceQuestDrafts,
+  spaceQuestMilestones,
+  spaceQuestMembers,
+  spaceQuestDeliverables,
+  spaceQuestUpdates,
+} from './space-quests';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
@@ -72,6 +85,8 @@ export * from './integration-client';
 export * from './integration-grant';
 export * from './notification-processed-events';
 export * from './space-member-invite';
+export * from './space-context';
+export * from './space-quests';
 
 export const schema = {
   documents,
@@ -112,4 +127,13 @@ export const schema = {
   integrationGrants,
   notificationProcessedEvents,
   spaceMemberInvites,
+  spaceContextSections,
+  spaceContextSectionMessages,
+  spaceContextAgentMemories,
+  spaceQuests,
+  spaceQuestDrafts,
+  spaceQuestMilestones,
+  spaceQuestMembers,
+  spaceQuestDeliverables,
+  spaceQuestUpdates,
 };

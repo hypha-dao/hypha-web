@@ -135,6 +135,7 @@ export async function PUT(
         coherence: context.target,
         actor: voter,
         votingPowerPercent: payload.votingPowerPercent,
+        direction: payload.direction,
       },
       { db },
     );

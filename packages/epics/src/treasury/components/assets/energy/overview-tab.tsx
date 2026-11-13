@@ -16,6 +16,7 @@ import type { EnergyTabProps } from './energy-tab-props';
 import { energyAvatarLoading } from './energy-tab-props';
 
 export const EnergyOverviewTab = ({
+  spaceSlug,
   data,
   people,
   peopleLoading,
@@ -84,6 +85,7 @@ export const EnergyOverviewTab = ({
               return (
                 <ConsumerConsumptionCard
                   key={address}
+                  spaceSlug={spaceSlug}
                   address={address}
                   displayName={display.displayName}
                   avatarUrl={display.avatarUrl}

@@ -10,7 +10,10 @@ import {
 } from '@hypha-platform/storage-postgres';
 import type { DbConfig } from '../../server';
 import { humanizeMemoryExcerpt } from '../../org-memory/space-memory-display';
+import { previewCallTranscriptText } from '../../org-memory/call-transcript-preview';
+import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
 import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
+import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 
 export type IngestSpaceCallArtifactsInput = {
   spaceSlug: string;
@@ -51,12 +54,7 @@ type MatrixTimelineEvent = {
 };
 
 function summarizeTranscriptText(text: string): string {
-  const compact = text.replace(/\s+/g, ' ').trim();
-  if (!compact) return '';
-  if (compact.length <= 320) return compact;
-  const cut = compact.slice(0, 320);
-  const stop = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '));
-  return (stop > 120 ? cut.slice(0, stop + 1) : `${cut}...`).trim();
+  return previewCallTranscriptText(text);
 }
 
 function normalizeRecordingMediaUri(value: string): string | null {
@@ -554,6 +552,63 @@ export async function getSpaceCallArtifactById(
     )
     .limit(1);
   return row ?? null;
+}
+
+export type SpaceCallTranscriptDetail = {
+  id: number;
+  call_session_id: string;
+  language: string;
+  text: string;
+  occurred_at: string;
+};
+
+/**
+ * Full transcript text for the Space Memory detail view. Off-chain spaces have
+ * no on-chain visibility rule, so they require a signed-in member.
+ */
+export async function getSpaceCallTranscriptForMember(
+  { spaceSlug, transcriptId }: { spaceSlug: string; transcriptId: number },
+  { db, authToken }: DbConfig & { authToken?: string },
+): Promise<
+  | { access: 'ok'; transcript: SpaceCallTranscriptDetail | null }
+  | { access: 'denied'; message: string; httpStatus: number }
+> {
+  const host = await findSpaceHostFieldsBySlug({ slug: spaceSlug }, { db });
+  if (!host) return { access: 'ok', transcript: null };
+
+  if (host.web3SpaceId != null && !canConvertToBigInt(host.web3SpaceId)) {
+    return {
+      access: 'denied',
+      message: `Space "${host.slug}" has an invalid on-chain space id.`,
+      httpStatus: 403,
+    };
+  }
+  const gate = await checkSpaceAccessForSpace(host, authToken, {
+    requireMembershipWhenOffChain: true,
+  });
+  if (!gate.hasAccess) {
+    return {
+      access: 'denied',
+      message: gate.message,
+      httpStatus: gate.httpStatus,
+    };
+  }
+
+  const row = (await getSpaceCallArtifactById(
+    { kind: 'transcript', id: transcriptId, spaceId: host.id },
+    { db },
+  )) as SpaceCallTranscriptRow | null;
+  if (!row) return { access: 'ok', transcript: null };
+  return {
+    access: 'ok',
+    transcript: {
+      id: row.id,
+      call_session_id: row.callSessionId,
+      language: row.language,
+      text: row.text,
+      occurred_at: row.createdAt.toISOString(),
+    },
+  };
 }
 
 function clampRetentionDays(

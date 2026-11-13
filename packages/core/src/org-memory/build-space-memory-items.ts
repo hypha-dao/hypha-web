@@ -38,6 +38,8 @@ export type SpaceMemoryItem = {
     signalTitle?: string;
     /** Matrix room or space chat label for the call, when known. */
     roomTitle?: string;
+    /** `space_call_transcripts.id` — loads the full transcript; the excerpt is only a preview. */
+    callTranscriptId?: number;
   };
 };
 
@@ -507,6 +509,9 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
           contextTitle: signalTitle ?? roomTitle ?? contextTitle,
           signalTitle,
           roomTitle,
+          ...(a.source === 'call_transcript' && a.call_transcript_id != null
+            ? { callTranscriptId: a.call_transcript_id }
+            : {}),
         },
       });
     }

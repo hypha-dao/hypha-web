@@ -2,6 +2,7 @@
 
 import type { ElementType } from 'react';
 import {
+  BookOpen,
   Circle,
   FileText,
   Globe2,
@@ -9,6 +10,7 @@ import {
   MessageSquare,
   MessagesSquare,
   Radio,
+  Scroll,
   Target,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -18,7 +20,13 @@ import { INBOX_FILTERS, type InboxFilter } from './messages-inbox';
 
 type FilterCounts = Record<InboxFilter, { total: number; unread: number }>;
 
-const NESTED = new Set<InboxFilter>(['rooms', 'proposals', 'signals']);
+const NESTED = new Set<InboxFilter>([
+  'rooms',
+  'proposals',
+  'signals',
+  'quests',
+  'context',
+]);
 
 /** Same marks the rest of the app already uses for these places. */
 const FILTER_ICONS: Record<InboxFilter, ElementType> = {
@@ -28,6 +36,8 @@ const FILTER_ICONS: Record<InboxFilter, ElementType> = {
   rooms: Circle,
   proposals: FileText,
   signals: Radio,
+  quests: Scroll,
+  context: BookOpen,
   ecosystem: Target,
   network: Globe2,
 };
@@ -80,7 +90,10 @@ function FilterRow({
             {title}
           </span>
           <span className="ml-auto flex shrink-0 items-center gap-2">
-            <span className="text-1 text-muted-foreground">{total}</span>
+            {/* Hide 0 while Matrix is still catching up and for empty filters. */}
+            {total > 0 ? (
+              <span className="text-1 text-muted-foreground">{total}</span>
+            ) : null}
             {unread > 0 ? (
               <span
                 className="grid h-5 min-w-5 place-items-center rounded-full bg-foreground px-1.5 text-[10px] leading-none text-background"

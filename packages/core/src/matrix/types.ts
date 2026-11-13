@@ -75,6 +75,11 @@ export type MessageMediaBundleItem = {
 export interface Message {
   id: string;
   sender: string;
+  /**
+   * False while Matrix still holds a local echo (sending / queued / failed).
+   * True once the homeserver has acknowledged the event (`event.status` null).
+   */
+  sendAcknowledged?: boolean;
   /** Synthetic row from a redaction handler: remove this timeline id from UI. */
   redacted?: boolean;
   /** Matrix msgtype for timeline rendering (`m.text` is implicit when omitted). */
@@ -87,6 +92,11 @@ export interface Message {
    */
   formattedContentHtml?: string;
   timestamp: Date;
+  /**
+   * True when this root message has been edited (`m.replace` / replacingEventId).
+   * The timeline keeps the original event id; content is the latest body.
+   */
+  edited?: boolean;
   pinned?: boolean;
   /** Matrix rich reply: event_id of the message being replied to. */
   inReplyToEventId?: string;

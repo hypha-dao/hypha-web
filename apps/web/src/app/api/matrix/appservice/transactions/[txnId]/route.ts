@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { recountSignalDiscussionByRoomId } from '@hypha-platform/core/server';
 import {
   getSuppressedBotUserIds,
   receiveTransaction,
@@ -54,6 +55,9 @@ export async function PUT(
         db,
         dispatch: chatNotificationDispatch,
         botUserIds: getSuppressedBotUserIds(),
+        onSignalDiscussion: async (roomId) => {
+          await recountSignalDiscussionByRoomId({ roomId }, { db });
+        },
       },
     );
     // Spec-required ACK body is `{}`; include counts for observability (Dendrite ignores extras).

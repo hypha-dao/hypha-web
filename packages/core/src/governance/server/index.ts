@@ -5,6 +5,7 @@ export * from './get-org-memory-by-space-slug';
 export * from './get-token-holdings-by-space-slug';
 export * from './fetch-org-memory-asset';
 export * from './resolve-document-proposal-status';
+export * from './proposal-ids-withdrawn';
 export * from './call-artifacts';
 export * from './decode-join-request-proposal';
 export * from './extract-deployed-token-from-receipt';

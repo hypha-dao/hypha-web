@@ -1,7 +1,9 @@
 'use client';
 
+import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 import {
+  getMySignalVotingPowerAction,
   removeCoherenceUpvoteAction,
   upvoteCoherenceAction,
 } from '../../server/actions';
@@ -20,7 +22,15 @@ export const useCoherenceUpvoteMutations = (authToken?: string | null) => {
     authToken ? [authToken, 'upvoteCoherence'] : null,
     async (
       [authToken],
-      { arg }: { arg: { slug: string; votingPowerPercent?: number } },
+      {
+        arg,
+      }: {
+        arg: {
+          slug: string;
+          votingPowerPercent?: number;
+          direction?: 'up' | 'down';
+        };
+      },
     ) => upvoteCoherenceAction(arg, { authToken }),
   );
 
@@ -42,4 +52,25 @@ export const useCoherenceUpvoteMutations = (authToken?: string | null) => {
     isRemovingUpvote,
     removeUpvoteError,
   };
+};
+
+/** The signed-in member's current voting power in a space (raw units). */
+export const useMySignalVotingPower = ({
+  spaceSlug,
+  authToken,
+}: {
+  spaceSlug?: string | null;
+  authToken?: string | null;
+}) => {
+  const slug = spaceSlug?.trim() || null;
+  const { data, isLoading, error } = useSWR(
+    slug && authToken ? [authToken, slug, 'mySignalVotingPower'] : null,
+    ([token, resolvedSlug]) =>
+      getMySignalVotingPowerAction(
+        { spaceSlug: resolvedSlug },
+        { authToken: token },
+      ),
+    { revalidateOnFocus: false },
+  );
+  return { votingPower: data ?? null, isLoading, error };
 };

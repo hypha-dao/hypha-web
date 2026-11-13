@@ -16,6 +16,7 @@ const menuKeys = [
   'overview',
   'coherence',
   'agreements',
+  'quests',
   'members',
   'treasury',
 ] as const;
@@ -23,7 +24,7 @@ const menuKeys = [
 describe('buildSpaceSectionNavItems', () => {
   it('keeps the menu to home, signals, agreements, members, and treasury', () => {
     const items = buildSpaceSectionNavItems(base);
-    expect(items.map((item) => item.key)).toEqual([...menuKeys]);
+    expect(items.map((item) => item.key)).toEqual([...menuKeys, 'context']);
     expect(
       items.every((item) => item.group === SPACE_SECTION_NAV_GROUP[item.key]),
     ).toBe(true);
@@ -37,7 +38,11 @@ describe('buildSpaceSectionNavItems', () => {
       ...base,
       memoryEnabled: true,
     });
-    expect(items.map((item) => item.key)).toEqual([...menuKeys, 'memory']);
+    expect(items.map((item) => item.key)).toEqual([
+      ...menuKeys,
+      'memory',
+      'context',
+    ]);
   });
 
   it('omits signals when coherence is off', () => {
@@ -59,9 +64,11 @@ describe('buildSpaceSectionNavItems', () => {
       'coherence',
       'pipeline',
       'agreements',
+      'quests',
       'members',
       'treasury',
       'memory',
+      'context',
     ]);
   });
 
@@ -78,9 +85,11 @@ describe('buildSpaceSectionNavItems', () => {
       'coherence',
       'pipeline',
       'agreements',
+      'quests',
       'members',
       'treasury',
       'memory',
+      'context',
     ]);
     expect(items.find((item) => item.key === 'energy')?.href).toBe(
       '/en/dho/hypha/energy',
@@ -114,6 +123,7 @@ describe('buildSpaceSectionNavItems', () => {
       'members',
       'treasury',
       'memory',
+      'context',
     ];
     for (const key of keys) {
       const items = buildSpaceSectionNavItems({
@@ -182,7 +192,11 @@ describe('partitionSpaceSectionNavForTabs', () => {
     const { primary, more } = partitionSpaceSectionNavForTabs(
       buildSpaceSectionNavItems({ ...base, memoryEnabled: true }),
     );
-    expect(primary.map((item) => item.key)).toEqual([...menuKeys, 'memory']);
+    expect(primary.map((item) => item.key)).toEqual([
+      ...menuKeys,
+      'memory',
+      'context',
+    ]);
     expect(more).toEqual([]);
   });
 

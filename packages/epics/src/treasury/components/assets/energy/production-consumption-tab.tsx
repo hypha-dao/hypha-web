@@ -27,8 +27,10 @@ export const PRODUCTION_DEFAULT_TIMEFRAME: Timeframe = '7d';
 
 export const ProductionConsumptionTab = ({
   data,
+  spaceSlug,
 }: {
   data: SpaceEnergyResponse;
+  spaceSlug: string;
 }) => {
   const locale = useLocale();
   const t = useTranslations('Energy.productionConsumption');
@@ -40,7 +42,7 @@ export const ProductionConsumptionTab = ({
     data: telemetry,
     isLoading: telemetryLoading,
     error: telemetryError,
-  } = useSpaceEnergyTelemetry(timeframe);
+  } = useSpaceEnergyTelemetry(timeframe, spaceSlug);
 
   const sourceFallback = tShared('source');
 

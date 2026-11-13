@@ -2,7 +2,7 @@
 
 import { FC } from 'react';
 import { Text } from '@radix-ui/themes';
-import { Checkbox, Combobox, SectionLoadMore } from '@hypha-platform/ui';
+import { Combobox, SectionLoadMore } from '@hypha-platform/ui';
 import { COHERENCE_ORDERS, CoherenceOrder } from '../types';
 import { ConversationGridContainer } from './conversation-grid.container';
 import { useConversationsSection } from '../hooks/use-conversations-section';
@@ -22,9 +22,7 @@ type ConversationSectionProps = {
   isLoading: boolean;
   firstPageSize?: number;
   pageSize?: number;
-  hideArchived: boolean;
   order?: CoherenceOrder;
-  setHideArchived: (checked: boolean) => void;
   refresh: () => Promise<void>;
 };
 
@@ -57,9 +55,7 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
   isLoading,
   firstPageSize = 3,
   pageSize = 3,
-  hideArchived,
   order = 'mostrecent',
-  setHideArchived,
   refresh,
 }) => {
   const t = useTranslations('CoherenceTab');
@@ -119,23 +115,6 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
               allowEmptyChoice={false}
               disabled={isLoading}
             />
-            <div className="flex flex-row gap-2 h-full">
-              <Checkbox
-                id="hideArchivedCheckbox"
-                className="self-center"
-                checked={hideArchived}
-                onCheckedChange={(value) => {
-                  setHideArchived(value === true);
-                }}
-                disabled={isLoading}
-              />
-              <label
-                className="text-[14px] self-center"
-                htmlFor="hideArchivedCheckbox"
-              >
-                {t('hideArchived')}
-              </label>
-            </div>
           </div>
         }
       />

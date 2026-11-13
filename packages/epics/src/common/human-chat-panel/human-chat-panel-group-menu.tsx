@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
 import { useDebounce } from 'use-debounce';
@@ -20,10 +20,15 @@ import {
   GROUP_ROOM_NAME_MAX,
   MEMBER_CONNECTION_MAX,
   isArchivedGroupRoom,
+  isHyphaBotMatrixIdentity,
+  looksLikeTechnicalMatrixDisplayName,
+  matrixMemberDisplayLabel,
   normalizeGroupRoomName,
+  uniqueCanonicalPrivySubsFromMxids,
   useJwt,
   useMatrix,
   useMatrixUserIdsByPersonIds,
+  usePeopleBySubs,
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
 import {
@@ -50,9 +55,13 @@ import {
 } from '@hypha-platform/ui';
 
 import {
+  addPeopleCandidateStatus,
   addablePeopleForGroup,
+  fetchMessageDirectorySearch,
   isRememberedGroupChatRoom as isLocalGroupCreator,
+  personIdsForMatrixLookup,
   rememberGroupChatMembers,
+  selectedPeopleMissingMatrixId,
 } from '../../people/components/member-connections';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { openDialogAfterMenu } from './open-dialog-after-menu';
@@ -83,6 +92,7 @@ export function HumanChatPanelGroupMenu({
   onUnarchived?: () => void;
 }) {
   const t = useTranslations('HumanChatPanel');
+  const tConnections = useTranslations('Connections');
   const { jwt } = useJwt();
   const { client, ensureRoomMembers } = useMatrix();
   const selfId = client?.getUserId() ?? null;
@@ -107,63 +117,177 @@ export function HumanChatPanelGroupMenu({
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [debouncedAddQuery] = useDebounce(addQuery.trim(), 200);
 
-  const { data: home } = useSWR<MemberIntelligence | null>(
+  // Shared-space page stays up while a search is in flight. Typing used to
+  // replace this request, so a search ran against an empty directory.
+  const {
+    data: directoryHome,
+    error: directoryError,
+    isLoading: directoryLoading,
+    isValidating: directoryValidating,
+  } = useSWR<MemberIntelligence>(
     addOpen && jwt
-      ? ['/api/v1/people/me/intelligence', jwt, 'add-people', debouncedAddQuery]
+      ? ['/api/v1/people/me/intelligence', jwt, 'add-people-directory']
       : null,
-    async ([url, token, , q]: [string, string, string, string]) => {
-      const params = new URLSearchParams();
-      if (q) params.set('q', q);
-      else params.set('connections', String(MEMBER_CONNECTION_MAX));
-      const response = await fetch(`${url}?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) return null;
+    async ([url, token]: [string, string]) => {
+      const response = await fetch(
+        `${url}?connections=${MEMBER_CONNECTION_MAX}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!response.ok) throw new Error('directory');
       return (await response.json()) as MemberIntelligence;
     },
+    { shouldRetryOnError: false, revalidateOnFocus: false },
   );
-  const connections = home?.connections ?? [];
-  const directoryRef = useRef<ConnectionPerson[]>([]);
-  if (!debouncedAddQuery && connections.length > 0) {
-    directoryRef.current = connections;
-  }
-  const directory =
-    directoryRef.current.length > 0 ? directoryRef.current : connections;
-  const { personIdToMatrixUserId } = useMatrixUserIdsByPersonIds({
-    personIds: [
-      ...directory.map((person) => person.id),
-      ...connections.map((person) => person.id),
-    ],
-  });
-  const roomMemberIds = useMemo(() => {
+  const [searchHits, setSearchHits] = useState<ConnectionPerson[] | null>(null);
+  const [searchFailed, setSearchFailed] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const selectedLabels = useRef(new Map<number, string>());
+  useEffect(() => {
+    const term = debouncedAddQuery.trim();
+    if (!addOpen || !jwt || !term) {
+      setSearchHits(null);
+      setSearchFailed(false);
+      setSearching(false);
+      return;
+    }
+    const controller = new AbortController();
+    setSearching(true);
+    void (async () => {
+      try {
+        const result = await fetchMessageDirectorySearch(term, {
+          headers: { Authorization: `Bearer ${jwt}` },
+          signal: controller.signal,
+        });
+        if (!controller.signal.aborted) {
+          setSearchHits(result.people);
+          setSearchFailed(result.failed);
+        }
+      } catch (searchError) {
+        if (
+          searchError instanceof DOMException &&
+          searchError.name === 'AbortError'
+        ) {
+          return;
+        }
+        if (!controller.signal.aborted) {
+          setSearchHits([]);
+          setSearchFailed(true);
+        }
+      } finally {
+        if (!controller.signal.aborted) setSearching(false);
+      }
+    })();
+    return () => controller.abort();
+  }, [addOpen, debouncedAddQuery, jwt]);
+  const directory = directoryHome?.connections ?? [];
+  const directoryPending =
+    directoryLoading || (directoryValidating && directoryHome == null);
+  const directoryFailed =
+    Boolean(addOpen && jwt) &&
+    !directoryPending &&
+    (directoryError != null || directoryHome == null);
+  const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
+    useMatrixUserIdsByPersonIds({
+      personIds: personIdsForMatrixLookup([
+        directory.map((person) => person.id),
+        (searchHits ?? []).map((person) => person.id),
+        [...selected],
+        directoryHome?.person.id != null ? [directoryHome.person.id] : [],
+      ]),
+    });
+  const roomMembers = useMemo(() => {
     const current = client?.getRoom(roomId);
     const ids = new Set<string>();
+    const joined: { userId: string; label: string | null }[] = [];
     for (const member of current?.getMembers() ?? []) {
       if (member.membership !== 'join' && member.membership !== 'invite') {
         continue;
       }
-      const id = member.userId?.trim().toLowerCase();
-      if (id) ids.add(id);
+      const userId = member.userId?.trim();
+      if (!userId) continue;
+      ids.add(userId.toLowerCase());
+      if (isHyphaBotMatrixIdentity(userId)) continue;
+      const raw = matrixMemberDisplayLabel(member, userId);
+      joined.push({
+        userId,
+        label: looksLikeTechnicalMatrixDisplayName(raw, userId) ? null : raw,
+      });
     }
-    return ids;
-  }, [addOpen, archiveCheck, client, roomId]);
-  const addablePeople = useMemo(
-    () =>
-      addablePeopleForGroup(
-        directory,
-        debouncedAddQuery ? connections : null,
-        personIdToMatrixUserId,
-        roomMemberIds,
-        addQuery,
-      ),
-    [
-      addQuery,
-      connections,
-      debouncedAddQuery,
+    const self = selfId?.trim();
+    if (self) ids.add(self.toLowerCase());
+    return { ids, joined };
+  }, [addOpen, archiveCheck, client, roomId, selfId]);
+  const roomMemberIds = roomMembers.ids;
+  const memberSubs = useMemo(
+    () => uniqueCanonicalPrivySubsFromMxids([...roomMemberIds]),
+    [roomMemberIds],
+  );
+  const { peopleBySub, isLoading: memberProfilesLoading } = usePeopleBySubs({
+    subs: addOpen ? memberSubs : [],
+  });
+  const memberProfilesPending = addOpen && memberProfilesLoading;
+  const addablePeople = useMemo(() => {
+    const caller = directoryHome?.person;
+    const occupants = [
+      ...roomMembers.joined.map((member) => ({
+        matrixUserId: member.userId,
+        label: member.label,
+      })),
+      ...[...peopleBySub.values()].map((person) => ({
+        personId: person.id,
+        slug: person.slug,
+        label:
+          [person.name, person.surname].filter(Boolean).join(' ').trim() ||
+          person.nickname,
+      })),
+      ...(caller
+        ? [
+            {
+              personId: caller.id,
+              slug: caller.slug,
+              address: caller.address,
+              label:
+                [caller.name, caller.surname]
+                  .filter(Boolean)
+                  .join(' ')
+                  .trim() || caller.nickname,
+            },
+          ]
+        : []),
+    ];
+    return addablePeopleForGroup(
       directory,
+      debouncedAddQuery ? searchHits : null,
       personIdToMatrixUserId,
       roomMemberIds,
-    ],
+      addQuery,
+      occupants,
+    );
+  }, [
+    addQuery,
+    debouncedAddQuery,
+    directory,
+    directoryHome?.person,
+    peopleBySub,
+    personIdToMatrixUserId,
+    roomMemberIds,
+    roomMembers.joined,
+    searchHits,
+  ]);
+  const listStatus = addPeopleCandidateStatus({
+    query: addQuery,
+    debouncedQuery: debouncedAddQuery,
+    // Member profiles supply the person id and name used to hide people who
+    // are already in the room. Showing the list before that arrives flashes
+    // those members as add candidates.
+    directoryLoaded: directoryHome != null && !memberProfilesPending,
+    directoryFailed: directoryFailed && !memberProfilesPending,
+    searching: searching || memberProfilesPending,
+    searchFailed,
+    matchCount: memberProfilesPending ? 0 : addablePeople.length,
+  });
+  const selectedMissingMatrixId = [...selected].some(
+    (id) => !personIdToMatrixUserId[id]?.trim(),
   );
 
   if (!room || !isPeopleGroupChatRoom(room)) return null;
@@ -185,6 +309,7 @@ export function HumanChatPanelGroupMenu({
 
   function openAddPeople() {
     setSelected(new Set());
+    selectedLabels.current.clear();
     setAddQuery('');
     setError(null);
     openDialogAfterMenu(() => setAddOpen(true));
@@ -276,12 +401,37 @@ export function HumanChatPanelGroupMenu({
       const mxid = personIdToMatrixUserId[id]?.trim();
       return mxid ? [mxid] : [];
     });
-    if (memberIds.length === 0) return;
+    if (memberIds.length !== selected.size) {
+      const labels: Record<number, string> = {};
+      for (const [id, label] of selectedLabels.current) labels[id] = label;
+      const names = selectedPeopleMissingMatrixId(
+        [...selected],
+        personIdToMatrixUserId,
+        labels,
+      );
+      setError(
+        names.length > 0
+          ? t('addPeopleMissingMatrix', { names: names.join(', ') })
+          : t('addPeopleFailed'),
+      );
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
       rememberGroupChatMembers(roomId, memberIds);
-      await ensureRoomMembers(roomId, memberIds);
+      // The result can also list older pending invitees; only the people
+      // picked here decide whether this add failed.
+      const notJoined = new Set(await ensureRoomMembers(roomId, memberIds));
+      const failedPersonIds = [...selected].filter((id) => {
+        const mxid = personIdToMatrixUserId[id]?.trim();
+        return mxid ? notJoined.has(mxid) : false;
+      });
+      if (failedPersonIds.length > 0) {
+        setSelected(new Set(failedPersonIds));
+        setError(t('addPeopleFailed'));
+        return;
+      }
       setAddOpen(false);
       setSelected(new Set());
     } catch {
@@ -406,10 +556,14 @@ export function HumanChatPanelGroupMenu({
             placeholder={t('addPeopleSearch')}
           />
           <div className="max-h-72 overflow-y-auto border border-border">
-            {addablePeople.length === 0 ? (
+            {listStatus !== 'results' ? (
               <p className="p-3 text-sm text-muted-foreground">
-                {addQuery.trim()
+                {listStatus === 'loading'
+                  ? tConnections('loading')
+                  : listStatus === 'no-matches'
                   ? t('addPeopleNoMatches')
+                  : listStatus === 'load-failed'
+                  ? t('addPeopleLoadFailed')
                   : t('addPeopleEmpty')}
               </p>
             ) : (
@@ -425,8 +579,14 @@ export function HumanChatPanelGroupMenu({
                     onClick={() => {
                       setSelected((current) => {
                         const next = new Set(current);
-                        if (next.has(person.id)) next.delete(person.id);
-                        else next.add(person.id);
+                        if (next.has(person.id)) {
+                          next.delete(person.id);
+                          selectedLabels.current.delete(person.id);
+                        } else {
+                          next.add(person.id);
+                          if (label)
+                            selectedLabels.current.set(person.id, label);
+                        }
                         return next;
                       });
                     }}
@@ -466,7 +626,11 @@ export function HumanChatPanelGroupMenu({
             </Button>
             <Button
               type="button"
-              disabled={busy || selected.size === 0}
+              disabled={
+                busy ||
+                selected.size === 0 ||
+                (matrixIdsLoading && selectedMissingMatrixId)
+              }
               onClick={() => void confirmAddPeople()}
             >
               {t('addPeopleConfirm')}

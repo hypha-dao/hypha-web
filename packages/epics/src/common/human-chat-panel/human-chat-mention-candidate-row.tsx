@@ -13,6 +13,7 @@ export type MentionCandidateRowProps = {
   /** When set (space roster row), fetch Person directly — skips Matrix→Privy link query. */
   privySub?: string;
   isActive: boolean;
+  className?: string;
   /** Legacy: no resolved Hypha name. Prefer {@link onPickResolved}. */
   onPick?: () => void;
   /**
@@ -34,6 +35,7 @@ export function HumanChatMentionCandidateRow({
   matrixFallbackAvatarUrl,
   privySub,
   isActive,
+  className,
   onPick,
   onPickResolved,
   onLabelResolved,
@@ -74,9 +76,10 @@ export function HumanChatMentionCandidateRow({
       title={resolvedName}
       disabled={pickDisabled}
       className={cn(
-        'flex w-full min-w-0 items-center gap-2.5 rounded-sm px-2 py-1.5 text-left text-sm',
+        'flex w-full min-w-0 items-center justify-start gap-2.5 rounded-sm px-2 py-1.5 text-left text-sm',
         busy && 'opacity-70',
         isActive ? 'bg-muted text-foreground' : 'hover:bg-muted/80',
+        className,
       )}
       onMouseDown={(ev) => ev.preventDefault()}
       onClick={handleClick}
@@ -89,7 +92,7 @@ export function HumanChatMentionCandidateRow({
         isLoading={busy}
         matrixUserId={matrixUserId}
       />
-      <span className="min-w-0 flex-1 truncate font-medium leading-snug">
+      <span className="min-w-0 flex-1 truncate text-left font-medium leading-snug">
         {resolvedName}
       </span>
     </button>

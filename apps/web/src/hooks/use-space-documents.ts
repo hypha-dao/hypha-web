@@ -9,6 +9,7 @@ import { useSpaceSlug } from './use-space-slug';
 import {
   Document,
   FilterParams,
+  fetchJson,
   getOrder,
   Order,
 } from '@hypha-platform/core/client';
@@ -48,7 +49,7 @@ export const useSpaceDocuments: UseDocuments = ({
 
   const { data: response, isLoading } = useSWR(
     [endpoint],
-    ([endpoint]) => fetch(endpoint).then((res) => res.json()),
+    ([endpoint]) => fetchJson(endpoint, undefined, 'space documents'),
     {
       revalidateOnFocus: true,
       refreshInterval: 10000,

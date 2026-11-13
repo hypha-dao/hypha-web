@@ -176,23 +176,25 @@ function buildRealtimeSpeakLanguageDirective(): string {
 }
 
 function buildRealtimeSpeakInstructions(text: string): string {
-  // Same relay instructions as LIVE: verbatim script, warm natural tone.
-  // Extra delivery coaching (bright/cheerful/young woman) changed rhythm.
+  // Silent ---CHAT_REPLY--- boundary (never say "script" — that word gets
+  // announced). Without a marker, Realtime invents lines instead of reading
+  // the bubble — including "Request completed" or false token sends.
   return [
     'CRITICAL OVERRIDE FOR THIS RESPONSE ONLY.',
     'Ignore any earlier briefing, space facts, or conversation summary for speech content.',
     'You are a voice output relay only. Do not call tools or add new information.',
-    'Your only job is text-to-speech of the SCRIPT below.',
-    'Speak the SCRIPT verbatim — every word, in order, with a warm natural tone.',
-    'Do not paraphrase, summarize, reorder, soften, or skip any sentence.',
-    'Do not add greetings, fillers, questions, or closings that are not in the SCRIPT.',
+    'Read aloud only the chat reply after ---CHAT_REPLY---, verbatim, every word, in order, with a warm natural tone.',
+    'Your first spoken word must be the first word after that marker. Never say the marker itself.',
+    'Do not announce what you are about to do. Do not paraphrase, summarize, reorder, soften, or skip.',
+    'Do not add greetings, fillers, questions, or closings that are not in the chat reply.',
+    'If the chat reply is one short sentence, speak only that sentence.',
+    'Forbidden spoken words unless they appear after the marker: "request completed", "done", "finished", "okay", "script", "I will read".',
+    'Do not invent actions. Never say you sent tokens, transferred funds, approved a proposal, or finished anything for them.',
     'Do not ask follow-up questions. Do not return to a previous signal or topic.',
     buildRealtimeSpeakLanguageDirective(),
     '',
-    'SCRIPT (read aloud exactly):',
-    '"""',
+    '---CHAT_REPLY---',
     text,
-    '"""',
   ].join('\n');
 }
 
@@ -427,7 +429,7 @@ export async function prefetchExactSpeechPcm({
 }
 
 /**
- * Play the chat script as synthesized speech. The realtime model is not asked
+ * Play the chat reply as synthesized speech. The realtime model is not asked
  * to say it: that call generates a new reply, and the words drift.
  * Streams PCM from `/api/voice/speak` so the first samples play before the
  * full clip arrives (avoids waiting on arrayBuffer + decodeAudioData).
@@ -650,6 +652,8 @@ export function speakAssistantTextViaRealtime(
     response: {
       output_modalities: ['audio'],
       instructions,
+      // Speak-only turn — tools invite meta like "Request completed".
+      tool_choice: 'none',
       ...(voice ? { audio: { output: { voice } } } : {}),
       metadata: { purpose: 'hypha_assistant_speak' },
     },

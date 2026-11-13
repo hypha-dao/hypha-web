@@ -18,6 +18,7 @@ import { useIsMobile, usePrefersCoarsePointer } from '@hypha-platform/ui';
 import { HumanChatPanelDateSeparator } from './human-chat-panel-date-separator';
 import { HumanChatPanelUnreadDivider } from './human-chat-panel-unread-divider';
 import { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
+import { toggleExpandedMessageId } from './message-text-expanded';
 import { touchComposerFromViewportFlags } from './touch-composer-flags';
 import type { ChatPanelAttachmentMedia } from './chat-panel-media-types';
 import {
@@ -47,11 +48,20 @@ function scrollChildIntoTimeline(
   });
 }
 
+/** Helper and other non-Matrix rows are not room messages, so they have no edit bar. */
+export function showsChatMessageActions(message: {
+  isSynthetic?: boolean;
+}): boolean {
+  return !message.isSynthetic;
+}
+
 type UIMessage = {
   id: string;
   role: 'user' | 'member';
   /** Non-Matrix / system rows: no reply or reactions. */
   isSynthetic?: boolean;
+  /** False while Matrix still holds a local echo / failed send. */
+  sendAcknowledged?: boolean;
   sendPending?: {
     attachmentCount: number;
     captionPreview: string;
@@ -70,6 +80,8 @@ type UIMessage = {
   agentSpecialistId?: string;
   avatarUrl?: string;
   timestamp?: Date;
+  /** True when the Matrix root was edited (`m.replace`). */
+  edited?: boolean;
   formattedContentHtml?: string;
   reactions?: Array<{
     emoji: string;
@@ -197,6 +209,8 @@ type HumanChatPanelMessagesProps = {
   /** Replaces the default space welcome. Space chat leaves both unset. */
   welcomeText?: string;
   welcomeSenderName?: string;
+  /** Context section chats use the book mark. Other welcomes keep the mycelium. */
+  welcomeMark?: 'context';
   onReply?: (messageId: string) => void;
   /** Jump the timeline to the quoted original when a reply header is clicked. */
   onJumpToOriginalMessage?: (eventId: string) => void;
@@ -236,6 +250,15 @@ type HumanChatPanelMessagesProps = {
     addedEvents: number;
     hasMoreOlder: boolean;
   }>;
+  /**
+   * DM peer MXID. When set with `peerReadUpToEventId`, own messages show
+   * sent/read ticks.
+   */
+  dmPeerUserId?: string | null;
+  /** Peer's public read-receipt cursor event id for this DM. */
+  peerReadUpToEventId?: string | null;
+  /** True when an own message id is at or before the peer read cursor. */
+  isMessageReadByPeer?: (eventId: string) => boolean;
 };
 
 export function HumanChatPanelMessages({
@@ -246,6 +269,7 @@ export function HumanChatPanelMessages({
   currentUserAvatarUrl,
   welcomeText,
   welcomeSenderName,
+  welcomeMark,
   onReply,
   onJumpToOriginalMessage,
   onEditMessage,
@@ -269,6 +293,9 @@ export function HumanChatPanelMessages({
   loadingOlderMessages = false,
   enableAutoLoadOlderMessages = true,
   onLoadOlderMessages,
+  dmPeerUserId = null,
+  peerReadUpToEventId = null,
+  isMessageReadByPeer,
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
   const formatter = useFormatter();
@@ -340,6 +367,14 @@ export function HumanChatPanelMessages({
   const [lockActionMessageId, setLockActionMessageId] = useState<string | null>(
     null,
   );
+  const [expandedMessageIds, setExpandedMessageIds] = useState<
+    ReadonlySet<string>
+  >(() => new Set());
+  const toggleMessageExpanded = useCallback((messageId: string) => {
+    setExpandedMessageIds((current) =>
+      toggleExpandedMessageId(current, messageId),
+    );
+  }, []);
   const lockActionMessageIdRef = useRef<string | null>(null);
   lockActionMessageIdRef.current = lockActionMessageId;
   /** Pointer left row while hover picker was open (portal); hide bar when picker closes. */
@@ -395,21 +430,36 @@ export function HumanChatPanelMessages({
     Boolean(firstUnreadMessageId) &&
     Boolean(firstUnreadMeta.dateLabel && firstUnreadMeta.timeLabel);
 
-  const scrollToUnread = useCallback(() => {
-    if (!firstUnreadMessageId) return;
-    const root = containerRef.current;
-    if (!root) return;
-    const escaped =
-      typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
-        ? CSS.escape(firstUnreadMessageId)
-        : firstUnreadMessageId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    const el = root.querySelector(
-      `[data-matrix-event-id="${escaped}"]`,
-    ) as HTMLElement | null;
-    if (el) scrollChildIntoTimeline(root, el);
-    stickToBottomRef.current = false;
-    onTimelineAtBottomChange?.(false);
-  }, [firstUnreadMessageId, onTimelineAtBottomChange]);
+  /**
+   * Jump so the NEW divider (preferred) or first unread row sits near the top
+   * of the timeline — Slack/Discord-style. Returns false when the target is
+   * not in the DOM yet (caller may retry).
+   */
+  const scrollToUnread = useCallback(
+    (behavior: ScrollBehavior = 'smooth'): boolean => {
+      if (!firstUnreadMessageId) return false;
+      const root = containerRef.current;
+      if (!root) return false;
+      const divider = root.querySelector('[data-chat-unread-divider]');
+      const escaped =
+        typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+          ? CSS.escape(firstUnreadMessageId)
+          : firstUnreadMessageId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      const message = root.querySelector(`[data-matrix-event-id="${escaped}"]`);
+      const el =
+        divider instanceof HTMLElement
+          ? divider
+          : message instanceof HTMLElement
+          ? message
+          : null;
+      if (!el) return false;
+      scrollChildIntoTimeline(root, el, behavior);
+      stickToBottomRef.current = false;
+      onTimelineAtBottomChange?.(false);
+      return true;
+    },
+    [firstUnreadMessageId, onTimelineAtBottomChange],
+  );
 
   useEffect(() => {
     if (roomId !== prevRoomIdRef.current) {
@@ -526,14 +576,35 @@ export function HumanChatPanelMessages({
       messages.some((m) => m.id === firstUnreadMessageId);
 
     if (shouldScrollUnread) {
-      initialUnreadScrollDoneRef.current = true;
+      // Do not mark done until the target is actually in the DOM — a single
+      // rAF often runs before long timelines paint, leaving the viewport at
+      // the oldest loaded messages with the unread banner still showing.
       stickToBottomRef.current = false;
       onTimelineAtBottomChange?.(false);
-      window.requestAnimationFrame(() => {
-        scrollToUnread();
-      });
+      let cancelled = false;
+      let frames = 0;
+      let raf = 0;
+      const maxFrames = 45;
+      const tryScroll = () => {
+        if (cancelled) return;
+        // Instant jump on open (Slack/Discord); smooth is for later in-thread jumps.
+        if (scrollToUnread('auto')) {
+          initialUnreadScrollDoneRef.current = true;
+          return;
+        }
+        frames += 1;
+        if (frames < maxFrames) {
+          raf = window.requestAnimationFrame(tryScroll);
+        } else {
+          initialUnreadScrollDoneRef.current = true;
+        }
+      };
+      raf = window.requestAnimationFrame(tryScroll);
       prevLastIdRef.current = lastId;
-      return;
+      return () => {
+        cancelled = true;
+        window.cancelAnimationFrame(raf);
+      };
     }
 
     if (
@@ -793,15 +864,20 @@ export function HumanChatPanelMessages({
 
             const msg = row.message;
             const index = displayMessages.findIndex((m) => m.id === msg.id);
-            const canInteract = !msg.isSynthetic;
+            const canInteract = showsChatMessageActions(msg);
             const isActionBarVisible =
-              lockActionMessageId === msg.id ||
-              (hoverActionMessageId === msg.id && lockActionMessageId == null);
+              canInteract &&
+              (lockActionMessageId === msg.id ||
+                (hoverActionMessageId === msg.id &&
+                  lockActionMessageId == null));
 
             return (
               <HumanChatPanelMessageBubble
                 key={row.key}
                 message={msg}
+                welcomeMark={msg.id === 'welcome' ? welcomeMark : undefined}
+                textExpanded={expandedMessageIds.has(msg.id)}
+                onToggleTextExpanded={toggleMessageExpanded}
                 roomId={roomId}
                 currentUserId={currentUserId}
                 currentUserAvatarUrl={currentUserAvatarUrl}
@@ -892,6 +968,18 @@ export function HumanChatPanelMessages({
                   msg.sendPending && onCancelSendPending
                     ? onCancelSendPending
                     : undefined
+                }
+                receiptStatus={
+                  !dmPeerUserId ||
+                  msg.role !== 'user' ||
+                  msg.isSynthetic ||
+                  msg.sendPending ||
+                  msg.sendAcknowledged === false
+                    ? null
+                    : isMessageReadByPeer?.(msg.id) ||
+                      peerReadUpToEventId === msg.id
+                    ? 'read'
+                    : 'sent'
                 }
               />
             );

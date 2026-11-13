@@ -1,3 +1,4 @@
+import { QUEST_HELPER_NAME } from '../../../../core/src/space-quests/constants';
 import { looksLikeTechnicalMatrixDisplayName } from '../../../../core/src/matrix/matrix-member-display';
 import {
   extractMentionUserIdsFromPlainBody,
@@ -22,6 +23,31 @@ export function sanitizeMentionDisplayLabel(label: string): string {
 export function formatComposerMentionToken(displayLabel: string): string {
   const safe = sanitizeMentionDisplayLabel(displayLabel);
   return `@${MENTION_DISPLAY_ZWSP}${safe} `;
+}
+
+/**
+ * `@Quest Helper` is one mention. A single-word `@handle` pill would keep
+ * only `@Quest` and leave `Helper` as plain text.
+ */
+export function questHelperMentionPill(
+  fragment: string,
+  atIndex: number,
+): { label: string; end: number } | null {
+  if (fragment[atIndex] !== '@') return null;
+  let cursor = atIndex + 1;
+  if (fragment.charCodeAt(cursor) === 0x200b) cursor += 1;
+  const match = /^(quest)\s+(helper)\b/i.exec(fragment.slice(cursor));
+  if (!match) return null;
+  return { label: QUEST_HELPER_NAME, end: cursor + match[0].length };
+}
+
+/**
+ * @ chip in a message body. Always the generic picker label ("AI Agents").
+ * The section specialist name belongs on the agent's reply, not this chip.
+ */
+export function botMentionChipText(genericLabel: string): string {
+  const label = genericLabel.trim() || 'AI Agents';
+  return label.startsWith('@') ? label : `@${label}`;
 }
 
 /**
