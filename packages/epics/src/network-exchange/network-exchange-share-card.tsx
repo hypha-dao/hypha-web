@@ -27,6 +27,10 @@ import {
   type LinkedTreasuryPayout,
 } from './linked-treasury-amount';
 import { SignalTypeIcon } from '../coherence/components/signal-type-icon';
+import {
+  signalVideoLinkHost,
+  signalVideoLinkProblem,
+} from '../coherence/utils/signal-video';
 import { MemberSpaceSelect } from './member-space-select';
 import { useMemberNamedSpaces } from './use-member-named-spaces';
 import {
@@ -49,6 +53,7 @@ function typeLabel(
   if (type === 'Tension') return t('filterTension');
   if (type === 'Insight') return t('filterInsight');
   if (type === 'Action') return t('filterAction');
+  if (type === 'Bug') return t('filterBug');
   return t('filterImpact');
 }
 
@@ -176,8 +181,18 @@ export function NetworkExchangeShareCard({
     ) {
       return;
     }
-    if (mediaKind === 'video' && video && !/^https?:\/\//i.test(video)) {
-      setNote(tSignals('signalFormVideoHint'));
+    const videoProblem =
+      mediaKind === 'video' ? signalVideoLinkProblem(video) : null;
+    if (videoProblem) {
+      setNote(
+        videoProblem === 'blocked'
+          ? tSignals('signalFormVideoBlocked', {
+              host: signalVideoLinkHost(video),
+            })
+          : videoProblem === 'too-long'
+          ? tSignals('signalFormVideoTooLong')
+          : tSignals('signalFormVideoUnsupported'),
+      );
       return;
     }
     const indicativePayouts = completePayouts(payouts);
@@ -205,9 +220,7 @@ export function NetworkExchangeShareCard({
         uploadSignalMedia,
       );
       const linkedVideo =
-        mediaKind === 'video' && /^https?:\/\//i.test(video)
-          ? video.slice(0, 2000)
-          : '';
+        mediaKind === 'video' && /^https?:\/\//i.test(video) ? video : '';
       const spaceId = await resolveSpaceId(spaceSlug, space?.id);
       if (!spaceId) {
         throw new Error('space');

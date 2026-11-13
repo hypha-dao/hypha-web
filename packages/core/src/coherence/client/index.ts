@@ -10,5 +10,7 @@ export * from '../signal-mentions';
 export * from '../signal-due-date';
 export * from '../signal-notification-triggers';
 export * from '../signal-creator';
+export * from '../signal-ranking';
+export * from '../signal-voting';
 export * from '../lib/get-prefix-by-environment';
 export * from '../lib/determine-environment';

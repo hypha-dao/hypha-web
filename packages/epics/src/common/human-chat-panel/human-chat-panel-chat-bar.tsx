@@ -34,6 +34,13 @@ import {
   AudioLines,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import {
+  CHAT_COMPOSER_ACTIONS_CLASS,
+  CHAT_COMPOSER_FIELD_CLASS,
+  CHAT_COMPOSER_INPUT_CLASS,
+  CHAT_COMPOSER_INPUT_SHELL_CLASS,
+  CHAT_COMPOSER_ROOT_CLASS,
+} from './composer-field';
 
 import {
   DropdownMenu,
@@ -673,7 +680,7 @@ export function HumanChatPanelChatBar({
     mentionPickerEnabled ?? mentionCandidates.length > 0;
   const atMentionInteractable = !composerLocked && membershipAvailable;
   const mentionButtonTitle = composerLocked
-    ? composerLockedMessage || t('signalTeamInteractionRestricted')
+    ? composerLockedMessage || t('mention')
     : !membershipAvailable
     ? t('mentionNoMembers')
     : t('mention');
@@ -1825,15 +1832,16 @@ export function HumanChatPanelChatBar({
 
   return (
     <div
-      className="flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pt-2"
+      className={CHAT_COMPOSER_ROOT_CLASS}
       style={{ paddingBottom: composerBottomPadding(keyboardInset) }}
     >
       <div
         ref={composerShellRef}
+        data-testid="chat-composer-field"
         onKeyDownCapture={handleComposerShellKeyDownCapture}
         className={cn(
-          'relative flex min-w-0 flex-col bg-transparent shadow-none',
-          isComposerDropActive && 'bg-foreground/5',
+          CHAT_COMPOSER_FIELD_CLASS,
+          isComposerDropActive && 'border-foreground bg-foreground/5',
         )}
         onDragEnter={(e) => {
           if (!e.dataTransfer?.types.includes('Files')) {
@@ -2279,7 +2287,7 @@ export function HumanChatPanelChatBar({
           highlights, but its wrap/scroll did not match the caret. Text and caret
           now live on one element; it grows to COMPOSER_INPUT_MAX_PX then scrolls.
         */}
-        <div className="relative isolate min-h-[36px] min-w-0 max-h-[160px] w-full overflow-hidden rounded-sm">
+        <div className={CHAT_COMPOSER_INPUT_SHELL_CLASS}>
           <textarea
             ref={textareaRef}
             value={value}
@@ -2328,8 +2336,9 @@ export function HumanChatPanelChatBar({
             placeholder={placeholder ?? defaultPlaceholder}
             rows={1}
             className={cn(
-              'relative z-[1] box-border block min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
-              'overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words bg-transparent px-3 py-2 text-[16px] leading-5',
+              CHAT_COMPOSER_INPUT_CLASS,
+              'relative z-[1] block min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
+              'overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words text-[16px] leading-5',
               'text-foreground caret-foreground',
               'placeholder:text-muted-foreground focus:outline-none',
             )}
@@ -2337,7 +2346,7 @@ export function HumanChatPanelChatBar({
           />
         </div>
 
-        <div className="flex min-w-0 flex-col gap-1 px-2 pb-2.5 pt-0">
+        <div className={CHAT_COMPOSER_ACTIONS_CLASS}>
           {(voiceError || attachError) && (
             <p role="alert" className="text-xs text-destructive">
               {voiceError ?? attachError}

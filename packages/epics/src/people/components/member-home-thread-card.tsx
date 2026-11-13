@@ -45,6 +45,7 @@ const SIGNAL_TYPES = [
   'Tension',
   'Risk',
   'Action',
+  'Bug',
   'Impact',
   'Trend',
   'Proposal',

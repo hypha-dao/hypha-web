@@ -22,6 +22,10 @@ export * from './events/server';
 export * from './transaction/server';
 export * from './coherence/server';
 export {
+  backfillSignalDiscussionCounts,
+  recountSignalDiscussionByRoomId,
+} from './coherence/server/recount-signal-discussion';
+export {
   patchCoherenceTaskBySlugAction,
   getSignalWorkflowConfigAction,
   updateSignalWorkflowConfigAction,
