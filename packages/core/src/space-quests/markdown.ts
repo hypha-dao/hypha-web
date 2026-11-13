@@ -1,10 +1,12 @@
-import { isQuestMilestoneStatus, type QuestMilestoneStatus } from './constants';
+import {
+  isQuestMilestoneStatus,
+  QUEST_PROPOSAL_DESCRIPTION_LIMIT,
+  type QuestMilestoneStatus,
+} from './constants';
 import type { QuestDraftInput, QuestRecord } from './types';
 
 export const QUEST_PROPOSAL_MARKER_START = '<!-- hypha-quest-proposal:start';
 export const QUEST_PROPOSAL_MARKER_END = 'hypha-quest-proposal:end -->';
-/** Agreements stores `documents.description` with a 4000 character cap. */
-export const QUEST_PROPOSAL_DESCRIPTION_LIMIT = 4000;
 
 const PLACEHOLDER_LEAD_RESPONSIBILITIES = [
   'Overall delivery',
@@ -574,7 +576,10 @@ export function buildQuestProposalDescription(
     `Quest proposal for ${payload.name} led by ${payload.leadName || 'team'}.`;
   const encoded = encodeURIComponent(JSON.stringify(payload));
   const marker = `${QUEST_PROPOSAL_MARKER_START}\n${encoded}\n${QUEST_PROPOSAL_MARKER_END}`;
-  const maxSummary = Math.max(120, 3900 - marker.length - 4);
+  // Keep the visible summary inside the quest limit, with room for the gap
+  // before the marker. The marker itself is never truncated.
+  const summaryBudget = QUEST_PROPOSAL_DESCRIPTION_LIMIT - 100;
+  const maxSummary = Math.max(120, summaryBudget - marker.length - 4);
   return `${summary.slice(0, maxSummary)}\n\n${marker}`;
 }
 
