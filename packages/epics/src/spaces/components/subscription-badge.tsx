@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Badge, type BadgeProps } from '@hypha-platform/ui';
 import { useHasSpacePaid } from '../hooks';
 import { useSpacePayments } from '../hooks/use-space-payments';
-import { cleanPath } from '../utils/cleanPath';
+import { spaceSelectActivateActionPath } from '../utils/cleanPath';
 import { usePathname } from 'next/navigation';
 import { useSpaceMember } from '../hooks';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -21,8 +21,6 @@ interface SubscriptionBadgeProps extends Omit<BadgeProps, 'isLoading'> {
    */
   onHeroBackground?: boolean;
 }
-
-const PATH_SELECT_ACTIVATE_ACTION = '/select-activate-action';
 
 export function SubscriptionBadge({
   web3SpaceId,
@@ -161,9 +159,8 @@ export function SubscriptionBadge({
     <Link
       className={isDisabled ? 'cursor-not-allowed' : ''}
       title={tooltipMessage || ''}
-      href={
-        isDisabled ? {} : `${cleanPath(pathname)}${PATH_SELECT_ACTIVATE_ACTION}`
-      }
+      prefetch={false}
+      href={isDisabled ? {} : spaceSelectActivateActionPath(pathname)}
     >
       <Badge
         variant="outline"

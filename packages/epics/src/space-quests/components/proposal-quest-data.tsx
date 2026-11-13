@@ -4,13 +4,55 @@ import {
   parseQuestProposalFromDescription,
   questHtmlHasVisibleText,
 } from '@hypha-platform/core/client';
+import { useAuthentication } from '@hypha-platform/authentication';
 import { Button } from '@hypha-platform/ui';
-import { ArrowRight } from 'lucide-react';
+import { cn } from '@hypha-platform/ui-utils';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { useMemo } from 'react';
-import { useSpaceQuests } from '../hooks/use-space-quests';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  seedSpaceQuestDetailCache,
+  useSpaceQuests,
+} from '../hooks/use-space-quests';
 import { QuestSectionMarkdown } from './quest-section-markdown';
+
+function QuestOverviewNavLink({ href }: { href: string }) {
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    router.prefetch(href);
+  }, [href, router]);
+
+  return (
+    <Button
+      asChild
+      variant="outline"
+      colorVariant="neutral"
+      className={cn(
+        'gap-2 rounded-none',
+        pending && 'pointer-events-none opacity-70',
+      )}
+    >
+      <Link
+        href={href}
+        prefetch={true}
+        onClick={() => setPending(true)}
+        aria-busy={pending}
+        data-pending={pending ? 'true' : undefined}
+      >
+        <span>VIEW QUEST OVERVIEW</span>
+        {pending ? (
+          <Loader2 className="size-3.5 animate-spin" aria-hidden />
+        ) : (
+          <ArrowRight className="size-3.5" aria-hidden />
+        )}
+      </Link>
+    </Button>
+  );
+}
 
 export function ProposalQuestOverviewLink({
   spaceSlug,
@@ -22,6 +64,8 @@ export function ProposalQuestOverviewLink({
   content?: string;
 }) {
   const locale = useLocale();
+  const { user, isLoading: authLoading } = useAuthentication();
+  const viewerKey = authLoading ? null : user?.id ?? 'anonymous';
   const { overview } = useSpaceQuests(spaceSlug);
   const parsed = useMemo(
     () => parseQuestProposalFromDescription(content),
@@ -44,6 +88,11 @@ export function ProposalQuestOverviewLink({
     return null;
   }, [documentId, overview?.quests, parsed?.questSlug]);
 
+  useEffect(() => {
+    if (!matchedQuest || !viewerKey) return;
+    void seedSpaceQuestDetailCache(spaceSlug, [matchedQuest], viewerKey);
+  }, [matchedQuest, spaceSlug, viewerKey]);
+
   if (!matchedQuest) return null;
 
   const overviewHref = `/${locale}/dho/${spaceSlug}/quests/${encodeURIComponent(
@@ -55,17 +104,7 @@ export function ProposalQuestOverviewLink({
       className="flex flex-wrap items-center gap-3"
       data-testid="quest-proposal-overview-link-row"
     >
-      <Button
-        asChild
-        variant="outline"
-        colorVariant="neutral"
-        className="gap-2 rounded-none"
-      >
-        <Link href={overviewHref}>
-          <span>VIEW QUEST OVERVIEW</span>
-          <ArrowRight className="size-3.5" aria-hidden />
-        </Link>
-      </Button>
+      <QuestOverviewNavLink href={overviewHref} />
       <p className="min-w-0 flex-1 text-[11px] text-neutral-11">
         See milestones, participants, and more on the quest page.
       </p>

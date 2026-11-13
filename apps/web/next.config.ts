@@ -122,10 +122,12 @@ const nextConfig: NextConfig = {
   },
   images: {
     unoptimized: process.env.DISABLE_IMAGE_OPTIMIZATION === 'true',
-    remotePatterns: IMAGE_HOSTS.map((hostname) => ({
-      protocol: 'https',
-      hostname,
-    })),
+    remotePatterns: [...new Set([...IMAGE_HOSTS, 'ufs.sh', '*.ufs.sh'])].map(
+      (hostname) => ({
+        protocol: 'https' as const,
+        hostname,
+      }),
+    ),
   },
   redirects: async () => {
     return [

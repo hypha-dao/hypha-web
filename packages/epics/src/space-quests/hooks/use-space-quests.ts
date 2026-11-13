@@ -11,11 +11,59 @@ import {
   type schemaPostQuestUpdate,
   type schemaQuestCreateDraftPayload,
 } from '@hypha-platform/core/client';
-import useSWR, { mutate } from 'swr';
+import useSWR, { mutate, unstable_serialize, useSWRConfig } from 'swr';
 import type { z } from 'zod';
 import { personRosterDisplayLabel } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
 
 export const SPACE_QUESTS_SWR_KEY = 'space-quests' as const;
+
+export function spaceQuestOverviewKey(spaceSlug: string, viewerKey: string) {
+  return [SPACE_QUESTS_SWR_KEY, spaceSlug, 'overview', viewerKey] as const;
+}
+
+export function spaceQuestDetailKey(
+  spaceSlug: string,
+  questSlug: string,
+  viewerKey: string,
+) {
+  return [
+    SPACE_QUESTS_SWR_KEY,
+    spaceSlug,
+    'detail',
+    questSlug,
+    viewerKey,
+  ] as const;
+}
+
+/** Fill empty detail keys from a list payload. Does not overwrite a warmer detail. */
+export function seedSpaceQuestDetailCache(
+  spaceSlug: string,
+  quests: readonly QuestRecord[],
+  viewerKey: string,
+) {
+  return Promise.all(
+    quests.map((quest) =>
+      mutate(
+        spaceQuestDetailKey(spaceSlug, quest.slug, viewerKey),
+        (current: QuestRecord | undefined) => current ?? quest,
+        { revalidate: false },
+      ),
+    ),
+  );
+}
+
+function questFromOverviewCache(
+  cache: ReturnType<typeof useSWRConfig>['cache'],
+  spaceSlug: string,
+  questSlug: string,
+  viewerKey: string,
+): QuestRecord | undefined {
+  const cached = cache.get(
+    unstable_serialize(spaceQuestOverviewKey(spaceSlug, viewerKey)),
+  )?.data as SpaceQuestsOverview | undefined;
+  return cached?.quests.find((quest) => quest.slug === questSlug);
+}
+
 export const SPACE_QUEST_DRAFTS_SWR_KEY = 'space-quest-drafts' as const;
 
 export type QuestDraftListItem = {
@@ -72,9 +120,7 @@ export function useSpaceQuests(spaceSlug: string | undefined) {
     isValidating,
     mutate: refresh,
   } = useSWR(
-    spaceSlug && viewerKey
-      ? [SPACE_QUESTS_SWR_KEY, spaceSlug, 'overview', viewerKey]
-      : null,
+    spaceSlug && viewerKey ? spaceQuestOverviewKey(spaceSlug, viewerKey) : null,
     async ([, slug]) => {
       const headers = await authHeaders(getAccessToken);
       const response = await fetch(`/api/v1/spaces/${slug}/quests`, {
@@ -89,6 +135,16 @@ export function useSpaceQuests(spaceSlug: string | undefined) {
       revalidateOnFocus: true,
       refreshInterval: (latest) =>
         latest?.quests.some((q) => q.status === 'proposed') ? 5_000 : 0,
+      onSuccess: (overview, key) => {
+        if (
+          !Array.isArray(key) ||
+          typeof key[1] !== 'string' ||
+          typeof key[3] !== 'string'
+        ) {
+          return;
+        }
+        void seedSpaceQuestDetailCache(key[1], overview.quests, key[3]);
+      },
     },
   );
 
@@ -106,7 +162,12 @@ export function useSpaceQuestDetail(
   questSlug: string | null | undefined,
 ) {
   const { getAccessToken, user, isLoading: authLoading } = useAuthentication();
+  const { cache } = useSWRConfig();
   const viewerKey = authLoading ? null : user?.id ?? 'anonymous';
+  const fallbackQuest =
+    spaceSlug && questSlug && viewerKey
+      ? questFromOverviewCache(cache, spaceSlug, questSlug, viewerKey)
+      : undefined;
 
   const {
     data,
@@ -115,7 +176,7 @@ export function useSpaceQuestDetail(
     mutate: refresh,
   } = useSWR(
     spaceSlug && questSlug && viewerKey
-      ? [SPACE_QUESTS_SWR_KEY, spaceSlug, 'detail', questSlug, viewerKey]
+      ? spaceQuestDetailKey(spaceSlug, questSlug, viewerKey)
       : null,
     async ([, slug, , qSlug]) => {
       const headers = await authHeaders(getAccessToken);
@@ -128,13 +189,17 @@ export function useSpaceQuestDetail(
       }
       return (await response.json()) as QuestRecord;
     },
-    { refreshInterval: 15_000, revalidateOnFocus: true },
+    {
+      fallbackData: fallbackQuest,
+      refreshInterval: 15_000,
+      revalidateOnFocus: true,
+    },
   );
 
   return {
     quest: data,
     error,
-    isLoading,
+    isLoading: Boolean(isLoading && !data),
     refresh,
   };
 }

@@ -547,6 +547,7 @@ export function MobileTabBar({
                 <Link
                   key={item.key}
                   href={item.href}
+                  prefetch={false}
                   aria-current={item.active ? 'page' : undefined}
                   className={className}
                 >
@@ -637,6 +638,7 @@ function TabLink({
   return (
     <Link
       href={href}
+      prefetch={false}
       aria-current={active ? 'page' : undefined}
       onClick={onClick}
       className={cn(

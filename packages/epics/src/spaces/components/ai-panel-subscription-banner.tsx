@@ -8,9 +8,7 @@ import React from 'react';
 import { useTranslations } from 'next-intl';
 
 import { useSalesBanner } from '../hooks/use-sales-banner';
-import { cleanPath } from '../utils/cleanPath';
-
-const PATH_SELECT_ACTIVATE_ACTION = '/select-activate-action';
+import { spaceSelectActivateActionPath } from '../utils/cleanPath';
 
 interface AiPanelSubscriptionBannerProps {
   spaceSlug: string;
@@ -35,7 +33,7 @@ export function AiPanelSubscriptionBanner({
   const router = useRouter();
 
   const handleExpiredAction = React.useCallback(() => {
-    router.push(`${cleanPath(pathname)}${PATH_SELECT_ACTIVATE_ACTION}`);
+    router.push(spaceSelectActivateActionPath(pathname));
   }, [router, pathname]);
 
   if (isSpaceLoading || !space || isStatusLoading || status !== 'expired') {

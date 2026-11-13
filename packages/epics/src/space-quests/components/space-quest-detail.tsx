@@ -35,6 +35,7 @@ import {
   Skeleton,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import dynamic from 'next/dynamic';
 import { QuestSectionMarkdown } from './quest-section-markdown';
 import {
   QuestDetailSubheading,
@@ -77,25 +78,10 @@ import {
   type SpaceQuestDraftChatMessage,
 } from '../../common/human-chat-panel-context';
 import { recordMobilizedAiAgentsForQuestion } from '../../common/ai-agent-competencies';
-import {
-  EditQuestDeliverablesModal,
-  EditQuestGoalModal,
-  EditQuestLeadModal,
-  EditQuestMembersModal,
-  EditQuestMilestonesModal,
-  EditQuestNameModal,
-  EditQuestRewardsModal,
-  EditQuestScopeModal,
-  EditQuestSuccessModal,
-  EditQuestTargetDateModal,
-} from './quest-section-edit-modals';
 import { QuestMilestoneStatusSelect } from './quest-milestone-status-select';
 import { useQuestRewardTokenCatalog } from './quest-reward-tokens';
 import type { ExtendedToken } from '../../treasury/hooks/use-tokens';
-import {
-  formatRelativeTimeShort,
-  healthBadgeMeta,
-} from './space-quests-section';
+import { formatRelativeTimeShort, healthBadgeMeta } from '../quest-health-meta';
 import { QuestStatusBadge, questStatusTag } from './quest-status-badge';
 import {
   CHAT_COMPOSER_ACTIONS_CLASS,
@@ -122,6 +108,39 @@ import {
   questAssistHistoryEntries,
   type QuestDraftPatchInput,
 } from '../utils/quest-draft-assistant';
+
+const EditQuestNameModal = dynamic(() =>
+  import('./quest-section-edit-modals').then((m) => m.EditQuestNameModal),
+);
+const EditQuestGoalModal = dynamic(() =>
+  import('./quest-section-edit-modals').then((m) => m.EditQuestGoalModal),
+);
+const EditQuestScopeModal = dynamic(() =>
+  import('./quest-section-edit-modals').then((m) => m.EditQuestScopeModal),
+);
+const EditQuestSuccessModal = dynamic(() =>
+  import('./quest-section-edit-modals').then((m) => m.EditQuestSuccessModal),
+);
+const EditQuestRewardsModal = dynamic(() =>
+  import('./quest-section-edit-modals').then((m) => m.EditQuestRewardsModal),
+);
+const EditQuestMilestonesModal = dynamic(() =>
+  import('./quest-section-edit-modals').then((m) => m.EditQuestMilestonesModal),
+);
+const EditQuestMembersModal = dynamic(() =>
+  import('./quest-section-edit-modals').then((m) => m.EditQuestMembersModal),
+);
+const EditQuestDeliverablesModal = dynamic(() =>
+  import('./quest-section-edit-modals').then(
+    (m) => m.EditQuestDeliverablesModal,
+  ),
+);
+const EditQuestLeadModal = dynamic(() =>
+  import('./quest-section-edit-modals').then((m) => m.EditQuestLeadModal),
+);
+const EditQuestTargetDateModal = dynamic(() =>
+  import('./quest-section-edit-modals').then((m) => m.EditQuestTargetDateModal),
+);
 
 type QuestPatch = z.infer<typeof schemaPatchSpaceQuest>;
 
@@ -1399,19 +1418,18 @@ export function SpaceQuestDetail({
     };
   }, [questSlug]);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-20 w-full" />
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <Skeleton className="h-96 w-full" />
-          <Skeleton className="h-64 w-full" />
+  if (!quest) {
+    if (isLoading) {
+      return (
+        <div className="space-y-4">
+          <Skeleton className="h-20 w-full" />
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <Skeleton className="h-96 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </div>
         </div>
-      </div>
-    );
-  }
-
-  if (error || !quest) {
+      );
+    }
     return (
       <div className="border border-error-6 bg-background-2 px-4 py-6">
         <p className="text-2 text-error-11">This quest could not be loaded.</p>
@@ -1825,6 +1843,7 @@ export function SpaceQuestDetail({
             key={item.key}
             href={item.href}
             scroll={false}
+            prefetch={false}
             aria-current={tab === item.key ? 'page' : undefined}
             className={cn(
               '-mb-px shrink-0 border-b-2 px-3 py-2 text-[11px] font-semibold tracking-[0.1em]',
