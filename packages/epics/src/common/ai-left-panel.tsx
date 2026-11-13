@@ -1114,18 +1114,17 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
                       : 'group-hover:ring-border/80'
                   }`}
                 >
-                  {recentSpaceIcon ? (
-                    <OptimizedAvatarImage
-                      src={recentSpaceIcon}
-                      alt={space.title}
-                      pixelSize={24}
-                      className="block h-full w-full rounded-full object-cover object-center"
-                    />
-                  ) : (
-                    <span className="text-xs font-semibold text-muted-foreground">
-                      {space.title.slice(0, 1).toUpperCase()}
-                    </span>
-                  )}
+                  <OptimizedAvatarImage
+                    src={recentSpaceIcon ?? undefined}
+                    alt={space.title}
+                    pixelSize={24}
+                    className="block h-full w-full rounded-full object-cover object-center"
+                    fallback={
+                      <span className="text-xs font-semibold text-muted-foreground">
+                        {space.title.slice(0, 1).toUpperCase()}
+                      </span>
+                    }
+                  />
                 </span>
               </span>
               {showLabel ? (

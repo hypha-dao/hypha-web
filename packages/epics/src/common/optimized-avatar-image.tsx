@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import Image from 'next/image';
 import { shouldOptimizeRemoteImage } from './optimize-remote-image';
 
@@ -11,6 +12,9 @@ type OptimizedAvatarImageProps = {
   /** Above-the-fold portraits only. */
   priority?: boolean;
   className?: string;
+  /** Shown when `src` is missing or `next/image` fails to load. */
+  fallback?: React.ReactNode;
+  onError?: () => void;
 };
 
 /**
@@ -24,8 +28,18 @@ export function OptimizedAvatarImage({
   pixelSize,
   priority = false,
   className = 'aspect-square h-full w-full object-cover',
+  fallback = null,
+  onError,
 }: OptimizedAvatarImageProps) {
-  if (!src) return null;
+  const [failed, setFailed] = React.useState(false);
+
+  React.useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  if (!src || failed) {
+    return fallback ? <>{fallback}</> : null;
+  }
 
   return (
     <Image
@@ -38,6 +52,10 @@ export function OptimizedAvatarImage({
       priority={priority}
       unoptimized={!shouldOptimizeRemoteImage(src)}
       className={className}
+      onError={() => {
+        setFailed(true);
+        onError?.();
+      }}
     />
   );
 }

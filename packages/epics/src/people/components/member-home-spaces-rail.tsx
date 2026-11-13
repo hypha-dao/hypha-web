@@ -184,22 +184,21 @@ export function MemberHomeSpacesRail({
                           )}
                           style={{ width: RAIL_ICON, height: RAIL_ICON }}
                         >
-                          {iconUrl ? (
-                            <OptimizedAvatarImage
-                              src={iconUrl}
-                              alt=""
-                              pixelSize={RAIL_ICON}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <span
-                              className="flex h-full w-full items-center justify-center text-1 font-medium text-foreground"
-                              aria-hidden
-                            >
-                              {space.title.trim().charAt(0).toUpperCase() ||
-                                '?'}
-                            </span>
-                          )}
+                          <OptimizedAvatarImage
+                            src={iconUrl ?? undefined}
+                            alt=""
+                            pixelSize={RAIL_ICON}
+                            className="h-full w-full object-cover"
+                            fallback={
+                              <span
+                                className="flex h-full w-full items-center justify-center text-1 font-medium text-foreground"
+                                aria-hidden
+                              >
+                                {space.title.trim().charAt(0).toUpperCase() ||
+                                  '?'}
+                              </span>
+                            }
+                          />
                         </Link>
                       </TooltipTrigger>
                       <TooltipContent side={tipSide}>

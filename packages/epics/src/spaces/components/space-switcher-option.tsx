@@ -20,18 +20,17 @@ export function SpaceSwitcherMark({
       className="shrink-0 overflow-hidden rounded-full"
       style={{ width: 24, height: 24 }}
     >
-      {iconUrl ? (
-        <OptimizedAvatarImage
-          src={iconUrl}
-          alt={alt}
-          pixelSize={24}
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <span className="flex h-full w-full items-center justify-center">
-          <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
-        </span>
-      )}
+      <OptimizedAvatarImage
+        src={iconUrl ?? undefined}
+        alt={alt}
+        pixelSize={24}
+        className="h-full w-full object-cover"
+        fallback={
+          <span className="flex h-full w-full items-center justify-center">
+            <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+          </span>
+        }
+      />
     </span>
   );
 }

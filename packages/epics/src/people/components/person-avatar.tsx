@@ -126,10 +126,8 @@ export const PersonAvatar = ({
           alt={`${userName}'s avatar`}
           pixelSize={pixelSize}
           priority={priority}
+          fallback={<AvatarFallback>{getFallbackContent()}</AvatarFallback>}
         />
-        {avatarSrc ? null : (
-          <AvatarFallback>{getFallbackContent()}</AvatarFallback>
-        )}
       </Avatar>
     </Skeleton>
   );
