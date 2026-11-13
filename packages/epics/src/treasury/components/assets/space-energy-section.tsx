@@ -11,7 +11,10 @@ import { ENERGY_PALETTE } from './energy/energy-palette';
 import { formatStablecoinMicro, UNAVAILABLE } from './energy/format';
 import { EnergyOverviewTab } from './energy/overview-tab';
 import { PRODUCTION_DEFAULT_TIMEFRAME } from './energy/energy-constants';
-import { holdEnergySevenDaySettled } from '../../../common/energy-seven-day-settled';
+import {
+  holdEnergySevenDaySettled,
+  shouldHoldSettledForDisabledEnergy,
+} from '../../../common/energy-seven-day-settled';
 import { useSpaceEnergyTelemetry } from '../../hooks/use-space-energy-telemetry';
 import { useOverviewFirstTelemetryPrefetch } from '../../hooks/use-overview-first-telemetry-prefetch';
 import { useEnergyPeople } from './energy/use-energy-people';
@@ -79,9 +82,9 @@ export const SpaceEnergySection = ({ spaceSlug }: SpaceEnergySectionProps) => {
     prefetchTelemetry,
   );
   React.useEffect(() => {
-    if (isLoading || data?.enabled) return;
+    if (!shouldHoldSettledForDisabledEnergy(isLoading, data)) return;
     return holdEnergySevenDaySettled();
-  }, [data?.enabled, isLoading]);
+  }, [data, isLoading]);
   useSpaceEnergyTelemetry('30d', spaceSlug, {
     ...prefetchTelemetry,
     enabled:

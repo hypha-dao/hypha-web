@@ -7,6 +7,7 @@ import { holdEnergySevenDaySettled } from '../energy-seven-day-settled';
 import {
   toLinkPrefetch,
   useAfterIdle,
+  useEnergyGatedSWRKey,
   useEnergyOverviewIdleGate,
 } from '../use-after-idle';
 
@@ -102,5 +103,22 @@ describe('useEnergyOverviewIdleGate', () => {
       release();
     });
     expect(result.current).toBe(false);
+  });
+});
+
+describe('useEnergyGatedSWRKey', () => {
+  it('drops the intelligence key on energy until 7d has settled', () => {
+    const key = ['/api/v1/people/me/intelligence', 'jwt'] as const;
+    const { result } = renderHook(() => useEnergyGatedSWRKey(key));
+    expect(result.current).toBeNull();
+    let release: () => void = () => undefined;
+    act(() => {
+      release = holdEnergySevenDaySettled();
+    });
+    expect(result.current).toEqual(key);
+    act(() => {
+      release();
+    });
+    expect(result.current).toBeNull();
   });
 });

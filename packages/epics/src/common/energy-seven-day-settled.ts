@@ -27,6 +27,19 @@ export function subscribeEnergySevenDaySettled(
   };
 }
 
+/**
+ * Hold only after the space energy payload has loaded with the community
+ * off. `isLoading === false` and `data === undefined` is the SWR empty
+ * state (auth still resolving, or the request has not started) — treating
+ * that as disabled opened the intelligence gate before 7d.
+ */
+export function shouldHoldSettledForDisabledEnergy(
+  isLoading: boolean,
+  data: { enabled?: boolean } | undefined,
+): boolean {
+  return !isLoading && data !== undefined && data.enabled !== true;
+}
+
 /** Hold while 7d telemetry has resolved, or while energy is disabled. */
 export function holdEnergySevenDaySettled(): () => void {
   settledHolders += 1;

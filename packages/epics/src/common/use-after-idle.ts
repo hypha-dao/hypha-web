@@ -65,3 +65,10 @@ export function useEnergyOverviewIdleGate(): boolean {
   if (!onEnergy) return true;
   return sevenDaySettled;
 }
+
+/** Drop a SWR key while the energy route is still waiting on 7d. */
+export function useEnergyGatedSWRKey<T>(key: T | null | undefined): T | null {
+  const ready = useEnergyOverviewIdleGate();
+  if (!ready || key == null) return null;
+  return key;
+}

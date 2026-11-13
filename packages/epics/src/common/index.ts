@@ -258,6 +258,7 @@ export {
 export {
   toLinkPrefetch,
   useAfterIdle,
+  useEnergyGatedSWRKey,
   useEnergyOverviewIdleGate,
 } from './use-after-idle';
 export * from './composer';
