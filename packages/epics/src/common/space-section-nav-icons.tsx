@@ -11,6 +11,7 @@ import {
   KanbanSquare,
   Navigation,
   Radio,
+  Scroll,
   UsersRound,
   Zap,
 } from 'lucide-react';
@@ -45,6 +46,7 @@ export const SPACE_SECTION_NAV_ICONS: Record<
 > = {
   overview: House,
   agreements: FileCheck2,
+  quests: Scroll,
   members: UsersRound,
   treasury: Coins,
   calendar: CalendarDays,

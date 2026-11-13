@@ -7,7 +7,7 @@ export const CHAT_COMPOSER_ROOT_CLASS =
   'flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pt-3';
 
 export const CHAT_COMPOSER_FIELD_CLASS =
-  'relative flex min-w-0 flex-col rounded-none border border-border bg-neutral-1 shadow-none transition-colors focus-within:border-foreground';
+  'relative flex min-w-0 flex-col rounded-none border border-border bg-neutral-1 shadow-none';
 
 export const CHAT_COMPOSER_INPUT_SHELL_CLASS =
   'relative isolate min-h-[36px] min-w-0 max-h-[160px] w-full overflow-hidden rounded-none';

@@ -184,6 +184,8 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
       'timeline',
       'milestone',
       'process',
+      'quest',
+      'quests',
     ],
   },
   {

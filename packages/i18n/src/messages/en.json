@@ -7,6 +7,7 @@
     "Treasury": "Treasury",
     "Energy": "Energy",
     "Agreements": "Agreements",
+    "quests": "Quests",
     "Spaces": "Spaces",
     "loadMore": "Load more",
     "noMore": "No more",
@@ -170,6 +171,8 @@
       "proposalsBody": "Conversations on proposals you can vote on",
       "signalsTitle": "Signals",
       "signalsBody": "Needs, resources, opportunities, risks, tensions, insights, actions and impact",
+      "questsTitle": "Quests",
+      "questsBody": "Quest channels that open when a quest proposal passes",
       "contextTitle": "Context",
       "contextBody": "Discussions on Context sections in your spaces",
       "ecosystemTitle": "Ecosystems",
@@ -182,6 +185,7 @@
       "tagSpacePublic": "Public Space Channel",
       "tagProposal": "Proposal",
       "tagSignal": "Space Signals",
+      "tagQuest": "Quest",
       "tagContext": "Space Context",
       "tagEcosystem": "Ecosystem Channel",
       "tagNetwork": "Network Channel",
@@ -2687,7 +2691,8 @@
       "addEnergyMember": "Add Energy Member",
       "changeEnergyOptimization": "Change Energy Optimization",
       "whitelistEnergySettlement": "Whitelist Energy Settlement",
-      "spaceContext": "Space Context"
+      "spaceContext": "Space Context",
+      "quest": "Quest"
     },
     "documentBadges": {
       "invite": "Invite",
@@ -3624,7 +3629,8 @@
       "toVote": "{duration} to Vote",
       "youVoted": "You voted {vote}",
       "voteValueYes": "yes",
-      "voteValueNo": "no"
+      "voteValueNo": "no",
+      "questActivationNote": "If this proposal passes, the quest becomes active."
     },
     "withdrawResubmit": {
       "title": "Withdraw your proposal or edit and submit again?",
@@ -3912,6 +3918,7 @@
     "tabChatProposal": "Proposal",
     "tabChatContext": "Context",
     "tabChatSignal": "Signal",
+    "tabChatQuest": "Quest",
     "tabChatEcosystem": "Ecosystem Channel",
     "tabChatNetwork": "Network Channel",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# unread mention} other {# unread mentions}}",
@@ -5841,6 +5848,86 @@
       "failed": "Could not suggest the section. Try again.",
       "restoreLabel": "Removed sections",
       "restore": "Suggest restoring"
+    }
+  },
+  "SpaceQuests": {
+    "title": "Quests",
+    "subtitle": "Focused, time-bound work with a clear goal, members and milestones",
+    "newQuest": "New Quest",
+    "searchPlaceholder": "Search quests",
+    "filters": {
+      "active": "Active",
+      "proposed": "Proposed",
+      "paused": "Paused",
+      "completed": "Completed",
+      "rejected": "Rejected",
+      "drafts": "My drafts",
+      "status": "Status"
+    },
+    "overview": {
+      "goal": "Goal",
+      "scope": "Scope",
+      "inScope": "In scope",
+      "outOfScope": "Out of scope",
+      "successCriteria": "Success criteria"
+    },
+    "settings": {
+      "deliverables": "Deliverables",
+      "deliverablesHint": "Show a Deliverables card on the overview",
+      "deliverablesKept": "Existing deliverables stay on the overview",
+      "on": "On",
+      "off": "Off"
+    },
+    "deliverableUrl": "Enter a link starting with http:// or https://",
+    "deliverableSaveError": "Could not save deliverables. Try again.",
+    "activity": {
+      "proposalRejected": "proposal rejected"
+    },
+    "confirm": {
+      "title": "Submit this quest?",
+      "body": "This submits the quest as a proposal for {space} to vote on. The quest stays proposed until the vote passes.",
+      "cancel": "Cancel",
+      "submit": "Submit for a vote"
+    },
+    "drafts": {
+      "empty": "You have no saved quest drafts in this space.",
+      "continue": "Continue",
+      "delete": "Delete",
+      "deleteTitle": "Delete this draft?",
+      "deleteBody": "This removes your saved draft. It does not affect any quest.",
+      "deleteConfirm": "Delete draft",
+      "cancel": "Cancel",
+      "edited": "Edited {when}",
+      "untitled": "Untitled quest",
+      "save": "Save draft",
+      "saving": "Saving…",
+      "saved": "Draft saved",
+      "saveFailed": "Could not save the draft. Try again.",
+      "keepTitle": "Keep this draft?",
+      "keepBody": "You can continue this quest later from My drafts. Discard removes it.",
+      "keep": "Keep draft",
+      "discard": "Discard",
+      "savedAuto": "Draft saved automatically",
+      "notSaved": "Not saved yet",
+      "retry": "Couldn't save. Retry",
+      "deleteFailed": "Could not delete that draft. It is back in your list."
+    },
+    "updates": {
+      "before": "Before",
+      "after": "After",
+      "showChanges": "Show changes",
+      "hideChanges": "Hide changes"
+    },
+    "milestones": {
+      "status": {
+        "not_started": "Not started",
+        "in_progress": "In progress",
+        "done": "Done"
+      }
+    },
+    "error": {
+      "load": "Quests could not be loaded.",
+      "retry": "Retry"
     }
   }
 }

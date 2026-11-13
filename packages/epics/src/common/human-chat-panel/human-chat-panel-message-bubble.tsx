@@ -47,6 +47,7 @@ import {
 import {
   AgentInitialsAvatar,
   isAgentChatAuthor,
+  visibleAgentSenderName,
 } from './agent-initials-avatar';
 import { MemberHomeMark } from '../../people/components/member-home-mark';
 import { PersonAvatar } from '../../people/components/person-avatar';
@@ -63,6 +64,7 @@ import {
   isHyphaDhoChatMessageUrl,
 } from './human-chat-message-link';
 import { ChatMessageRichText } from './parse-simple-matrix-html';
+import { questHelperMentionPill } from './human-chat-display-mention';
 import {
   isHyphaBotMatrixIdentity,
   matrixMemberDisplayLabelFromRoom,
@@ -1432,6 +1434,20 @@ export function renderTextWithMentions(
           </span>,
         );
       }
+      const helperMention = questHelperMentionPill(fragment, mentionStart);
+      if (helperMention) {
+        chunks.push(
+          <span
+            key={`${keyBase}-at-${keyN++}`}
+            className={chatMentionPillClass(viewerMentionTintRow)}
+          >
+            @{helperMention.label}
+          </span>,
+        );
+        last = helperMention.end;
+        reLocal.lastIndex = last;
+        continue;
+      }
       const bridgedMxid = resolveBridgedLocalHandleToMxid(
         handle,
         memberUserIds,
@@ -1806,9 +1822,13 @@ export function HumanChatPanelMessageBubble({
     usePersonBySub({ sub: replyPrivySub ?? replyCanonicalSub });
 
   const resolvedSenderName = useMemo(() => {
-    if (isHyphaBotMatrixIdentity(message.senderMatrixId, message.senderName)) {
-      return agentMentionLabel;
-    }
+    const agentLabel = visibleAgentSenderName({
+      agentSpecialistId: message.agentSpecialistId,
+      senderMatrixId: message.senderMatrixId,
+      senderName: message.senderName,
+      agentMentionLabel,
+    });
+    if (agentLabel) return agentLabel;
     if (message.role === 'user') {
       return message.senderName ?? t('you');
     }
@@ -1827,6 +1847,7 @@ export function HumanChatPanelMessageBubble({
     return visible || t('unknownMember');
   }, [
     agentMentionLabel,
+    message.agentSpecialistId,
     message.role,
     message.senderMatrixId,
     message.senderName,

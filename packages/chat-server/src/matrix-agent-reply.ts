@@ -263,6 +263,7 @@ export type MatrixAgentRoomContext = {
   kind:
     | 'proposal'
     | 'signal'
+    | 'quest'
     | 'space'
     | 'space_context'
     | 'ecosystem'
@@ -274,6 +275,8 @@ export type MatrixAgentRoomContext = {
   documentTitle?: string | null;
   signalSlug?: string | null;
   signalTitle?: string | null;
+  questSlug?: string | null;
+  questTitle?: string | null;
   /** Context section whose agent was mentioned (`space_context` rooms). */
   sectionKey?: string | null;
 };
@@ -283,6 +286,20 @@ function describeRoomContext(
   spaceSlug: string,
 ): string {
   const kind = context?.kind;
+  if (kind === 'quest') {
+    const title = context?.questTitle?.trim();
+    const slug = context?.questSlug?.trim();
+    return [
+      'You are in a quest discussion channel.',
+      title ? `Quest title: ${title}` : null,
+      slug ? `Quest slug: ${slug}` : null,
+      spaceSlug
+        ? `Space slug: ${spaceSlug}. Answer from the message and room history.`
+        : 'Space slug is unknown — answer from the room and the quest title only.',
+    ]
+      .filter(Boolean)
+      .join(' ');
+  }
   if (kind === 'proposal') {
     const title = context?.documentTitle?.trim();
     const slug = context?.documentSlug?.trim();
@@ -433,8 +450,11 @@ export async function replyToMatrixAgentMention({
     });
   }
 
+  const defaultSpecialistId =
+    context?.kind === 'quest' ? 'operations' : 'purpose';
   const specialist =
-    selectSpecialistForQuestion(turn.question) ?? specialistById('purpose');
+    selectSpecialistForQuestion(turn.question) ??
+    specialistById(defaultSpecialistId);
   const roomKind = context?.kind ?? (slug ? 'space' : 'dm');
   const allowSpaceTools =
     Boolean(slug) && roomKind !== 'dm' && roomKind !== 'network';

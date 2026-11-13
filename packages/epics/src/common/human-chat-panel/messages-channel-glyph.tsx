@@ -6,6 +6,7 @@ import {
   Globe,
   Globe2,
   Radio,
+  Scroll,
   Target,
 } from 'lucide-react';
 
@@ -27,6 +28,7 @@ export const MESSAGES_CHANNEL_GLYPH: Record<
   'space-public': Globe,
   ecosystem: Target,
   signal: Radio,
+  quest: Scroll,
   proposal: FileText,
   context: BookOpen,
 };

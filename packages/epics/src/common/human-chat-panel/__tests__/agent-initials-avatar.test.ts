@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
+import { QUEST_HELPER_AUTHOR_ID } from '@hypha-platform/core/client';
 import { getAgentAvatarInitials } from '../../ai-agent-competencies';
-import { isAgentChatAuthor } from '../agent-initials-avatar';
+import {
+  isAgentChatAuthor,
+  visibleAgentSenderName,
+} from '../agent-initials-avatar';
 
 describe('agent initials face', () => {
   it('builds two letters from the agent name', () => {
@@ -29,5 +33,23 @@ describe('agent initials face', () => {
         label: 'Ada Lovelace',
       }),
     ).toBe(false);
+  });
+
+  it('shows a stamped acceptance notice as the Quest Helper and leaves an unmarked bot message as AI Agents', () => {
+    expect(
+      visibleAgentSenderName({
+        agentSpecialistId: QUEST_HELPER_AUTHOR_ID,
+        senderMatrixId: '@hypha_bot_prod:matrix.hypha.earth',
+        senderName: 'AI Agents',
+        agentMentionLabel: 'AI Agents',
+      }),
+    ).toBe('Quest Helper');
+    expect(
+      visibleAgentSenderName({
+        senderMatrixId: '@hypha_bot_prod:matrix.hypha.earth',
+        senderName: 'AI Agents',
+        agentMentionLabel: 'AI Agents',
+      }),
+    ).toBe('AI Agents');
   });
 });

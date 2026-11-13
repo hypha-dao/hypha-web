@@ -32,6 +32,26 @@ describe('resolveInviteLeadImage', () => {
     ).toBe('https://cdn.example/space.jpg');
   });
 
+  it('uses the space banner for a Quest proposal without its own image', () => {
+    expect(
+      resolveInviteLeadImage({
+        label: 'Quest',
+        title: 'Ship the checklist',
+        spaceLeadImage: 'https://cdn.example/space.jpg',
+      }),
+    ).toBe('https://cdn.example/space.jpg');
+  });
+
+  it('keeps a Quest proposal image when one is set', () => {
+    expect(
+      resolveInviteLeadImage({
+        leadImage: 'https://cdn.example/quest.jpg',
+        label: 'Quest',
+        spaceLeadImage: 'https://cdn.example/space.jpg',
+      }),
+    ).toBe('https://cdn.example/quest.jpg');
+  });
+
   it('does not override non-invite proposals', () => {
     expect(
       resolveInviteLeadImage({

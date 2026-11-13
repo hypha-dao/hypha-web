@@ -608,6 +608,7 @@
     "Treasury": "Kasse",
     "Energy": "Energi",
     "Agreements": "Avtaler",
+    "quests": "Oppdrag",
     "Spaces": "Rom",
     "loadMore": "Last inn flere",
     "noMore": "Ingen flere",
@@ -770,6 +771,8 @@
       "proposalsBody": "Samtaler om forslag du kan stemme over",
       "signalsTitle": "Signaler",
       "signalsBody": "Behov, ressurser, muligheter, risiko, spenninger, innsikt, handlinger og virkning",
+      "questsTitle": "Oppdrag",
+      "questsBody": "Oppdragskanaler som åpnes når et oppdragsforslag vedtas",
       "contextTitle": "Kontekst",
       "contextBody": "Samtaler om Kontekst-seksjoner i områdene dine",
       "ecosystemTitle": "Økosystemer",
@@ -782,6 +785,7 @@
       "tagSpacePublic": "Offentlig områdekanal",
       "tagProposal": "Forslag",
       "tagSignal": "Områdesignaler",
+      "tagQuest": "Oppdrag",
       "tagContext": "Områdekontekst",
       "tagEcosystem": "Økosystemkanal",
       "tagNetwork": "Nettverkskanal",
@@ -2658,7 +2662,8 @@
       "addEnergyMember": "Legg til energimedlem",
       "changeEnergyOptimization": "Endre energioptimalisering",
       "whitelistEnergySettlement": "Hvitelist energioppgjør",
-      "spaceContext": "Space-kontekst"
+      "spaceContext": "Space-kontekst",
+      "quest": "Oppdrag"
     },
     "documentBadges": {
       "invite": "Invitasjon",
@@ -3595,7 +3600,8 @@
       "toVote": "{duration} til å stemme",
       "youVoted": "Du stemte {vote}",
       "voteValueYes": "ja",
-      "voteValueNo": "nei"
+      "voteValueNo": "nei",
+      "questActivationNote": "Hvis dette forslaget blir vedtatt, blir oppdraget aktivt."
     },
     "withdrawResubmit": {
       "title": "Vil du trekke tilbake forslaget ditt, eller redigere og sende inn på nytt?",
@@ -3883,6 +3889,7 @@
     "tabChatProposal": "Forslag",
     "tabChatContext": "Kontekst",
     "tabChatSignal": "Signal",
+    "tabChatQuest": "Oppdrag",
     "tabChatEcosystem": "Økosystemkanal",
     "tabChatNetwork": "Nettverkskanal",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# ulest omtale} other {# uleste omtaler}}",
@@ -5824,6 +5831,86 @@
       "failed": "Kunne ikke foreslå seksjonen. Prøv igjen.",
       "restoreLabel": "Fjernede seksjoner",
       "restore": "Foreslå gjenoppretting"
+    }
+  },
+  "SpaceQuests": {
+    "title": "Oppdrag",
+    "subtitle": "Fokusert, tidsavgrenset arbeid med tydelig mål, medlemmer og milepæler",
+    "newQuest": "NYTT OPPDRAG",
+    "searchPlaceholder": "Søk i oppdrag",
+    "filters": {
+      "active": "Aktive",
+      "proposed": "Foreslått",
+      "paused": "Pauset",
+      "completed": "Fullført",
+      "rejected": "Avvist",
+      "drafts": "Mine utkast",
+      "status": "Status"
+    },
+    "overview": {
+      "goal": "Mål",
+      "scope": "Omfang",
+      "inScope": "Innenfor omfanget",
+      "outOfScope": "Utenfor omfanget",
+      "successCriteria": "Suksesskriterier"
+    },
+    "settings": {
+      "deliverables": "Leveranser",
+      "deliverablesHint": "Vis et leveransekort i oversikten",
+      "deliverablesKept": "Eksisterende leveranser blir stående i oversikten",
+      "on": "På",
+      "off": "Av"
+    },
+    "deliverableUrl": "Skriv inn en lenke som starter med http:// eller https://",
+    "deliverableSaveError": "Kunne ikke lagre leveransene. Prøv igjen.",
+    "activity": {
+      "proposalRejected": "forslag avvist"
+    },
+    "confirm": {
+      "title": "Sende inn dette oppdraget?",
+      "body": "Dette sender oppdraget inn som et forslag som {space} stemmer over. Oppdraget forblir foreslått til avstemningen går gjennom.",
+      "cancel": "Avbryt",
+      "submit": "Send til avstemning"
+    },
+    "drafts": {
+      "empty": "Du har ingen lagrede utkast i dette området.",
+      "continue": "Fortsett",
+      "delete": "Slett",
+      "deleteTitle": "Slette dette utkastet?",
+      "deleteBody": "Dette fjerner det lagrede utkastet. Ingen eksisterende oppdrag endres.",
+      "deleteConfirm": "Slett utkast",
+      "cancel": "Avbryt",
+      "edited": "Redigert {when}",
+      "untitled": "Oppdrag uten tittel",
+      "save": "Lagre utkast",
+      "saving": "Lagrer…",
+      "saved": "Utkast lagret",
+      "saveFailed": "Utkastet kunne ikke lagres. Prøv igjen.",
+      "keepTitle": "Beholde dette utkastet?",
+      "keepBody": "Du kan fortsette dette oppdraget senere under Mine utkast. Forkast fjerner utkastet.",
+      "keep": "Behold utkast",
+      "discard": "Forkast",
+      "savedAuto": "Utkast lagret automatisk",
+      "notSaved": "Ikke lagret ennå",
+      "retry": "Kunne ikke lagre. Prøv igjen",
+      "deleteFailed": "Kunne ikke slette det utkastet. Det er tilbake i listen."
+    },
+    "updates": {
+      "before": "Før",
+      "after": "Etter",
+      "showChanges": "Vis endringer",
+      "hideChanges": "Skjul endringer"
+    },
+    "milestones": {
+      "status": {
+        "not_started": "Ikke startet",
+        "in_progress": "Pågår",
+        "done": "Ferdig"
+      }
+    },
+    "error": {
+      "load": "Kunne ikke laste oppdrag.",
+      "retry": "Prøv igjen"
     }
   }
 }

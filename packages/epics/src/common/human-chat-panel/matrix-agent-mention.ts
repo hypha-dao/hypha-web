@@ -107,6 +107,7 @@ export type MatrixAgentRoomContext = {
   kind:
     | 'proposal'
     | 'signal'
+    | 'quest'
     | 'space'
     | 'space_context'
     | 'ecosystem'
@@ -118,6 +119,8 @@ export type MatrixAgentRoomContext = {
   documentTitle?: string | null;
   signalSlug?: string | null;
   signalTitle?: string | null;
+  questSlug?: string | null;
+  questTitle?: string | null;
   /** Context section whose agent was mentioned (`space_context` rooms). */
   sectionKey?: string | null;
 };
@@ -152,6 +155,8 @@ export function requestMatrixAgentReply({
           documentTitle: context.documentTitle?.trim() || null,
           signalSlug: context.signalSlug?.trim() || null,
           signalTitle: context.signalTitle?.trim() || null,
+          questSlug: context.questSlug?.trim() || null,
+          questTitle: context.questTitle?.trim() || null,
           sectionKey: context.sectionKey?.trim() || null,
         }
       : null,

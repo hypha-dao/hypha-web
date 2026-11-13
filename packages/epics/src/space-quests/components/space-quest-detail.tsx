@@ -1,0 +1,2159 @@
+'use client';
+
+import { useAuthentication } from '@hypha-platform/authentication';
+import {
+  QUEST_HEALTH_STATES,
+  buildMilestoneStatusPatch,
+  canChangeMilestoneStatus,
+  canMemberEditQuest,
+  formatQuestCalendarDate,
+  isViewerQuestLead,
+  ACTIVE_QUEST_HEALTH_LABEL,
+  isRejectedProposedQuest,
+  questHealthDisplay,
+  questOverviewVisibility,
+  readableQuestErrorMessage,
+  bulletsToMarkdownList,
+  useMe,
+  type QuestHealthState,
+  type QuestPatchStatus,
+  type QuestRecord,
+  type QuestStatus,
+  type QuestUpdateRecord,
+  type schemaPatchSpaceQuest,
+} from '@hypha-platform/core/client';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+} from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
+import { QuestSectionMarkdown } from './quest-section-markdown';
+import {
+  QuestDetailSubheading,
+  QuestMilestonesCard,
+  QuestParticipantsCard,
+  QuestRewardStrip,
+  QuestTargetDateCard,
+  resolveQuestLeadIdentity,
+} from './quest-detail-presentation';
+import { QuestUpdateCard } from './quest-update-card';
+import { ArrowLeft, ArrowUpRight, Pencil, Send } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import type { z } from 'zod';
+import {
+  deleteSpaceQuestRequest,
+  findQuestSpaceMember,
+  findQuestSpaceMemberId,
+  patchSpaceQuestRequest,
+  SpaceQuestRequestError,
+  type QuestSpaceMember,
+  postSpaceQuestUpdateRequest,
+  toQuestSpaceMemberPersons,
+  useQuestSpaceMembers,
+  useSpaceQuestDetail,
+} from '../hooks/use-space-quests';
+import {
+  useAiPanel,
+  useHumanChatPanel,
+  type SpaceQuestDraftChatMessage,
+} from '../../common/human-chat-panel-context';
+import { recordMobilizedAiAgentsForQuestion } from '../../common/ai-agent-competencies';
+import {
+  EditQuestDeliverablesModal,
+  EditQuestGoalModal,
+  EditQuestLeadModal,
+  EditQuestMembersModal,
+  EditQuestMilestonesModal,
+  EditQuestNameModal,
+  EditQuestRewardsModal,
+  EditQuestScopeModal,
+  EditQuestSuccessModal,
+  EditQuestTargetDateModal,
+} from './quest-section-edit-modals';
+import { QuestMilestoneStatusSelect } from './quest-milestone-status-select';
+import { useQuestRewardTokenCatalog } from './quest-reward-tokens';
+import type { ExtendedToken } from '../../treasury/hooks/use-tokens';
+import {
+  formatRelativeTimeShort,
+  healthBadgeMeta,
+} from './space-quests-section';
+import { QuestStatusBadge, questStatusTag } from './quest-status-badge';
+import {
+  CHAT_COMPOSER_ACTIONS_CLASS,
+  CHAT_COMPOSER_FIELD_CLASS,
+  CHAT_COMPOSER_INPUT_CLASS,
+  CHAT_COMPOSER_ROOT_CLASS,
+} from '../../common/human-chat-panel/composer-field';
+import {
+  clearMainColumnScrollFreeze,
+  releaseMainColumnScrollHeightHold,
+} from '../../common/main-column-scroll';
+import {
+  captureQuestDetailView,
+  clearQuestDetailScrollMemory,
+  releaseQuestDetailScrollPin,
+  retainQuestDetailScroll,
+} from '../quest-detail-scroll';
+import {
+  spaceQuestDetailTabLinks,
+  type SpaceQuestDetailTab,
+} from '../space-quest-tabs';
+import {
+  QUEST_HELPER_OFFLINE_REPLY,
+  questAssistHistoryEntries,
+  type QuestDraftPatchInput,
+} from '../utils/quest-draft-assistant';
+
+type QuestPatch = z.infer<typeof schemaPatchSpaceQuest>;
+
+type EditingModal =
+  | 'name'
+  | 'goal'
+  | 'scope'
+  | 'success'
+  | 'rewards'
+  | 'milestones'
+  | 'members'
+  | 'deliverables'
+  | 'lead'
+  | 'targetDate'
+  | 'health'
+  | 'status'
+  | 'delete'
+  | 'archive'
+  | null;
+
+const LABEL_CLASS =
+  'text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-11';
+
+const CARD_CLASS = 'border border-border bg-background p-5';
+
+function statusLabel(status: QuestStatus): string {
+  switch (status) {
+    case 'proposed':
+      return 'Proposed';
+    case 'paused':
+      return 'Paused';
+    case 'completed':
+      return 'Completed';
+    case 'archived':
+      return 'Archived';
+    default:
+      return 'Active';
+  }
+}
+
+function showQuestHealthTag(
+  quest: Pick<QuestRecord, 'status' | 'proposalStatus'>,
+): boolean {
+  return quest.status !== 'completed' && !isRejectedProposedQuest(quest);
+}
+
+function healthStateLabel(state: QuestHealthState): string {
+  return healthBadgeMeta(state).label;
+}
+
+function defaultMarkerForState(state: QuestHealthState): number {
+  switch (state) {
+    case 'off_track':
+      return 15;
+    case 'at_risk':
+      return 45;
+    default:
+      return 80;
+  }
+}
+
+function dayGroupLabel(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return 'EARLIER';
+  const today = new Date();
+  const startOf = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const diffDays = Math.round((startOf(today) - startOf(date)) / 86_400_000);
+  if (diffDays <= 0) return 'TODAY';
+  if (diffDays === 1) return 'YESTERDAY';
+  return date
+    .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    .toUpperCase();
+}
+
+function SectionHeader({
+  title,
+  variant = 'card',
+  onEdit,
+  editLabel = 'Edit',
+  right,
+}: {
+  title: string;
+  variant?: 'card' | 'subsection';
+  onEdit?: () => void;
+  editLabel?: string;
+  right?: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        'flex items-center justify-between gap-3',
+        variant === 'card' ? 'mb-3.5' : 'mb-2',
+      )}
+    >
+      {variant === 'card' ? (
+        <h2 className="font-display text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+          {title}
+        </h2>
+      ) : (
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.08em] text-foreground/85">
+          {title}
+        </h3>
+      )}
+      <div className="flex items-center gap-3">
+        {right}
+        {onEdit ? (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="inline-flex items-center gap-1 text-xs font-medium text-neutral-11 hover:text-foreground"
+          >
+            <Pencil className="size-3" aria-hidden />
+            {editLabel}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function healthPresentation(quest: QuestRecord) {
+  const display = questHealthDisplay(quest);
+  if (display.notStarted) {
+    return {
+      ...display,
+      dotClass: 'bg-neutral-9',
+      textClass: 'text-neutral-11',
+    };
+  }
+  const meta = healthBadgeMeta(display.state ?? 'on_track');
+  return {
+    ...display,
+    dotClass: meta.dotClass,
+    textClass: meta.textClass,
+  };
+}
+
+function HealthScale({
+  marker,
+  startLabel = 'Off track',
+  endLabel = 'Healthy',
+  uppercase = true,
+}: {
+  marker: number;
+  startLabel?: string;
+  endLabel?: string;
+  uppercase?: boolean;
+}) {
+  const clamped = Math.min(100, Math.max(0, marker));
+  const atStart = clamped <= 0;
+  const atEnd = clamped >= 100;
+  return (
+    <div className="space-y-1.5">
+      <div className="relative h-2 w-full bg-gradient-to-r from-[#d2463c] via-[#d99a1e] to-[#2e9e5b]">
+        <span
+          data-testid="quest-health-marker"
+          data-marker={clamped}
+          className={cn(
+            'absolute top-1/2 size-3.5 -translate-y-1/2 rounded-full border-2 border-background bg-foreground shadow',
+            atStart ? 'left-0' : atEnd ? 'right-0' : '-translate-x-1/2',
+          )}
+          style={atStart || atEnd ? undefined : { left: `${clamped}%` }}
+          aria-hidden
+        />
+      </div>
+      <div
+        className={cn(
+          'flex justify-between text-[10px] font-semibold tracking-[0.08em] text-neutral-11',
+          uppercase && 'uppercase',
+        )}
+      >
+        <span data-testid="quest-health-scale-start">{startLabel}</span>
+        <span data-testid="quest-health-scale-end">{endLabel}</span>
+      </div>
+    </div>
+  );
+}
+
+function SimpleDialog({
+  open,
+  onOpenChange,
+  title,
+  children,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[480px] rounded-none">
+        <DialogTitle className="font-display text-[18px] font-semibold text-foreground">
+          {title}
+        </DialogTitle>
+        {children}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditHealthDialog({
+  open,
+  onOpenChange,
+  quest,
+  onSave,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  quest: QuestRecord;
+  onSave: (patch: QuestPatch) => void;
+}) {
+  const [state, setState] = useState<QuestHealthState>(quest.health.state);
+  const [marker, setMarker] = useState<number>(quest.health.marker);
+  const [summary, setSummary] = useState(quest.health.summary);
+
+  return (
+    <SimpleDialog
+      open={open}
+      onOpenChange={(next) => {
+        if (next) {
+          setState(quest.health.state);
+          setMarker(quest.health.marker);
+          setSummary(quest.health.summary);
+        }
+        onOpenChange(next);
+      }}
+      title="Edit quest health"
+    >
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <span className={LABEL_CLASS}>STATE</span>
+          <div className="flex gap-2">
+            {QUEST_HEALTH_STATES.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => {
+                  setState(s);
+                  setMarker(defaultMarkerForState(s));
+                }}
+                className={cn(
+                  'px-2.5 py-1 text-[11px] font-semibold',
+                  state === s
+                    ? 'bg-foreground text-background'
+                    : 'bg-neutral-3 text-foreground hover:bg-neutral-4',
+                )}
+              >
+                {healthStateLabel(s)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <span className={LABEL_CLASS}>MARKER</span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={marker}
+            onChange={(e) => setMarker(Number(e.target.value))}
+            className="w-full"
+            aria-label="Health marker"
+          />
+          <HealthScale marker={marker} />
+        </div>
+        <div className="space-y-1.5">
+          <span className={LABEL_CLASS}>SUMMARY</span>
+          <textarea
+            value={summary}
+            onChange={(e) => setSummary(e.target.value)}
+            rows={3}
+            className="w-full border border-border bg-background-2 p-2 text-[13px] text-foreground"
+          />
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            colorVariant="neutral"
+            className="rounded-none"
+            onClick={() => onOpenChange(false)}
+          >
+            CANCEL
+          </Button>
+          <Button
+            type="button"
+            className="rounded-none"
+            onClick={() => {
+              onSave({
+                healthState: state,
+                healthMarker: marker,
+                healthSummary: summary,
+              });
+              onOpenChange(false);
+            }}
+          >
+            SAVE
+          </Button>
+        </div>
+      </div>
+    </SimpleDialog>
+  );
+}
+
+function milestoneOwnerPortrait(
+  milestone: { ownerPersonId: number | null; ownerName: string | null },
+  members: readonly {
+    personId: number | null;
+    memberName: string;
+    memberAvatarUrl: string | null;
+  }[],
+  spaceMembers: readonly QuestSpaceMember[],
+  viewer: { id: number; name: string; avatarUrl?: string | null } | null,
+): { avatarSrc?: string; personId?: number } {
+  const ownerName = milestone.ownerName?.trim() ?? '';
+  const member = members.find((entry) => {
+    if (
+      milestone.ownerPersonId &&
+      milestone.ownerPersonId > 0 &&
+      entry.personId === milestone.ownerPersonId
+    ) {
+      return true;
+    }
+    return (
+      ownerName.length > 0 &&
+      entry.memberName.trim().toLowerCase() === ownerName.toLowerCase()
+    );
+  });
+  if (member) return participantPortrait(member, spaceMembers, viewer);
+  const roster = findQuestSpaceMember(spaceMembers, {
+    personId: milestone.ownerPersonId,
+    name: ownerName,
+  });
+  const personId =
+    (milestone.ownerPersonId && milestone.ownerPersonId > 0
+      ? milestone.ownerPersonId
+      : undefined) ?? roster?.personId;
+  return {
+    avatarSrc: roster?.avatarUrl?.trim() || undefined,
+    personId,
+  };
+}
+
+function participantPortrait(
+  member: {
+    personId: number | null;
+    memberName: string;
+    memberAvatarUrl: string | null;
+  },
+  spaceMembers: readonly QuestSpaceMember[],
+  viewer: { id: number; name: string; avatarUrl?: string | null } | null,
+): { avatarSrc?: string; personId?: number } {
+  const roster = findQuestSpaceMember(spaceMembers, {
+    personId: member.personId,
+    name: member.memberName,
+  });
+  const viewerMatch = Boolean(
+    viewer?.name &&
+      member.memberName.trim().toLowerCase() ===
+        viewer.name.trim().toLowerCase(),
+  );
+  const avatarSrc =
+    member.memberAvatarUrl?.trim() ||
+    roster?.avatarUrl?.trim() ||
+    (viewerMatch ? viewer?.avatarUrl?.trim() : '') ||
+    undefined;
+  const personId =
+    (member.personId && member.personId > 0 ? member.personId : undefined) ??
+    roster?.personId ??
+    (viewerMatch ? viewer?.id : undefined);
+  return { avatarSrc: avatarSrc || undefined, personId };
+}
+
+function OverviewTab({
+  quest,
+  spaceTokens,
+  spaceMembers,
+  viewer,
+  canEditDeliverables,
+  onEditDeliverables,
+}: {
+  quest: QuestRecord;
+  spaceTokens: readonly ExtendedToken[];
+  spaceMembers: readonly QuestSpaceMember[];
+  viewer: { id: number; name: string; avatarUrl?: string | null } | null;
+  canEditDeliverables: boolean;
+  onEditDeliverables: () => void;
+}) {
+  const locale = useLocale();
+  const t = useTranslations('SpaceQuests');
+  const visibility = questOverviewVisibility(quest);
+  const health = healthPresentation(quest);
+  const healthUpdatedAt = quest.health.generatedAt ?? quest.health.lastUpdateAt;
+
+  return (
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="min-w-0 space-y-5">
+        {visibility.showGoal ? (
+          <section className={CARD_CLASS} data-testid="quest-overview-goal">
+            <SectionHeader title={t('overview.goal')} />
+            <QuestSectionMarkdown
+              markdown={quest.goal}
+              variant="body"
+              empty=""
+            />
+          </section>
+        ) : null}
+
+        {visibility.showScopeIn || visibility.showScopeOut ? (
+          <section className={CARD_CLASS} data-testid="quest-overview-scope">
+            <SectionHeader title={t('overview.scope')} />
+            <div className="space-y-5">
+              {visibility.showScopeIn ? (
+                <div className="space-y-2">
+                  <h3 className="text-2 font-semibold leading-relaxed text-foreground">
+                    {t('overview.inScope')}
+                  </h3>
+                  <QuestSectionMarkdown
+                    markdown={
+                      quest.scopeInMarkdown?.trim() ||
+                      bulletsToMarkdownList(quest.scopeIn)
+                    }
+                    variant="body"
+                    empty=""
+                  />
+                </div>
+              ) : null}
+              {visibility.showScopeOut ? (
+                <div className="space-y-2">
+                  <h3 className="text-2 font-semibold leading-relaxed text-foreground">
+                    {t('overview.outOfScope')}
+                  </h3>
+                  <QuestSectionMarkdown
+                    markdown={
+                      quest.scopeOutMarkdown?.trim() ||
+                      bulletsToMarkdownList(quest.scopeOut)
+                    }
+                    variant="body"
+                    empty=""
+                  />
+                </div>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
+        {visibility.showSuccess ? (
+          <section className={CARD_CLASS} data-testid="quest-overview-success">
+            <SectionHeader title={t('overview.successCriteria')} />
+            <QuestSectionMarkdown
+              markdown={quest.successCriteria}
+              variant="body"
+              empty=""
+            />
+          </section>
+        ) : null}
+
+        {visibility.showRewards ? (
+          <section className={CARD_CLASS} data-testid="quest-overview-reward">
+            <SectionHeader title="Quest Reward" />
+            <QuestRewardStrip
+              rewards={quest.rewards}
+              spaceTokens={spaceTokens}
+            />
+          </section>
+        ) : null}
+
+        {visibility.showMilestones ? (
+          <QuestMilestonesCard
+            milestones={quest.milestones.map((milestone) => ({
+              ...milestone,
+              ...milestoneOwnerPortrait(
+                milestone,
+                quest.members,
+                spaceMembers,
+                viewer,
+              ),
+            }))}
+            locale={locale}
+          />
+        ) : null}
+
+        <section className={CARD_CLASS} data-testid="quest-overview-health">
+          <SectionHeader
+            title="Quest Health"
+            right={
+              <span className="text-[11px] text-neutral-11">
+                Updated {formatRelativeTimeShort(healthUpdatedAt)}
+              </span>
+            }
+          />
+          <div className="space-y-3">
+            {showQuestHealthTag(quest) ? (
+              <p
+                className="inline-flex items-center gap-1.5 text-[13px] font-semibold"
+                data-testid="quest-health-label"
+              >
+                <span
+                  className={cn('size-2 rounded-full', health.dotClass)}
+                  aria-hidden
+                />
+                <span className={health.textClass}>{health.label}</span>
+              </p>
+            ) : null}
+            <HealthScale
+              marker={health.marker}
+              {...(quest.status === 'active'
+                ? {
+                    startLabel: ACTIVE_QUEST_HEALTH_LABEL.off_track,
+                    endLabel: ACTIVE_QUEST_HEALTH_LABEL.on_track,
+                    uppercase: false,
+                  }
+                : {})}
+            />
+            <p className="text-[11px] text-neutral-11">
+              {quest.health.updatesThisWeek}{' '}
+              {quest.health.updatesThisWeek === 1 ? 'update' : 'updates'} this
+              week
+              {quest.health.daysToTarget != null
+                ? quest.health.daysToTarget < 0
+                  ? ` · ${-quest.health.daysToTarget} days past target`
+                  : ` · ${quest.health.daysToTarget} days to target`
+                : ''}
+            </p>
+            {health.summary ? (
+              <p
+                className="text-[13.5px] leading-relaxed text-foreground"
+                data-testid="quest-health-summary"
+              >
+                {health.summary}
+              </p>
+            ) : null}
+          </div>
+        </section>
+      </div>
+
+      <div className="min-w-0 space-y-5">
+        {visibility.showMembers ? (
+          <QuestParticipantsCard
+            members={quest.members.map((member) => ({
+              ...member,
+              ...participantPortrait(member, spaceMembers, viewer),
+            }))}
+          />
+        ) : null}
+
+        {visibility.showTargetDate ? (
+          <QuestTargetDateCard
+            label={formatQuestCalendarDate(quest.targetDate, locale)}
+          />
+        ) : null}
+
+        {visibility.showDeliverablesSection ? (
+          <section
+            className={CARD_CLASS}
+            data-testid="quest-overview-deliverables"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-display text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+                Deliverables
+              </h2>
+              <Button
+                type="button"
+                variant="outline"
+                colorVariant="neutral"
+                disabled={!canEditDeliverables}
+                data-testid="quest-overview-deliverables-action"
+                onClick={onEditDeliverables}
+              >
+                {quest.deliverables.length === 0 ? 'Add' : 'Edit'}
+              </Button>
+            </div>
+            {quest.deliverables.length === 0 ? (
+              <p
+                className="pt-3 text-[12px] text-neutral-11"
+                data-testid="quest-overview-deliverables-empty"
+              >
+                No deliverables yet
+              </p>
+            ) : (
+              <div className="divide-y divide-border pt-3">
+                {quest.deliverables.map((d) => (
+                  <div key={d.id} className="space-y-0.5 py-2 first:pt-0">
+                    {d.url ? (
+                      <a
+                        href={d.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[13px] font-semibold text-foreground hover:underline"
+                      >
+                        {d.name}
+                        <ArrowUpRight className="size-3" aria-hidden />
+                      </a>
+                    ) : (
+                      <p className="text-[13px] font-semibold text-foreground">
+                        {d.name}
+                      </p>
+                    )}
+                    {d.note ? (
+                      <p className="text-[11px] text-neutral-11">{d.note}</p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function UpdatesTab({
+  quest,
+  canPost,
+  onPost,
+}: {
+  quest: QuestRecord;
+  canPost: boolean;
+  onPost: (input: {
+    text: string;
+    milestoneOrder: number | null;
+  }) => Promise<boolean>;
+}) {
+  const [authorFilter, setAuthorFilter] = useState<string | null>(null);
+  const [text, setText] = useState('');
+  const [milestoneOrder, setMilestoneOrder] = useState<number | null>(null);
+  const [sending, setSending] = useState(false);
+
+  const authors = useMemo(
+    () => Array.from(new Set(quest.updates.map((u) => u.authorName))),
+    [quest.updates],
+  );
+
+  const groups = useMemo(() => {
+    const sorted = [...quest.updates]
+      .filter((u) => !authorFilter || u.authorName === authorFilter)
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+    const out: Array<{ label: string; items: QuestUpdateRecord[] }> = [];
+    for (const update of sorted) {
+      const label = dayGroupLabel(update.createdAt);
+      const last = out[out.length - 1];
+      if (last && last.label === label) {
+        last.items.push(update);
+      } else {
+        out.push({ label, items: [update] });
+      }
+    }
+    return out;
+  }, [authorFilter, quest.updates]);
+
+  const submit = async () => {
+    const message = text.trim();
+    if (!message || sending) return;
+    setSending(true);
+    try {
+      const posted = await onPost({
+        text: message,
+        milestoneOrder,
+      });
+      if (!posted) return;
+      setText('');
+      setMilestoneOrder(null);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="mx-auto w-full max-w-[760px] space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className={LABEL_CLASS}>
+          UPDATES · newest first · posted by participants
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => setAuthorFilter(null)}
+            className={cn(
+              'px-2.5 py-1 text-[11px] font-semibold',
+              authorFilter === null
+                ? 'bg-foreground text-background'
+                : 'bg-neutral-3 text-foreground hover:bg-neutral-4',
+            )}
+          >
+            All
+          </button>
+          {authors.map((author) => (
+            <button
+              key={author}
+              type="button"
+              onClick={() => setAuthorFilter(author)}
+              className={cn(
+                'px-2.5 py-1 text-[11px] font-semibold',
+                authorFilter === author
+                  ? 'bg-foreground text-background'
+                  : 'bg-neutral-3 text-foreground hover:bg-neutral-4',
+              )}
+            >
+              {author.split(' ')[0]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {canPost ? (
+        <div
+          className={CHAT_COMPOSER_ROOT_CLASS}
+          data-testid="quest-update-composer"
+        >
+          <div className={CHAT_COMPOSER_FIELD_CLASS}>
+            <label className="block">
+              <span className="sr-only">Share progress</span>
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                rows={3}
+                aria-label="Share progress"
+                placeholder="Share progress with the quest…"
+                className={cn(
+                  'w-full resize-none text-[16px] leading-5 text-foreground outline-none placeholder:text-neutral-11',
+                  CHAT_COMPOSER_INPUT_CLASS,
+                )}
+              />
+            </label>
+            <div
+              className={cn(
+                CHAT_COMPOSER_ACTIONS_CLASS,
+                'flex-row flex-wrap items-center',
+              )}
+            >
+              <div className="w-full max-w-xs shrink-0">
+                <Select
+                  value={
+                    milestoneOrder == null ? 'none' : String(milestoneOrder)
+                  }
+                  onValueChange={(next) =>
+                    setMilestoneOrder(next === 'none' ? null : Number(next))
+                  }
+                >
+                  <SelectTrigger
+                    aria-label="Milestone"
+                    data-testid="quest-update-milestone"
+                    className="h-10 rounded-none bg-background px-3 text-[11px] font-semibold"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No milestone</SelectItem>
+                    {quest.milestones.map((milestone) => (
+                      <SelectItem
+                        key={milestone.id}
+                        value={String(milestone.order)}
+                      >
+                        M{milestone.order} · {milestone.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                type="button"
+                data-testid="quest-update-post"
+                disabled={sending || !text.trim()}
+                onClick={() => void submit()}
+                className="h-8 shrink-0 gap-1.5 rounded-none px-3 text-[11px] font-semibold uppercase tracking-[0.06em]"
+              >
+                <Send className="size-3" aria-hidden />
+                POST
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {groups.length === 0 ? (
+        <div className="border border-dashed border-border bg-background-2 px-6 py-10 text-center text-sm text-neutral-11">
+          No updates yet.
+        </div>
+      ) : (
+        groups.map((group) => (
+          <section key={group.label} className="space-y-2">
+            <p className={LABEL_CLASS}>{group.label}</p>
+            <div className="divide-y divide-border border border-border bg-background">
+              {group.items.map((update) => (
+                <QuestUpdateCard key={update.id} update={update} />
+              ))}
+            </div>
+          </section>
+        ))
+      )}
+    </div>
+  );
+}
+
+function SettingsRow({
+  label,
+  value,
+  action,
+  onAction,
+  disabled,
+  tone = 'default',
+  testId,
+}: {
+  label: string;
+  value?: ReactNode;
+  action: string;
+  onAction: () => void;
+  disabled?: boolean;
+  tone?: 'default' | 'danger';
+  testId?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-3">
+      <div className="min-w-0">
+        <p className="text-[13px] font-semibold text-foreground">{label}</p>
+        {value ? <p className="text-[12px] text-neutral-11">{value}</p> : null}
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        colorVariant={tone === 'danger' ? 'error' : 'neutral'}
+        disabled={disabled}
+        onClick={onAction}
+        className="shrink-0"
+        data-testid={testId}
+      >
+        {action}
+      </Button>
+    </div>
+  );
+}
+
+function SettingsTab({
+  quest,
+  isLead,
+  canEdit,
+  canChangeMilestones,
+  saving,
+  openModal,
+  onPatch,
+}: {
+  quest: QuestRecord;
+  isLead: boolean;
+  canEdit: boolean;
+  canChangeMilestones: boolean;
+  saving: boolean;
+  openModal: (modal: EditingModal) => void;
+  onPatch: (patch: QuestPatch) => void;
+}) {
+  const locale = useLocale();
+  const t = useTranslations('SpaceQuests');
+  const visibility = questOverviewVisibility(quest);
+  const leadOnly = !isLead;
+  const isPaused = quest.status === 'paused';
+  const targetLabel = quest.targetDate
+    ? formatQuestCalendarDate(quest.targetDate, locale)
+    : '—';
+  return (
+    <div className="mx-auto w-full max-w-[760px] space-y-4">
+      {!isLead ? (
+        <p className="border border-border bg-background-2 px-3 py-2 text-[12px] text-neutral-11">
+          Only the Lead can change status, transfer the lead, or use the danger
+          zone.
+        </p>
+      ) : null}
+
+      <section className={CARD_CLASS}>
+        <p className={LABEL_CLASS}>STATUS</p>
+        <div className="divide-y divide-border">
+          <SettingsRow
+            label="Quest status"
+            value={questStatusTag(quest)}
+            action="CHANGE"
+            disabled={leadOnly || quest.status === 'proposed'}
+            onAction={() => openModal('status')}
+          />
+          <SettingsRow
+            label="Target date"
+            value={targetLabel}
+            action="EDIT"
+            disabled={!canEdit}
+            onAction={() => openModal('targetDate')}
+          />
+          {quest.status !== 'active' ? (
+            <SettingsRow
+              label="Quest health"
+              action="EDIT"
+              disabled={!canEdit}
+              onAction={() => openModal('health')}
+            />
+          ) : null}
+        </div>
+      </section>
+
+      <section className={CARD_CLASS} data-testid="quest-settings-content">
+        <p className={LABEL_CLASS}>QUEST CONTENT</p>
+        <div className="divide-y divide-border">
+          <SettingsRow
+            label="Quest name"
+            value={quest.name}
+            action="EDIT"
+            disabled={!canEdit}
+            onAction={() => openModal('name')}
+          />
+          <SettingsRow
+            label="Goal"
+            action={visibility.showGoal ? 'EDIT' : 'ADD'}
+            disabled={!canEdit}
+            onAction={() => openModal('goal')}
+          />
+          <SettingsRow
+            label="Scope"
+            action={
+              visibility.showScopeIn || visibility.showScopeOut ? 'EDIT' : 'ADD'
+            }
+            disabled={!canEdit}
+            onAction={() => openModal('scope')}
+          />
+          <SettingsRow
+            label="Success criteria"
+            action={visibility.showSuccess ? 'EDIT' : 'ADD'}
+            disabled={!canEdit}
+            onAction={() => openModal('success')}
+          />
+          <SettingsRow
+            label="Quest reward"
+            action={visibility.showRewards ? 'EDIT' : 'ADD'}
+            disabled={!canEdit}
+            onAction={() => openModal('rewards')}
+          />
+          <SettingsRow
+            label={t('settings.deliverables')}
+            value={
+              visibility.showDeliverables
+                ? t('settings.deliverablesKept')
+                : t('settings.deliverablesHint')
+            }
+            action={
+              visibility.showDeliverablesSection
+                ? t('settings.on')
+                : t('settings.off')
+            }
+            disabled={
+              !canEdit ||
+              saving ||
+              quest.status === 'proposed' ||
+              quest.deliverables.length > 0
+            }
+            testId="quest-settings-deliverables-toggle"
+            onAction={() =>
+              onPatch({
+                deliverablesEnabled: !visibility.showDeliverablesSection,
+              })
+            }
+          />
+          {visibility.showDeliverablesSection ? (
+            <SettingsRow
+              label="Deliverables"
+              value={
+                quest.status === 'proposed'
+                  ? 'Available once the quest is active'
+                  : `${quest.deliverables.length} ${
+                      quest.deliverables.length === 1
+                        ? 'deliverable'
+                        : 'deliverables'
+                    }`
+              }
+              action={visibility.showDeliverables ? 'EDIT' : 'ADD'}
+              disabled={!canEdit || quest.status === 'proposed'}
+              onAction={() => openModal('deliverables')}
+            />
+          ) : null}
+        </div>
+      </section>
+
+      <section className={CARD_CLASS} data-testid="quest-settings-milestones">
+        <div className="flex items-center justify-between gap-3">
+          <p className={LABEL_CLASS}>MILESTONES</p>
+          <Button
+            type="button"
+            variant="outline"
+            colorVariant="neutral"
+            disabled={!canEdit}
+            onClick={() => openModal('milestones')}
+          >
+            {quest.milestones.length === 0 ? 'Add' : 'Edit'}
+          </Button>
+        </div>
+        {quest.milestones.length === 0 ? (
+          <p
+            className="pt-3 text-[12px] text-neutral-11"
+            data-testid="settings-milestones-empty"
+          >
+            No milestones yet
+          </p>
+        ) : (
+          <div className="divide-y divide-border">
+            {quest.milestones.map((milestone) => (
+              <div
+                key={milestone.id}
+                className="flex items-center justify-between gap-3 py-2.5"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-[13px] font-semibold text-foreground">
+                    M{milestone.order} · {milestone.name}
+                  </p>
+                  <p className="text-[12px] text-neutral-11">
+                    {[
+                      milestone.ownerName,
+                      formatQuestCalendarDate(milestone.dueDate, locale),
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || '—'}
+                  </p>
+                </div>
+                <QuestMilestoneStatusSelect
+                  ariaLabel={`Status for ${milestone.name}`}
+                  testId={`milestone-status-${milestone.id}`}
+                  value={milestone.status}
+                  disabled={
+                    !canChangeMilestones || saving || milestone.id == null
+                  }
+                  className="w-[9.5rem] shrink-0"
+                  onChange={(status) => {
+                    const patch = buildMilestoneStatusPatch(
+                      quest.milestones,
+                      milestone.id,
+                      status,
+                    );
+                    if (patch) onPatch(patch);
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className={CARD_CLASS}>
+        <p className={LABEL_CLASS}>PEOPLE</p>
+        <div className="divide-y divide-border">
+          <SettingsRow
+            label="Lead"
+            value={quest.leadName || '—'}
+            action="TRANSFER"
+            disabled={leadOnly}
+            onAction={() => openModal('lead')}
+          />
+          <SettingsRow
+            label="Participants"
+            value={`${quest.members.length} ${
+              quest.members.length === 1 ? 'participant' : 'participants'
+            }`}
+            action="MANAGE"
+            disabled={!canEdit}
+            onAction={() => openModal('members')}
+          />
+        </div>
+      </section>
+
+      <section className={CARD_CLASS}>
+        <p className={LABEL_CLASS}>UPDATES &amp; NOTIFICATIONS</p>
+        <div className="divide-y divide-border">
+          <SettingsRow
+            label="AI health summaries"
+            value="AI Agents refresh the health summary from participant updates"
+            action={quest.stewardHealthSummaries ? 'ON' : 'OFF'}
+            disabled={leadOnly}
+            onAction={() =>
+              onPatch({
+                stewardHealthSummaries: !quest.stewardHealthSummaries,
+              })
+            }
+          />
+          <SettingsRow
+            label="Participant update alerts"
+            value="Notify Quest participants when someone posts an update"
+            action={quest.memberUpdateAlerts ? 'ON' : 'OFF'}
+            disabled={leadOnly}
+            onAction={() =>
+              onPatch({ memberUpdateAlerts: !quest.memberUpdateAlerts })
+            }
+          />
+        </div>
+      </section>
+
+      <section className={cn(CARD_CLASS, 'border-error-6')}>
+        <p className={cn(LABEL_CLASS, 'text-error-11')}>DANGER ZONE</p>
+        <div className="divide-y divide-border">
+          <SettingsRow
+            label={isPaused ? 'Resume quest' : 'Pause quest'}
+            value={
+              isPaused
+                ? 'Return the quest to Active'
+                : 'Participants keep access; updates are paused'
+            }
+            action={isPaused ? 'RESUME' : 'PAUSE'}
+            disabled={
+              leadOnly ||
+              !(quest.status === 'active' || quest.status === 'paused')
+            }
+            onAction={() => onPatch({ status: isPaused ? 'active' : 'paused' })}
+            tone="danger"
+          />
+          <SettingsRow
+            label="Archive quest"
+            value="Hide from the list; content becomes read-only"
+            action="ARCHIVE"
+            disabled={leadOnly || quest.status === 'archived'}
+            onAction={() => openModal('archive')}
+            tone="danger"
+          />
+          <SettingsRow
+            label="Delete quest"
+            value={
+              quest.acceptedAt
+                ? 'Accepted quests cannot be deleted — archive instead'
+                : 'Permanently remove this quest'
+            }
+            action="DELETE"
+            disabled={leadOnly || Boolean(quest.acceptedAt)}
+            onAction={() => openModal('delete')}
+            tone="danger"
+          />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export function SpaceQuestDetail({
+  spaceSlug,
+  questSlug,
+  tab = 'overview',
+}: {
+  spaceSlug: string;
+  questSlug: string;
+  tab?: SpaceQuestDetailTab;
+}) {
+  const locale = useLocale();
+  const router = useRouter();
+  const { person } = useMe();
+  const { getAccessToken } = useAuthentication();
+  const { closeAiPanel } = useAiPanel();
+  const {
+    openCoherenceChat,
+    closeCoherenceChat,
+    closeHumanChatPanel,
+    setSpaceQuestDraft,
+    dismissQuestChat,
+    mode: chatMode,
+    coherenceSlug: chatSlug,
+    questChatRequested,
+  } = useHumanChatPanel();
+  const { quest, isLoading, error, refresh } = useSpaceQuestDetail(
+    spaceSlug,
+    questSlug,
+  );
+  const spaceMembers = useQuestSpaceMembers(spaceSlug);
+  const { spaceTokens } = useQuestRewardTokenCatalog(spaceSlug);
+  const [editingModal, setEditingModal] = useState<EditingModal>(null);
+  const [saving, setSaving] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [nextStatus, setNextStatus] = useState<QuestPatchStatus>('active');
+  const [detailChatOpen, setDetailChatOpen] = useState(false);
+  const [detailChatInput, setDetailChatInput] = useState('');
+  const [detailChatTyping, setDetailChatTyping] = useState(false);
+  const [detailChatMessages, setDetailChatMessages] = useState<
+    SpaceQuestDraftChatMessage[]
+  >(() => [
+    {
+      id: 'detail-m1',
+      role: 'member',
+      agentSpecialistId: 'operations',
+      senderName: 'AI Agents',
+      timestamp: new Date(),
+      text: 'Ask me to refine the Goal, Scope, Success Criteria, Milestones, Deliverables, or Quest Reward for this quest.',
+    },
+  ]);
+
+  const viewer = useMemo(
+    () =>
+      person
+        ? {
+            id: person.id,
+            name: [person.name, person.surname].filter(Boolean).join(' '),
+          }
+        : null,
+    [person],
+  );
+
+  const baseHref = `/${locale}/dho/${spaceSlug}/quests/${encodeURIComponent(
+    questSlug,
+  )}`;
+  const listHref = `/${locale}/dho/${spaceSlug}/quests`;
+
+  const openingDiscussionRef = useRef(false);
+  const sendDetailRef = useRef<(overridePrompt?: string) => void>(() => {});
+  const triggerDetailSend = useCallback(() => {
+    sendDetailRef.current();
+  }, []);
+  const triggerDetailQuickPrompt = useCallback((prompt: string) => {
+    sendDetailRef.current(prompt);
+  }, []);
+
+  useEffect(() => {
+    if (!detailChatOpen || !quest) return;
+    setSpaceQuestDraft({
+      spaceSlug,
+      questTitle: quest.name,
+      messages: detailChatMessages,
+      input: detailChatInput,
+      onInputChange: setDetailChatInput,
+      onSend: triggerDetailSend,
+      onQuickPrompt: triggerDetailQuickPrompt,
+      isAgentTyping: detailChatTyping,
+    });
+  }, [
+    detailChatInput,
+    detailChatMessages,
+    detailChatOpen,
+    detailChatTyping,
+    quest,
+    setSpaceQuestDraft,
+    spaceSlug,
+    triggerDetailQuickPrompt,
+    triggerDetailSend,
+  ]);
+
+  const questChatRef = useRef({
+    mode: chatMode,
+    slug: chatSlug,
+    questChatRequested,
+    closeCoherenceChat,
+    closeHumanChatPanel,
+    dismissQuestChat,
+    setSpaceQuestDraft,
+  });
+  questChatRef.current = {
+    mode: chatMode,
+    slug: chatSlug,
+    questChatRequested,
+    closeCoherenceChat,
+    closeHumanChatPanel,
+    dismissQuestChat,
+    setSpaceQuestDraft,
+  };
+
+  useLayoutEffect(() => {
+    // Settings can hold the saved offset, so the restore loop must not run
+    // there: it would drop the pin before this overview screen commits.
+    // The space chrome then releases a short overview to the hero.
+    if (tab !== 'overview') return;
+    return retainQuestDetailScroll();
+  }, [tab]);
+
+  useEffect(() => {
+    return () => {
+      const current = questChatRef.current;
+      current.setSpaceQuestDraft(null);
+      const openedThisQuest =
+        current.questChatRequested ||
+        (current.mode === 'coherence' &&
+          (current.slug?.trim() ?? '') === questSlug);
+      if (!openedThisQuest) return;
+      current.dismissQuestChat();
+      current.closeCoherenceChat();
+      current.closeHumanChatPanel();
+    };
+  }, [questSlug]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-20 w-full" />
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <Skeleton className="h-96 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !quest) {
+    return (
+      <div className="border border-error-6 bg-background-2 px-4 py-6">
+        <p className="text-2 text-error-11">This quest could not be loaded.</p>
+        <div className="mt-3 flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            colorVariant="neutral"
+            onClick={() => void refresh()}
+          >
+            Retry
+          </Button>
+          <Button asChild variant="ghost" colorVariant="neutral">
+            <Link href={listHref}>Back to quests</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const editableStatus = quest.status === 'active' || quest.status === 'paused';
+  const canEdit = editableStatus && canMemberEditQuest(viewer, quest);
+  const isLead = editableStatus && isViewerQuestLead(viewer, quest);
+  const canChangeMilestones = canChangeMilestoneStatus(viewer, quest);
+  const memberOptions = Array.from(
+    new Set([
+      ...spaceMembers.map((m) => m.name),
+      ...quest.members.map((m) => m.memberName),
+      quest.leadName,
+    ]),
+  ).filter(Boolean);
+  const spaceMemberPersons = toQuestSpaceMemberPersons(
+    spaceMembers,
+    memberOptions,
+  );
+
+  const openDiscussion = () => {
+    // The quest room is created when the quest is accepted. Proposed,
+    // rejected, and draft quests have no discussion on this page.
+    if (quest.status === 'proposed') return;
+    if (openingDiscussionRef.current) return;
+    openingDiscussionRef.current = true;
+    if (typeof window !== 'undefined' && window.innerWidth < 1200) {
+      closeAiPanel();
+    }
+    // The helper lives inside the quest room. Do not open the separate
+    // create-flow panel on this page.
+    setDetailChatOpen(false);
+    dismissQuestChat();
+    setSpaceQuestDraft(null);
+
+    const snapshot = quest;
+    void (async () => {
+      let roomId: string | null = null;
+      try {
+        roomId = snapshot.chatRoomId?.trim() || null;
+        if (!roomId) {
+          // The detail request retries provisioning for an accepted quest
+          // whose room was missed. Use that room; do not create one here.
+          const latest = await refresh();
+          if (
+            latest &&
+            typeof latest === 'object' &&
+            'slug' in latest &&
+            typeof latest.chatRoomId === 'string'
+          ) {
+            roomId = latest.chatRoomId.trim() || null;
+          }
+        }
+      } catch (error) {
+        console.warn(
+          '[quest discussion] could not open the discussion room',
+          error,
+        );
+        roomId = null;
+      } finally {
+        openingDiscussionRef.current = false;
+      }
+
+      // Opening with no room id renders the empty direct-message shell.
+      if (!roomId?.trim()) {
+        setActionError('Discussion could not be opened. Try again.');
+        return;
+      }
+      setActionError(null);
+      openCoherenceChat(
+        roomId,
+        snapshot.name,
+        snapshot.slug,
+        snapshot.goal,
+        spaceSlug,
+        { channel: 'quest' },
+      );
+    })();
+  };
+
+  const handleSendDetailChatMessage = async (overridePrompt?: string) => {
+    const rawTrimmed = (overridePrompt ?? detailChatInput).trim();
+    if (!rawTrimmed) return;
+    if (!overridePrompt) setDetailChatInput('');
+
+    const trimmed =
+      rawTrimmed.replace(/^@AI\s+Agents\b[,:\s]*/i, '').trim() || rawTrimmed;
+    recordMobilizedAiAgentsForQuestion(spaceSlug, trimmed);
+
+    const viewerName = viewer?.name?.trim() || 'Participant';
+    const now = new Date();
+    setDetailChatMessages((prev) => [
+      ...prev,
+      {
+        id: `du-${now.getTime()}`,
+        role: 'user',
+        senderName: viewerName,
+        avatarUrl: person?.avatarUrl ?? undefined,
+        timestamp: now,
+        text: rawTrimmed,
+      },
+    ]);
+
+    const appendAssistantReply = (text: string) => {
+      setDetailChatMessages((prev) => [
+        ...prev,
+        {
+          id: `ds-${Date.now()}`,
+          role: 'member',
+          agentSpecialistId: 'operations',
+          senderName: 'AI Agents',
+          timestamp: new Date(),
+          text,
+        },
+      ]);
+    };
+
+    setDetailChatTyping(true);
+    try {
+      const token = await getAccessToken?.().catch(() => null);
+      if (!token) {
+        appendAssistantReply(
+          'Could not reach the assistant right now. Try again or click any section to edit directly.',
+        );
+        return;
+      }
+      const response = await fetch(
+        `/api/v1/spaces/${encodeURIComponent(spaceSlug)}/quests/draft-assist`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            message: trimmed,
+            questSlug: quest.slug,
+            spaceTitle: quest.spaceTitle,
+            spaceMembers: spaceMembers.slice(0, 60).map((m) => ({
+              personId: m.personId,
+              name: m.name,
+            })),
+            history: questAssistHistoryEntries(detailChatMessages.slice(-8)),
+          }),
+        },
+      );
+      if (!response.ok) {
+        appendAssistantReply(
+          'Could not reach the assistant right now. Try again or click any section to edit directly.',
+        );
+        return;
+      }
+      const data = (await response.json()) as {
+        ok?: boolean;
+        patch?: QuestDraftPatchInput | null;
+        updatedQuest?: QuestRecord | null;
+        reply?: string | null;
+        specialistId?: string;
+        writeError?: string | null;
+      };
+      let saved = false;
+      if (data.updatedQuest) {
+        await refresh(data.updatedQuest, { revalidate: false });
+        saved = true;
+      } else if (data.patch && canEdit && !data.writeError) {
+        const patchToSave: QuestPatch = {
+          ...(data.patch.name ? { name: data.patch.name } : {}),
+          ...(data.patch.goal ? { goal: data.patch.goal } : {}),
+          ...(data.patch.scopeIn ? { scopeIn: data.patch.scopeIn } : {}),
+          ...(data.patch.scopeOut ? { scopeOut: data.patch.scopeOut } : {}),
+          ...(data.patch.successCriteriaBullets
+            ? {
+                successCriteria: data.patch.successCriteriaBullets
+                  .map((b) => `- ${b}`)
+                  .join('\n'),
+              }
+            : {}),
+          ...(data.patch.targetDate !== undefined
+            ? { targetDate: data.patch.targetDate }
+            : {}),
+          ...(data.patch.rewards ? { rewards: data.patch.rewards } : {}),
+        };
+        if (Object.keys(patchToSave).length > 0) {
+          saved = (await savePatch(patchToSave)).ok;
+        }
+      }
+      const replyText =
+        data.reply?.trim() ||
+        (saved
+          ? 'Updated the quest sections on screen.'
+          : QUEST_HELPER_OFFLINE_REPLY);
+      setDetailChatMessages((prev) => [
+        ...prev,
+        {
+          id: `ds-${Date.now()}`,
+          role: 'member',
+          agentSpecialistId: data.specialistId ?? 'operations',
+          senderName: 'AI Agents',
+          timestamp: new Date(),
+          text: replyText,
+        },
+      ]);
+    } catch {
+      appendAssistantReply(
+        'Could not reach the assistant right now. Try again or click any section to edit directly.',
+      );
+    } finally {
+      setDetailChatTyping(false);
+    }
+  };
+
+  sendDetailRef.current = (overridePrompt?: string) => {
+    void handleSendDetailChatMessage(overridePrompt);
+  };
+
+  const savePatch = async (
+    patch: QuestPatch,
+    options?: { inline?: boolean },
+  ): Promise<
+    | { ok: true; quest: QuestRecord }
+    | {
+        ok: false;
+        message: string;
+        code: string | null;
+        path: Array<string | number> | null;
+      }
+  > => {
+    const leavingForOverview = tab !== 'overview';
+    // Record the scroller and the tabs' viewport Y, and hold the column.
+    // Do not restore here. This screen can still hold the offset, so the
+    // loop would forget it before overview mounts and the chrome scrolls
+    // the short screen back to the hero.
+    if (leavingForOverview) captureQuestDetailView();
+    setSaving(true);
+    setActionError(null);
+    try {
+      const updated = await patchSpaceQuestRequest({
+        spaceSlug,
+        questSlug: quest.slug,
+        patch,
+        getAccessToken,
+      });
+      await refresh(updated, { revalidate: false });
+      if (leavingForOverview) {
+        router.replace(baseHref, { scroll: false });
+      }
+      return { ok: true, quest: updated };
+    } catch (err) {
+      if (leavingForOverview) {
+        releaseQuestDetailScrollPin();
+        clearMainColumnScrollFreeze();
+        releaseMainColumnScrollHeightHold();
+        clearQuestDetailScrollMemory();
+      }
+      const message = readableQuestErrorMessage(
+        err instanceof Error ? err.message : 'Failed to update quest',
+      );
+      if (!options?.inline) setActionError(message);
+      return {
+        ok: false,
+        message,
+        code: err instanceof SpaceQuestRequestError ? err.code : null,
+        path: err instanceof SpaceQuestRequestError ? err.path : null,
+      };
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const postUpdate = async ({
+    text,
+    milestoneOrder,
+  }: {
+    text: string;
+    milestoneOrder: number | null;
+  }) => {
+    setSaving(true);
+    setActionError(null);
+    try {
+      const updated = await postSpaceQuestUpdateRequest({
+        spaceSlug,
+        questSlug: quest.slug,
+        body: {
+          text,
+          milestoneOrder,
+          milestoneLabel: milestoneOrder != null ? `M${milestoneOrder}` : null,
+          links: [],
+        },
+        getAccessToken,
+      });
+      await refresh(updated, { revalidate: false });
+      return true;
+    } catch (err) {
+      setActionError(
+        readableQuestErrorMessage(
+          err instanceof Error ? err.message : 'Failed to post update',
+        ),
+      );
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteQuest = async () => {
+    setSaving(true);
+    setActionError(null);
+    try {
+      await deleteSpaceQuestRequest({
+        spaceSlug,
+        questSlug: quest.slug,
+        getAccessToken,
+      });
+      router.push(listHref);
+    } catch (err) {
+      setActionError(
+        readableQuestErrorMessage(
+          err instanceof Error ? err.message : 'Failed to delete quest',
+        ),
+      );
+      setSaving(false);
+    }
+  };
+
+  const closeModal = (open: boolean) => {
+    if (!open) setEditingModal(null);
+  };
+
+  const tabs = spaceQuestDetailTabLinks(baseHref);
+
+  return (
+    <div className="space-y-4" data-testid="quest-detail">
+      <Link
+        href={listHref}
+        className="inline-flex items-center gap-1 text-xs font-medium text-neutral-11 hover:text-foreground"
+      >
+        <ArrowLeft className="size-3" aria-hidden />
+        Quests
+      </Link>
+
+      <header className="space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="m-0 min-w-0 text-4 leading-tight text-foreground">
+              {quest.name}
+            </h1>
+            <QuestStatusBadge quest={quest} />
+          </div>
+          {quest.status !== 'proposed' ? (
+            <div className="flex shrink-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={openDiscussion}
+                data-testid="open-quest-discussion-button"
+                className="inline-flex items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
+              >
+                Open discussion
+                <span aria-hidden>→</span>
+              </button>
+            </div>
+          ) : null}
+        </div>
+        <QuestDetailSubheading
+          lead={resolveQuestLeadIdentity({
+            leadName: quest.leadName,
+            avatarSrc:
+              quest.members.find((member) => member.isLead)?.memberAvatarUrl ??
+              findQuestSpaceMember(spaceMembers, { name: quest.leadName })
+                ?.avatarUrl ??
+              (viewer?.name &&
+              quest.leadName.trim().toLowerCase() ===
+                viewer.name.trim().toLowerCase()
+                ? person?.avatarUrl ?? undefined
+                : undefined),
+            personId:
+              quest.members.find((member) => member.isLead)?.personId ??
+              findQuestSpaceMember(spaceMembers, { name: quest.leadName })
+                ?.personId ??
+              (viewer?.name &&
+              quest.leadName.trim().toLowerCase() ===
+                viewer.name.trim().toLowerCase()
+                ? person?.id
+                : undefined),
+          })}
+        />
+      </header>
+
+      <nav
+        className="flex gap-1 overflow-x-auto border-b border-border"
+        aria-label="Quest sections"
+        data-quest-detail-tabs=""
+      >
+        {tabs.map((item) => (
+          <Link
+            key={item.key}
+            href={item.href}
+            scroll={false}
+            aria-current={tab === item.key ? 'page' : undefined}
+            className={cn(
+              '-mb-px shrink-0 border-b-2 px-3 py-2 text-[11px] font-semibold tracking-[0.1em]',
+              tab === item.key
+                ? 'border-foreground text-foreground'
+                : 'border-transparent text-neutral-11 hover:text-foreground',
+            )}
+          >
+            {item.label}
+            {item.key === 'updates' && quest.updates.length > 0 ? (
+              <span className="ml-1.5 text-neutral-11">
+                {quest.updates.length}
+              </span>
+            ) : null}
+          </Link>
+        ))}
+      </nav>
+
+      {actionError ? (
+        <p
+          className="border border-error-6 bg-background-2 px-3 py-2 text-[12px] text-error-11"
+          data-testid="quest-action-error"
+        >
+          {readableQuestErrorMessage(actionError)}
+        </p>
+      ) : null}
+
+      {tab === 'overview' ? (
+        <OverviewTab
+          quest={quest}
+          spaceTokens={spaceTokens}
+          spaceMembers={spaceMembers}
+          canEditDeliverables={canEdit}
+          onEditDeliverables={() => setEditingModal('deliverables')}
+          viewer={
+            viewer
+              ? {
+                  id: viewer.id,
+                  name: viewer.name,
+                  avatarUrl: person?.avatarUrl,
+                }
+              : null
+          }
+        />
+      ) : null}
+      {tab === 'updates' ? (
+        <UpdatesTab quest={quest} canPost={canEdit} onPost={postUpdate} />
+      ) : null}
+      {tab === 'settings' ? (
+        <SettingsTab
+          quest={quest}
+          isLead={isLead}
+          canEdit={canEdit}
+          canChangeMilestones={canChangeMilestones}
+          saving={saving}
+          openModal={(modal) => {
+            if (modal === 'status') {
+              setNextStatus(quest.status === 'active' ? 'completed' : 'active');
+            }
+            setEditingModal(modal);
+          }}
+          onPatch={(patch) => void savePatch(patch)}
+        />
+      ) : null}
+
+      <EditQuestNameModal
+        open={editingModal === 'name'}
+        onOpenChange={closeModal}
+        value={quest.name}
+        onSave={(name) => void savePatch({ name })}
+      />
+      <EditQuestGoalModal
+        open={editingModal === 'goal'}
+        onOpenChange={closeModal}
+        value={quest.goal}
+        onSave={(goal) => void savePatch({ goal })}
+      />
+      <EditQuestScopeModal
+        open={editingModal === 'scope'}
+        onOpenChange={closeModal}
+        scopeIn={quest.scopeIn}
+        scopeOut={quest.scopeOut}
+        scopeInMarkdown={quest.scopeInMarkdown}
+        scopeOutMarkdown={quest.scopeOutMarkdown}
+        onSave={(next) => void savePatch(next)}
+      />
+      <EditQuestSuccessModal
+        open={editingModal === 'success'}
+        onOpenChange={closeModal}
+        value={quest.successCriteria}
+        onSave={(successCriteria) => void savePatch({ successCriteria })}
+      />
+      <EditQuestRewardsModal
+        open={editingModal === 'rewards'}
+        onOpenChange={closeModal}
+        rewards={quest.rewards}
+        spaceSlug={spaceSlug}
+        onSave={(rewards) => void savePatch({ rewards })}
+      />
+      <EditQuestMilestonesModal
+        open={editingModal === 'milestones'}
+        onOpenChange={closeModal}
+        milestones={quest.milestones.map((m) => ({
+          id: m.id,
+          name: m.name,
+          description: m.description,
+          dueDate: m.dueDate,
+          ownerPersonId: m.ownerPersonId,
+          ownerName: m.ownerName,
+          status: m.status,
+        }))}
+        spaceMembers={spaceMemberPersons}
+        spaceMemberNames={memberOptions}
+        showStatusSelect
+        onSave={(next) =>
+          void savePatch({
+            milestones: next.map((m) => ({
+              id: m.id,
+              name: m.name.trim() || 'Untitled milestone',
+              description: m.description,
+              dueDate: m.dueDate,
+              ownerPersonId:
+                m.ownerPersonId ??
+                (m.ownerName
+                  ? findQuestSpaceMemberId(spaceMembers, m.ownerName)
+                  : null),
+              ownerName: m.ownerName,
+              status: m.status,
+            })),
+          })
+        }
+      />
+      <EditQuestMembersModal
+        open={editingModal === 'members'}
+        onOpenChange={closeModal}
+        members={quest.members.map((m) => ({
+          id: m.id,
+          personId: m.personId,
+          memberName: m.memberName,
+          memberAvatarUrl: m.memberAvatarUrl,
+          roleLabel: m.roleLabel,
+          responsibilities: m.responsibilities,
+        }))}
+        spaceMembers={spaceMemberPersons}
+        spaceMemberNames={memberOptions}
+        onSave={(next) =>
+          void savePatch({
+            members: next.map((m) => ({
+              id: m.id,
+              personId:
+                m.personId ??
+                findQuestSpaceMemberId(spaceMembers, m.memberName),
+              memberName: m.memberName,
+              memberAvatarUrl: m.memberAvatarUrl ?? null,
+              roleLabel: m.roleLabel ?? null,
+              responsibilities: m.responsibilities
+                .map((r) => r.trim())
+                .filter(Boolean),
+            })),
+          })
+        }
+      />
+      <EditQuestDeliverablesModal
+        open={editingModal === 'deliverables'}
+        onOpenChange={closeModal}
+        deliverables={quest.deliverables}
+        onSave={(next) =>
+          savePatch(
+            {
+              deliverables: next
+                .filter((d) => d.name.trim())
+                .map((d) => ({
+                  id: d.id,
+                  name: d.name.trim(),
+                  url: d.url.trim() || null,
+                  note: d.note.trim() || null,
+                })),
+            },
+            { inline: true },
+          )
+        }
+      />
+      <EditQuestLeadModal
+        open={editingModal === 'lead'}
+        onOpenChange={closeModal}
+        leadName={quest.leadName}
+        leadPersonId={quest.leadPersonId}
+        spaceMembers={spaceMemberPersons}
+        spaceMemberNames={memberOptions}
+        onSave={(leadName, leadPersonId) => {
+          const match = quest.members.find((m) => m.memberName === leadName);
+          void savePatch({
+            leadName,
+            leadPersonId:
+              leadPersonId ??
+              match?.personId ??
+              findQuestSpaceMemberId(spaceMembers, leadName),
+          });
+        }}
+      />
+      <EditQuestTargetDateModal
+        open={editingModal === 'targetDate'}
+        onOpenChange={closeModal}
+        value={quest.targetDate}
+        onSave={(targetDate) => void savePatch({ targetDate })}
+      />
+      <EditHealthDialog
+        open={editingModal === 'health'}
+        onOpenChange={closeModal}
+        quest={quest}
+        onSave={(patch) => void savePatch(patch)}
+      />
+
+      <SimpleDialog
+        open={editingModal === 'status'}
+        onOpenChange={closeModal}
+        title="Change quest status"
+      >
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {(['active', 'paused', 'completed'] as const).map((status) => (
+              <button
+                key={status}
+                type="button"
+                onClick={() => setNextStatus(status)}
+                className={cn(
+                  'px-2.5 py-1 text-[11px] font-semibold',
+                  nextStatus === status
+                    ? 'bg-foreground text-background'
+                    : 'bg-neutral-3 text-foreground hover:bg-neutral-4',
+                )}
+              >
+                {statusLabel(status)}
+              </button>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              className="rounded-none"
+              onClick={() => setEditingModal(null)}
+            >
+              CANCEL
+            </Button>
+            <Button
+              type="button"
+              className="rounded-none"
+              disabled={saving || nextStatus === quest.status}
+              onClick={() => {
+                setEditingModal(null);
+                void savePatch({ status: nextStatus });
+              }}
+            >
+              SAVE
+            </Button>
+          </div>
+        </div>
+      </SimpleDialog>
+
+      <SimpleDialog
+        open={editingModal === 'archive'}
+        onOpenChange={closeModal}
+        title="Archive this quest?"
+      >
+        <div className="space-y-4">
+          <p className="text-[13px] text-neutral-11">
+            Hide {quest.name} from the list. Content becomes read-only, and
+            there is no restore action for the Lead.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              className="rounded-none"
+              onClick={() => setEditingModal(null)}
+            >
+              CANCEL
+            </Button>
+            <Button
+              type="button"
+              colorVariant="error"
+              className="rounded-none"
+              disabled={saving}
+              onClick={() => {
+                setEditingModal(null);
+                void savePatch({ status: 'archived' });
+              }}
+            >
+              ARCHIVE QUEST
+            </Button>
+          </div>
+        </div>
+      </SimpleDialog>
+
+      <SimpleDialog
+        open={editingModal === 'delete'}
+        onOpenChange={closeModal}
+        title="Delete this quest?"
+      >
+        <div className="space-y-4">
+          <p className="text-[13px] text-neutral-11">
+            This permanently removes {quest.name} with its milestones,
+            participants, deliverables and updates.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              className="rounded-none"
+              onClick={() => setEditingModal(null)}
+            >
+              CANCEL
+            </Button>
+            <Button
+              type="button"
+              colorVariant="error"
+              className="rounded-none"
+              disabled={saving}
+              onClick={() => void deleteQuest()}
+            >
+              DELETE QUEST
+            </Button>
+          </div>
+        </div>
+      </SimpleDialog>
+    </div>
+  );
+}

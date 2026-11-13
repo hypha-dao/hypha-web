@@ -131,6 +131,39 @@ describe('messageFromRoomMessageEvent edited', () => {
     expect(message.edited).toBe(true);
   });
 
+  it('labels a quest-helper stamp as the helper and leaves an unmarked bot event alone', () => {
+    const client = {
+      getRoom: () => null,
+    } as unknown as MatrixSdk.MatrixClient;
+    const stamped = messageFromRoomMessageEvent(
+      client,
+      '!room:example.com',
+      {
+        ...makeTextEvent({
+          body: 'Quest accepted · Fri, Nov 6, 2026 — channel opened\nParticipants: Ada',
+        }),
+        getContent: () => ({
+          msgtype: 'm.text',
+          body: 'Quest accepted · Fri, Nov 6, 2026 — channel opened\nParticipants: Ada',
+          'org.hypha.quest_helper': 'quest-helper',
+        }),
+      } as unknown as MatrixSdk.MatrixEvent,
+      false,
+    );
+    expect(stamped.agentSpecialistId).toBe('quest-helper');
+    expect(stamped.content).toContain('Quest accepted');
+    expect(stamped.content).toContain('Participants: Ada');
+    const historical = messageFromRoomMessageEvent(
+      client,
+      '!room:example.com',
+      makeTextEvent({
+        body: 'Quest accepted · Fri, Nov 6, 2026 — channel opened',
+      }),
+      false,
+    );
+    expect(historical.agentSpecialistId).toBeUndefined();
+  });
+
   it('omits edited when there is no replacement', () => {
     const client = {
       getRoom: () => null,

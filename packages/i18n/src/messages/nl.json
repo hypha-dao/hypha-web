@@ -608,6 +608,7 @@
     "Treasury": "Treasury",
     "Energy": "Energie",
     "Agreements": "Overeenkomsten",
+    "quests": "Quests",
     "Spaces": "Ruimtes",
     "loadMore": "Meer laden",
     "noMore": "Geen meer",
@@ -771,6 +772,8 @@
       "proposalsBody": "Gesprekken over voorstellen waar je over kunt stemmen",
       "signalsTitle": "Signalen",
       "signalsBody": "Behoeften, middelen, kansen, risico's, spanningen, inzichten, acties en impact",
+      "questsTitle": "Quests",
+      "questsBody": "Questkanalen die openen wanneer een questvoorstel wordt aangenomen",
       "contextTitle": "Context",
       "contextBody": "Gesprekken over Context-secties in je spaces",
       "ecosystemTitle": "Ecosystemen",
@@ -783,6 +786,7 @@
       "tagSpacePublic": "Openbaar space-kanaal",
       "tagProposal": "Voorstel",
       "tagSignal": "Space-signalen",
+      "tagQuest": "Quest",
       "tagContext": "Space-context",
       "tagEcosystem": "Ecosysteemkanaal",
       "tagNetwork": "Netwerkkanaal",
@@ -2659,7 +2663,8 @@
       "addEnergyMember": "Energielid toevoegen",
       "changeEnergyOptimization": "Verander energieoptimalisatie",
       "whitelistEnergySettlement": "Energieafwikkeling op de witte lijst",
-      "spaceContext": "Space-context"
+      "spaceContext": "Space-context",
+      "quest": "Quest"
     },
     "documentBadges": {
       "invite": "Uitnodiging",
@@ -3596,7 +3601,8 @@
       "toVote": "{duration} om te stemmen",
       "youVoted": "Je hebt op {vote} gestemd",
       "voteValueYes": "Ja",
-      "voteValueNo": "Nee"
+      "voteValueNo": "Nee",
+      "questActivationNote": "Als dit voorstel wordt aangenomen, wordt de quest actief."
     },
     "withdrawResubmit": {
       "title": "Uw voorstel intrekken of bewerken en opnieuw indienen?",
@@ -3884,6 +3890,7 @@
     "tabChatProposal": "Voorstel",
     "tabChatContext": "Context",
     "tabChatSignal": "Signaal",
+    "tabChatQuest": "Quest",
     "tabChatEcosystem": "Ecosysteemkanaal",
     "tabChatNetwork": "Netwerkkanaal",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# ongelezen vermelding} other {# ongelezen vermeldingen}}",
@@ -5825,6 +5832,86 @@
       "failed": "De sectie kon niet worden voorgesteld. Probeer het opnieuw.",
       "restoreLabel": "Verwijderde secties",
       "restore": "Herstellen voorstellen"
+    }
+  },
+  "SpaceQuests": {
+    "title": "Quests",
+    "subtitle": "Gericht, tijdgebonden werk met een duidelijk doel, leden en mijlpalen",
+    "newQuest": "NIEUWE QUEST",
+    "searchPlaceholder": "Quests zoeken",
+    "filters": {
+      "active": "Actief",
+      "proposed": "Voorgesteld",
+      "paused": "Gepauzeerd",
+      "completed": "Voltooid",
+      "rejected": "Afgewezen",
+      "drafts": "Mijn concepten",
+      "status": "Status"
+    },
+    "overview": {
+      "goal": "Doel",
+      "scope": "Reikwijdte",
+      "inScope": "Binnen de reikwijdte",
+      "outOfScope": "Buiten de reikwijdte",
+      "successCriteria": "Succescriteria"
+    },
+    "settings": {
+      "deliverables": "Deliverables",
+      "deliverablesHint": "Toon een Deliverables-kaart in het overzicht",
+      "deliverablesKept": "Bestaande deliverables blijven in het overzicht",
+      "on": "Aan",
+      "off": "Uit"
+    },
+    "deliverableUrl": "Voer een link in die begint met http:// of https://",
+    "deliverableSaveError": "Deliverables konden niet worden opgeslagen. Probeer het opnieuw.",
+    "activity": {
+      "proposalRejected": "voorstel afgewezen"
+    },
+    "confirm": {
+      "title": "Deze quest indienen?",
+      "body": "Dit dient de quest in als voorstel waar {space} over stemt. De quest blijft voorgesteld tot de stemming slaagt.",
+      "cancel": "Annuleren",
+      "submit": "Indienen voor stemming"
+    },
+    "drafts": {
+      "empty": "Je hebt geen opgeslagen quest-concepten in deze space.",
+      "continue": "Doorgaan",
+      "delete": "Verwijderen",
+      "deleteTitle": "Dit concept verwijderen?",
+      "deleteBody": "Dit verwijdert je opgeslagen concept. Bestaande quests blijven ongewijzigd.",
+      "deleteConfirm": "Concept verwijderen",
+      "cancel": "Annuleren",
+      "edited": "Bewerkt {when}",
+      "untitled": "Quest zonder titel",
+      "save": "Concept opslaan",
+      "saving": "Opslaan…",
+      "saved": "Concept opgeslagen",
+      "saveFailed": "Het concept kon niet worden opgeslagen. Probeer het opnieuw.",
+      "keepTitle": "Dit concept bewaren?",
+      "keepBody": "Je kunt deze quest later verder zetten via Mijn concepten. Weggooien wist het concept.",
+      "keep": "Concept bewaren",
+      "discard": "Weggooien",
+      "savedAuto": "Concept automatisch opgeslagen",
+      "notSaved": "Nog niet opgeslagen",
+      "retry": "Opslaan mislukt. Opnieuw",
+      "deleteFailed": "Die conceptversie kon niet worden verwijderd. Hij staat weer in de lijst."
+    },
+    "updates": {
+      "before": "Voor",
+      "after": "Na",
+      "showChanges": "Wijzigingen tonen",
+      "hideChanges": "Wijzigingen verbergen"
+    },
+    "milestones": {
+      "status": {
+        "not_started": "Niet gestart",
+        "in_progress": "Bezig",
+        "done": "Klaar"
+      }
+    },
+    "error": {
+      "load": "Quests konden niet worden geladen.",
+      "retry": "Opnieuw proberen"
     }
   }
 }

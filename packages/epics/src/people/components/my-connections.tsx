@@ -66,6 +66,7 @@ import {
   Globe,
   Globe2,
   Radio,
+  Scroll,
   Search,
   Target,
   Users,
@@ -142,6 +143,7 @@ import { MessagesInboxFilters } from './messages-inbox-filters';
 import {
   channelRowsFromSnapshots,
   directInboxPlace,
+  inboxCoherenceSlug,
   inboxContextHref,
   inboxContextLine,
   inboxFilterCounts,
@@ -1551,6 +1553,7 @@ const INBOX_CHANNEL_TYPES = new Set<string>([
   HYPHA_ROOM_TYPES.signal,
   HYPHA_ROOM_TYPES.proposal,
   HYPHA_ROOM_TYPES.context,
+  HYPHA_ROOM_TYPES.quest,
   HYPHA_ROOM_TYPES.ecosystem,
   HYPHA_ROOM_TYPES.network,
 ]);
@@ -2937,7 +2940,7 @@ export function MyConnections({
       openCoherenceChat(
         row.roomId,
         row.name,
-        row.inbox.signalSlug ?? '',
+        inboxCoherenceSlug(row.inbox),
         null,
         spaceSlug,
         {
@@ -3597,6 +3600,7 @@ const CHANNEL_MARK_ICONS: Partial<Record<InboxChannelKind, typeof Circle>> = {
   space: Circle,
   'space-public': Globe,
   signal: Radio,
+  quest: Scroll,
   proposal: FileText,
   context: BookOpen,
   ecosystem: Target,
@@ -3629,6 +3633,8 @@ function channelTagKey(kind: InboxChannelKind) {
       return 'inbox.tagSpacePublic';
     case 'signal':
       return 'inbox.tagSignal';
+    case 'quest':
+      return 'inbox.tagQuest';
     case 'proposal':
       return 'inbox.tagProposal';
     case 'context':

@@ -123,6 +123,8 @@ const KEYWORDS: Array<{ id: AiSpecialistId; keywords: string[] }> = [
       'timeline',
       'milestone',
       'process',
+      'quest',
+      'quests',
     ],
   },
   {

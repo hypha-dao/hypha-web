@@ -6,6 +6,7 @@ import {
   channelHasRecentActivity,
   channelIsRelevantToMember,
   channelRowsFromSnapshots,
+  inboxCoherenceSlug,
   inboxContextHref,
   inboxContextLine,
   inboxFilterCounts,
@@ -80,6 +81,58 @@ describe('messages inbox filters', () => {
       isInboxChannelKind(inboxKindForRoomType('io.hypha.room.space')),
     ).toBe(true);
     expect(isInboxChannelKind('dm')).toBe(false);
+  });
+
+  it('lists quest channels under Spaces and their own Quests filter', () => {
+    expect(inboxKindForRoomType('io.hypha.room.quest')).toBe('quest');
+    expect(rowMatchesInboxFilter('quest', 'quests')).toBe(true);
+    expect(rowMatchesInboxFilter('quest', 'spaces')).toBe(true);
+    expect(rowMatchesInboxFilter('quest', 'signals')).toBe(false);
+    expect(rowMatchesInboxFilter('signal', 'quests')).toBe(false);
+
+    const rows = channelRowsFromSnapshots(
+      [
+        {
+          roomId: '!quest:hs',
+          roomType: 'io.hypha.room.quest',
+          name: 'Quest room',
+          aliases: [],
+          preview: 'Quest accepted — channel opened',
+          mine: false,
+          lastTs: recent,
+          unread: 1,
+        },
+        {
+          roomId: '!other-quest:hs',
+          roomType: 'io.hypha.room.quest',
+          name: 'Another space quest',
+          aliases: [],
+          preview: 'hello',
+          mine: false,
+          lastTs: recent,
+          unread: 0,
+        },
+      ],
+      {
+        ...context,
+        quests: [
+          {
+            roomId: '!quest:hs',
+            title: 'Onboarding matcher',
+            slug: 'onboarding-matcher',
+            spaceSlug: 'hypha-platform',
+            spaceTitle: 'Hypha Platform',
+            rootSlug: 'hypha',
+            rootTitle: 'Hypha',
+          },
+        ],
+      },
+      'Network',
+      now,
+    );
+    expect(rows.map((row) => [row.roomId, row.name, row.inbox.kind])).toEqual([
+      ['!quest:hs', 'Onboarding matcher', 'quest'],
+    ]);
   });
 
   it('counts each conversation once per matching filter', () => {
@@ -215,6 +268,8 @@ describe('messages inbox context', () => {
           signalTitle: null,
           signalType: null,
           signalSlug: null,
+          questTitle: null,
+          questSlug: null,
           proposalTitle: 'Genesis IP Contribution',
           proposalSlug: 'genesis-ip',
           contextSectionKey: null,
@@ -738,6 +793,8 @@ describe('inboxContextHref', () => {
     signalTitle: 'Roadmap page',
     signalType: 'Need',
     signalSlug: 'roadmap-page',
+    questTitle: 'Onboarding matcher',
+    questSlug: 'onboarding-matcher',
     proposalTitle: 'Garden vote',
     proposalSlug: 'garden-vote',
     contextSectionKey: 'mission',
@@ -770,6 +827,15 @@ describe('inboxContextHref', () => {
     );
     expect(inboxContextHref('en', { ...place, kind: 'context' })).toBe(
       '/en/dho/hypha-platform/context?section=mission',
+    );
+    expect(inboxContextHref('en', { ...place, kind: 'quest' })).toBe(
+      '/en/dho/hypha-platform/quests/onboarding-matcher',
+    );
+    expect(inboxCoherenceSlug({ ...place, kind: 'quest' })).toBe(
+      'onboarding-matcher',
+    );
+    expect(inboxCoherenceSlug({ ...place, kind: 'signal' })).toBe(
+      'roadmap-page',
     );
   });
 

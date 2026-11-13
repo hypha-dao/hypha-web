@@ -57,6 +57,8 @@ export * from './pipeline/server';
 export * from './pipeline';
 export * from './space-context/server';
 export * from './space-context';
+export * from './space-quests/server';
+export * from './space-quests';
 export * from './matrix/server';
 export * from './matrix/types';
 export * from './energy/server';

@@ -25,6 +25,7 @@ import {
 } from './token-update-apply';
 import { parseCapitalKey } from '../../network/capitals';
 import { writeTokenCapital } from '../../network/capital-columns';
+import { deleteUnacceptedProposedQuestByDocumentId } from '../../space-quests/server/delete-proposed-quest-for-document';
 
 export const createAgreement = async (
   { title, slug: maybeSlug, creatorId, ...rest }: CreateAgreementInput,
@@ -74,6 +75,21 @@ export const deleteAgreementBySlug = async (
   { slug }: { slug: string },
   { db }: { db: DatabaseInstance },
 ) => {
+  const [existing] = await db
+    .select({ id: documents.id })
+    .from(documents)
+    .where(eq(documents.slug, slug))
+    .limit(1);
+  if (!existing) {
+    throw new Error('Failed to delete agreement');
+  }
+
+  // Quest proposals: drop the still-proposed quest before ON DELETE SET NULL.
+  await deleteUnacceptedProposedQuestByDocumentId(
+    { documentId: existing.id },
+    { db },
+  );
+
   const deleted = await db
     .delete(documents)
     .where(eq(documents.slug, slug))

@@ -1,10 +1,33 @@
 'use client';
 
 import {
+  QUEST_HELPER_AUTHOR_ID,
+  QUEST_HELPER_NAME,
+} from '@hypha-platform/core/client';
+import {
   getAgentAvatarInitials,
   tagGroupAccentClass,
 } from '../ai-agent-competencies';
 import { isHyphaBotMatrixIdentity } from './matrix-room-member-display';
+
+/**
+ * Quest Helper wins over the org-bot label. An unmarked bot message stays
+ * AI Agents, including acceptance notices posted before the helper stamp.
+ */
+export function visibleAgentSenderName(input: {
+  agentSpecialistId?: string | null;
+  senderMatrixId?: string | null;
+  senderName?: string | null;
+  agentMentionLabel: string;
+}): string | null {
+  if (input.agentSpecialistId === QUEST_HELPER_AUTHOR_ID) {
+    return QUEST_HELPER_NAME;
+  }
+  if (isHyphaBotMatrixIdentity(input.senderMatrixId, input.senderName)) {
+    return input.agentMentionLabel;
+  }
+  return null;
+}
 
 /** A Matrix bot reply, or a message stamped with the specialist who answered. */
 export function isAgentChatAuthor(input: {

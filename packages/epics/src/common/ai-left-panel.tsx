@@ -676,6 +676,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           return tCommon('overview');
         case 'agreements':
           return tCommon('Agreements');
+        case 'quests':
+          return tCommon('quests');
         case 'members':
           return tCommon('Members');
         case 'treasury':
