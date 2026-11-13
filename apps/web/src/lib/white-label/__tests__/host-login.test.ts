@@ -82,13 +82,14 @@ describe('/api allowlist: signed-in reads, on the real allowlist', () => {
       apiAllowlistFor(true),
     );
 
-  it('allows the profile and the four Banking listings, GET and HEAD only', () => {
+  it('allows the profile, the four Banking listings and the signal workflow, GET and HEAD only', () => {
     for (const path of [
       '/api/v1/people/me',
       '/api/v1/spaces/hypha-platform/banking/bank-customers',
       '/api/v1/spaces/hypha-platform/banking/accounts',
       '/api/v1/spaces/hypha-platform/banking/payout-accounts',
       '/api/v1/spaces/hypha-platform/banking/transfers',
+      '/api/v1/spaces/hypha-platform/signal-workflow',
     ]) {
       expect(allowed('GET', path)).toBe(true);
       expect(allowed('HEAD', path)).toBe(true);
@@ -255,6 +256,7 @@ describe('login is an option of the host: resolver on the real allowlists', () =
     '/api/v1/spaces/hypha-platform/banking/accounts',
     '/api/v1/spaces/hypha-platform/banking/payout-accounts',
     '/api/v1/spaces/hypha-platform/banking/transfers',
+    '/api/v1/spaces/hypha-platform/signal-workflow',
   ];
   const BASE = [
     '/api/v1/spaces/hypha-platform',

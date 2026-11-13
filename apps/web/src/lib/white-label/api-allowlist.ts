@@ -48,14 +48,18 @@ export const WL_API_READ_ALLOWLIST: readonly string[] = [
  */
 export const WL_API_SIGNED_IN_READ_ALLOWLIST: readonly string[] = [
   // Measured by reading the hooks of all twelve sections, not one browser run:
-  // the profile (`useMe`, used by Banking, Overview, Members) and the four
-  // Banking listings (`transfers` also answers `?mode=transfer-options`). The
-  // rest of the signed-in calls the sections can make stay refused on purpose.
+  // the profile (`useMe`, used by Banking, Overview, Members), the four
+  // Banking listings (`transfers` also answers `?mode=transfer-options`) and
+  // the Signal section's workflow config. The rest of the signed-in calls the
+  // sections can make stay refused on purpose.
   '/api/v1/people/me',
   '/api/v1/spaces/:slug/banking/bank-customers',
   '/api/v1/spaces/:slug/banking/accounts',
   '/api/v1/spaces/:slug/banking/payout-accounts',
   '/api/v1/spaces/:slug/banking/transfers',
+  // Signal section: the Space's signal-workflow config, read only when signed in.
+  // The handler checks Space read access itself (`checkSpaceAccess`).
+  '/api/v1/spaces/:slug/signal-workflow',
 ];
 
 /**
