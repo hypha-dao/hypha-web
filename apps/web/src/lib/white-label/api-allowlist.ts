@@ -45,10 +45,11 @@ export const WL_API_READ_ALLOWLIST: readonly string[] = [
  * settings gets these; a read-only host refuses them (404) like any other path
  * off the base list. The list only makes a route reachable: each handler
  * applies its own access policy. Most require a bearer token (profile,
- * Banking). Two serve public Space data without one, exactly as on the main
- * app: signal workflow (access is checked for a private Space) and organisation
- * (no check). They are listed here because the sections request them only once
- * a token exists, not because the route authenticates.
+ * Banking). Two serve public Space data without one, as on the main app:
+ * signal workflow (access is checked for a private Space) and organisation
+ * (no check; filtered to PUBLIC Spaces on a host). They are listed here
+ * because the sections request them only once a token exists, not because the
+ * route authenticates.
  */
 export const WL_API_SIGNED_IN_READ_ALLOWLIST: readonly string[] = [
   // From the hooks of the twelve sections, plus calls seen on a real host with
@@ -67,8 +68,9 @@ export const WL_API_SIGNED_IN_READ_ALLOWLIST: readonly string[] = [
   // token); a public Space's config is readable without one, as on the main app.
   '/api/v1/spaces/:slug/signal-workflow',
   // The organisation's Spaces (parent and siblings), used to count membership in
-  // any of them as access. The handler checks no token and serves public Space
-  // records, as on the main app; the hook requests it only once a token exists.
+  // any of them as access. The handler checks no token; on a host it returns only
+  // the own Space and PUBLIC Spaces (`keepPublicSpaces`, interim until #2652
+  // enforces visibility on the route for everyone). The main app is unchanged.
   '/api/v1/spaces/:slug/organisation',
 ];
 
