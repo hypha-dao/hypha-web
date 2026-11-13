@@ -21,9 +21,20 @@ describe('shouldOptimizeRemoteImage', () => {
       shouldOptimizeRemoteImage('https://bovzk9ehhu.ufs.sh/f/abc-avatar.png'),
     ).toBe(true);
     expect(shouldOptimizeRemoteImage('https://utfs.io/f/abc')).toBe(true);
+    expect(shouldOptimizeRemoteImage('https://ufs.sh/f/abc')).toBe(true);
     expect(
       shouldOptimizeRemoteImage('https://files.uploadthing.com/f/abc'),
     ).toBe(true);
+  });
+
+  it('does not optimize bare uploadthing.com or http UploadThing URLs', () => {
+    expect(shouldOptimizeRemoteImage('https://uploadthing.com/f/abc')).toBe(
+      false,
+    );
+    expect(shouldOptimizeRemoteImage('http://utfs.io/f/abc')).toBe(false);
+    expect(
+      shouldOptimizeRemoteImage('http://bovzk9ehhu.ufs.sh/f/abc-avatar.png'),
+    ).toBe(false);
   });
 
   it('leaves data and blob URLs unoptimized', () => {
@@ -31,9 +42,11 @@ describe('shouldOptimizeRemoteImage', () => {
     expect(shouldOptimizeRemoteImage('blob:https://hypha.earth/1')).toBe(false);
   });
 
-  it('optimizes local and relative paths', () => {
+  it('optimizes only root-relative local paths', () => {
     expect(shouldOptimizeRemoteImage('/placeholder.png')).toBe(true);
-    expect(shouldOptimizeRemoteImage('placeholder.png')).toBe(true);
+    expect(shouldOptimizeRemoteImage('placeholder.png')).toBe(false);
+    expect(shouldOptimizeRemoteImage('./placeholder.png')).toBe(false);
+    expect(shouldOptimizeRemoteImage('//cdn.example.org/a.png')).toBe(false);
   });
 
   it('optimizes hosts listed in NEXT_PUBLIC_IMAGE_HOSTS', () => {
@@ -44,6 +57,26 @@ describe('shouldOptimizeRemoteImage', () => {
     expect(
       shouldOptimizeRemoteImage('https://images.hypha.earth/people/1.png'),
     ).toBe(true);
+  });
+
+  it('parses NEXT_PUBLIC_IMAGE_HOSTS without requiring a space after commas', () => {
+    process.env.NEXT_PUBLIC_IMAGE_HOSTS = 'cdn.example.org,images.hypha.earth';
+    expect(shouldOptimizeRemoteImage('https://cdn.example.org/a.png')).toBe(
+      true,
+    );
+    expect(
+      shouldOptimizeRemoteImage('https://images.hypha.earth/people/1.png'),
+    ).toBe(true);
+  });
+
+  it('requires https and an exact hostname for configured hosts', () => {
+    process.env.NEXT_PUBLIC_IMAGE_HOSTS = 'cdn.example.org';
+    expect(shouldOptimizeRemoteImage('http://cdn.example.org/a.png')).toBe(
+      false,
+    );
+    expect(shouldOptimizeRemoteImage('https://img.cdn.example.org/a.png')).toBe(
+      false,
+    );
   });
 
   it('does not send unknown remotes through the optimizer', () => {

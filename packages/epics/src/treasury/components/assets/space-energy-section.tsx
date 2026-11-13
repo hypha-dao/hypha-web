@@ -82,7 +82,7 @@ export const SpaceEnergySection = ({ spaceSlug }: SpaceEnergySectionProps) => {
     enabled:
       prefetchTelemetry.enabled &&
       (sevenDayTelemetry.data !== undefined ||
-        sevenDayTelemetry.error !== undefined),
+        sevenDayTelemetry.retriesExhausted),
   });
 
   const memberAddresses = React.useMemo(

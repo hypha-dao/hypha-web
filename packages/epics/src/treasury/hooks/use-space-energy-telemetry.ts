@@ -211,6 +211,12 @@ export const useSpaceEnergyTelemetry = (
     };
   }, [endpoint]);
 
+  const [retriesExhausted, setRetriesExhausted] = React.useState(false);
+
+  React.useEffect(() => {
+    setRetriesExhausted(false);
+  }, [endpoint]);
+
   const { data, isLoading, isValidating, error, mutate } = useSWR(
     endpoint ? ([endpoint, period] as const) : null,
     async (key: readonly [string, TelemetryPeriod]) => {
@@ -224,7 +230,10 @@ export const useSpaceEnergyTelemetry = (
       refreshInterval,
       shouldRetryOnError: isRetryableTelemetryError,
       onErrorRetry: (_retryError, key, _config, revalidate, retryOptions) => {
-        if (retryOptions.retryCount > TELEMETRY_MAX_RETRIES) return;
+        if (retryOptions.retryCount > TELEMETRY_MAX_RETRIES) {
+          setRetriesExhausted(true);
+          return;
+        }
         const path = Array.isArray(key) ? key[0] : undefined;
         // A still-running request is the cold Azure aggregate; starting
         // another one is what made 7d and 30d time out together.
@@ -242,6 +251,16 @@ export const useSpaceEnergyTelemetry = (
   const visibleError = cancelled ? undefined : error;
 
   React.useEffect(() => {
+    if (data !== undefined) setRetriesExhausted(false);
+  }, [data]);
+
+  React.useEffect(() => {
+    if (visibleError && !isRetryableTelemetryError(visibleError)) {
+      setRetriesExhausted(true);
+    }
+  }, [visibleError]);
+
+  React.useEffect(() => {
     if (cancelled && endpoint) void mutate();
   }, [cancelled, endpoint, mutate]);
 
@@ -252,6 +271,7 @@ export const useSpaceEnergyTelemetry = (
       data === undefined &&
       (isLoading || isValidating || cancelled),
     error: visibleError,
+    retriesExhausted: Boolean(visibleError) && retriesExhausted,
     refresh: mutate,
   };
 };

@@ -1,6 +1,16 @@
-const UPLOADTHING_HOSTS = new Set(['ufs.sh', 'utfs.io', 'uploadthing.com']);
-const UPLOADTHING_HOST_SUFFIXES = ['.ufs.sh', '.utfs.io', '.uploadthing.com'];
+/** Exact hosts listed in `apps/web/next.config.ts` `images.remotePatterns`. */
+const UPLOADTHING_EXACT_HOSTS = new Set(['ufs.sh', 'utfs.io']);
+/** `*.ufs.sh`, `*.utfs.io`, `*.uploadthing.com` — not bare `uploadthing.com`. */
+const UPLOADTHING_WILDCARD_SUFFIXES = [
+  '.ufs.sh',
+  '.utfs.io',
+  '.uploadthing.com',
+];
 
+/**
+ * Same parse as `apps/web/next.config.ts`: comma-separated hostnames, trimmed.
+ * Entries are exact hostnames — no subdomain wildcard.
+ */
 function configuredImageHosts(): string[] {
   return (process.env.NEXT_PUBLIC_IMAGE_HOSTS ?? '')
     .split(',')
@@ -19,12 +29,25 @@ export function isLikelyGifSrc(src: string): boolean {
   }
 }
 
+function isRootRelativeSrc(src: string): boolean {
+  return src.startsWith('/') && !src.startsWith('//');
+}
+
+function isAllowedOptimizerHost(hostname: string): boolean {
+  if (UPLOADTHING_EXACT_HOSTS.has(hostname)) return true;
+  if (
+    UPLOADTHING_WILDCARD_SUFFIXES.some((suffix) => hostname.endsWith(suffix))
+  ) {
+    return true;
+  }
+  return configuredImageHosts().includes(hostname);
+}
+
 /**
  * Whether `next/image` can send this URL through `/_next/image`.
- * UploadThing originals are huge; those hosts are always optimized.
- * Other remote hosts must be listed in `NEXT_PUBLIC_IMAGE_HOSTS` or the
- * optimizer rejects them — those stay `unoptimized` (original src).
- * GIFs stay unoptimized: the optimizer is slow and drops animation.
+ * Must match `apps/web/next.config.ts` `images.remotePatterns`: https only,
+ * UploadThing wildcards as configured, and exact `NEXT_PUBLIC_IMAGE_HOSTS`.
+ * Local optimized srcs must start with `/`. GIFs stay unoptimized.
  */
 export function shouldOptimizeRemoteImage(src: string): boolean {
   if (!src || src.startsWith('data:') || src.startsWith('blob:')) {
@@ -34,17 +57,12 @@ export function shouldOptimizeRemoteImage(src: string): boolean {
     return false;
   }
   if (!/^https?:\/\//i.test(src)) {
-    return true;
+    return isRootRelativeSrc(src);
   }
   try {
-    const hostname = new URL(src).hostname.toLowerCase();
-    if (UPLOADTHING_HOSTS.has(hostname)) return true;
-    if (UPLOADTHING_HOST_SUFFIXES.some((suffix) => hostname.endsWith(suffix))) {
-      return true;
-    }
-    return configuredImageHosts().some(
-      (host) => hostname === host || hostname.endsWith(`.${host}`),
-    );
+    const url = new URL(src);
+    if (url.protocol !== 'https:') return false;
+    return isAllowedOptimizerHost(url.hostname.toLowerCase());
   } catch {
     return false;
   }

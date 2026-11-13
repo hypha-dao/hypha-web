@@ -8,7 +8,10 @@ import {
   parseWhiteLabelHostConfig,
 } from './src/lib/white-label/config';
 
-const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
+const IMAGE_HOSTS = (process.env.NEXT_PUBLIC_IMAGE_HOSTS ?? '')
+  .split(',')
+  .map((host) => host.trim())
+  .filter(Boolean);
 const LOCALES = routing.locales;
 
 /**

@@ -318,6 +318,57 @@ describe('useSpaceEnergyTelemetry', () => {
     await advance(60_000);
     expect(pending).toHaveLength(1);
     expect(result.current.error).toBeInstanceOf(EnergyTelemetryHttpError);
+    expect(result.current.retriesExhausted).toBe(true);
+  });
+
+  it('does not exhaust retries on the first retryable 7d error', async () => {
+    const { result } = renderHook(
+      () => useSpaceEnergyTelemetry('7d', 'first-error-space'),
+      { wrapper },
+    );
+    await advance(0);
+    await act(async () => {
+      pending[0]!.resolve({ error: 'Failed' }, 500);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(result.current.error).toBeInstanceOf(EnergyTelemetryHttpError);
+    expect(result.current.retriesExhausted).toBe(false);
+  });
+
+  it('exhausts retries after the last 7d attempt so 30d can start', async () => {
+    const { result } = renderHook(
+      () =>
+        useSpaceEnergyTelemetry('7d', 'give-up-space', { refreshInterval: 0 }),
+      { wrapper },
+    );
+    await advance(0);
+    await act(async () => {
+      pending[0]!.resolve({ error: 'Failed' }, 500);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(result.current.retriesExhausted).toBe(false);
+
+    await advance(5_000);
+    await act(async () => {
+      pending[1]!.resolve({ error: 'Failed' }, 500);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    await advance(10_000);
+    await act(async () => {
+      pending[2]!.resolve({ error: 'Failed' }, 500);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(result.current.retriesExhausted).toBe(false);
+
+    await advance(20_000);
+    await act(async () => {
+      pending[3]!.resolve({ error: 'Failed' }, 500);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    await advance(60_000);
+    expect(pending).toHaveLength(4);
+    expect(result.current.error).toBeInstanceOf(EnergyTelemetryHttpError);
+    expect(result.current.retriesExhausted).toBe(true);
   });
 
   it('hard-aborts a hung request after 85s', async () => {
