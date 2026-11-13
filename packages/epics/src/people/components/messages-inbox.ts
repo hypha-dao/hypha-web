@@ -11,6 +11,7 @@ export type InboxChannelKind =
   | 'space'
   | 'space-public'
   | 'signal'
+  | 'quest'
   | 'proposal'
   | 'context'
   | 'ecosystem'
@@ -23,6 +24,7 @@ export type InboxFilter =
   | 'rooms'
   | 'proposals'
   | 'signals'
+  | 'quests'
   | 'context'
   | 'ecosystem'
   | 'network';
@@ -34,6 +36,7 @@ export const INBOX_FILTERS: readonly InboxFilter[] = [
   'rooms',
   'proposals',
   'signals',
+  'quests',
   'context',
   'ecosystem',
   'network',
@@ -50,6 +53,7 @@ const ROOM_TYPE_KIND: Record<string, InboxChannelKind> = {
   'io.hypha.room.space': 'space',
   'io.hypha.room.space-public': 'space-public',
   'io.hypha.room.signal': 'signal',
+  'io.hypha.room.quest': 'quest',
   'io.hypha.room.proposal': 'proposal',
   'io.hypha.room.context': 'context',
   'io.hypha.room.ecosystem': 'ecosystem',
@@ -65,6 +69,8 @@ export type InboxPlace = {
   signalTitle: string | null;
   signalType: string | null;
   signalSlug: string | null;
+  questTitle: string | null;
+  questSlug: string | null;
   proposalTitle: string | null;
   proposalSlug: string | null;
   contextSectionKey: string | null;
@@ -95,6 +101,17 @@ export type InboxSignalLabel = {
   notified: boolean;
 };
 
+/** Quest channel opened when a Quest proposal passes. */
+export type InboxQuestLabel = {
+  roomId: string;
+  title: string;
+  slug: string;
+  spaceSlug: string;
+  spaceTitle: string;
+  rootSlug: string;
+  rootTitle: string;
+};
+
 /** Open proposal (`documents.state = proposal`) the member can vote on. */
 export type InboxProposalLabel = {
   roomId: string;
@@ -122,6 +139,7 @@ export type InboxContext = {
   signals: readonly InboxSignalLabel[];
   proposals?: readonly InboxProposalLabel[];
   contexts?: readonly InboxContextSectionLabel[];
+  quests?: readonly InboxQuestLabel[];
 };
 
 export type JoinedChannelSnapshot = {
@@ -149,6 +167,7 @@ const EMPTY_CONTEXT: InboxContext = {
   signals: [],
   proposals: [],
   contexts: [],
+  quests: [],
 };
 
 export function isInboxFilter(
@@ -173,6 +192,7 @@ export function isInboxChannelKind(
     kind === 'space' ||
     kind === 'space-public' ||
     kind === 'signal' ||
+    kind === 'quest' ||
     kind === 'proposal' ||
     kind === 'context' ||
     kind === 'ecosystem' ||
@@ -245,6 +265,14 @@ export function channelIsRelevantToMember(
       (signal) => signal.notified && signal.roomId.trim() === roomId,
     );
   }
+  if (place.kind === 'quest') {
+    // Quest channels are listed for the space; the server only returns quests
+    // in spaces the member belongs to.
+    const roomId = snapshot.roomId.trim();
+    return (context.quests ?? []).some(
+      (quest) => quest.roomId.trim() === roomId,
+    );
+  }
   if (place.kind === 'proposal') {
     const roomId = snapshot.roomId.trim();
     return (context.proposals ?? []).some(
@@ -271,6 +299,7 @@ export function rowMatchesInboxFilter(
       kind === 'space' ||
       kind === 'space-public' ||
       kind === 'signal' ||
+      kind === 'quest' ||
       kind === 'proposal' ||
       kind === 'context'
     );
@@ -278,6 +307,7 @@ export function rowMatchesInboxFilter(
   if (filter === 'rooms') return kind === 'space' || kind === 'space-public';
   if (filter === 'proposals') return kind === 'proposal';
   if (filter === 'signals') return kind === 'signal';
+  if (filter === 'quests') return kind === 'quest';
   if (filter === 'context') return kind === 'context';
   if (filter === 'ecosystem') return kind === 'ecosystem';
   return kind === 'network';
@@ -388,6 +418,15 @@ function signalByRoomId(signals: readonly InboxSignalLabel[], roomId: string) {
   return signals.find((signal) => signal.roomId.trim() === id) ?? null;
 }
 
+function questByRoomId(
+  quests: readonly InboxQuestLabel[] | undefined,
+  roomId: string,
+) {
+  const id = roomId.trim();
+  if (!id) return null;
+  return quests?.find((quest) => quest.roomId.trim() === id) ?? null;
+}
+
 function proposalByRoomId(
   proposals: readonly InboxProposalLabel[] | undefined,
   roomId: string,
@@ -434,6 +473,7 @@ export function inboxKindForJoinedRoom(input: {
   if (!context) return null;
   if (spaceByRoomId(context.spaces, input.roomId)) return 'space';
   if (signalByRoomId(context.signals, input.roomId)) return 'signal';
+  if (questByRoomId(context.quests, input.roomId)) return 'quest';
   if (proposalByRoomId(context.proposals, input.roomId)) return 'proposal';
   if (contextSectionByRoomId(context.contexts, input.roomId)) return 'context';
   return null;
@@ -452,9 +492,10 @@ export function resolveInboxPlace(
   if (!isInboxChannelKind(kind)) return null;
   const alias = placeFromAliases(snapshot.aliases);
   const signal = signalByRoomId(context.signals, snapshot.roomId);
+  const quest = questByRoomId(context.quests, snapshot.roomId);
   const proposal = proposalByRoomId(context.proposals, snapshot.roomId);
   const section = contextSectionByRoomId(context.contexts, snapshot.roomId);
-  const owner = signal ?? proposal ?? section;
+  const owner = signal ?? quest ?? proposal ?? section;
   const byRoom = spaceByRoomId(context.spaces, snapshot.roomId);
   const bySlug = spaceBySlug(
     context.spaces,
@@ -479,11 +520,24 @@ export function resolveInboxPlace(
     signalTitle: clean(signal?.title),
     signalType: clean(signal?.type),
     signalSlug: clean(signal?.slug),
+    questTitle: clean(quest?.title),
+    questSlug: clean(quest?.slug),
     proposalTitle: clean(proposal?.title),
     proposalSlug: clean(proposal?.slug),
     contextSectionKey: clean(section?.sectionKey),
     contextSectionTitle: clean(section?.title),
   };
+}
+
+/**
+ * Slug the opened room belongs to. Quest rooms are not signals: Messages
+ * must pass the quest slug or the discussion helper has nothing to load.
+ */
+export function inboxCoherenceSlug(
+  place: Pick<InboxPlace, 'kind' | 'signalSlug' | 'questSlug'>,
+): string {
+  if (place.kind === 'quest') return place.questSlug?.trim() ?? '';
+  return place.signalSlug?.trim() ?? '';
 }
 
 export function inboxContextLine(
@@ -504,6 +558,7 @@ export function inboxContextLine(
   if (
     place.kind === 'space' ||
     place.kind === 'space-public' ||
+    place.kind === 'quest' ||
     place.kind === 'proposal' ||
     place.kind === 'context'
   ) {
@@ -519,6 +574,7 @@ export function channelDisplayName(
   networkFallback: string,
 ): string {
   if (place.kind === 'signal' && place.signalTitle) return place.signalTitle;
+  if (place.kind === 'quest' && place.questTitle) return place.questTitle;
   if (place.kind === 'proposal' && place.proposalTitle) {
     return place.proposalTitle;
   }
@@ -567,6 +623,13 @@ export function inboxContextHref(
       signal,
     )}`;
   }
+  if (place.kind === 'quest') {
+    if (!space) return null;
+    const quest = place.questSlug?.trim();
+    return quest
+      ? `/${locale}/dho/${space}/quests/${encodeURIComponent(quest)}`
+      : `/${locale}/dho/${space}/quests`;
+  }
   if (place.kind === 'proposal') {
     const proposal = place.proposalSlug?.trim();
     if (!space || !proposal) return null;
@@ -605,6 +668,8 @@ export function directInboxPlace(kind: 'dm' | 'group'): InboxPlace {
     signalTitle: null,
     signalType: null,
     signalSlug: null,
+    questTitle: null,
+    questSlug: null,
     proposalTitle: null,
     proposalSlug: null,
     contextSectionKey: null,
@@ -725,6 +790,7 @@ export function channelRowsFromSnapshots(
       place.signalTitle,
       place.signalType,
       place.signalSlug,
+      place.questTitle,
       place.proposalTitle,
       place.proposalSlug,
       place.contextSectionTitle,

@@ -1,4 +1,9 @@
 export { getGovernanceChainId } from './governance-chain-id';
+export {
+  StaleDeploymentError,
+  isStaleClientBundleError,
+  type StaleAgreementRef,
+} from '../stale-deployment';
 export * from './useAddMemberOrchestrator';
 export * from './useAgreementFileUploads';
 export * from './useAgreementMutations.web2.rsc';

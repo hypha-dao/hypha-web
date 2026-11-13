@@ -114,10 +114,25 @@ describe('network room join guard', () => {
     expect(source).toContain(
       '<AgentMentionLabelProvider value={agentMentionLabel}>',
     );
-    const pickerAt = source.indexOf('return withMatrixAgentMention(');
+    const pickerAt = source.indexOf('withMatrixAgentMention(');
     expect(pickerAt).toBeGreaterThan(-1);
-    expect(source.slice(pickerAt, pickerAt + 220)).toContain(
-      "roster,\n      t('agentMentionLabel'),",
+    expect(source.slice(pickerAt, pickerAt + 240)).toContain(
+      "roster,\n        t('agentMentionLabel'),",
+    );
+  });
+
+  it('does not put a signal join slug on quest channel call links', () => {
+    expect(source).toContain('const callJoinNotificationTarget = useMemo');
+    expect(source).toContain(
+      "mode === 'coherence' &&\n        (!coherenceChannel || coherenceChannel === 'signal')",
+    );
+    expect(source).toContain(
+      '[spaceSlug, roomId, pathname, mode, coherenceSlug, coherenceChannel]',
+    );
+    const fallbackAt = source.indexOf('buildCallJoinHref({\n            lang,');
+    expect(fallbackAt).toBeGreaterThan(-1);
+    expect(source.slice(fallbackAt, fallbackAt + 420)).toContain(
+      "!coherenceChannel || coherenceChannel === 'signal'",
     );
   });
 });

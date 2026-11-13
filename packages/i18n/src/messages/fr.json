@@ -608,6 +608,7 @@
     "Treasury": "Trésorerie",
     "Energy": "Énergie",
     "Agreements": "Accords",
+    "quests": "Quêtes",
     "Spaces": "Espaces",
     "loadMore": "Charger plus",
     "noMore": "Plus aucun",
@@ -771,6 +772,8 @@
       "proposalsBody": "Conversations sur les propositions auxquelles tu peux voter",
       "signalsTitle": "Signaux",
       "signalsBody": "Besoins, ressources, opportunités, risques, tensions, idées, actions et impact",
+      "questsTitle": "Quêtes",
+      "questsBody": "Canaux de quête ouverts lorsqu’une proposition de quête est adoptée",
       "contextTitle": "Contexte",
       "contextBody": "Discussions sur les sections du Contexte de tes espaces",
       "ecosystemTitle": "Écosystèmes",
@@ -783,6 +786,7 @@
       "tagSpacePublic": "Canal public de l'espace",
       "tagProposal": "Proposition",
       "tagSignal": "Signaux de l'espace",
+      "tagQuest": "Quête",
       "tagContext": "Contexte de l'espace",
       "tagEcosystem": "Canal de l'écosystème",
       "tagNetwork": "Canal du réseau",
@@ -2088,7 +2092,8 @@
       "addEnergyMember": "Ajouter un membre énergie",
       "changeEnergyOptimization": "Modifier l'optimisation énergétique",
       "whitelistEnergySettlement": "Liste blanche de règlement énergétique",
-      "spaceContext": "Contexte de l'espace"
+      "spaceContext": "Contexte de l'espace",
+      "quest": "Quête"
     },
     "documentBadges": {
       "invite": "Invitation",
@@ -3022,7 +3027,8 @@
       "toVote": "{duration} pour voter",
       "youVoted": "Vous avez voté {vote}",
       "voteValueYes": "Oui",
-      "voteValueNo": "Non"
+      "voteValueNo": "Non",
+      "questActivationNote": "Si cette proposition est adoptée, la quête devient active."
     },
     "withdrawResubmit": {
       "title": "Retirer votre proposition ou la modifier et la soumettre à nouveau ?",
@@ -3309,6 +3315,7 @@
     "tabChatProposal": "Proposition",
     "tabChatContext": "Contexte",
     "tabChatSignal": "Signal",
+    "tabChatQuest": "Quête",
     "tabChatEcosystem": "Canal de l'écosystème",
     "tabChatNetwork": "Canal du réseau",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# mention non lue} other {# mentions non lues}}",
@@ -5816,6 +5823,86 @@
       "failed": "Impossible de suggérer la section. Réessayez.",
       "restoreLabel": "Sections supprimées",
       "restore": "Suggérer la restauration"
+    }
+  },
+  "SpaceQuests": {
+    "title": "Quêtes",
+    "subtitle": "Travail ciblé et limité dans le temps, avec un objectif clair, des membres et des jalons",
+    "newQuest": "NOUVELLE QUÊTE",
+    "searchPlaceholder": "Rechercher des quêtes",
+    "filters": {
+      "active": "Actives",
+      "proposed": "Proposées",
+      "paused": "En pause",
+      "completed": "Terminées",
+      "rejected": "Rejetées",
+      "drafts": "Mes brouillons",
+      "status": "Statut"
+    },
+    "overview": {
+      "goal": "Objectif",
+      "scope": "Périmètre",
+      "inScope": "Dans le périmètre",
+      "outOfScope": "Hors périmètre",
+      "successCriteria": "Critères de réussite"
+    },
+    "settings": {
+      "deliverables": "Livrables",
+      "deliverablesHint": "Afficher une carte Livrables dans l’aperçu",
+      "deliverablesKept": "Les livrables existants restent dans l’aperçu",
+      "on": "Activé",
+      "off": "Désactivé"
+    },
+    "deliverableUrl": "Saisissez un lien commençant par http:// ou https://",
+    "deliverableSaveError": "Impossible d’enregistrer les livrables. Réessayez.",
+    "activity": {
+      "proposalRejected": "proposition rejetée"
+    },
+    "confirm": {
+      "title": "Soumettre cette quête ?",
+      "body": "Cela soumet la quête comme proposition au vote de {space}. La quête reste proposée jusqu’à l’adoption du vote.",
+      "cancel": "Annuler",
+      "submit": "Soumettre au vote"
+    },
+    "drafts": {
+      "empty": "Vous n’avez aucun brouillon de quête enregistré dans cet espace.",
+      "continue": "Continuer",
+      "delete": "Supprimer",
+      "deleteTitle": "Supprimer ce brouillon ?",
+      "deleteBody": "Cela retire votre brouillon enregistré. Aucune quête existante n’est modifiée.",
+      "deleteConfirm": "Supprimer le brouillon",
+      "cancel": "Annuler",
+      "edited": "Modifié {when}",
+      "untitled": "Quête sans titre",
+      "save": "Enregistrer le brouillon",
+      "saving": "Enregistrement…",
+      "saved": "Brouillon enregistré",
+      "saveFailed": "Le brouillon n’a pas pu être enregistré. Réessayez.",
+      "keepTitle": "Conserver ce brouillon ?",
+      "keepBody": "Vous pourrez reprendre cette quête plus tard dans Mes brouillons. Abandonner le supprime.",
+      "keep": "Conserver le brouillon",
+      "discard": "Abandonner",
+      "savedAuto": "Brouillon enregistré automatiquement",
+      "notSaved": "Pas encore enregistré",
+      "retry": "Enregistrement impossible. Réessayer",
+      "deleteFailed": "Impossible de supprimer ce brouillon. Il est de retour dans la liste."
+    },
+    "updates": {
+      "before": "Avant",
+      "after": "Après",
+      "showChanges": "Afficher les modifications",
+      "hideChanges": "Masquer les modifications"
+    },
+    "milestones": {
+      "status": {
+        "not_started": "Pas commencé",
+        "in_progress": "En cours",
+        "done": "Terminé"
+      }
+    },
+    "error": {
+      "load": "Impossible de charger les quêtes.",
+      "retry": "Réessayer"
     }
   }
 }

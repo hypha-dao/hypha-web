@@ -117,7 +117,11 @@ export function Combobox({
           <ChevronDownIcon className="size-2" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="z-[100] w-full md:w-72 p-0" align="end">
+      <PopoverContent
+        data-hypha-combobox-content=""
+        className="pointer-events-auto z-[200] w-full p-0 md:w-72"
+        align="end"
+      >
         <Command shouldFilter={false}>
           <CommandInput
             placeholder={searchPlaceholder}

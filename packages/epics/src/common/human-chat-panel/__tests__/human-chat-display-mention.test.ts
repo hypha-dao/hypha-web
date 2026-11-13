@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
+import { createElement, Fragment } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import {
   botMentionChipText,
   formatComposerMentionToken,
+  questHelperMentionPill,
   replaceDisplayNameMentionsWithMxids,
   replaceMxidsWithComposerMentionTokens,
   replaceMxidsWithVisibleMentionLabels,
 } from '../human-chat-display-mention';
+import { renderTextWithMentions } from '../human-chat-panel-message-bubble';
 
 const MXID = '@prod_privy_did_privy_cmh0rv92y0040abc:matrix.hypha.earth';
 
@@ -79,5 +83,26 @@ describe('botMentionChipText', () => {
     expect(botMentionChipText('AI Agents')).toBe('@AI Agents');
     expect(botMentionChipText('@AI Agents')).toBe('@AI Agents');
     expect(botMentionChipText('  ')).toBe('@AI Agents');
+  });
+});
+
+describe('quest helper mention chip', () => {
+  it('keeps @Quest Helper as one chip', () => {
+    const inserted = `${formatComposerMentionToken(
+      'Quest Helper',
+    )}what is the goal?`;
+    const at = inserted.indexOf('@');
+    expect(questHelperMentionPill(inserted, at)?.label).toBe('Quest Helper');
+    const html = renderToStaticMarkup(
+      createElement(
+        Fragment,
+        null,
+        renderTextWithMentions(inserted, () => ''),
+      ),
+    );
+    expect(html).toContain('@Quest Helper');
+    expect(html.match(/mention-pill/g)).toHaveLength(1);
+    expect(html).toContain('what is the goal?');
+    expect(html).not.toMatch(/>@Quest</);
   });
 });

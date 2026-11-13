@@ -80,6 +80,7 @@ export type CoherenceOpenedChannel =
   | 'ecosystem'
   | 'network'
   | 'signal'
+  | 'quest'
   | 'proposal'
   | 'context';
 
@@ -95,6 +96,34 @@ export type OpenCoherenceChatOptions = {
 export type SpaceContextPanelSection = {
   spaceSlug: string;
   sectionKey: SpaceContextSectionKey;
+};
+
+export type SpaceQuestDraftChatMessage = {
+  id: string;
+  role: 'user' | 'member';
+  text: string;
+  timestamp: Date;
+  senderName?: string;
+  senderMatrixId?: string;
+  avatarUrl?: string;
+  agentSpecialistId?: string;
+};
+
+/** Quest draft chat shown in the right panel while creating a quest. */
+export type SpaceQuestDraftPanelSession = {
+  spaceSlug: string;
+  questTitle: string;
+  messages: SpaceQuestDraftChatMessage[];
+  input: string;
+  onInputChange: (next: string) => void;
+  onSend: () => void;
+  onQuickPrompt?: (prompt: string) => void;
+  isAgentTyping?: boolean;
+  /**
+   * Quest Helper is a 1:1 coach. The create flow and the saved-quest
+   * helper set this. Discussion refine leaves it unset and stays AI Agents.
+   */
+  coach?: 'quest-helper';
 };
 
 export type HumanChatPanelContextValue = {
@@ -143,6 +172,16 @@ export type HumanChatPanelContextValue = {
   /** Opens the right panel on a Space Context section (detail + discussion). */
   openSpaceContextSection: (section: SpaceContextPanelSection) => void;
   closeSpaceContextSection: () => void;
+  spaceQuestDraft: SpaceQuestDraftPanelSession | null;
+  setSpaceQuestDraft: (session: SpaceQuestDraftPanelSession | null) => void;
+  /**
+   * The create-quest helper session can stay loaded without being shown.
+   * The create flow's quest chat button sets this. A saved quest's Open
+   * discussion opens that quest's room and leaves this false.
+   */
+  questChatRequested: boolean;
+  requestQuestChat: () => void;
+  dismissQuestChat: () => void;
 };
 
 const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
@@ -171,6 +210,11 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   spaceContextSection: null,
   openSpaceContextSection: () => {},
   closeSpaceContextSection: () => {},
+  spaceQuestDraft: null,
+  setSpaceQuestDraft: () => {},
+  questChatRequested: false,
+  requestQuestChat: () => {},
+  dismissQuestChat: () => {},
 });
 
 /**
@@ -212,6 +256,9 @@ export function HumanChatPanelProvider({
   const [panelAvailable, setPanelAvailable] = useState(false);
   const [spaceContextSection, setSpaceContextSection] =
     useState<SpaceContextPanelSection | null>(null);
+  const [spaceQuestDraft, setSpaceQuestDraft] =
+    useState<SpaceQuestDraftPanelSession | null>(null);
+  const [questChatRequested, setQuestChatRequested] = useState(false);
 
   useEffect(() => {
     if (!open) setSpaceContextSection(null);
@@ -294,6 +341,8 @@ export function HumanChatPanelProvider({
       );
       setMode('coherence');
       setSpaceContextSection(null);
+      // A real room replaces the quest helper. This does not create a room.
+      setQuestChatRequested(false);
       // Idempotently open the sidebar — avoids race condition with toggle()
       setOpen(true);
     },
@@ -318,8 +367,18 @@ export function HumanChatPanelProvider({
   }, [setOpen]);
 
   const closeHumanChatPanel = useCallback(() => {
+    setQuestChatRequested(false);
     setOpen(false);
   }, [setOpen]);
+
+  const requestQuestChat = useCallback(() => {
+    setQuestChatRequested(true);
+    setOpen(true);
+  }, [setOpen]);
+
+  const dismissQuestChat = useCallback(() => {
+    setQuestChatRequested(false);
+  }, []);
 
   return (
     <HumanChatPanelContext.Provider
@@ -349,6 +408,11 @@ export function HumanChatPanelProvider({
         spaceContextSection,
         openSpaceContextSection,
         closeSpaceContextSection,
+        spaceQuestDraft,
+        setSpaceQuestDraft,
+        questChatRequested,
+        requestQuestChat,
+        dismissQuestChat,
       }}
     >
       {children}

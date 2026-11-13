@@ -59,6 +59,7 @@ import {
   PROPOSAL_DOCUMENTS_DEFAULT_ORDER,
 } from '../../governance';
 import { isPast } from 'date-fns';
+import { usePathname } from 'next/navigation';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { TransparencyLevel } from '../../spaces/components/transparency-level';
 import { useTranslations } from 'next-intl';
@@ -72,6 +73,11 @@ import {
   parseEnergyProposalMarker,
   stripEnergyProposalMarker,
 } from '../../governance/utils/energy-proposal-markers';
+import {
+  ProposalQuestData,
+  ProposalQuestOverviewLink,
+} from '../../space-quests/components/proposal-quest-data';
+import { revalidateSpaceQuests } from '../../space-quests/hooks/use-space-quests';
 
 /** Markdown body shown in the proposal view (strip embedded JSON / markers so MDX does not parse `{` from payloads as JSX). */
 function markdownBodyForProposalView(
@@ -517,6 +523,10 @@ export const ProposalDetail = ({
   spacesForWhitelist,
 }: ProposalDetailProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
+  const pathname = usePathname();
+  const closeStaleQuestOverlay = useCallback(() => {
+    window.location.assign(pathname);
+  }, [pathname]);
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
   });
@@ -799,7 +809,10 @@ export const ProposalDetail = ({
     if (proposalDetails?.executed || proposalDetails?.expired) {
       setIsActionCompleted(true);
     }
-  }, [proposalDetails?.executed, proposalDetails?.expired]);
+    if (proposalDetails?.executed && label === 'Quest' && spaceSlug) {
+      void revalidateSpaceQuests(spaceSlug);
+    }
+  }, [proposalDetails?.executed, proposalDetails?.expired, label, spaceSlug]);
 
   const resubmitTemplateData = (() => {
     if (!proposalDetails) return undefined;
@@ -1210,41 +1223,45 @@ export const ProposalDetail = ({
 
   const exchangeDetails =
     label === 'Exchange' ? parseExchangeDetailsFromDescription(content) : null;
-  const hasProposalDetails = Boolean(
-    label === 'Investment' ||
-      exchangeDetails ||
-      proposalDetails?.votingMethods?.length ||
-      proposalDetails?.entryMethods?.length ||
-      proposalDetails?.tokenRequirements?.length ||
-      (label !== 'Investment' &&
-        label !== 'Exchange' &&
-        proposalDetails?.tokens?.length) ||
-      (proposalDetails?.transfers?.length &&
-        label !== 'Investment' &&
-        label !== 'Exchange') ||
-      proposalDetails?.mintings?.length ||
-      proposalDetails?.burnings?.length ||
-      proposalDetails?.buyHyphaTokensData?.amount ||
-      proposalDetails?.activateSpacesData?.spaceIds?.length ||
-      proposalDetails?.delegatesData?.member ||
-      proposalDetails?.membershipExitData?.member ||
-      (proposalDetails?.transparencySettingsData &&
-        (proposalDetails.transparencySettingsData.spaceDiscoverability !==
-          undefined ||
-          proposalDetails.transparencySettingsData.spaceActivityAccess !==
-            undefined)) ||
-      (proposalDetails?.redeemTokensData?.amount &&
-        proposalDetails?.redeemTokensData?.token) ||
-      (proposalDetails?.tokenBackingVaultData &&
-        !(
-          proposalDetails?.redeemTokensData?.amount &&
-          proposalDetails?.redeemTokensData?.token
-        )) ||
-      (proposalDetails &&
-        hasUpdateTokenDataToDisplay(proposalDetails.updateTokenData)) ||
-      (label === 'Token Purchase' && proposalDetails?.spaceTokenPurchaseData) ||
-      energyMarkerData,
-  );
+  const isQuestProposal = label === 'Quest';
+  const hasProposalDetails =
+    !isQuestProposal &&
+    Boolean(
+      label === 'Investment' ||
+        exchangeDetails ||
+        proposalDetails?.votingMethods?.length ||
+        proposalDetails?.entryMethods?.length ||
+        proposalDetails?.tokenRequirements?.length ||
+        (label !== 'Investment' &&
+          label !== 'Exchange' &&
+          proposalDetails?.tokens?.length) ||
+        (proposalDetails?.transfers?.length &&
+          label !== 'Investment' &&
+          label !== 'Exchange') ||
+        proposalDetails?.mintings?.length ||
+        proposalDetails?.burnings?.length ||
+        proposalDetails?.buyHyphaTokensData?.amount ||
+        proposalDetails?.activateSpacesData?.spaceIds?.length ||
+        proposalDetails?.delegatesData?.member ||
+        proposalDetails?.membershipExitData?.member ||
+        (proposalDetails?.transparencySettingsData &&
+          (proposalDetails.transparencySettingsData.spaceDiscoverability !==
+            undefined ||
+            proposalDetails.transparencySettingsData.spaceActivityAccess !==
+              undefined)) ||
+        (proposalDetails?.redeemTokensData?.amount &&
+          proposalDetails?.redeemTokensData?.token) ||
+        (proposalDetails?.tokenBackingVaultData &&
+          !(
+            proposalDetails?.redeemTokensData?.amount &&
+            proposalDetails?.redeemTokensData?.token
+          )) ||
+        (proposalDetails &&
+          hasUpdateTokenDataToDisplay(proposalDetails.updateTokenData)) ||
+        (label === 'Token Purchase' &&
+          proposalDetails?.spaceTokenPurchaseData) ||
+        energyMarkerData,
+    );
 
   return (
     <div className="flex flex-col gap-5">
@@ -1254,6 +1271,13 @@ export const ProposalDetail = ({
             closeUrl={closeUrl}
             className="px-0 md:px-3"
             preferBack
+            onClose={
+              label === 'Quest' &&
+              spaceSlug.length > 0 &&
+              pathname.includes(`/dho/${spaceSlug}/quests/`)
+                ? closeStaleQuestOverlay
+                : undefined
+            }
           />
         </div>
       </div>
@@ -1299,11 +1323,24 @@ export const ProposalDetail = ({
         isExpiring={isExpiring}
         web3SpaceId={proposalDetails?.spaceId}
       />
-      {descriptionMarkdown}
-      <AttachmentList
-        attachments={attachments || []}
-        label={tProposalDetails('labels.attachments')}
-      />
+      {isQuestProposal ? (
+        <>
+          <ProposalQuestData title={title} content={content} />
+          <ProposalQuestOverviewLink
+            spaceSlug={spaceSlug}
+            documentId={documentId}
+            content={content}
+          />
+        </>
+      ) : (
+        <>
+          {descriptionMarkdown}
+          <AttachmentList
+            attachments={attachments || []}
+            label={tProposalDetails('labels.attachments')}
+          />
+        </>
+      )}
       {documentSlug ? (
         <ProposalDiscussionChat
           documentSlug={documentSlug}

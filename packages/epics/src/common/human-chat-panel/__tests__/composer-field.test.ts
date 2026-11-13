@@ -28,9 +28,11 @@ describe('chat composer field', () => {
         'border-border',
         'rounded-none',
         'bg-neutral-1',
-        'focus-within:border-foreground',
       ]),
     );
+    expect(CHAT_COMPOSER_FIELD_CLASS).not.toContain('focus-within:');
+    expect(CHAT_COMPOSER_FIELD_CLASS).not.toContain('focus:');
+    expect(CHAT_COMPOSER_FIELD_CLASS).not.toContain('ring');
     expect(CHAT_COMPOSER_FIELD_CLASS).not.toContain('bg-transparent');
     expect(CHAT_COMPOSER_FIELD_CLASS).not.toContain('rounded-lg');
 

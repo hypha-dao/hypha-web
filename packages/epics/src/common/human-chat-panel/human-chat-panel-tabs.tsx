@@ -15,6 +15,8 @@ type HumanChatPanelTabsProps = {
    * Falls back to the generic "Room" copy when omitted.
    */
   chatTabLabel?: string;
+  /** Quest chats call this roster Participants. Other chats keep Members. */
+  membersTabLabel?: string;
   /** Tab next to the chat tab: room Members (default) or this room's @Mentions. */
   secondaryTab?: 'members' | 'mentions';
   /** Unread @mentions in this room, appended to the Mentions tab label when > 0. */
@@ -28,6 +30,7 @@ export function HumanChatPanelTabs({
   activeTab,
   onTabChange,
   chatTabLabel,
+  membersTabLabel,
   secondaryTab = 'members',
   mentionCount = 0,
   mentionCountIsCapped = false,
@@ -81,7 +84,10 @@ export function HumanChatPanelTabs({
                 })
             : undefined,
         }
-      : { key: 'members', label: t('tabMembers') },
+      : {
+          key: 'members',
+          label: membersTabLabel?.trim() || t('tabMembers'),
+        },
   ];
 
   const handleKeyDown = (e: React.KeyboardEvent, currentIndex: number) => {

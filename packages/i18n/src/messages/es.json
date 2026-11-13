@@ -613,6 +613,7 @@
     "Treasury": "Tesorería",
     "Energy": "Energía",
     "Agreements": "Acuerdos",
+    "quests": "Misiones",
     "Spaces": "Espacios",
     "loadMore": "Cargar más",
     "noMore": "No más",
@@ -1303,7 +1304,8 @@
       "addEnergyMember": "Añadir miembro de energía",
       "changeEnergyOptimization": "Cambiar optimización energética",
       "whitelistEnergySettlement": "Lista blanca de liquidación energética",
-      "spaceContext": "Contexto del espacio"
+      "spaceContext": "Contexto del espacio",
+      "quest": "Misión"
     },
     "documentBadges": {
       "invite": "Invitación",
@@ -1550,6 +1552,8 @@
       "proposalsBody": "Conversaciones sobre propuestas en las que puedes votar",
       "signalsTitle": "Señales",
       "signalsBody": "Necesidades, recursos, oportunidades, riesgos, tensiones, ideas, acciones e impacto",
+      "questsTitle": "Misiones",
+      "questsBody": "Canales de misión que se abren cuando se aprueba una propuesta de misión",
       "contextTitle": "Contexto",
       "contextBody": "Conversaciones sobre secciones del Contexto de tus espacios",
       "ecosystemTitle": "Ecosistemas",
@@ -1562,6 +1566,7 @@
       "tagSpacePublic": "Canal público del espacio",
       "tagProposal": "Propuesta",
       "tagSignal": "Señales del espacio",
+      "tagQuest": "Misión",
       "tagContext": "Contexto del espacio",
       "tagEcosystem": "Canal del ecosistema",
       "tagNetwork": "Canal de la red",
@@ -3036,7 +3041,8 @@
       "toVote": "{duration} para votar",
       "youVoted": "Votaste {vote}",
       "voteValueYes": "Sí",
-      "voteValueNo": "No"
+      "voteValueNo": "No",
+      "questActivationNote": "Si esta propuesta se aprueba, la misión pasa a estar activa."
     },
     "withdrawResubmit": {
       "title": "¿Retirar tu propuesta o editarla y enviarla de nuevo?",
@@ -3323,6 +3329,7 @@
     "tabChatProposal": "Propuesta",
     "tabChatContext": "Contexto",
     "tabChatSignal": "Señal",
+    "tabChatQuest": "Misión",
     "tabChatEcosystem": "Canal del ecosistema",
     "tabChatNetwork": "Canal de la red",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# mención sin leer} other {# menciones sin leer}}",
@@ -5833,6 +5840,86 @@
       "failed": "No se pudo sugerir la sección. Inténtalo de nuevo.",
       "restoreLabel": "Secciones eliminadas",
       "restore": "Sugerir restaurar"
+    }
+  },
+  "SpaceQuests": {
+    "title": "Misiones",
+    "subtitle": "Trabajo enfocado y con plazo, con un objetivo claro, miembros e hitos",
+    "newQuest": "NUEVA MISIÓN",
+    "searchPlaceholder": "Buscar misiones",
+    "filters": {
+      "active": "Activas",
+      "proposed": "Propuestas",
+      "paused": "En pausa",
+      "completed": "Completadas",
+      "rejected": "Rechazadas",
+      "drafts": "Mis borradores",
+      "status": "Estado"
+    },
+    "overview": {
+      "goal": "Objetivo",
+      "scope": "Alcance",
+      "inScope": "Dentro del alcance",
+      "outOfScope": "Fuera del alcance",
+      "successCriteria": "Criterios de éxito"
+    },
+    "settings": {
+      "deliverables": "Entregables",
+      "deliverablesHint": "Mostrar una tarjeta de entregables en el resumen",
+      "deliverablesKept": "Los entregables existentes siguen en el resumen",
+      "on": "Activado",
+      "off": "Desactivado"
+    },
+    "deliverableUrl": "Introduce un enlace que empiece por http:// o https://",
+    "deliverableSaveError": "No se pudieron guardar los entregables. Inténtalo de nuevo.",
+    "activity": {
+      "proposalRejected": "propuesta rechazada"
+    },
+    "confirm": {
+      "title": "¿Enviar esta misión?",
+      "body": "Esto envía la misión como propuesta para que {space} vote. La misión sigue propuesta hasta que la votación se apruebe.",
+      "cancel": "Cancelar",
+      "submit": "Enviar a votación"
+    },
+    "drafts": {
+      "empty": "No tienes borradores de misiones guardados en este espacio.",
+      "continue": "Continuar",
+      "delete": "Eliminar",
+      "deleteTitle": "¿Eliminar este borrador?",
+      "deleteBody": "Esto elimina tu borrador guardado. No afecta a ninguna misión.",
+      "deleteConfirm": "Eliminar borrador",
+      "cancel": "Cancelar",
+      "edited": "Editado {when}",
+      "untitled": "Misión sin título",
+      "save": "Guardar borrador",
+      "saving": "Guardando…",
+      "saved": "Borrador guardado",
+      "saveFailed": "No se pudo guardar el borrador. Inténtalo de nuevo.",
+      "keepTitle": "¿Conservar este borrador?",
+      "keepBody": "Puedes continuar esta misión más tarde desde Mis borradores. Descartar lo elimina.",
+      "keep": "Conservar borrador",
+      "discard": "Descartar",
+      "savedAuto": "Borrador guardado automáticamente",
+      "notSaved": "Aún no guardado",
+      "retry": "No se pudo guardar. Reintentar",
+      "deleteFailed": "No se pudo eliminar ese borrador. Volvió a tu lista."
+    },
+    "updates": {
+      "before": "Antes",
+      "after": "Después",
+      "showChanges": "Mostrar cambios",
+      "hideChanges": "Ocultar cambios"
+    },
+    "milestones": {
+      "status": {
+        "not_started": "Sin empezar",
+        "in_progress": "En curso",
+        "done": "Hecho"
+      }
+    },
+    "error": {
+      "load": "No se pudieron cargar las misiones.",
+      "retry": "Reintentar"
     }
   }
 }

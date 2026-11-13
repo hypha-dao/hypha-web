@@ -10,6 +10,7 @@ import {
   MessageSquare,
   MessagesSquare,
   Radio,
+  Scroll,
   Target,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -23,6 +24,7 @@ const NESTED = new Set<InboxFilter>([
   'rooms',
   'proposals',
   'signals',
+  'quests',
   'context',
 ]);
 
@@ -34,6 +36,7 @@ const FILTER_ICONS: Record<InboxFilter, ElementType> = {
   rooms: Circle,
   proposals: FileText,
   signals: Radio,
+  quests: Scroll,
   context: BookOpen,
   ecosystem: Target,
   network: Globe2,

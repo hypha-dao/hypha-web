@@ -93,6 +93,8 @@ export const LOCALIZED_PROPOSAL_LABEL_TO_CANONICAL: Record<string, string> = {
   'Contexto del espacio': 'Space Context',
   "Contexte de l'espace": 'Space Context',
   'Contexto do espaço': 'Space Context',
+  Quest: 'Quest',
+  Quests: 'Quest',
   'New memory': 'Space Memory',
   'Neue Erinnerung': 'Space Memory',
   'Nueva memoria': 'Space Memory',

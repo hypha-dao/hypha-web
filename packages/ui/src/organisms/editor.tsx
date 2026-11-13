@@ -8,8 +8,8 @@ import {
 } from '@tiptap/react';
 import { Markdown } from '@tiptap/markdown';
 import { Placeholder } from '@tiptap/extensions';
-import StarterKit from '@tiptap/starter-kit';
 import { PasteMarkdown } from './paste-markdown';
+import { createRichTextDocumentExtensions } from './rich-text-markdown';
 import {
   Bold,
   Heading1,
@@ -26,7 +26,9 @@ import {
   Undo2,
 } from 'lucide-react';
 import {
+  createContext,
   forwardRef,
+  useContext,
   useEffect,
   useId,
   useMemo,
@@ -44,28 +46,16 @@ import { Input } from '../input';
 import { Label } from '../label';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { Separator } from '../separator';
-import { AsteriskBold, UnderscoreUnderline } from './chat-markdown-marks';
-
 import './editor.css';
+
+export { canonicalizeRichTextMarkdown } from './rich-text-markdown';
 
 const EDITOR_CONTENT_CLASS =
   'richtext-editor-content prose max-w-full focus:outline-none';
 
 function createRichTextExtensions(placeholder: string) {
   return [
-    StarterKit.configure({
-      // Replaced by AsteriskBold / UnderscoreUnderline for chat-compatible __/ **.
-      bold: false,
-      underline: false,
-      heading: { levels: [1, 2, 3, 4] },
-      link: {
-        openOnClick: false,
-        autolink: true,
-        defaultProtocol: 'https',
-      },
-    }),
-    AsteriskBold,
-    UnderscoreUnderline,
+    ...createRichTextDocumentExtensions(),
     Placeholder.configure({ placeholder }),
     Markdown,
     PasteMarkdown,
@@ -129,6 +119,8 @@ export interface ToolbarButtonProps
   onFocus?: () => void;
 }
 
+const ToolbarCompactContext = createContext(false);
+
 const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
   function ToolbarButton(
     {
@@ -144,6 +136,7 @@ const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
     },
     ref,
   ) {
+    const compact = useContext(ToolbarCompactContext);
     return (
       <Button
         ref={ref}
@@ -154,6 +147,7 @@ const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
         data-toolbar-item=""
         className={cn(
           'h-8 w-8 shrink-0 p-0',
+          compact && COMPACT_EDITOR_TOOLBAR_BUTTON_CLASS,
           active && 'bg-accent-4 text-accent-12 hover:bg-accent-5',
           className,
         )}
@@ -305,12 +299,20 @@ function LinkToolbarControl({
   );
 }
 
+/**
+ * Icon toolbar controls. Explicit pixels: `h-8` / `min-h-8` are 48px and
+ * `h-9` is 64px on the Hypha spacing scale, so those utilities are not compact.
+ */
+export const COMPACT_EDITOR_TOOLBAR_BUTTON_CLASS =
+  'h-[32px] max-h-[32px] min-h-[32px] w-[32px] min-w-[32px] px-0';
+
 interface EditorToolbarProps {
   editor: Editor;
   translation?: EditorTranslationFn;
+  compact?: boolean;
 }
 
-function EditorToolbar({ editor, translation }: EditorToolbarProps) {
+function EditorToolbar({ editor, translation, compact }: EditorToolbarProps) {
   const [tabbableIndex, setTabbableIndex] = useState(0);
   const toolbarRef = useRef<HTMLDivElement>(null);
 
@@ -396,178 +398,199 @@ function EditorToolbar({ editor, translation }: EditorToolbarProps) {
   const redoShortcut = isApple ? '⇧⌘Z' : 'Ctrl+Y';
 
   return (
-    <div
-      ref={toolbarRef}
-      className="richtext-editor-toolbar flex flex-wrap items-center gap-0.5 border-b border-border bg-neutral-2 px-2 py-1.5"
-      role="toolbar"
-      aria-label={translateLabel(
-        translation,
-        'toolbar.ariaLabel',
-        'Formatting',
-      )}
-      onKeyDown={handleToolbarKeyDown}
-    >
-      <ToolbarButton
-        label={translateLabel(
+    <ToolbarCompactContext.Provider value={Boolean(compact)}>
+      <div
+        ref={toolbarRef}
+        className="richtext-editor-toolbar flex flex-wrap items-center gap-0.5 border-b border-border bg-neutral-2 px-2 py-1.5"
+        data-toolbar-density={compact ? 'compact' : 'default'}
+        role="toolbar"
+        aria-label={translateLabel(
           translation,
-          'toolbar.blockTypes.paragraph',
-          'Paragraph',
+          'toolbar.ariaLabel',
+          'Formatting',
         )}
-        active={state.headingLevel === 0}
-        tabIndex={itemTabIndex(0)}
-        onFocus={itemFocus(0)}
-        onClick={() => editor.chain().focus().setParagraph().run()}
+        onKeyDown={handleToolbarKeyDown}
       >
-        <Type className="h-4 w-4" aria-hidden />
-      </ToolbarButton>
-      <ToolbarButton
-        label={translateLabel(
-          translation,
-          'toolbar.blockTypes.heading',
-          'Heading {level}',
-          { level: 1 },
-        )}
-        active={state.headingLevel === 1}
-        tabIndex={itemTabIndex(1)}
-        onFocus={itemFocus(1)}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-      >
-        <Heading1 className="h-4 w-4" aria-hidden />
-      </ToolbarButton>
-      <ToolbarButton
-        label={translateLabel(
-          translation,
-          'toolbar.blockTypes.heading',
-          'Heading {level}',
-          { level: 2 },
-        )}
-        active={state.headingLevel === 2}
-        tabIndex={itemTabIndex(2)}
-        onFocus={itemFocus(2)}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-      >
-        <Heading2 className="h-4 w-4" aria-hidden />
-      </ToolbarButton>
-      <ToolbarButton
-        label={translateLabel(
-          translation,
-          'toolbar.blockTypes.heading',
-          'Heading {level}',
-          { level: 3 },
-        )}
-        active={state.headingLevel === 3}
-        tabIndex={itemTabIndex(3)}
-        onFocus={itemFocus(3)}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-      >
-        <Heading3 className="h-4 w-4" aria-hidden />
-      </ToolbarButton>
-      <ToolbarButton
-        label={translateLabel(
-          translation,
-          'toolbar.blockTypes.heading',
-          'Heading {level}',
-          { level: 4 },
-        )}
-        active={state.headingLevel === 4}
-        tabIndex={itemTabIndex(4)}
-        onFocus={itemFocus(4)}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
-      >
-        <Heading4 className="h-4 w-4" aria-hidden />
-      </ToolbarButton>
+        <ToolbarButton
+          label={translateLabel(
+            translation,
+            'toolbar.blockTypes.paragraph',
+            'Paragraph',
+          )}
+          active={state.headingLevel === 0}
+          tabIndex={itemTabIndex(0)}
+          onFocus={itemFocus(0)}
+          onClick={() => editor.chain().focus().setParagraph().run()}
+        >
+          <Type className="h-4 w-4" aria-hidden />
+        </ToolbarButton>
+        <ToolbarButton
+          label={translateLabel(
+            translation,
+            'toolbar.blockTypes.heading',
+            'Heading {level}',
+            { level: 1 },
+          )}
+          active={state.headingLevel === 1}
+          tabIndex={itemTabIndex(1)}
+          onFocus={itemFocus(1)}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 1 }).run()
+          }
+        >
+          <Heading1 className="h-4 w-4" aria-hidden />
+        </ToolbarButton>
+        <ToolbarButton
+          label={translateLabel(
+            translation,
+            'toolbar.blockTypes.heading',
+            'Heading {level}',
+            { level: 2 },
+          )}
+          active={state.headingLevel === 2}
+          tabIndex={itemTabIndex(2)}
+          onFocus={itemFocus(2)}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
+        >
+          <Heading2 className="h-4 w-4" aria-hidden />
+        </ToolbarButton>
+        <ToolbarButton
+          label={translateLabel(
+            translation,
+            'toolbar.blockTypes.heading',
+            'Heading {level}',
+            { level: 3 },
+          )}
+          active={state.headingLevel === 3}
+          tabIndex={itemTabIndex(3)}
+          onFocus={itemFocus(3)}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 3 }).run()
+          }
+        >
+          <Heading3 className="h-4 w-4" aria-hidden />
+        </ToolbarButton>
+        <ToolbarButton
+          label={translateLabel(
+            translation,
+            'toolbar.blockTypes.heading',
+            'Heading {level}',
+            { level: 4 },
+          )}
+          active={state.headingLevel === 4}
+          tabIndex={itemTabIndex(4)}
+          onFocus={itemFocus(4)}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 4 }).run()
+          }
+        >
+          <Heading4 className="h-4 w-4" aria-hidden />
+        </ToolbarButton>
 
-      <Separator orientation="vertical" className="mx-1 h-6" />
+        <Separator orientation="vertical" className="mx-1 h-6" />
 
-      <ToolbarButton
-        label={translateLabel(translation, 'toolbar.bold', 'Bold')}
-        active={state.isBold}
-        tabIndex={itemTabIndex(5)}
-        onFocus={itemFocus(5)}
-        onClick={() => editor.chain().focus().toggleBold().run()}
-      >
-        <Bold className="h-4 w-4" aria-hidden />
-      </ToolbarButton>
-      <ToolbarButton
-        label={translateLabel(translation, 'toolbar.italic', 'Italic')}
-        active={state.isItalic}
-        tabIndex={itemTabIndex(6)}
-        onFocus={itemFocus(6)}
-        onClick={() => editor.chain().focus().toggleItalic().run()}
-      >
-        <Italic className="h-4 w-4" aria-hidden />
-      </ToolbarButton>
-      <ToolbarButton
-        label={translateLabel(translation, 'toolbar.underline', 'Underline')}
-        active={state.isUnderline}
-        tabIndex={itemTabIndex(7)}
-        onFocus={itemFocus(7)}
-        onClick={() => editor.chain().focus().toggleUnderline().run()}
-      >
-        <UnderlineIcon className="h-4 w-4" aria-hidden />
-      </ToolbarButton>
+        <ToolbarButton
+          label={translateLabel(translation, 'toolbar.bold', 'Bold')}
+          active={state.isBold}
+          tabIndex={itemTabIndex(5)}
+          onFocus={itemFocus(5)}
+          onClick={() => editor.chain().focus().toggleBold().run()}
+        >
+          <Bold className="h-4 w-4" aria-hidden />
+        </ToolbarButton>
+        <ToolbarButton
+          label={translateLabel(translation, 'toolbar.italic', 'Italic')}
+          active={state.isItalic}
+          tabIndex={itemTabIndex(6)}
+          onFocus={itemFocus(6)}
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+        >
+          <Italic className="h-4 w-4" aria-hidden />
+        </ToolbarButton>
+        <ToolbarButton
+          label={translateLabel(translation, 'toolbar.underline', 'Underline')}
+          active={state.isUnderline}
+          tabIndex={itemTabIndex(7)}
+          onFocus={itemFocus(7)}
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+        >
+          <UnderlineIcon className="h-4 w-4" aria-hidden />
+        </ToolbarButton>
 
-      <Separator orientation="vertical" className="mx-1 h-6" />
+        <Separator orientation="vertical" className="mx-1 h-6" />
 
-      <ToolbarButton
-        label={translateLabel(
-          translation,
-          'toolbar.bulletedList',
-          'Bullet list',
-        )}
-        active={state.isBulletList}
-        tabIndex={itemTabIndex(8)}
-        onFocus={itemFocus(8)}
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
-      >
-        <List className="h-4 w-4" aria-hidden />
-      </ToolbarButton>
-      <ToolbarButton
-        label={translateLabel(
-          translation,
-          'toolbar.numberedList',
-          'Numbered list',
-        )}
-        active={state.isOrderedList}
-        tabIndex={itemTabIndex(9)}
-        onFocus={itemFocus(9)}
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
-      >
-        <ListOrdered className="h-4 w-4" aria-hidden />
-      </ToolbarButton>
-      <LinkToolbarControl
-        editor={editor}
-        translation={translation}
-        active={state.isLink}
-        tabIndex={itemTabIndex(10)}
-        onFocus={itemFocus(10)}
-      />
+        <ToolbarButton
+          label={translateLabel(
+            translation,
+            'toolbar.bulletedList',
+            'Bullet list',
+          )}
+          active={state.isBulletList}
+          tabIndex={itemTabIndex(8)}
+          onFocus={itemFocus(8)}
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+        >
+          <List className="h-4 w-4" aria-hidden />
+        </ToolbarButton>
+        <ToolbarButton
+          label={translateLabel(
+            translation,
+            'toolbar.numberedList',
+            'Numbered list',
+          )}
+          active={state.isOrderedList}
+          tabIndex={itemTabIndex(9)}
+          onFocus={itemFocus(9)}
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        >
+          <ListOrdered className="h-4 w-4" aria-hidden />
+        </ToolbarButton>
+        <LinkToolbarControl
+          editor={editor}
+          translation={translation}
+          active={state.isLink}
+          tabIndex={itemTabIndex(10)}
+          onFocus={itemFocus(10)}
+        />
 
-      <div className="grow" />
+        <div className="grow" />
 
-      <ToolbarButton
-        label={translateLabel(translation, 'toolbar.undo', 'Undo {shortcut}', {
-          shortcut: undoShortcut,
-        })}
-        disabled={!state.canUndo}
-        tabIndex={itemTabIndex(11)}
-        onFocus={itemFocus(11)}
-        onClick={() => editor.chain().focus().undo().run()}
-      >
-        <Undo2 className="h-4 w-4" aria-hidden />
-      </ToolbarButton>
-      <ToolbarButton
-        label={translateLabel(translation, 'toolbar.redo', 'Redo {shortcut}', {
-          shortcut: redoShortcut,
-        })}
-        disabled={!state.canRedo}
-        tabIndex={itemTabIndex(12)}
-        onFocus={itemFocus(12)}
-        onClick={() => editor.chain().focus().redo().run()}
-      >
-        <Redo2 className="h-4 w-4" aria-hidden />
-      </ToolbarButton>
-    </div>
+        <ToolbarButton
+          label={translateLabel(
+            translation,
+            'toolbar.undo',
+            'Undo {shortcut}',
+            {
+              shortcut: undoShortcut,
+            },
+          )}
+          disabled={!state.canUndo}
+          tabIndex={itemTabIndex(11)}
+          onFocus={itemFocus(11)}
+          onClick={() => editor.chain().focus().undo().run()}
+        >
+          <Undo2 className="h-4 w-4" aria-hidden />
+        </ToolbarButton>
+        <ToolbarButton
+          label={translateLabel(
+            translation,
+            'toolbar.redo',
+            'Redo {shortcut}',
+            {
+              shortcut: redoShortcut,
+            },
+          )}
+          disabled={!state.canRedo}
+          tabIndex={itemTabIndex(12)}
+          onFocus={itemFocus(12)}
+          onClick={() => editor.chain().focus().redo().run()}
+        >
+          <Redo2 className="h-4 w-4" aria-hidden />
+        </ToolbarButton>
+      </div>
+    </ToolbarCompactContext.Provider>
   );
 }
 
@@ -602,6 +625,11 @@ export interface RichTextEditorProps {
    */
   translation?: EditorTranslationFn;
   mentionCandidates?: RichTextMentionCandidate[];
+  /**
+   * Quest editors opt in. Shared agreements/signal editors keep the default
+   * toolbar so this does not resize unrelated controls.
+   */
+  compactToolbar?: boolean;
 }
 
 export function RichTextEditor({
@@ -616,6 +644,7 @@ export function RichTextEditor({
   editorRef,
   translation,
   mentionCandidates,
+  compactToolbar = false,
 }: RichTextEditorProps) {
   const lastEmittedMarkdown = useRef(markdown);
   const initialMarkdown = useRef(markdown);
@@ -762,7 +791,11 @@ export function RichTextEditor({
       data-bordered={bordered ? 'true' : 'false'}
     >
       {editor && editable ? (
-        <EditorToolbar editor={editor} translation={translation} />
+        <EditorToolbar
+          editor={editor}
+          translation={translation}
+          compact={compactToolbar}
+        />
       ) : null}
       <EditorContent
         editor={editor}

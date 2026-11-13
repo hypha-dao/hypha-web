@@ -8,6 +8,11 @@ import React, { useCallback } from 'react';
 
 import { useAgreementMutationsWeb2Rsc } from './useAgreementMutations.web2.rsc';
 import { useAgreementMutationsWeb3Rpc } from './useAgreementMutations.web3.rsc';
+import {
+  StaleDeploymentError,
+  isStaleClientBundleError,
+  type StaleAgreementRef,
+} from '../stale-deployment';
 import useSWRMutation from 'swr/mutation';
 import {
   schemaCreateAgreement,
@@ -181,9 +186,15 @@ export const useCreateAgreementOrchestrator = ({
     async (_, { arg }: { arg: z.infer<typeof schemaCreateAgreement> }) => {
       startTask('CREATE_WEB2_AGREEMENT');
       const inputCreateAgreementWeb2 = schemaCreateAgreementWeb2.parse(arg);
-      const createdAgreement = await web2.createAgreement(
-        inputCreateAgreementWeb2,
-      );
+      let createdAgreement: Awaited<ReturnType<typeof web2.createAgreement>>;
+      try {
+        createdAgreement = await web2.createAgreement(inputCreateAgreementWeb2);
+      } catch (err) {
+        if (isStaleClientBundleError(err)) {
+          throw new StaleDeploymentError(null);
+        }
+        throw err;
+      }
       completeTask('CREATE_WEB2_AGREEMENT');
 
       let web3ProposalResult = undefined;
@@ -252,6 +263,18 @@ export const useCreateAgreementOrchestrator = ({
           completeTask('UPLOAD_FILES');
         }
       } catch (err) {
+        const agreementRef: StaleAgreementRef | null =
+          typeof createdAgreement?.id === 'number'
+            ? {
+                id: createdAgreement.id,
+                slug: createdAgreement.slug ?? web2Slug ?? null,
+              }
+            : null;
+        if (isStaleClientBundleError(err)) {
+          // The Web2 row already exists. Deleting it is another Server
+          // Action from the same stale tab, so leave it for the retry.
+          throw new StaleDeploymentError(agreementRef);
+        }
         if (web2Slug) {
           await web2.deleteAgreementBySlug({ slug: web2Slug });
         }
@@ -307,6 +330,7 @@ export const useCreateAgreementOrchestrator = ({
   ]);
 
   const reset = useCallback(() => {
+    setCurrentAction(undefined);
     resetTasks();
     web2.resetCreateAgreementMutation();
     web3.resetCreateAgreementMutation();
@@ -315,6 +339,7 @@ export const useCreateAgreementOrchestrator = ({
   return {
     reset,
     createAgreement,
+    updateAgreementBySlug: web2.updateAgreementBySlug,
     agreement: {
       ...web2.createdAgreement,
       ...web3.createdAgreement,

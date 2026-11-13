@@ -608,6 +608,7 @@
     "Treasury": "Schatzkammer",
     "Energy": "Energie",
     "Agreements": "Vereinbarungen",
+    "quests": "Quests",
     "Spaces": "Spaces",
     "loadMore": "Mehr laden",
     "noMore": "Keine weiteren",
@@ -771,6 +772,8 @@
       "proposalsBody": "Gespräche zu Vorschlägen, über die du abstimmen kannst",
       "signalsTitle": "Signale",
       "signalsBody": "Bedürfnisse, Ressourcen, Chancen, Risiken, Spannungen, Einsichten, Handlungen und Wirkung",
+      "questsTitle": "Quests",
+      "questsBody": "Quest-Kanäle, die sich öffnen, wenn ein Quest-Vorschlag angenommen wird",
       "contextTitle": "Kontext",
       "contextBody": "Diskussionen zu Kontext-Abschnitten in deinen Spaces",
       "ecosystemTitle": "Ökosysteme",
@@ -783,6 +786,7 @@
       "tagSpacePublic": "Öffentlicher Space-Kanal",
       "tagProposal": "Vorschlag",
       "tagSignal": "Space-Signale",
+      "tagQuest": "Quest",
       "tagContext": "Space-Kontext",
       "tagEcosystem": "Ökosystem-Kanal",
       "tagNetwork": "Netzwerk-Kanal",
@@ -2660,7 +2664,8 @@
       "addEnergyMember": "Energiemitglied hinzufügen",
       "changeEnergyOptimization": "Energieoptimierung ändern",
       "whitelistEnergySettlement": "Energieabrechnung whitelisten",
-      "spaceContext": "Kontext des Spaces"
+      "spaceContext": "Kontext des Spaces",
+      "quest": "Quest"
     },
     "documentBadges": {
       "invite": "Einladung",
@@ -3594,7 +3599,8 @@
       "toVote": "{duration} zum Abstimmen",
       "youVoted": "Du hast {vote} abgestimmt",
       "voteValueYes": "Ja",
-      "voteValueNo": "Nein"
+      "voteValueNo": "Nein",
+      "questActivationNote": "Wenn dieser Vorschlag angenommen wird, wird die Quest aktiv."
     },
     "withdrawResubmit": {
       "title": "Vorschlag zurückziehen oder bearbeiten und erneut einreichen?",
@@ -3881,6 +3887,7 @@
     "tabChatProposal": "Vorschlag",
     "tabChatContext": "Kontext",
     "tabChatSignal": "Signal",
+    "tabChatQuest": "Quest",
     "tabChatEcosystem": "Ökosystem-Kanal",
     "tabChatNetwork": "Netzwerk-Kanal",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# ungelesene Erwähnung} other {# ungelesene Erwähnungen}}",
@@ -5819,6 +5826,86 @@
       "failed": "Der Abschnitt konnte nicht vorgeschlagen werden. Versuche es erneut.",
       "restoreLabel": "Entfernte Abschnitte",
       "restore": "Wiederherstellen vorschlagen"
+    }
+  },
+  "SpaceQuests": {
+    "title": "Quests",
+    "subtitle": "Fokussierte, befristete Arbeit mit klarem Ziel, Mitgliedern und Meilensteinen",
+    "newQuest": "NEUE QUEST",
+    "searchPlaceholder": "Quests suchen",
+    "filters": {
+      "active": "Aktiv",
+      "proposed": "Vorgeschlagen",
+      "paused": "Pausiert",
+      "completed": "Abgeschlossen",
+      "rejected": "Abgelehnt",
+      "drafts": "Meine Entwürfe",
+      "status": "Status"
+    },
+    "overview": {
+      "goal": "Ziel",
+      "scope": "Umfang",
+      "inScope": "Im Umfang",
+      "outOfScope": "Außerhalb des Umfangs",
+      "successCriteria": "Erfolgskriterien"
+    },
+    "settings": {
+      "deliverables": "Deliverables",
+      "deliverablesHint": "Eine Deliverables-Karte in der Übersicht anzeigen",
+      "deliverablesKept": "Vorhandene Deliverables bleiben in der Übersicht",
+      "on": "An",
+      "off": "Aus"
+    },
+    "deliverableUrl": "Gib einen Link ein, der mit http:// oder https:// beginnt",
+    "deliverableSaveError": "Deliverables konnten nicht gespeichert werden. Versuche es erneut.",
+    "activity": {
+      "proposalRejected": "Vorschlag abgelehnt"
+    },
+    "confirm": {
+      "title": "Diese Quest einreichen?",
+      "body": "Damit wird die Quest als Vorschlag zur Abstimmung in {space} eingereicht. Die Quest bleibt vorgeschlagen, bis die Abstimmung angenommen ist.",
+      "cancel": "Abbrechen",
+      "submit": "Zur Abstimmung einreichen"
+    },
+    "drafts": {
+      "empty": "Du hast in diesem Space keine gespeicherten Quest-Entwürfe.",
+      "continue": "Weiter",
+      "delete": "Löschen",
+      "deleteTitle": "Diesen Entwurf löschen?",
+      "deleteBody": "Das entfernt deinen gespeicherten Entwurf. Bestehende Quests bleiben unverändert.",
+      "deleteConfirm": "Entwurf löschen",
+      "cancel": "Abbrechen",
+      "edited": "Bearbeitet {when}",
+      "untitled": "Quest ohne Titel",
+      "save": "Entwurf speichern",
+      "saving": "Speichern…",
+      "saved": "Entwurf gespeichert",
+      "saveFailed": "Der Entwurf konnte nicht gespeichert werden. Versuche es erneut.",
+      "keepTitle": "Diesen Entwurf behalten?",
+      "keepBody": "Du kannst diese Quest später unter Meine Entwürfe fortsetzen. Verwerfen entfernt sie.",
+      "keep": "Entwurf behalten",
+      "discard": "Verwerfen",
+      "savedAuto": "Entwurf automatisch gespeichert",
+      "notSaved": "Noch nicht gespeichert",
+      "retry": "Speichern fehlgeschlagen. Erneut versuchen",
+      "deleteFailed": "Der Entwurf konnte nicht gelöscht werden. Er ist wieder in der Liste."
+    },
+    "updates": {
+      "before": "Vorher",
+      "after": "Nachher",
+      "showChanges": "Änderungen anzeigen",
+      "hideChanges": "Änderungen ausblenden"
+    },
+    "milestones": {
+      "status": {
+        "not_started": "Nicht begonnen",
+        "in_progress": "In Arbeit",
+        "done": "Erledigt"
+      }
+    },
+    "error": {
+      "load": "Quests konnten nicht geladen werden.",
+      "retry": "Erneut versuchen"
     }
   }
 }

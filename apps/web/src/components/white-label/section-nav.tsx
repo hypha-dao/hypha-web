@@ -74,6 +74,8 @@ export function WhiteLabelSectionNav({
         return t('overview');
       case 'agreements':
         return t('Agreements');
+      case 'quests':
+        return t('quests');
       case 'members':
         return t('Members');
       case 'treasury':
