@@ -2547,6 +2547,7 @@
     "exitSpaceConfirmNo": "Nein, bleiben",
     "exitSpaceDisabledTooltip": "Sie müssen autorisiert und Mitglied des aktuellen Spaces sein, um ihn verlassen zu können",
     "accessDeniedNotLoggedIn": "Sie benötigen ein aktives Konto, um auf diesen Bereich zugreifen zu können. Bitte melden Sie sich an oder klicken Sie auf „Loslegen“, um eines zu erstellen.",
+    "accessDeniedReadOnly": "Dieser Bereich erfordert ein aktives Konto und ist hier nicht verfügbar.",
     "signIn": "Anmelden",
     "getStarted": "Loslegen",
     "accessDeniedNotMember": "Sie müssen Mitglied werden, um auf diese Funktion zugreifen zu können. Treten Sie dem Space jetzt bei, um die Aktivität dieses Spaces zu sehen.",
