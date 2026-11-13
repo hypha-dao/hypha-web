@@ -3,15 +3,15 @@ import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import createWithVercelToolbar from '@vercel/toolbar/plugins/next';
 import { routing } from '../../packages/i18n/src/routing';
+import { parseConfiguredImageHosts } from '../../packages/epics/src/common/optimize-remote-image';
 import {
   WHITE_LABEL_HOST_CONFIG_ENV,
   parseWhiteLabelHostConfig,
 } from './src/lib/white-label/config';
 
-const IMAGE_HOSTS = (process.env.NEXT_PUBLIC_IMAGE_HOSTS ?? '')
-  .split(',')
-  .map((host) => host.trim())
-  .filter(Boolean);
+const IMAGE_HOSTS = parseConfiguredImageHosts(
+  process.env.NEXT_PUBLIC_IMAGE_HOSTS,
+);
 const LOCALES = routing.locales;
 
 /**

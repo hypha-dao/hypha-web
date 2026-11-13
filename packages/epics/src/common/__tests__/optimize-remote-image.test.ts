@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   isLikelyGifSrc,
+  parseConfiguredImageHosts,
   shouldOptimizeRemoteImage,
 } from '../optimize-remote-image';
 
@@ -67,6 +68,14 @@ describe('shouldOptimizeRemoteImage', () => {
     expect(
       shouldOptimizeRemoteImage('https://images.hypha.earth/people/1.png'),
     ).toBe(true);
+  });
+
+  it('lowercases mixed-case NEXT_PUBLIC_IMAGE_HOSTS to match next/image', () => {
+    process.env.NEXT_PUBLIC_IMAGE_HOSTS = 'CDN.EXAMPLE.ORG';
+    expect(parseConfiguredImageHosts()).toEqual(['cdn.example.org']);
+    expect(shouldOptimizeRemoteImage('https://cdn.example.org/a.png')).toBe(
+      true,
+    );
   });
 
   it('requires https and an exact hostname for configured hosts', () => {

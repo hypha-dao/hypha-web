@@ -8,11 +8,15 @@ const UPLOADTHING_WILDCARD_SUFFIXES = [
 ];
 
 /**
- * Same parse as `apps/web/next.config.ts`: comma-separated hostnames, trimmed.
- * Entries are exact hostnames — no subdomain wildcard.
+ * Same parse as `apps/web/next.config.ts` `images.remotePatterns`:
+ * comma-separated hostnames, trimmed and lowercased. Next matches hostname
+ * case-sensitively, so both sides must lowercase. Exact hosts — no subdomain
+ * wildcard.
  */
-function configuredImageHosts(): string[] {
-  return (process.env.NEXT_PUBLIC_IMAGE_HOSTS ?? '')
+export function parseConfiguredImageHosts(
+  raw: string | null | undefined = process.env.NEXT_PUBLIC_IMAGE_HOSTS,
+): string[] {
+  return (raw ?? '')
     .split(',')
     .map((host) => host.trim().toLowerCase())
     .filter(Boolean);
@@ -40,7 +44,7 @@ function isAllowedOptimizerHost(hostname: string): boolean {
   ) {
     return true;
   }
-  return configuredImageHosts().includes(hostname);
+  return parseConfiguredImageHosts().includes(hostname);
 }
 
 /**

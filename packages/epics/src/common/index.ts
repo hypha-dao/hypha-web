@@ -252,6 +252,7 @@ export {
 export { OptimizedAvatarImage } from './optimized-avatar-image';
 export {
   isLikelyGifSrc,
+  parseConfiguredImageHosts,
   shouldOptimizeRemoteImage,
 } from './optimize-remote-image';
 export { useAfterIdle, useEnergyOverviewIdleGate } from './use-after-idle';
