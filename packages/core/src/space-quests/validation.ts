@@ -1,9 +1,14 @@
 import { z } from 'zod';
 import {
+  QUEST_GOAL_LIMIT,
   QUEST_HEALTH_STATES,
   QUEST_MILESTONE_STATUSES,
   QUEST_PATCH_STATUSES,
+  QUEST_RESPONSIBILITY_LIMIT,
+  QUEST_SCOPE_ITEM_LIMIT,
+  QUEST_SCOPE_TEXT_LIMIT,
   QUEST_STEWARD_STEPS,
+  QUEST_SUCCESS_CRITERIA_LIMIT,
 } from './constants';
 
 export const schemaQuestReward = z.object({
@@ -28,7 +33,7 @@ export const schemaQuestMemberInput = z.object({
   memberAvatarUrl: z.string().trim().max(500).nullable().optional(),
   roleLabel: z.string().trim().max(80).nullable().optional(),
   responsibilities: z
-    .array(z.string().trim().min(1).max(400))
+    .array(z.string().trim().min(1).max(QUEST_RESPONSIBILITY_LIMIT))
     .max(25)
     .default([]),
 });
@@ -131,12 +136,18 @@ export const schemaQuestDeliverableInput = z.object({
 
 export const schemaCreateSpaceQuest = z.object({
   name: z.string().trim().min(1).max(160),
-  goal: z.string().max(10_000).default(''),
-  scopeIn: z.array(z.string().trim().max(500)).max(50).default([]),
-  scopeOut: z.array(z.string().trim().max(500)).max(50).default([]),
-  scopeInMarkdown: z.string().max(10_000).optional(),
-  scopeOutMarkdown: z.string().max(10_000).optional(),
-  successCriteria: z.string().max(10_000).default(''),
+  goal: z.string().max(QUEST_GOAL_LIMIT).default(''),
+  scopeIn: z
+    .array(z.string().trim().max(QUEST_SCOPE_ITEM_LIMIT))
+    .max(50)
+    .default([]),
+  scopeOut: z
+    .array(z.string().trim().max(QUEST_SCOPE_ITEM_LIMIT))
+    .max(50)
+    .default([]),
+  scopeInMarkdown: z.string().max(QUEST_SCOPE_TEXT_LIMIT).optional(),
+  scopeOutMarkdown: z.string().max(QUEST_SCOPE_TEXT_LIMIT).optional(),
+  successCriteria: z.string().max(QUEST_SUCCESS_CRITERIA_LIMIT).default(''),
   rewards: z.array(schemaQuestReward).max(12).default([]),
   targetDate: z.string().trim().max(64).nullable().optional(),
   leadPersonId: z.number().int().positive().nullable().optional(),
@@ -150,12 +161,18 @@ export const schemaCreateSpaceQuest = z.object({
 
 export const schemaPatchSpaceQuest = z.object({
   name: z.string().trim().min(1).max(160).optional(),
-  goal: z.string().max(10_000).optional(),
-  scopeIn: z.array(z.string().trim().max(500)).max(50).optional(),
-  scopeOut: z.array(z.string().trim().max(500)).max(50).optional(),
-  scopeInMarkdown: z.string().max(10_000).optional(),
-  scopeOutMarkdown: z.string().max(10_000).optional(),
-  successCriteria: z.string().max(10_000).optional(),
+  goal: z.string().max(QUEST_GOAL_LIMIT).optional(),
+  scopeIn: z
+    .array(z.string().trim().max(QUEST_SCOPE_ITEM_LIMIT))
+    .max(50)
+    .optional(),
+  scopeOut: z
+    .array(z.string().trim().max(QUEST_SCOPE_ITEM_LIMIT))
+    .max(50)
+    .optional(),
+  scopeInMarkdown: z.string().max(QUEST_SCOPE_TEXT_LIMIT).optional(),
+  scopeOutMarkdown: z.string().max(QUEST_SCOPE_TEXT_LIMIT).optional(),
+  successCriteria: z.string().max(QUEST_SUCCESS_CRITERIA_LIMIT).optional(),
   rewards: z.array(schemaQuestReward).max(12).optional(),
   targetDate: z.string().trim().max(64).nullable().optional(),
   leadPersonId: z.number().int().positive().nullable().optional(),
@@ -202,19 +219,23 @@ const questDraftMember = z.object({
   memberName: z.string().max(120),
   memberAvatarUrl: z.string().max(500).nullable().optional(),
   roleLabel: z.string().max(80).nullable().optional(),
-  responsibilities: z.array(z.string().max(400)).max(25).optional().default([]),
+  responsibilities: z
+    .array(z.string().max(QUEST_RESPONSIBILITY_LIMIT))
+    .max(25)
+    .optional()
+    .default([]),
 });
 
 /** Create-quest form, Helper thread, and a waiting suggestion card. */
 export const schemaQuestCreateDraftPayload = z.object({
   draft: z.object({
     name: z.string().max(200),
-    goal: z.string().max(10_000),
-    scopeIn: z.array(z.string().max(500)).max(50),
-    scopeOut: z.array(z.string().max(500)).max(50),
-    scopeInMarkdown: z.string().max(10_000),
-    scopeOutMarkdown: z.string().max(10_000),
-    successCriteria: z.string().max(10_000),
+    goal: z.string().max(QUEST_GOAL_LIMIT),
+    scopeIn: z.array(z.string().max(QUEST_SCOPE_ITEM_LIMIT)).max(50),
+    scopeOut: z.array(z.string().max(QUEST_SCOPE_ITEM_LIMIT)).max(50),
+    scopeInMarkdown: z.string().max(QUEST_SCOPE_TEXT_LIMIT),
+    scopeOutMarkdown: z.string().max(QUEST_SCOPE_TEXT_LIMIT),
+    successCriteria: z.string().max(QUEST_SUCCESS_CRITERIA_LIMIT),
     rewards: z
       .array(
         z.object({

@@ -53,10 +53,24 @@ export type QuestUpdateKind = (typeof QUEST_UPDATE_KINDS)[number];
 export const QUEST_DOCUMENT_LABEL = 'Quest' as const;
 
 /**
+ * Visible quest fields. Draft save and create/patch share these caps.
+ * Goal is sized for a long written brief. Scope, success criteria, and
+ * responsibilities scale with it so a long quest can still name its work.
+ */
+export const QUEST_GOAL_LIMIT = 20_000;
+export const QUEST_SCOPE_ITEM_LIMIT = 1_000;
+export const QUEST_SCOPE_TEXT_LIMIT = 20_000;
+export const QUEST_SUCCESS_CRITERIA_LIMIT = 20_000;
+export const QUEST_RESPONSIBILITY_LIMIT = 800;
+
+/**
  * Quest proposal body stored in `documents.description`.
  * Other agreement types stay on the shared 4000 character schema.
+ * The stored body encodes the quest, so a 20,000 character goal is longer
+ * than 20,000 once published. 32,000 covers that goal plus the usual lead,
+ * scope, and participant fields.
  */
-export const QUEST_PROPOSAL_DESCRIPTION_LIMIT = 20_000;
+export const QUEST_PROPOSAL_DESCRIPTION_LIMIT = 32_000;
 
 /** Default token symbols offered in Quest Reward selector. */
 export const QUEST_DEFAULT_REWARD_TOKENS = [
