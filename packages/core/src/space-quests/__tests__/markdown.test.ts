@@ -1,4 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { ZodError } from 'zod';
+import { parseCreateAgreementWeb2 } from '../../governance/parse-create-agreement-web2';
+import { schemaCreateAgreementWeb2 } from '../../governance/validation';
+import {
+  QUEST_DOCUMENT_LABEL,
+  QUEST_PROPOSAL_DESCRIPTION_LIMIT,
+} from '../constants';
 import {
   buildQuestProposalDescription,
   canMemberEditQuest,
@@ -640,5 +647,121 @@ describe('quest permissions', () => {
     expect(canMemberEditQuest({ id: 42, name: 'Vlad K.' }, quest)).toBe(false);
     expect(canMemberEditQuest({ id: 42, name: 'Maria S.' }, quest)).toBe(false);
     expect(isViewerQuestLead({ id: 42, name: 'Vlad K.' }, quest)).toBe(false);
+  });
+});
+
+/** Visible text from the quest that the 4000 character cap rejected. */
+const screenshotGoal =
+  'Establish and document how Hypha could serve as Antipartido’s training, communication and governance layer, so its members can onboard citizens into Hypha-backed training instead of building that infrastructure from scratch. The deliverable is a written integration recommendation — covering which layers Antipartido could adopt first and how the two platforms would interact — not a launch commitment.';
+
+function repeatText(text: string, times: number) {
+  return Array.from({ length: times }, () => text).join(' ');
+}
+
+function screenshotQuestDraft(times: number): QuestDraftInput {
+  return {
+    name: 'Antipartido x Hypha',
+    goal: repeatText(screenshotGoal, times),
+    scopeIn: [
+      'Map the three integration layers — training (5 electoral roles), communication (sectional to national rooms) and governance — and note where each Hypha capability fits.',
+      'Hands-on sandbox testing of Antipartido’s existing flows.',
+      'Recommend which layers Antipartido could adopt first, in what order, with dependencies and interaction points between the two platforms.',
+      'Deliver a written integration recommendation document for the 150 members and the board to review.',
+    ].map((item) => repeatText(item, times)),
+    scopeOut: [
+      'Building training, chat or voting infrastructure in this quest.',
+      'Committing to the 20 November launch or to any partnership/legal agreement.',
+      'Replacing or modifying the existing Antipartido app.',
+    ].map((item) => repeatText(item, times)),
+    successCriteria: repeatText(
+      [
+        'The written integration recommendation is delivered and reviewed by both Hypha and Antipartido.',
+        'The document states which layer(s) Antipartido would adopt first, in what order, and the dependencies between them.',
+        'Both parties can state the agreed next steps from the document, each with a named owner on the Hypha or Antipartido side.',
+        'No open question remains about what happens after the recommendation — either side can point to the next action and who holds it.',
+      ]
+        .map((line) => `- ${line}`)
+        .join('\n'),
+      times,
+    ),
+    rewards: [],
+    targetDate: '16 November 2026',
+    leadName: 'Vlad Hramtsov',
+    milestones: [],
+    members: [
+      {
+        memberName: 'Vlad Hramtsov',
+        roleLabel: 'Lead',
+        responsibilities: ['Overall delivery', 'Unblock reviews'],
+      },
+      {
+        memberName: 'Gerardo Roza',
+        roleLabel: 'Integration expert',
+        responsibilities: [
+          repeatText(
+            'Evaluate whether the suggested integration is possible.',
+            times,
+          ),
+        ],
+      },
+      {
+        memberName: 'Alex Prate',
+        roleLabel: 'Communication/Reviewer',
+        responsibilities: [
+          repeatText('Keep contact between Hypha and Antipartido.', times),
+          repeatText(
+            'Approve and evaluate the integration and cooperation recommendation document.',
+            times,
+          ),
+        ],
+      },
+    ],
+  };
+}
+
+describe('quest proposal length', () => {
+  it('accepts a quest about five times the screenshot that exceeded 4000 characters', () => {
+    expect(QUEST_PROPOSAL_DESCRIPTION_LIMIT).toBeGreaterThanOrEqual(20_000);
+
+    const description = buildQuestProposalDescription(
+      screenshotQuestDraft(5),
+      'q'.repeat(52),
+    );
+    expect(description.length).toBeGreaterThan(4000);
+    expect(description.length).toBeLessThanOrEqual(
+      QUEST_PROPOSAL_DESCRIPTION_LIMIT,
+    );
+
+    const parsedPayload = parseQuestProposalFromDescription(description);
+    expect(parsedPayload?.goal).toBe(repeatText(screenshotGoal, 5));
+    expect(parsedPayload?.members).toHaveLength(3);
+
+    const parsed = parseCreateAgreementWeb2({
+      title: 'Antipartido x Hypha',
+      description,
+      creatorId: 1,
+      spaceId: 1,
+      label: QUEST_DOCUMENT_LABEL,
+    });
+    expect(parsed.description).toBe(description);
+
+    expect(() =>
+      schemaCreateAgreementWeb2.parse({
+        title: 'Antipartido x Hypha',
+        description,
+        creatorId: 1,
+        spaceId: 1,
+      }),
+    ).toThrow(ZodError);
+
+    expect(() =>
+      parseCreateAgreementWeb2({
+        title: 'Antipartido x Hypha',
+        description: 'x'.repeat(QUEST_PROPOSAL_DESCRIPTION_LIMIT + 1),
+        creatorId: 1,
+        spaceId: 1,
+        label: QUEST_DOCUMENT_LABEL,
+      }),
+    ).toThrow(ZodError);
   });
 });

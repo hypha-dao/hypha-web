@@ -52,6 +52,12 @@ export type QuestUpdateKind = (typeof QUEST_UPDATE_KINDS)[number];
 /** Canonical `documents.label` for Quest proposals in Agreements. */
 export const QUEST_DOCUMENT_LABEL = 'Quest' as const;
 
+/**
+ * Quest proposal body stored in `documents.description`.
+ * Other agreement types stay on the shared 4000 character schema.
+ */
+export const QUEST_PROPOSAL_DESCRIPTION_LIMIT = 20_000;
+
 /** Default token symbols offered in Quest Reward selector. */
 export const QUEST_DEFAULT_REWARD_TOKENS = [
   'USDC',

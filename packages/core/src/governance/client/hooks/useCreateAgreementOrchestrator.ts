@@ -17,8 +17,8 @@ import useSWRMutation from 'swr/mutation';
 import {
   schemaCreateAgreement,
   schemaCreateAgreementFiles,
-  schemaCreateAgreementWeb2,
 } from '../../validation';
+import { parseCreateAgreementWeb2 } from '../../parse-create-agreement-web2';
 import { useAgreementFileUploads } from './useAgreementFileUploads';
 
 type UseCreateAgreementOrchestratorInput = {
@@ -185,7 +185,7 @@ export const useCreateAgreementOrchestrator = ({
     'createAgreementOrchestration',
     async (_, { arg }: { arg: z.infer<typeof schemaCreateAgreement> }) => {
       startTask('CREATE_WEB2_AGREEMENT');
-      const inputCreateAgreementWeb2 = schemaCreateAgreementWeb2.parse(arg);
+      const inputCreateAgreementWeb2 = parseCreateAgreementWeb2(arg);
       let createdAgreement: Awaited<ReturnType<typeof web2.createAgreement>>;
       try {
         createdAgreement = await web2.createAgreement(inputCreateAgreementWeb2);
