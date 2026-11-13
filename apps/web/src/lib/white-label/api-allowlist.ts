@@ -43,26 +43,32 @@ export const WL_API_READ_ALLOWLIST: readonly string[] = [
 /**
  * Signed-in reads (login on a mapped host). Only a host registered WITH login
  * settings gets these; a read-only host refuses them (404) like any other path
- * off the base list. Each handler still authenticates the bearer token itself:
- * the list only makes the route reachable.
+ * off the base list. The list only makes a route reachable: each handler
+ * applies its own access policy. Most require a bearer token (profile,
+ * Banking). Two serve public Space data without one, exactly as on the main
+ * app: signal workflow (access is checked for a private Space) and organisation
+ * (no check). They are listed here because the sections request them only once
+ * a token exists, not because the route authenticates.
  */
 export const WL_API_SIGNED_IN_READ_ALLOWLIST: readonly string[] = [
-  // Measured by reading the hooks of all twelve sections, not one browser run:
-  // the profile (`useMe`, used by Banking, Overview, Members), the four
-  // Banking listings (`transfers` also answers `?mode=transfer-options`) and
-  // the Signal section's workflow config. The rest of the signed-in calls the
-  // sections can make stay refused on purpose.
+  // From the hooks of the twelve sections, plus calls seen on a real host with
+  // login (the first read missed those that fire only once signed in): the
+  // profile (`useMe`, used by Banking, Overview, Members), the four Banking
+  // listings (`transfers` also answers `?mode=transfer-options`), the Signal
+  // section's workflow config and the organisation's Spaces. The rest of the
+  // signed-in calls the sections can make stay refused on purpose.
   '/api/v1/people/me',
   '/api/v1/spaces/:slug/banking/bank-customers',
   '/api/v1/spaces/:slug/banking/accounts',
   '/api/v1/spaces/:slug/banking/payout-accounts',
   '/api/v1/spaces/:slug/banking/transfers',
-  // Signal section: the Space's signal-workflow config, read only when signed in.
-  // The handler checks Space read access itself (`checkSpaceAccess`).
+  // Signal section: the Space's signal-workflow config, requested only when
+  // signed in. The handler runs `checkSpaceAccess` (a private Space needs a
+  // token); a public Space's config is readable without one, as on the main app.
   '/api/v1/spaces/:slug/signal-workflow',
   // The organisation's Spaces (parent and siblings), used to count membership in
-  // any of them as access. The handler serves it without auth, as on the main
-  // app (public Space records); it is requested only once a token exists.
+  // any of them as access. The handler checks no token and serves public Space
+  // records, as on the main app; the hook requests it only once a token exists.
   '/api/v1/spaces/:slug/organisation',
 ];
 
