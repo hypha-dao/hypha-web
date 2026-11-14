@@ -832,7 +832,7 @@ export function MatrixDiscussionThread({
     const key = `${roomId}:${memberMatrixIds.join(',')}`;
     if (invitedMembersKeyRef.current === key) return;
     invitedMembersKeyRef.current = key;
-    void ensureRoomMembers(roomId, memberMatrixIds, { pruneAbsent: true });
+    void ensureRoomMembers(roomId, memberMatrixIds);
   }, [ensureRoomMembers, matrixIdsLoading, memberMatrixIds, roomId]);
 
   const mentionLabelByUserId = React.useMemo(
