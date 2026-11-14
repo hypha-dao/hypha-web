@@ -61,7 +61,7 @@
     "noOwnership": "Er is nog geen broneigendom vastgelegd in de keten.",
     "earningsOverWindow": "≈ {amount} EURC over dit venster",
     "earnings": "Inkomsten",
-    "earnedFromSource": "{prefix}{amount} EURC verdiend uit deze bron",
+    "earnedFromSource": "{prefix}{amount} EURC verdiend uit deze bron in de afgelopen 7 dagen",
     "placeholderEstimate": "Placeholderschatting: live productietelemetrie is nog niet verbonden.",
     "liveEstimate": "Geschat op basis van live productietelemetrie × huidige prijs × eigendomsaandeel.",
     "earningsHint": "De inkomsten worden over de afgelopen twaalf maanden geschat op basis van productiegegevens van {dataType}. Klik op een eigenaar voor dagelijkse, wekelijkse of maandelijkse details.",

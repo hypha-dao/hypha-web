@@ -5113,7 +5113,7 @@
       "earningsUnavailable": "Erträge sind vorübergehend nicht verfügbar, da die Quellenliste nicht geladen werden konnte.",
       "earningsOverWindow": "≈ {amount} EURC in diesem Zeitraum",
       "earnings": "Einnahmen",
-      "earnedFromSource": "{prefix}{amount} EURC mit dieser Quelle verdient",
+      "earnedFromSource": "{prefix}{amount} EURC mit dieser Quelle in den letzten 7 Tagen verdient",
       "placeholderEstimate": "Platzhalterschätzung — Live-Produktionstelemetrie ist noch nicht verbunden.",
       "liveEstimate": "Geschätzt aus Live-Produktionstelemetrie × Grundpreis × Eigentumsanteil.",
       "earningsHint": "Einnahmen werden über die letzten 12 Monate aus {dataType}-Produktionsdaten geschätzt. Klicken Sie auf einen Eigentümer für tägliche, wöchentliche oder monatliche Details.",

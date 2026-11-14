@@ -5149,7 +5149,7 @@
       "earningsUnavailable": "Earnings are temporarily unavailable because the source list could not be loaded.",
       "earningsOverWindow": "≈ {amount} EURC over this window",
       "earnings": "Earnings",
-      "earnedFromSource": "{prefix}{amount} EURC earned from this source",
+      "earnedFromSource": "{prefix}{amount} EURC earned from this source in the last 7 days",
       "placeholderEstimate": "Placeholder estimate — live production telemetry is not connected yet.",
       "liveEstimate": "Estimated from live production telemetry × base price × ownership share.",
       "earningsHint": "Earnings are estimated over the last 12 months from {dataType} production data. Click an owner for daily, weekly or monthly detail.",

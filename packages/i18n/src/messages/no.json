@@ -5118,7 +5118,7 @@
       "earningsUnavailable": "Inntekter er midlertidig utilgjengelige fordi kildelisten ikke kunne lastes inn.",
       "earningsOverWindow": "≈ {amount} EURC i denne perioden",
       "earnings": "Inntekter",
-      "earnedFromSource": "{prefix}{amount} EURC opptjent fra denne kilden",
+      "earnedFromSource": "{prefix}{amount} EURC opptjent fra denne kilden de siste 7 dagene",
       "placeholderEstimate": "Plassholderestimat — produksjonstelemetri i sanntid er ikke tilkoblet ennå.",
       "liveEstimate": "Estimert fra produksjonstelemetri i sanntid × gjeldende pris × eierandel.",
       "earningsHint": "Inntektene er estimert over de siste 12 månedene basert på {dataType} produksjonsdata. Klikk på en eier for daglige, ukentlige eller månedlige detaljer.",

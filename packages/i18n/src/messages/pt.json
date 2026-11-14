@@ -5112,7 +5112,7 @@
       "earningsUnavailable": "Os ganhos estão temporariamente indisponíveis porque não foi possível carregar a lista de fontes.",
       "earningsOverWindow": "≈ {amount} EURC neste período",
       "earnings": "Ganhos",
-      "earnedFromSource": "{prefix}{amount} EURC ganhos com esta fonte",
+      "earnedFromSource": "{prefix}{amount} EURC ganhos com esta fonte nos últimos 7 dias",
       "placeholderEstimate": "Estimativa de exemplo — a telemetria de produção em tempo real ainda não está ligada.",
       "liveEstimate": "Estimado a partir da telemetria de produção em tempo real × preço base × quota de propriedade.",
       "earningsHint": "Os ganhos são estimados nos últimos 12 meses com base em dados de produção {dataType}. Clique num proprietário para ver o detalhe diário, semanal ou mensal.",

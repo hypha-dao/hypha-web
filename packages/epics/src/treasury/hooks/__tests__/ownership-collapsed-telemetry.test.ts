@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -10,6 +10,7 @@ import {
 import { telemetryPeriodForOwnershipWindow } from '../../components/assets/energy/granularity';
 
 const treasuryDir = join(dirname(fileURLToPath(import.meta.url)), '../..');
+const messagesDir = join(treasuryDir, '../../../i18n/src/messages');
 
 const ownershipTab = readFileSync(
   join(treasuryDir, 'components/assets/energy/ownership-tab.tsx'),
@@ -61,5 +62,46 @@ describe('ownership collapsed telemetry', () => {
     );
     expect(spaceEnergySection).not.toMatch(/useSpaceEnergyTelemetry\(\s*'12m'/);
     expect(spaceEnergySection).not.toMatch(/useSpaceEnergyTelemetry\(\s*'12w'/);
+  });
+
+  it('labels collapsed earnings as the last 7 days and keeps prefix/amount interpolation', () => {
+    expect(ownershipTab).toMatch(
+      /t\('earnedFromSource',\s*\{\s*prefix:[\s\S]*amount:/,
+    );
+
+    const expected: Record<string, string> = {
+      en: '{prefix}{amount} EURC earned from this source in the last 7 days',
+      de: '{prefix}{amount} EURC mit dieser Quelle in den letzten 7 Tagen verdient',
+      pt: '{prefix}{amount} EURC ganhos com esta fonte nos últimos 7 dias',
+      es: '{prefix}{amount} EURC obtenidos de esta fuente en los últimos 7 días',
+      fr: '{prefix}{amount} EURC gagnés depuis cette source au cours des 7 derniers jours',
+      nl: '{prefix}{amount} EURC verdiend uit deze bron in de afgelopen 7 dagen',
+      no: '{prefix}{amount} EURC opptjent fra denne kilden de siste 7 dagene',
+      mk: '{prefix}{amount} EURC заработено од овој извор во последните 7 дена',
+    };
+
+    const localeFiles = readdirSync(messagesDir).filter((name) =>
+      name.endsWith('.json'),
+    );
+    expect(localeFiles.sort()).toEqual(
+      Object.keys(expected)
+        .map((locale) => `${locale}.json`)
+        .sort(),
+    );
+
+    for (const file of localeFiles) {
+      const locale = file.replace(/\.json$/, '');
+      const messages = JSON.parse(
+        readFileSync(join(messagesDir, file), 'utf8'),
+      ) as {
+        Energy?: { ownership?: { earnedFromSource?: string } };
+      };
+      const copy = messages.Energy?.ownership?.earnedFromSource;
+      expect({ locale, copy }).toEqual({
+        locale,
+        copy: expected[locale],
+      });
+      expect(copy).toContain('{prefix}{amount}');
+    }
   });
 });
