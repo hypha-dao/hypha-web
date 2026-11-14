@@ -1909,147 +1909,167 @@ export function SpaceQuestDetail({
         />
       ) : null}
 
-      <EditQuestNameModal
-        open={editingModal === 'name'}
-        onOpenChange={closeModal}
-        value={quest.name}
-        onSave={(name) => void savePatch({ name })}
-      />
-      <EditQuestGoalModal
-        open={editingModal === 'goal'}
-        onOpenChange={closeModal}
-        value={quest.goal}
-        onSave={(goal) => void savePatch({ goal })}
-      />
-      <EditQuestScopeModal
-        open={editingModal === 'scope'}
-        onOpenChange={closeModal}
-        scopeIn={quest.scopeIn}
-        scopeOut={quest.scopeOut}
-        scopeInMarkdown={quest.scopeInMarkdown}
-        scopeOutMarkdown={quest.scopeOutMarkdown}
-        onSave={(next) => void savePatch(next)}
-      />
-      <EditQuestSuccessModal
-        open={editingModal === 'success'}
-        onOpenChange={closeModal}
-        value={quest.successCriteria}
-        onSave={(successCriteria) => void savePatch({ successCriteria })}
-      />
-      <EditQuestRewardsModal
-        open={editingModal === 'rewards'}
-        onOpenChange={closeModal}
-        rewards={quest.rewards}
-        spaceSlug={spaceSlug}
-        onSave={(rewards) => void savePatch({ rewards })}
-      />
-      <EditQuestMilestonesModal
-        open={editingModal === 'milestones'}
-        onOpenChange={closeModal}
-        milestones={quest.milestones.map((m) => ({
-          id: m.id,
-          name: m.name,
-          description: m.description,
-          dueDate: m.dueDate,
-          ownerPersonId: m.ownerPersonId,
-          ownerName: m.ownerName,
-          status: m.status,
-        }))}
-        spaceMembers={spaceMemberPersons}
-        spaceMemberNames={memberOptions}
-        showStatusSelect
-        onSave={(next) =>
-          void savePatch({
-            milestones: next.map((m) => ({
-              id: m.id,
-              name: m.name.trim() || 'Untitled milestone',
-              description: m.description,
-              dueDate: m.dueDate,
-              ownerPersonId:
-                m.ownerPersonId ??
-                (m.ownerName
-                  ? findQuestSpaceMemberId(spaceMembers, m.ownerName)
-                  : null),
-              ownerName: m.ownerName,
-              status: m.status,
-            })),
-          })
-        }
-      />
-      <EditQuestMembersModal
-        open={editingModal === 'members'}
-        onOpenChange={closeModal}
-        members={quest.members.map((m) => ({
-          id: m.id,
-          personId: m.personId,
-          memberName: m.memberName,
-          memberAvatarUrl: m.memberAvatarUrl,
-          roleLabel: m.roleLabel,
-          responsibilities: m.responsibilities,
-        }))}
-        spaceMembers={spaceMemberPersons}
-        spaceMemberNames={memberOptions}
-        onSave={(next) =>
-          void savePatch({
-            members: next.map((m) => ({
-              id: m.id,
-              personId:
-                m.personId ??
-                findQuestSpaceMemberId(spaceMembers, m.memberName),
-              memberName: m.memberName,
-              memberAvatarUrl: m.memberAvatarUrl ?? null,
-              roleLabel: m.roleLabel ?? null,
-              responsibilities: m.responsibilities
-                .map((r) => r.trim())
-                .filter(Boolean),
-            })),
-          })
-        }
-      />
-      <EditQuestDeliverablesModal
-        open={editingModal === 'deliverables'}
-        onOpenChange={closeModal}
-        deliverables={quest.deliverables}
-        onSave={(next) =>
-          savePatch(
-            {
-              deliverables: next
-                .filter((d) => d.name.trim())
-                .map((d) => ({
-                  id: d.id,
-                  name: d.name.trim(),
-                  url: d.url.trim() || null,
-                  note: d.note.trim() || null,
-                })),
-            },
-            { inline: true },
-          )
-        }
-      />
-      <EditQuestLeadModal
-        open={editingModal === 'lead'}
-        onOpenChange={closeModal}
-        leadName={quest.leadName}
-        leadPersonId={quest.leadPersonId}
-        spaceMembers={spaceMemberPersons}
-        spaceMemberNames={memberOptions}
-        onSave={(leadName, leadPersonId) => {
-          const match = quest.members.find((m) => m.memberName === leadName);
-          void savePatch({
-            leadName,
-            leadPersonId:
-              leadPersonId ??
-              match?.personId ??
-              findQuestSpaceMemberId(spaceMembers, leadName),
-          });
-        }}
-      />
-      <EditQuestTargetDateModal
-        open={editingModal === 'targetDate'}
-        onOpenChange={closeModal}
-        value={quest.targetDate}
-        onSave={(targetDate) => void savePatch({ targetDate })}
-      />
+      {editingModal === 'name' ? (
+        <EditQuestNameModal
+          open
+          onOpenChange={closeModal}
+          value={quest.name}
+          onSave={(name) => void savePatch({ name })}
+        />
+      ) : null}
+      {editingModal === 'goal' ? (
+        <EditQuestGoalModal
+          open
+          onOpenChange={closeModal}
+          value={quest.goal}
+          onSave={(goal) => void savePatch({ goal })}
+        />
+      ) : null}
+      {editingModal === 'scope' ? (
+        <EditQuestScopeModal
+          open
+          onOpenChange={closeModal}
+          scopeIn={quest.scopeIn}
+          scopeOut={quest.scopeOut}
+          scopeInMarkdown={quest.scopeInMarkdown}
+          scopeOutMarkdown={quest.scopeOutMarkdown}
+          onSave={(next) => void savePatch(next)}
+        />
+      ) : null}
+      {editingModal === 'success' ? (
+        <EditQuestSuccessModal
+          open
+          onOpenChange={closeModal}
+          value={quest.successCriteria}
+          onSave={(successCriteria) => void savePatch({ successCriteria })}
+        />
+      ) : null}
+      {editingModal === 'rewards' ? (
+        <EditQuestRewardsModal
+          open
+          onOpenChange={closeModal}
+          rewards={quest.rewards}
+          spaceSlug={spaceSlug}
+          onSave={(rewards) => void savePatch({ rewards })}
+        />
+      ) : null}
+      {editingModal === 'milestones' ? (
+        <EditQuestMilestonesModal
+          open
+          onOpenChange={closeModal}
+          milestones={quest.milestones.map((m) => ({
+            id: m.id,
+            name: m.name,
+            description: m.description,
+            dueDate: m.dueDate,
+            ownerPersonId: m.ownerPersonId,
+            ownerName: m.ownerName,
+            status: m.status,
+          }))}
+          spaceMembers={spaceMemberPersons}
+          spaceMemberNames={memberOptions}
+          showStatusSelect
+          onSave={(next) =>
+            void savePatch({
+              milestones: next.map((m) => ({
+                id: m.id,
+                name: m.name.trim() || 'Untitled milestone',
+                description: m.description,
+                dueDate: m.dueDate,
+                ownerPersonId:
+                  m.ownerPersonId ??
+                  (m.ownerName
+                    ? findQuestSpaceMemberId(spaceMembers, m.ownerName)
+                    : null),
+                ownerName: m.ownerName,
+                status: m.status,
+              })),
+            })
+          }
+        />
+      ) : null}
+      {editingModal === 'members' ? (
+        <EditQuestMembersModal
+          open
+          onOpenChange={closeModal}
+          members={quest.members.map((m) => ({
+            id: m.id,
+            personId: m.personId,
+            memberName: m.memberName,
+            memberAvatarUrl: m.memberAvatarUrl,
+            roleLabel: m.roleLabel,
+            responsibilities: m.responsibilities,
+          }))}
+          spaceMembers={spaceMemberPersons}
+          spaceMemberNames={memberOptions}
+          onSave={(next) =>
+            void savePatch({
+              members: next.map((m) => ({
+                id: m.id,
+                personId:
+                  m.personId ??
+                  findQuestSpaceMemberId(spaceMembers, m.memberName),
+                memberName: m.memberName,
+                memberAvatarUrl: m.memberAvatarUrl ?? null,
+                roleLabel: m.roleLabel ?? null,
+                responsibilities: m.responsibilities
+                  .map((r) => r.trim())
+                  .filter(Boolean),
+              })),
+            })
+          }
+        />
+      ) : null}
+      {editingModal === 'deliverables' ? (
+        <EditQuestDeliverablesModal
+          open
+          onOpenChange={closeModal}
+          deliverables={quest.deliverables}
+          onSave={(next) =>
+            savePatch(
+              {
+                deliverables: next
+                  .filter((d) => d.name.trim())
+                  .map((d) => ({
+                    id: d.id,
+                    name: d.name.trim(),
+                    url: d.url.trim() || null,
+                    note: d.note.trim() || null,
+                  })),
+              },
+              { inline: true },
+            )
+          }
+        />
+      ) : null}
+      {editingModal === 'lead' ? (
+        <EditQuestLeadModal
+          open
+          onOpenChange={closeModal}
+          leadName={quest.leadName}
+          leadPersonId={quest.leadPersonId}
+          spaceMembers={spaceMemberPersons}
+          spaceMemberNames={memberOptions}
+          onSave={(leadName, leadPersonId) => {
+            const match = quest.members.find((m) => m.memberName === leadName);
+            void savePatch({
+              leadName,
+              leadPersonId:
+                leadPersonId ??
+                match?.personId ??
+                findQuestSpaceMemberId(spaceMembers, leadName),
+            });
+          }}
+        />
+      ) : null}
+      {editingModal === 'targetDate' ? (
+        <EditQuestTargetDateModal
+          open
+          onOpenChange={closeModal}
+          value={quest.targetDate}
+          onSave={(targetDate) => void savePatch({ targetDate })}
+        />
+      ) : null}
       <EditHealthDialog
         open={editingModal === 'health'}
         onOpenChange={closeModal}

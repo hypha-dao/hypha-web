@@ -9,22 +9,40 @@ import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import {
   seedSpaceQuestDetailCache,
   useSpaceQuests,
 } from '../hooks/use-space-quests';
 import { QuestSectionMarkdown } from './quest-section-markdown';
 
+function isModifiedClick(event: MouseEvent<HTMLAnchorElement>) {
+  return (
+    event.defaultPrevented ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey ||
+    event.button !== 0
+  );
+}
+
 function QuestOverviewNavLink({ href }: { href: string }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
     router.prefetch(href);
   }, [href, router]);
+
+  useEffect(() => {
+    if (!pending) return undefined;
+    const timeout = window.setTimeout(() => setPending(false), 4000);
+    return () => window.clearTimeout(timeout);
+  }, [pending, pathname]);
 
   return (
     <Button
@@ -39,7 +57,10 @@ function QuestOverviewNavLink({ href }: { href: string }) {
       <Link
         href={href}
         prefetch={true}
-        onClick={() => setPending(true)}
+        onClick={(event) => {
+          if (isModifiedClick(event)) return;
+          setPending(true);
+        }}
         aria-busy={pending}
         data-pending={pending ? 'true' : undefined}
       >

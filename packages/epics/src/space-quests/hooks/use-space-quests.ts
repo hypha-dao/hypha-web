@@ -135,15 +135,9 @@ export function useSpaceQuests(spaceSlug: string | undefined) {
       revalidateOnFocus: true,
       refreshInterval: (latest) =>
         latest?.quests.some((q) => q.status === 'proposed') ? 5_000 : 0,
-      onSuccess: (overview, key) => {
-        if (
-          !Array.isArray(key) ||
-          typeof key[1] !== 'string' ||
-          typeof key[3] !== 'string'
-        ) {
-          return;
-        }
-        void seedSpaceQuestDetailCache(key[1], overview.quests, key[3]);
+      onSuccess: (overview) => {
+        if (!spaceSlug || !viewerKey) return;
+        void seedSpaceQuestDetailCache(spaceSlug, overview.quests, viewerKey);
       },
     },
   );

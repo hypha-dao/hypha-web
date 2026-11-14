@@ -10,10 +10,10 @@ import type {
 } from '@hypha-platform/core/client';
 import {
   seedSpaceQuestDetailCache,
-  SPACE_QUESTS_SWR_KEY,
   spaceQuestDetailKey,
   spaceQuestOverviewKey,
   useSpaceQuestDetail,
+  useSpaceQuests,
 } from '../use-space-quests';
 
 vi.mock('@hypha-platform/authentication', () => ({
@@ -102,9 +102,32 @@ function DetailProbe() {
   );
 }
 
-async function clearQuestCache() {
+function OverviewProbe() {
+  const { overview } = useSpaceQuests('sandbox');
+  return (
+    <span data-testid="overview-count">{overview?.quests.length ?? 0}</span>
+  );
+}
+
+async function readCachedQuest(spaceSlug: string, questSlug: string) {
+  let seeded: QuestRecord | undefined;
   await mutate(
-    (key) => Array.isArray(key) && key[0] === SPACE_QUESTS_SWR_KEY,
+    spaceQuestDetailKey(spaceSlug, questSlug, 'user-1'),
+    (current: QuestRecord | undefined) => {
+      seeded = current;
+      return current;
+    },
+    { revalidate: false },
+  );
+  return seeded;
+}
+
+async function clearQuestCache() {
+  await mutate(spaceQuestOverviewKey('sandbox', 'user-1'), undefined, {
+    revalidate: false,
+  });
+  await mutate(
+    spaceQuestDetailKey('sandbox', 'onboarding', 'user-1'),
     undefined,
     { revalidate: false },
   );
@@ -218,6 +241,9 @@ describe('quest detail cache reuse', () => {
     );
 
     await seedSpaceQuestDetailCache('sandbox', [questFixture()], 'user-1');
+    expect((await readCachedQuest('sandbox', 'onboarding'))?.name).toBe(
+      'Onboarding matcher',
+    );
     const { unmount } = render(
       <SWRConfig value={{ dedupingInterval: 0, revalidateOnFocus: false }}>
         <DetailProbe />
@@ -247,5 +273,48 @@ describe('quest detail cache reuse', () => {
     expect(screen.getByTestId('quest-name').textContent).toBe(
       'Edited on the quest page',
     );
+  });
+
+  it('seeds detail cache from a successful overview fetch', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes('/quests/onboarding')) {
+          return new Promise<Response>(() => undefined);
+        }
+        if (url.includes('/spaces/sandbox/quests')) {
+          return new Response(JSON.stringify(overviewFor(questFixture())), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        return new Response('not found', { status: 404 });
+      }),
+    );
+
+    const { rerender } = render(
+      <SWRConfig value={{ dedupingInterval: 0, revalidateOnFocus: false }}>
+        <OverviewProbe />
+      </SWRConfig>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('overview-count').textContent).toBe('1');
+    });
+    expect((await readCachedQuest('sandbox', 'onboarding'))?.name).toBe(
+      'Onboarding matcher',
+    );
+
+    rerender(
+      <SWRConfig value={{ dedupingInterval: 0, revalidateOnFocus: false }}>
+        <OverviewProbe />
+        <DetailProbe />
+      </SWRConfig>,
+    );
+    expect(screen.getByTestId('quest-name').textContent).toBe(
+      'Onboarding matcher',
+    );
+    expect(screen.getByTestId('quest-loading').textContent).toBe('false');
   });
 });

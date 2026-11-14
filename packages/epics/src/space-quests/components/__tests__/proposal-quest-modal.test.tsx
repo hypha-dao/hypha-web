@@ -18,6 +18,7 @@ vi.mock('next-intl', () => ({
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ prefetch: vi.fn(), push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => '/en/dho/hypha/agreements/proposal/quest',
 }));
 
 vi.mock('@hypha-platform/authentication', () => ({
@@ -180,7 +181,8 @@ describe('quest proposal modal body', () => {
     );
     expect(linkSource).toContain('prefetch={true}');
     expect(linkSource).toContain('router.prefetch(href)');
-    expect(linkSource).toContain('onClick={() => setPending(true)}');
+    expect(linkSource).toContain('if (isModifiedClick(event)) return');
+    expect(linkSource).toContain('setPending(true)');
 
     const detailSource = readFileSync(
       join(
@@ -213,5 +215,6 @@ describe('quest proposal modal body', () => {
     );
     expect(asideLoadingSource).toContain('return null');
     expect(detailSource).toContain('prefetch={false}');
+    expect(detailSource).toContain("editingModal === 'name' ? (");
   });
 });
