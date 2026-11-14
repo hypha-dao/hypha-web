@@ -10,6 +10,7 @@ import {
   measureUnclampedMessageBodyHeight,
   messageBodyCanExpand,
   stripLineClampClasses,
+  watchClampedMessageBody,
 } from '../message-text-clamp';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -247,14 +248,130 @@ describe('measureUnclampedMessageBodyHeight', () => {
   });
 });
 
+describe('watchClampedMessageBody', () => {
+  function installLayoutDoubles() {
+    const frames: Array<FrameRequestCallback | undefined> = [];
+    class SilentResizeObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      frames.push(cb);
+      return frames.length;
+    });
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+      frames[id - 1] = undefined;
+    });
+    vi.stubGlobal('ResizeObserver', SilentResizeObserver);
+    const previousFonts = Object.getOwnPropertyDescriptor(document, 'fonts');
+    Object.defineProperty(document, 'fonts', {
+      configurable: true,
+      value: {
+        ready: new Promise(() => {}),
+        addEventListener() {},
+        removeEventListener() {},
+      },
+    });
+    return {
+      flushFrames() {
+        for (let pass = 0; pass < 8; pass += 1) {
+          const batch = frames.splice(0);
+          const pending = batch.filter((frame): frame is FrameRequestCallback =>
+            Boolean(frame),
+          );
+          if (pending.length === 0) break;
+          for (const frame of pending) frame(0);
+        }
+      },
+      restore() {
+        vi.unstubAllGlobals();
+        if (previousFonts) {
+          Object.defineProperty(document, 'fonts', previousFonts);
+        }
+      },
+    };
+  }
+
+  function clampedBox() {
+    const el = document.createElement('div');
+    el.className = 'line-clamp-10 whitespace-pre-wrap';
+    let scrollHeight = 175;
+    Object.defineProperty(el, 'clientWidth', {
+      configurable: true,
+      get: () => 320,
+    });
+    Object.defineProperty(el, 'clientHeight', {
+      configurable: true,
+      get: () => 175,
+    });
+    Object.defineProperty(el, 'offsetHeight', {
+      configurable: true,
+      get: () => 175,
+    });
+    Object.defineProperty(el, 'scrollHeight', {
+      configurable: true,
+      get: () => scrollHeight,
+    });
+    document.body.appendChild(el);
+    return {
+      el,
+      setScrollHeight: (value: number) => {
+        scrollHeight = value;
+      },
+    };
+  }
+
+  it('remeasures on a settled frame when the clamped box never resizes', () => {
+    const layout = installLayoutDoubles();
+    const { el, setScrollHeight } = clampedBox();
+    const seen: boolean[] = [];
+    const stop = watchClampedMessageBody(el, (overflows) => {
+      seen.push(overflows);
+    });
+    try {
+      // iPhone failure: the box is already 10 lines tall and scrollHeight
+      // catches up later, with no border-box change for ResizeObserver.
+      expect(seen[0]).toBe(false);
+      setScrollHeight(351);
+      layout.flushFrames();
+      expect(seen).toContain(true);
+    } finally {
+      stop();
+      el.remove();
+      layout.restore();
+    }
+  });
+
+  it('remeasures when message text arrives after the first layout', async () => {
+    const layout = installLayoutDoubles();
+    const { el, setScrollHeight } = clampedBox();
+    const seen: boolean[] = [];
+    const stop = watchClampedMessageBody(el, (overflows) => {
+      seen.push(overflows);
+    });
+    try {
+      expect(seen[0]).toBe(false);
+      setScrollHeight(351);
+      el.textContent = `${el.textContent ?? ''} more lines`;
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(seen).toContain(true);
+    } finally {
+      stop();
+      el.remove();
+      layout.restore();
+    }
+  });
+});
+
 describe('message bubble clamp wiring', () => {
   const source = readFileSync(
     join(here, '../human-chat-panel-message-bubble.tsx'),
     'utf8',
   );
 
-  it('decides Read more from messageBodyCanExpand', () => {
-    expect(source).toContain('messageBodyCanExpand(el)');
+  it('keeps watching the clamped body after the first layout', () => {
+    expect(source).toContain('watchClampedMessageBody(');
     expect(source).not.toContain('el.scrollHeight > el.clientHeight + 1');
   });
 
@@ -266,7 +383,13 @@ describe('message bubble clamp wiring', () => {
     const buttonAt = source.indexOf('data-testid="chat-message-read-more"');
     const clampAt = source.indexOf("!textExpanded && 'line-clamp-10'");
     expect(buttonAt).toBeGreaterThan(clampAt);
-    const buttonBlock = source.slice(buttonAt, buttonAt + 700);
+    const buttonBlock = source.slice(buttonAt, buttonAt + 900);
     expect(buttonBlock).not.toContain('line-clamp-10');
+    expect(buttonBlock).not.toMatch(
+      /max-md:|md:hidden|group-hover|pointer-fine|pointer-events-none|opacity-0/,
+    );
+    expect(source).not.toMatch(
+      /isTouchComposer[\s\S]{0,80}messageReadMore|messageReadMore[\s\S]{0,80}isTouchComposer/,
+    );
   });
 });

@@ -19,11 +19,9 @@ export function stripLineClampClasses(className: string): string {
 
 /**
  * True when a line-clamped message body is taller than the box the reader sees.
- *
- * Chromium reports the full `scrollHeight` under `-webkit-line-clamp`, so the
- * first comparison is enough there. WebKit (iPhone Safari) reports
- * `scrollHeight === clientHeight` for a clamped box, which hid Read more.
- * `unclampedHeight` is the same node measured with the clamp removed.
+ * Either signal is enough: Chromium's `scrollHeight`, or the height of a copy
+ * with the clamp removed. WebKit can report both as equal until layout
+ * settles, so callers must measure again after that.
  */
 export function clampedMessageBodyOverflows(input: {
   clientWidth: number;
@@ -124,4 +122,156 @@ export function messageBodyCanExpand(
     scrollHeight,
     unclampedHeight: fastPathOverflows ? 0 : measureUnclamped(el),
   });
+}
+
+function scheduleSettledFrames(run: () => void, pending: Set<number>): void {
+  const outer = requestAnimationFrame(() => {
+    pending.delete(outer);
+    run();
+    const inner = requestAnimationFrame(() => {
+      pending.delete(inner);
+      run();
+    });
+    pending.add(inner);
+  });
+  pending.add(outer);
+}
+
+/**
+ * Hidden unclamped copy. Its border box grows with the text, so a
+ * ResizeObserver on it fires when the clamped box stays at 10 lines.
+ */
+function attachUnclampedProbe(
+  el: HTMLElement,
+  onResize: () => void,
+): { sync: () => void; disconnect: () => void } {
+  const probe = document.createElement('div');
+  probe.setAttribute('data-message-clamp-probe', '');
+  probe.setAttribute('aria-hidden', 'true');
+  probe.style.position = 'fixed';
+  probe.style.left = '0';
+  probe.style.top = '0';
+  probe.style.visibility = 'hidden';
+  probe.style.pointerEvents = 'none';
+  probe.style.zIndex = '-1';
+  probe.style.display = 'block';
+  probe.style.overflow = 'visible';
+  probe.style.height = 'auto';
+  probe.style.maxHeight = 'none';
+  probe.style.margin = '0';
+  probe.style.setProperty('-webkit-line-clamp', 'unset');
+  probe.style.setProperty('-webkit-box-orient', 'unset');
+  document.body.appendChild(probe);
+
+  const observer =
+    typeof ResizeObserver === 'undefined'
+      ? null
+      : new ResizeObserver(() => onResize());
+  observer?.observe(probe);
+
+  const sync = () => {
+    const width = el.clientWidth;
+    if (!(width > 0)) return;
+    const computed = getComputedStyle(el);
+    probe.className = stripLineClampClasses(el.className);
+    probe.style.width = `${width}px`;
+    probe.style.boxSizing = 'border-box';
+    probe.style.whiteSpace = computed.whiteSpace;
+    probe.style.fontFamily = computed.fontFamily;
+    probe.style.fontSize = computed.fontSize;
+    probe.style.fontWeight = computed.fontWeight;
+    probe.style.lineHeight = computed.lineHeight;
+    probe.style.wordBreak = computed.wordBreak;
+    probe.style.overflowWrap = computed.overflowWrap;
+    probe.innerHTML = el.innerHTML;
+  };
+
+  return {
+    sync,
+    disconnect: () => {
+      observer?.disconnect();
+      probe.remove();
+    },
+  };
+}
+
+function whenDocumentFontsSettle(onSettle: () => void): () => void {
+  const fonts = document.fonts;
+  if (!fonts) return () => {};
+  let cancelled = false;
+  const run = () => {
+    if (!cancelled) onSettle();
+  };
+  void fonts.ready?.then(run).catch(() => {});
+  const onDone = () => run();
+  if (typeof fonts.addEventListener === 'function') {
+    fonts.addEventListener('loadingdone', onDone);
+  }
+  return () => {
+    cancelled = true;
+    if (typeof fonts.removeEventListener === 'function') {
+      fonts.removeEventListener('loadingdone', onDone);
+    }
+  };
+}
+
+/**
+ * Report whether a clamped message body overflows, including after WebKit
+ * updates `scrollHeight` without resizing the clamped box.
+ *
+ * The first read often happens in `useLayoutEffect`, before line-clamp
+ * overflow, fonts, or mention text have settled. The clamped border box can
+ * already be 10 lines tall, so a ResizeObserver on that box never fires again.
+ */
+export function watchClampedMessageBody(
+  el: HTMLElement,
+  onChange: (overflows: boolean) => void,
+): () => void {
+  let cancelled = false;
+  const pendingFrames = new Set<number>();
+  const probe = attachUnclampedProbe(el, () => measure());
+
+  function measure() {
+    if (cancelled || !el.isConnected) return;
+    onChange(messageBodyCanExpand(el));
+  }
+
+  const settle = () => {
+    if (cancelled) return;
+    probe.sync();
+    measure();
+    scheduleSettledFrames(() => {
+      if (cancelled) return;
+      probe.sync();
+      measure();
+    }, pendingFrames);
+  };
+
+  settle();
+
+  const boxObserver =
+    typeof ResizeObserver === 'undefined'
+      ? null
+      : new ResizeObserver(() => settle());
+  boxObserver?.observe(el);
+  if (el.parentElement) boxObserver?.observe(el.parentElement);
+
+  const mutations = new MutationObserver(() => settle());
+  mutations.observe(el, {
+    subtree: true,
+    childList: true,
+    characterData: true,
+  });
+
+  const stopFonts = whenDocumentFontsSettle(settle);
+
+  return () => {
+    cancelled = true;
+    for (const id of pendingFrames) cancelAnimationFrame(id);
+    pendingFrames.clear();
+    boxObserver?.disconnect();
+    mutations.disconnect();
+    stopFonts();
+    probe.disconnect();
+  };
 }

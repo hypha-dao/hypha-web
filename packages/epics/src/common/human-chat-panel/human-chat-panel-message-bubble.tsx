@@ -84,7 +84,7 @@ import {
   formatVoiceDurationLabel,
 } from './human-chat-panel-voice-audio-row';
 import { asTimelineDate } from './human-chat-timeline-order';
-import { messageBodyCanExpand } from './message-text-clamp';
+import { watchClampedMessageBody } from './message-text-clamp';
 import { useAgentMentionLabel } from './agent-mention-label-context';
 import { botMentionChipText } from './human-chat-display-mention';
 
@@ -2039,27 +2039,11 @@ export function HumanChatPanelMessageBubble({
       return;
     }
     if (textExpanded) return;
-    let cancelled = false;
-    const measure = () => {
-      if (cancelled) return;
-      const next = messageBodyCanExpand(el);
-      setTextCanExpand((current) => (current === next ? current : next));
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    // A font swap can push a message over 10 lines without resizing the
-    // already-clamped box, so ResizeObserver never fires again.
-    const fontsReady = document.fonts?.ready;
-    if (fontsReady) {
-      void fontsReady.then(() => {
-        measure();
-      });
-    }
-    return () => {
-      cancelled = true;
-      ro.disconnect();
-    };
+    return watchClampedMessageBody(el, (overflows) => {
+      setTextCanExpand((current) =>
+        current === overflows ? current : overflows,
+      );
+    });
   }, [textContent, textExpanded, richTextHtml, hasInlineMedia]);
 
   const replyExcerpt =
