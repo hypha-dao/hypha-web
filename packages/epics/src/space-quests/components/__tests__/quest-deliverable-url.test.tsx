@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
 
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { QUEST_DELIVERABLE_URL_CODE } from '@hypha-platform/core/client';
 import { EditQuestDeliverablesModal } from '../quest-section-edit-modals';
@@ -72,5 +78,43 @@ describe('deliverable URL field', () => {
       screen.getByRole('heading', { name: 'Edit deliverables' }),
     ).toBeTruthy();
     expect(onSave).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores close and cancel while a save is in flight', async () => {
+    let resolveSave: () => void = () => undefined;
+    const saveGate = new Promise<void>((resolve) => {
+      resolveSave = resolve;
+    });
+    const onSave = vi.fn(() => saveGate);
+    const onOpenChange = vi.fn();
+    render(
+      <EditQuestDeliverablesModal
+        open
+        onOpenChange={onOpenChange}
+        deliverables={[{ name: 'Spec', url: 'https://example.com/spec' }]}
+        onSave={onSave}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledTimes(1);
+      expect(
+        (screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('heading', { name: 'Edit deliverables' }),
+    ).toBeTruthy();
+
+    resolveSave();
+    await waitFor(() => {
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
   });
 });

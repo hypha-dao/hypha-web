@@ -125,6 +125,30 @@ vi.mock('next/image', () => ({
   ),
 }));
 
+vi.mock('next/dynamic', () => ({
+  default: (
+    loader: () => Promise<
+      | React.ComponentType<Record<string, unknown>>
+      | { default: React.ComponentType<Record<string, unknown>> }
+    >,
+  ) => {
+    const Lazy = React.lazy(async () => {
+      const loaded = await loader();
+      if (typeof loaded === 'function') {
+        return { default: loaded };
+      }
+      return loaded;
+    });
+    return function DynamicComponent(props: Record<string, unknown>) {
+      return (
+        <React.Suspense fallback={null}>
+          <Lazy {...props} />
+        </React.Suspense>
+      );
+    };
+  },
+}));
+
 vi.mock('next/link', () => ({
   default: ({
     children,
@@ -707,7 +731,7 @@ describe('saved quest helper entry', () => {
     expect(harness.requestQuestChat).not.toHaveBeenCalled();
   });
 
-  it('edits the quest name, participants, and paused health from Settings', () => {
+  it('edits the quest name, participants, and paused health from Settings', async () => {
     render(
       <SpaceQuestDetail
         spaceSlug="sandbox"
@@ -718,11 +742,13 @@ describe('saved quest helper entry', () => {
 
     expect(screen.queryByText('Quest health')).toBeNull();
     fireEvent.click(settingsAction('Quest name'));
-    expect(screen.getByRole('heading', { name: 'Edit name' })).toBeTruthy();
+    expect(
+      await screen.findByRole('heading', { name: 'Edit name' }),
+    ).toBeTruthy();
 
     fireEvent.click(settingsAction('Participants'));
     expect(
-      screen.getByRole('heading', { name: 'Edit participants' }),
+      await screen.findByRole('heading', { name: 'Edit participants' }),
     ).toBeTruthy();
     expect(screen.getByTestId('quest-participant-role-0')).toBeTruthy();
     expect(screen.getByTestId('quest-new-participant-role')).toBeTruthy();

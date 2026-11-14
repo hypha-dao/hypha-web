@@ -4,6 +4,10 @@ import * as React from 'react';
 import Image from 'next/image';
 import { cn } from '@hypha-platform/ui-utils';
 import { useMainColumnScrollY } from '../../common/main-column-scroll';
+import {
+  COMPACT_SPACE_BANNER_LEAD_SIZES,
+  shouldUseUnoptimizedRemoteImage,
+} from '../utils/compact-space-banner-lead-image';
 
 type Props = {
   src: string;
@@ -21,26 +25,6 @@ function clampParallaxScrollY(scrollY: number): number {
     PARALLAX_MAX_SHIFT_PX,
     Math.max(-PARALLAX_MAX_SHIFT_PX, scrollY * PARALLAX_SCROLL_RATE),
   );
-}
-
-/** UploadThing/CDN hosts that must bypass `/_next/image` downscaling. */
-const UNOPTIMIZED_REMOTE_IMAGE_HOSTS = new Set([
-  'utfs.io',
-  'uploadthing.com',
-  'ufs.sh',
-]);
-
-function shouldUseUnoptimizedRemoteImage(src: string): boolean {
-  if (!src.startsWith('http://') && !src.startsWith('https://')) {
-    return false;
-  }
-  try {
-    const hostname = new URL(src).hostname.toLowerCase();
-    if (UNOPTIMIZED_REMOTE_IMAGE_HOSTS.has(hostname)) return true;
-    return hostname.endsWith('.utfs.io');
-  } catch {
-    return false;
-  }
 }
 
 /**
@@ -71,33 +55,6 @@ export function CompactSpaceBannerLead({ src }: Props) {
     mq.addEventListener('change', sync);
     return () => mq.removeEventListener('change', sync);
   }, []);
-
-  React.useEffect(() => {
-    let cancelled = false;
-    const image = new window.Image();
-
-    const markReady = () => {
-      if (!cancelled) setReady(true);
-    };
-
-    image.onload = () => {
-      if (typeof image.decode === 'function') {
-        image.decode().then(markReady).catch(markReady);
-        return;
-      }
-      markReady();
-    };
-
-    image.onerror = () => {
-      if (!cancelled) setImageFailed(true);
-    };
-
-    image.src = src;
-
-    return () => {
-      cancelled = true;
-    };
-  }, [src]);
 
   const parallaxY = reduceMotion ? 0 : clampParallaxScrollY(mainScrollY);
   const imageVisible = ready && !imageFailed;
@@ -159,8 +116,8 @@ export function CompactSpaceBannerLead({ src }: Props) {
             fill
             priority
             unoptimized={unoptimized}
-            quality={92}
-            sizes="100vw"
+            quality={75}
+            sizes={COMPACT_SPACE_BANNER_LEAD_SIZES}
             className={cn(
               'object-cover object-center transition-opacity duration-320 ease-out',
               imageFailed

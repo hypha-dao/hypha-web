@@ -16,6 +16,21 @@ vi.mock('next-intl', () => ({
   useLocale: () => 'en',
 }));
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ prefetch: vi.fn(), push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => '/en/dho/hypha/agreements/proposal/quest',
+}));
+
+vi.mock('@hypha-platform/authentication', () => ({
+  useAuthentication: () => ({
+    getAccessToken: async () => 'token',
+    user: { id: 'user-1' },
+    isLoading: false,
+  }),
+}));
+
+const seedSpaceQuestDetailCache = vi.hoisted(() => vi.fn());
+
 vi.mock('../../hooks/use-space-quests', () => ({
   useSpaceQuests: () => ({
     overview: {
@@ -27,10 +42,13 @@ vi.mock('../../hooks/use-space-quests', () => ({
       ],
     },
   }),
+  seedSpaceQuestDetailCache: (...args: unknown[]) =>
+    seedSpaceQuestDetailCache(...args),
 }));
 
 afterEach(() => {
   cleanup();
+  seedSpaceQuestDetailCache.mockClear();
 });
 
 const description = buildQuestProposalDescription(
@@ -93,6 +111,11 @@ describe('quest proposal modal body', () => {
     expect(link.getAttribute('href')).toBe(
       '/en/dho/hypha/quests/onboarding-matcher',
     );
+    expect(seedSpaceQuestDetailCache).toHaveBeenCalledWith(
+      'hypha',
+      [expect.objectContaining({ slug: 'onboarding-matcher' })],
+      'user-1',
+    );
     expect(
       screen
         .getByTestId('quest-proposal-structured-body')
@@ -146,5 +169,52 @@ describe('quest proposal modal body', () => {
     );
     expect(source).not.toContain('QUEST REWARD');
     expect(source).not.toContain('showMilestones');
+  });
+
+  it('prefetches the quest page and keeps edit modals off the first chunk', () => {
+    const linkSource = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        '../proposal-quest-data.tsx',
+      ),
+      'utf8',
+    );
+    expect(linkSource).toContain('prefetch={true}');
+    expect(linkSource).toContain('router.prefetch(href)');
+    expect(linkSource).toContain('if (isModifiedClick(event)) return');
+    expect(linkSource).toContain('setPending(true)');
+
+    const detailSource = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        '../space-quest-detail.tsx',
+      ),
+      'utf8',
+    );
+    expect(detailSource).toContain("import dynamic from 'next/dynamic'");
+    expect(detailSource).not.toMatch(
+      /import \{[^}]*EditQuestNameModal[^}]*\} from '\.\/quest-section-edit-modals'/,
+    );
+    expect(detailSource).not.toContain("from './space-quests-section'");
+
+    const loadingSource = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        '../../../../../../apps/web/src/app/(main)/[lang]/dho/[id]/@tab/quests/[questSlug]/loading.tsx',
+      ),
+      'utf8',
+    );
+    expect(loadingSource).toContain('layout="quests"');
+
+    const asideLoadingSource = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        '../../../../../../apps/web/src/app/(main)/[lang]/dho/[id]/@aside/quests/[questSlug]/loading.tsx',
+      ),
+      'utf8',
+    );
+    expect(asideLoadingSource).toContain('return null');
+    expect(detailSource).toContain('prefetch={false}');
+    expect(detailSource).toContain("editingModal === 'name' ? (");
   });
 });

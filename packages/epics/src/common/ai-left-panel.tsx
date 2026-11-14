@@ -1031,6 +1031,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           <Link
             href={item.href}
             scroll={false}
+            prefetch={false}
             onClick={mode === 'collapsed' ? undefined : closeIfExpanded}
             aria-label={item.label}
             aria-current={item.active ? 'page' : undefined}
