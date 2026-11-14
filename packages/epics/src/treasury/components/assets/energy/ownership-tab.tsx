@@ -271,7 +271,7 @@ const OwnerEarningsRow = ({
           ) : earningsLoading ? (
             <EnergyTextSkeleton className="mt-1 w-48" />
           ) : (
-            <p className="truncate text-1 text-neutral-11">
+            <p className="min-w-0 break-words text-1 text-neutral-11">
               {t('earnedFromSource', {
                 prefix: totalIsPlaceholder ? '≈ ' : '',
                 amount: formatEarnings(totalEarned),

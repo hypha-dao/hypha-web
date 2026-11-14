@@ -104,4 +104,14 @@ describe('ownership collapsed telemetry', () => {
       expect(copy).toContain('{prefix}{amount}');
     }
   });
+
+  it('lets the earned-from-source line wrap at narrow viewports', () => {
+    expect(ownershipTab).toMatch(
+      /<p className="min-w-0 break-words text-1 text-neutral-11">\s*\{t\('earnedFromSource'/,
+    );
+    expect(ownershipTab).not.toMatch(
+      /<p className="truncate text-1 text-neutral-11">\s*\{t\('earnedFromSource'/,
+    );
+    expect(ownershipTab).toContain('truncate font-medium text-foreground');
+  });
 });
