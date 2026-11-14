@@ -84,6 +84,7 @@ import {
   formatVoiceDurationLabel,
 } from './human-chat-panel-voice-audio-row';
 import { asTimelineDate } from './human-chat-timeline-order';
+import { watchClampedMessageBody } from './message-text-clamp';
 import { useAgentMentionLabel } from './agent-mention-label-context';
 import { botMentionChipText } from './human-chat-display-mention';
 
@@ -2038,13 +2039,11 @@ export function HumanChatPanelMessageBubble({
       return;
     }
     if (textExpanded) return;
-    const measure = () => {
-      setTextCanExpand(el.scrollHeight > el.clientHeight + 1);
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
+    return watchClampedMessageBody(el, (overflows) => {
+      setTextCanExpand((current) =>
+        current === overflows ? current : overflows,
+      );
+    });
   }, [textContent, textExpanded, richTextHtml, hasInlineMedia]);
 
   const replyExcerpt =
@@ -2389,7 +2388,15 @@ export function HumanChatPanelMessageBubble({
             <button
               type="button"
               data-message-id={message.id}
-              className="mt-0.5 w-fit text-xs font-medium text-accent-11 underline-offset-2 hover:underline"
+              data-testid="chat-message-read-more"
+              aria-expanded={textExpanded}
+              className="mt-0.5 w-fit touch-manipulation text-xs font-medium text-accent-11 underline-offset-2 hover:underline"
+              onPointerDown={(event) => {
+                event.stopPropagation();
+              }}
+              onPointerUp={(event) => {
+                event.stopPropagation();
+              }}
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
