@@ -62,7 +62,6 @@ import {
   type Person,
   isArchivedGroupRoom,
   looksLikeTechnicalSpaceMemoryName,
-  type MemberIntelligence,
   type SignalTeamNotice,
   requestRemoteGroupCallLeave,
   calledSpecialistIds,
@@ -91,6 +90,8 @@ import {
 } from '../spaces/utils/transparency-access';
 import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
+import { OptimizedAvatarImage } from './optimized-avatar-image';
+import { useMemberIntelligence } from './member-intelligence-swr';
 import { Empty } from './empty';
 import { notifyConversationUnreadChanged } from '../people/components/conversation-unread-event';
 import {
@@ -743,11 +744,10 @@ function HeaderSpaceLogoMark({
   const showImage = Boolean(src && src !== failedSrc);
   if (showImage && src) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element -- remote space logos in header chrome
-      <img
+      <OptimizedAvatarImage
         src={src}
         alt=""
-        aria-hidden
+        pixelSize={36}
         className="h-full w-full rounded-full border border-border object-cover"
         onError={() => setFailedSrc(src)}
       />
@@ -2503,18 +2503,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const profileLookupInFlightRef = useRef<Set<string>>(new Set());
   const profileLookupAttemptedRef = useRef<Set<string>>(new Set());
 
-  const { data: directoryHome } = useSWR<MemberIntelligence | null>(
-    isDirectConversation && authToken
-      ? ['/api/v1/people/me/intelligence', authToken]
-      : null,
-    async ([url, token]) => {
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) return null;
-      return (await response.json()) as MemberIntelligence;
-    },
-  );
+  const { data: directoryHome } = useMemberIntelligence(null, {
+    enabled: isDirectConversation,
+  });
   const directoryPersonIds = useMemo(() => {
     if (!directoryHome) return [];
     return [

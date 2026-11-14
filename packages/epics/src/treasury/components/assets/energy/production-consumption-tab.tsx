@@ -5,13 +5,15 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@hypha-platform/ui';
 import type { SpaceEnergyResponse } from '../../../hooks/use-space-energy';
 import { useSpaceEnergyTelemetry } from '../../../hooks/use-space-energy-telemetry';
-import { BarChart, ENERGY_PALETTE, type ChartSeries } from './charts';
+import { BarChart, type ChartSeries } from './charts';
+import { ENERGY_PALETTE } from './energy-palette';
 import {
   buildProductionSeries,
   buildGridFlowSeries,
   timeframeLabels,
   type Timeframe,
 } from './dummy-data';
+import { PRODUCTION_DEFAULT_TIMEFRAME } from './energy-constants';
 import { TimeframeToggle } from './timeframe-toggle';
 import { StatCard } from './shared';
 import { readableSourceMetadataLabel, sourceCardLabel } from './format';
@@ -23,6 +25,8 @@ import {
 
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
+export { PRODUCTION_DEFAULT_TIMEFRAME };
+
 export const ProductionConsumptionTab = ({
   data,
   spaceSlug,
@@ -33,7 +37,9 @@ export const ProductionConsumptionTab = ({
   const locale = useLocale();
   const t = useTranslations('Energy.productionConsumption');
   const tShared = useTranslations('Energy.shared');
-  const [timeframe, setTimeframe] = React.useState<Timeframe>('30d');
+  const [timeframe, setTimeframe] = React.useState<Timeframe>(
+    PRODUCTION_DEFAULT_TIMEFRAME,
+  );
   const {
     data: telemetry,
     isLoading: telemetryLoading,

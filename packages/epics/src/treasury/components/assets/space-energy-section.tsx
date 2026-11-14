@@ -1,20 +1,56 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { UsersIcon, ZapIcon, CoinsIcon } from 'lucide-react';
 import { useSpaceEnergy } from '../../hooks/use-space-energy';
 import { StatCard } from './energy/shared';
-import { ENERGY_PALETTE } from './energy/charts';
-import { formatStablecoinMicro } from './energy/format';
+import { ENERGY_PALETTE } from './energy/energy-palette';
+import { formatStablecoinMicro, UNAVAILABLE } from './energy/format';
 import { EnergyOverviewTab } from './energy/overview-tab';
-import { ProductionConsumptionTab } from './energy/production-consumption-tab';
-import { OwnershipTab } from './energy/ownership-tab';
-import { CreditsTab } from './energy/credits-tab';
+import { PRODUCTION_DEFAULT_TIMEFRAME } from './energy/energy-constants';
+import {
+  holdEnergySevenDaySettled,
+  shouldHoldSettledForDisabledEnergy,
+} from '../../../common/energy-seven-day-settled';
+import { useSpaceEnergyTelemetry } from '../../hooks/use-space-energy-telemetry';
+import { useOverviewFirstTelemetryPrefetch } from '../../hooks/use-overview-first-telemetry-prefetch';
 import { useEnergyPeople } from './energy/use-energy-people';
-import { usePreloadImages } from './energy/use-preload-images';
-import { EnergySectionSkeleton } from './energy/loading-skeletons';
+import {
+  EnergyChartSkeleton,
+  EnergySectionSkeleton,
+} from './energy/loading-skeletons';
+
+export { EnergySectionSkeleton };
+
+const ProductionConsumptionTab = dynamic(
+  () =>
+    import('./energy/production-consumption-tab').then(
+      (mod) => mod.ProductionConsumptionTab,
+    ),
+  {
+    ssr: false,
+    loading: () => <EnergyChartSkeleton height={220} bars={12} />,
+  },
+);
+
+const OwnershipTab = dynamic(
+  () => import('./energy/ownership-tab').then((mod) => mod.OwnershipTab),
+  {
+    ssr: false,
+    loading: () => <EnergyChartSkeleton height={220} bars={12} />,
+  },
+);
+
+const CreditsTab = dynamic(
+  () => import('./energy/credits-tab').then((mod) => mod.CreditsTab),
+  {
+    ssr: false,
+    loading: () => <EnergyChartSkeleton height={220} bars={12} />,
+  },
+);
 
 const TAB_VALUES = ['overview', 'flows', 'ownership', 'credits'] as const;
 
@@ -26,8 +62,40 @@ export type SpaceEnergySectionProps = {
 export const SpaceEnergySection = ({ spaceSlug }: SpaceEnergySectionProps) => {
   const t = useTranslations('Energy.tabs');
   const tOverview = useTranslations('Energy.overview');
-  const { data, isLoading } = useSpaceEnergy(spaceSlug);
+  const { data, isLoading, error } = useSpaceEnergy(spaceSlug);
   const [tab, setTab] = React.useState<string>('overview');
+
+  // Overview is gated only on `/energy`. 7d then 30d still prefetch so
+  // Production opens from cache, but only after the consumer grid paints
+  // (or as soon as the user leaves Overview).
+  const prefetchEnabled = useOverviewFirstTelemetryPrefetch(
+    Boolean(data?.enabled),
+    tab,
+  );
+  const prefetchTelemetry = {
+    enabled: prefetchEnabled,
+    refreshInterval: 0,
+  };
+  const sevenDayTelemetry = useSpaceEnergyTelemetry(
+    PRODUCTION_DEFAULT_TIMEFRAME,
+    spaceSlug,
+    prefetchTelemetry,
+  );
+  React.useEffect(() => {
+    if (
+      shouldHoldSettledForDisabledEnergy(isLoading, data) ||
+      (error && !data)
+    ) {
+      return holdEnergySevenDaySettled();
+    }
+  }, [data, error, isLoading]);
+  useSpaceEnergyTelemetry('30d', spaceSlug, {
+    ...prefetchTelemetry,
+    enabled:
+      prefetchTelemetry.enabled &&
+      (sevenDayTelemetry.data !== undefined ||
+        sevenDayTelemetry.retriesExhausted),
+  });
 
   const memberAddresses = React.useMemo(
     () =>
@@ -37,27 +105,24 @@ export const SpaceEnergySection = ({ spaceSlug }: SpaceEnergySectionProps) => {
     [data?.enabled, data?.members],
   );
 
-  const { people, isLoading: peopleLoading } = useEnergyPeople(memberAddresses);
+  const unresolvedMemberAddresses = React.useMemo(
+    () =>
+      memberAddresses.filter(
+        (address) => !data?.participantProfiles?.[address]?.displayName,
+      ),
+    [data?.participantProfiles, memberAddresses],
+  );
 
-  const avatarUrls = React.useMemo(() => {
-    const urls = new Set<string>();
-    for (const profile of Object.values(data?.participantProfiles ?? {})) {
-      if (profile.avatarUrl) urls.add(profile.avatarUrl);
-    }
-    for (const person of Object.values(people)) {
-      if (person?.avatarUrl) urls.add(person.avatarUrl);
-    }
-    return [...urls];
-  }, [data?.participantProfiles, people]);
+  const { people, isLoading: peopleLoading } = useEnergyPeople(
+    unresolvedMemberAddresses,
+  );
 
-  usePreloadImages(avatarUrls);
-
-  if (isLoading) {
-    return <EnergySectionSkeleton />;
+  if (!isLoading && (!data?.enabled || !data.overview)) {
+    return null;
   }
 
-  if (!data?.enabled || !data.overview) {
-    return null;
+  if (isLoading || !data?.overview) {
+    return <EnergySectionSkeleton />;
   }
 
   const overview = data.overview;
@@ -78,13 +143,13 @@ export const SpaceEnergySection = ({ spaceSlug }: SpaceEnergySectionProps) => {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatCard
           label={tOverview('statConsumers')}
-          value={consumerCount}
+          value={data.memberAddressesOk === false ? UNAVAILABLE : consumerCount}
           accent={ENERGY_PALETTE[2]}
           icon={<UsersIcon size={16} />}
         />
         <StatCard
           label={tOverview('statSources')}
-          value={overview.sourceCount}
+          value={data.sourcesOk === false ? UNAVAILABLE : overview.sourceCount}
           accent={ENERGY_PALETTE[0]}
           icon={<ZapIcon size={16} />}
         />
@@ -113,25 +178,31 @@ export const SpaceEnergySection = ({ spaceSlug }: SpaceEnergySectionProps) => {
             peopleLoading={peopleLoading}
           />
         </TabsContent>
-        <TabsContent value="flows" className="mt-6">
-          <ProductionConsumptionTab data={data} spaceSlug={spaceSlug} />
-        </TabsContent>
-        <TabsContent value="ownership" className="mt-6">
-          <OwnershipTab
-            spaceSlug={spaceSlug}
-            data={data}
-            people={people}
-            peopleLoading={peopleLoading}
-          />
-        </TabsContent>
-        <TabsContent value="credits" className="mt-6">
-          <CreditsTab
-            spaceSlug={spaceSlug}
-            data={data}
-            people={people}
-            peopleLoading={peopleLoading}
-          />
-        </TabsContent>
+        {tab === 'flows' ? (
+          <TabsContent value="flows" className="mt-6">
+            <ProductionConsumptionTab data={data} spaceSlug={spaceSlug} />
+          </TabsContent>
+        ) : null}
+        {tab === 'ownership' ? (
+          <TabsContent value="ownership" className="mt-6">
+            <OwnershipTab
+              spaceSlug={spaceSlug}
+              data={data}
+              people={people}
+              peopleLoading={peopleLoading}
+            />
+          </TabsContent>
+        ) : null}
+        {tab === 'credits' ? (
+          <TabsContent value="credits" className="mt-6">
+            <CreditsTab
+              spaceSlug={spaceSlug}
+              data={data}
+              people={people}
+              peopleLoading={peopleLoading}
+            />
+          </TabsContent>
+        ) : null}
       </Tabs>
     </div>
   );

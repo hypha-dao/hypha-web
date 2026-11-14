@@ -9,6 +9,7 @@ import {
   getDhoSpaceSlugFromPathname,
   getRootSpace,
   isSafeImageUrl,
+  toNextImageOptimizerSrc,
   useAiPanel,
   AiPanelTrigger,
   SpacesRailTopToggle,
@@ -16,6 +17,7 @@ import {
 } from '@hypha-platform/epics';
 import useSWR from 'swr';
 import { Space } from '@hypha-platform/core/client';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { Pencil } from 'lucide-react';
@@ -164,11 +166,15 @@ export function ConnectedMenuTop({
           aria-label={logoA11yLabel}
           title={logoA11yLabel}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={rootLogoUrl}
+          <Image
+            src={toNextImageOptimizerSrc(rootLogoUrl, 384, 70)}
             alt={rootTitle || tNavigation('ecosystemLogo')}
-            loading="eager"
+            width={192}
+            height={28}
+            sizes="192px"
+            quality={70}
+            priority
+            unoptimized
             className="max-h-[28px] w-auto bg-transparent object-contain"
           />
           <span className="pointer-events-none absolute bottom-0.5 right-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-border/70 bg-background/85 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">

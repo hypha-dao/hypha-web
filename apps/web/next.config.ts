@@ -4,11 +4,22 @@ import createNextIntlPlugin from 'next-intl/plugin';
 import createWithVercelToolbar from '@vercel/toolbar/plugins/next';
 import { routing } from '../../packages/i18n/src/routing';
 import {
+  isNextImageOptimizationDisabled,
+  parseConfiguredImageHosts,
+} from '../../packages/epics/src/common/optimize-remote-image';
+import {
   WHITE_LABEL_HOST_CONFIG_ENV,
   parseWhiteLabelHostConfig,
 } from './src/lib/white-label/config';
 
-const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
+const IMAGE_HOSTS = parseConfiguredImageHosts(
+  process.env.NEXT_PUBLIC_IMAGE_HOSTS,
+);
+/** One value for `images.unoptimized` and the client-inlined public env. */
+const disableImageOptimization =
+  process.env.NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION ||
+  process.env.DISABLE_IMAGE_OPTIMIZATION ||
+  '';
 const LOCALES = routing.locales;
 
 /**
@@ -55,6 +66,9 @@ const MIDDLEWARE_SKIPPED_PREFIXES = [
 const withNextIntl = createNextIntlPlugin('../../packages/i18n/src/request.ts');
 
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION: disableImageOptimization,
+  },
   // Load matrix-js-sdk from node_modules on the server so it is not duplicated
   // across server chunks (pairs with webpack resolve.alias below). See
   // .agents/references/domain/hypha-matrix-mapping.md — stay on SDK ^40.x.
@@ -121,11 +135,22 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    unoptimized: process.env.DISABLE_IMAGE_OPTIMIZATION === 'true',
-    remotePatterns: IMAGE_HOSTS.map((hostname) => ({
-      protocol: 'https',
-      hostname,
-    })),
+    unoptimized: isNextImageOptimizationDisabled(disableImageOptimization),
+    remotePatterns: [
+      ...new Set([
+        ...IMAGE_HOSTS,
+        '*.ufs.sh',
+        'ufs.sh',
+        'utfs.io',
+        '*.utfs.io',
+        '*.uploadthing.com',
+      ]),
+    ]
+      .filter(Boolean)
+      .map((hostname) => ({
+        protocol: 'https' as const,
+        hostname,
+      })),
   },
   redirects: async () => {
     return [

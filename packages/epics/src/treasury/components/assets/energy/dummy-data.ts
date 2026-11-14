@@ -8,7 +8,11 @@
  * flicker between renders / refresh).
  */
 
+import { PRODUCTION_DEFAULT_TIMEFRAME } from './energy-constants';
+
 export type Timeframe = '7d' | '30d' | '90d' | '12m';
+
+export { PRODUCTION_DEFAULT_TIMEFRAME };
 
 export const TIMEFRAMES: {
   id: Timeframe;

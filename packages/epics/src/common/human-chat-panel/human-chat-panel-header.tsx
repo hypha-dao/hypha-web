@@ -21,6 +21,7 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { OptimizedAvatarImage } from '../optimized-avatar-image';
 
 type RoomChoiceIcon = ComponentType<{
   className?: string;
@@ -55,11 +56,10 @@ function RoomChoiceGlyph({
   const src = iconSrc?.trim();
   if (src && !failed) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element -- remote space logos; Avatar-sized chrome
-      <img
+      <OptimizedAvatarImage
         src={src}
         alt=""
-        aria-hidden
+        pixelSize={20}
         className="h-5 w-5 rounded-full object-cover"
         onError={() => setFailed(true)}
       />

@@ -1,7 +1,8 @@
 import { Locale } from '@hypha-platform/i18n';
 import {
-  SpaceTabAccessWrapper,
+  EnergySectionSkeleton,
   SpaceEnergySection,
+  SpaceTabAccessWrapper,
 } from '@hypha-platform/epics';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -21,6 +22,11 @@ export default async function EnergyPage(props: PageProps) {
     <SpaceTabAccessWrapper
       spaceId={spaceFromDb.web3SpaceId as number}
       spaceSlug={id}
+      pendingFallback={
+        <div className="flex flex-col gap-6 py-4">
+          <EnergySectionSkeleton />
+        </div>
+      }
     >
       <div className="flex flex-col gap-6 py-4">
         <SpaceEnergySection spaceSlug={id} />

@@ -4,6 +4,8 @@ import { forwardRef } from 'react';
 import Link from 'next/link';
 import { Sparkles } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
+import { OptimizedAvatarImage } from '../../common/optimized-avatar-image';
+import { useEnergyOverviewIdleGate } from '../../common/use-after-idle';
 
 /** Circular space avatar from the space switcher, including its Sparkles fallback. */
 export function SpaceSwitcherMark({
@@ -18,16 +20,17 @@ export function SpaceSwitcherMark({
       className="shrink-0 overflow-hidden rounded-full"
       style={{ width: 24, height: 24 }}
     >
-      {iconUrl ? (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={iconUrl} alt={alt} className="h-full w-full object-cover" />
-        </>
-      ) : (
-        <span className="flex h-full w-full items-center justify-center">
-          <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
-        </span>
-      )}
+      <OptimizedAvatarImage
+        src={iconUrl ?? undefined}
+        alt={alt}
+        pixelSize={24}
+        className="h-full w-full object-cover"
+        fallback={
+          <span className="flex h-full w-full items-center justify-center">
+            <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+          </span>
+        }
+      />
     </span>
   );
 }
@@ -41,11 +44,16 @@ export const SpaceSwitcherOption = forwardRef<
     title: string;
     iconUrl?: string | null;
   }
->(function SpaceSwitcherOption({ title, iconUrl, className, ...props }, ref) {
+>(function SpaceSwitcherOption(
+  { title, iconUrl, className, prefetch, ...props },
+  ref,
+) {
+  const prefetchNav = useEnergyOverviewIdleGate();
   return (
     <Link
       ref={ref}
       {...props}
+      prefetch={prefetch ?? (prefetchNav ? null : false)}
       className={cn('flex w-full min-w-0 items-center gap-2', className)}
       style={{ minHeight: 32 }}
     >

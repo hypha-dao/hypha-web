@@ -7,7 +7,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../../../people/components/person-avatar';
 import type { EnergyPerson } from './use-energy-people';
 import { personDisplayName, shortAddr } from './format';
-import { ENERGY_PALETTE } from './charts';
+import { ENERGY_PALETTE } from './energy-palette';
 import { AnimatedSourceIcon } from './animated-source-icons';
 
 /** Placeholder until grid-operator profiles are wired to on-chain roles. */
@@ -71,6 +71,7 @@ export const StatCard = ({
 export const EnergyPersonCard = ({
   address,
   person,
+  personId,
   isLoading,
   right,
   subtitle,
@@ -79,6 +80,7 @@ export const EnergyPersonCard = ({
 }: {
   address: string;
   person?: EnergyPerson | null;
+  personId?: number;
   isLoading?: boolean;
   right?: React.ReactNode;
   subtitle?: React.ReactNode;
@@ -96,7 +98,7 @@ export const EnergyPersonCard = ({
         size="md"
         shape="circle"
         isLoading={isLoading}
-        personId={person?.id}
+        personId={personId ?? person?.id}
       />
       <div className="min-w-0 flex-1">
         <p className="truncate text-2 font-medium tracking-tight text-foreground">

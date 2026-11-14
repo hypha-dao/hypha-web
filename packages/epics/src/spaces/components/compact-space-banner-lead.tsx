@@ -4,6 +4,11 @@ import * as React from 'react';
 import Image from 'next/image';
 import { cn } from '@hypha-platform/ui-utils';
 import { useMainColumnScrollY } from '../../common/main-column-scroll';
+import { toNextImageOptimizerSrc } from '../../common/optimize-remote-image';
+import {
+  SPACE_BANNER_IMAGE_QUALITY,
+  SPACE_BANNER_IMAGE_SIZES,
+} from '../utils/space-banner-image';
 
 type Props = {
   src: string;
@@ -21,26 +26,6 @@ function clampParallaxScrollY(scrollY: number): number {
     PARALLAX_MAX_SHIFT_PX,
     Math.max(-PARALLAX_MAX_SHIFT_PX, scrollY * PARALLAX_SCROLL_RATE),
   );
-}
-
-/** UploadThing/CDN hosts that must bypass `/_next/image` downscaling. */
-const UNOPTIMIZED_REMOTE_IMAGE_HOSTS = new Set([
-  'utfs.io',
-  'uploadthing.com',
-  'ufs.sh',
-]);
-
-function shouldUseUnoptimizedRemoteImage(src: string): boolean {
-  if (!src.startsWith('http://') && !src.startsWith('https://')) {
-    return false;
-  }
-  try {
-    const hostname = new URL(src).hostname.toLowerCase();
-    if (UNOPTIMIZED_REMOTE_IMAGE_HOSTS.has(hostname)) return true;
-    return hostname.endsWith('.utfs.io');
-  } catch {
-    return false;
-  }
 }
 
 /**
@@ -72,37 +57,16 @@ export function CompactSpaceBannerLead({ src }: Props) {
     return () => mq.removeEventListener('change', sync);
   }, []);
 
-  React.useEffect(() => {
-    let cancelled = false;
-    const image = new window.Image();
-
-    const markReady = () => {
-      if (!cancelled) setReady(true);
-    };
-
-    image.onload = () => {
-      if (typeof image.decode === 'function') {
-        image.decode().then(markReady).catch(markReady);
-        return;
-      }
-      markReady();
-    };
-
-    image.onerror = () => {
-      if (!cancelled) setImageFailed(true);
-    };
-
-    image.src = src;
-
-    return () => {
-      cancelled = true;
-    };
-  }, [src]);
-
   const parallaxY = reduceMotion ? 0 : clampParallaxScrollY(mainScrollY);
   const imageVisible = ready && !imageFailed;
   const loadedOverlayOpacity = imageVisible ? 1 : 0;
-  const unoptimized = shouldUseUnoptimizedRemoteImage(src);
+  // Pass the optimizer URL as `src` so React 19 / next/image preload cannot
+  // `new Image()` the UploadThing original. GIFs stay on the CDN.
+  const imageSrc = toNextImageOptimizerSrc(
+    src,
+    1920,
+    SPACE_BANNER_IMAGE_QUALITY,
+  );
   const predecodePlateStyle = {
     backgroundImage:
       'radial-gradient(ellipse 140% 100% at 12% -5%, rgb(14,17,25) 0%, rgb(10,13,20) 42%, rgb(7,9,15) 68%, rgb(4,6,11) 100%)',
@@ -154,13 +118,13 @@ export function CompactSpaceBannerLead({ src }: Props) {
       >
         <div className="relative h-full w-full min-h-[8rem]">
           <Image
-            src={src}
+            src={imageSrc}
             alt=""
             fill
             priority
-            unoptimized={unoptimized}
-            quality={92}
-            sizes="100vw"
+            unoptimized
+            quality={SPACE_BANNER_IMAGE_QUALITY}
+            sizes={SPACE_BANNER_IMAGE_SIZES}
             className={cn(
               'object-cover object-center transition-opacity duration-320 ease-out',
               imageFailed

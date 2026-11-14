@@ -1,12 +1,14 @@
 'use client';
 
-import { MemberHomeAttention } from '@hypha-platform/epics';
+import {
+  MemberHomeAttention,
+  useMemberIntelligence,
+} from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useJwt, type MemberIntelligence } from '@hypha-platform/core/client';
+import { useJwt } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import { Button } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
-import useSWR from 'swr';
 
 export function MemberHomeAttentionRoute({ lang }: { lang: Locale }) {
   const t = useTranslations('MemberHome');
@@ -16,19 +18,10 @@ export function MemberHomeAttentionRoute({ lang }: { lang: Locale }) {
     login,
   } = useAuthentication();
   const { jwt, isLoadingJwt } = useJwt();
-  const { data, isLoading } = useSWR<MemberIntelligence | null>(
-    jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
-    async ([url, token]) => {
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: 'no-store',
-      });
-      if (response.status === 404) return null;
-      if (!response.ok) throw new Error('Failed to load home');
-      return (await response.json()) as MemberIntelligence;
-    },
-    { refreshInterval: 20_000, revalidateOnFocus: true },
-  );
+  const { data, isLoading } = useMemberIntelligence(null, {
+    refreshInterval: 20_000,
+    revalidateOnFocus: true,
+  });
 
   if (isAuthLoading || isLoadingJwt) {
     return <MemberHomeAttention lang={lang} isLoading />;

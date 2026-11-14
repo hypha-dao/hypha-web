@@ -32,6 +32,11 @@ import {
   type MemberIntelligence,
 } from '@hypha-platform/core/client';
 import {
+  ADD_PEOPLE_DIRECTORY_KEY,
+  isAddPeopleDirectoryFailed,
+  isAddPeopleDirectoryPending,
+} from '../member-intelligence-swr';
+import {
   AlertDialog,
   AlertDialogCancel,
   AlertDialogContent,
@@ -126,7 +131,11 @@ export function HumanChatPanelGroupMenu({
     isValidating: directoryValidating,
   } = useSWR<MemberIntelligence>(
     addOpen && jwt
-      ? ['/api/v1/people/me/intelligence', jwt, 'add-people-directory']
+      ? ([
+          '/api/v1/people/me/intelligence',
+          jwt,
+          ADD_PEOPLE_DIRECTORY_KEY,
+        ] as const)
       : null,
     async ([url, token]: [string, string]) => {
       const response = await fetch(
@@ -181,11 +190,19 @@ export function HumanChatPanelGroupMenu({
   }, [addOpen, debouncedAddQuery, jwt]);
   const directory = directoryHome?.connections ?? [];
   const directoryPending =
-    directoryLoading || (directoryValidating && directoryHome == null);
-  const directoryFailed =
-    Boolean(addOpen && jwt) &&
-    !directoryPending &&
-    (directoryError != null || directoryHome == null);
+    isAddPeopleDirectoryPending({
+      addOpen,
+      hasJwt: Boolean(jwt),
+      home: directoryHome,
+      error: directoryError,
+    }) ||
+    directoryLoading ||
+    (directoryValidating && directoryHome == null);
+  const directoryFailed = isAddPeopleDirectoryFailed({
+    addOpen,
+    hasJwt: Boolean(jwt),
+    error: directoryError,
+  });
   const { personIdToMatrixUserId, isLoading: matrixIdsLoading } =
     useMatrixUserIdsByPersonIds({
       personIds: personIdsForMatrixLookup([
