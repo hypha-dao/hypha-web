@@ -84,6 +84,7 @@ import {
   formatVoiceDurationLabel,
 } from './human-chat-panel-voice-audio-row';
 import { asTimelineDate } from './human-chat-timeline-order';
+import { messageBodyCanExpand } from './message-text-clamp';
 import { useAgentMentionLabel } from './agent-mention-label-context';
 import { botMentionChipText } from './human-chat-display-mention';
 
@@ -2038,13 +2039,27 @@ export function HumanChatPanelMessageBubble({
       return;
     }
     if (textExpanded) return;
+    let cancelled = false;
     const measure = () => {
-      setTextCanExpand(el.scrollHeight > el.clientHeight + 1);
+      if (cancelled) return;
+      const next = messageBodyCanExpand(el);
+      setTextCanExpand((current) => (current === next ? current : next));
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
-    return () => ro.disconnect();
+    // A font swap can push a message over 10 lines without resizing the
+    // already-clamped box, so ResizeObserver never fires again.
+    const fontsReady = document.fonts?.ready;
+    if (fontsReady) {
+      void fontsReady.then(() => {
+        measure();
+      });
+    }
+    return () => {
+      cancelled = true;
+      ro.disconnect();
+    };
   }, [textContent, textExpanded, richTextHtml, hasInlineMedia]);
 
   const replyExcerpt =
@@ -2389,7 +2404,15 @@ export function HumanChatPanelMessageBubble({
             <button
               type="button"
               data-message-id={message.id}
-              className="mt-0.5 w-fit text-xs font-medium text-accent-11 underline-offset-2 hover:underline"
+              data-testid="chat-message-read-more"
+              aria-expanded={textExpanded}
+              className="mt-0.5 w-fit touch-manipulation text-xs font-medium text-accent-11 underline-offset-2 hover:underline"
+              onPointerDown={(event) => {
+                event.stopPropagation();
+              }}
+              onPointerUp={(event) => {
+                event.stopPropagation();
+              }}
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
