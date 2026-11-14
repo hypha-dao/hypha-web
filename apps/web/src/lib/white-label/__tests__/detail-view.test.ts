@@ -1,0 +1,326 @@
+import { describe, expect, it } from 'vitest';
+
+import {
+  WL_SERVED_DETAIL_PATTERNS,
+  WL_DETAIL_VIEW_HEADER,
+  classifyLink,
+  parseWhiteLabelConfig,
+  parseWhiteLabelHostConfig,
+  resolve,
+  stripWhiteLabelHeaders,
+  type ResolveOptions,
+  type WhiteLabelConfig,
+  type WhiteLabelLinkContext,
+} from '..';
+
+const OPTIONS: ResolveOptions = {
+  locales: ['en', 'pt', 'es', 'fr', 'de', 'mk', 'nl', 'no'],
+  defaultLocale: 'en',
+};
+const ORIGINS = ['https://partner.example'];
+type View = 'embedded' | 'full-app';
+
+describe('detailView in the config', () => {
+  const embed = (extra: string) =>
+    parseWhiteLabelConfig(
+      `[{"id":"c1"${extra},"spaces":[{"slug":"s1","framingOrigins":["https://partner.example"]}]}]`,
+    ).clients[0];
+  const host = (extra: string) =>
+    parseWhiteLabelHostConfig(
+      `[{"id":"c1"${extra},"hosts":[{"host":"space.partner.example","space":"s1"}]}]`,
+    )[0];
+
+  it('absent stays absent (the default applies at resolve time)', () => {
+    expect(embed('')).not.toHaveProperty('detailView');
+    expect(host('')).not.toHaveProperty('detailView');
+  });
+
+  it('accepts the two values, in both configs', () => {
+    expect(embed(',"detailView":"embedded"')?.detailView).toBe('embedded');
+    expect(embed(',"detailView":"full-app"')?.detailView).toBe('full-app');
+    expect(host(',"detailView":"embedded"')?.detailView).toBe('embedded');
+    expect(host(',"detailView":"full-app"')?.detailView).toBe('full-app');
+  });
+
+  it('fails closed: any other value serves no detail page', () => {
+    for (const bad of [
+      '"Embedded"',
+      '"overlay"',
+      '""',
+      'true',
+      '1',
+      'null',
+      '[]',
+    ]) {
+      expect(embed(`,"detailView":${bad}`)?.detailView).toBe('full-app');
+      expect(host(`,"detailView":${bad}`)?.detailView).toBe('full-app');
+    }
+  });
+});
+
+describe('detailView on the resolver result', () => {
+  const embedConfig = (views: (View | undefined)[]): WhiteLabelConfig => ({
+    hostClients: [],
+    mainHosts: [],
+    clients: views.map((view, i) => ({
+      id: `c${i}`,
+      ...(view ? { detailView: view } : {}),
+      spaces: [{ slug: 'space-one', framingOrigins: ORIGINS }],
+    })),
+  });
+  const embedView = (views: (View | undefined)[]) => {
+    const d = resolve(
+      'h',
+      '/embed/space-one/en/agreements',
+      embedConfig(views),
+      OPTIONS,
+    );
+    return d.kind === 'rewrite' ? d.detailView : null;
+  };
+
+  it('embed: default embedded', () => {
+    expect(embedView([undefined])).toBe('embedded');
+    expect(embedView(['embedded'])).toBe('embedded');
+    expect(embedView(['full-app'])).toBe('full-app');
+  });
+
+  it('embed, a Space approved by two clients: embedded wins if any says so', () => {
+    expect(embedView(['full-app', 'embedded'])).toBe('embedded');
+    expect(embedView(['full-app', undefined])).toBe('embedded');
+    expect(embedView(['full-app', 'full-app'])).toBe('full-app');
+  });
+
+  it('host: the owning client value, default embedded', () => {
+    const config = (view?: View): WhiteLabelConfig => ({
+      clients: [],
+      mainHosts: ['app.example'],
+      hostClients: [
+        {
+          id: 'h1',
+          ...(view ? { detailView: view } : {}),
+          hosts: [{ host: 'space.partner.example', spaceSlug: 'space-one' }],
+        },
+      ],
+    });
+    const view = (v?: View) => {
+      const d = resolve(
+        'space.partner.example',
+        '/en/agreements',
+        config(v),
+        OPTIONS,
+      );
+      return d.kind === 'rewrite' ? d.detailView : null;
+    };
+    expect(view()).toBe('embedded');
+    expect(view('full-app')).toBe('full-app');
+    expect(view('embedded')).toBe('embedded');
+  });
+
+  it('a visitor can not forge the header: it is stripped like the others', () => {
+    const headers = new Headers({ [WL_DETAIL_VIEW_HEADER]: 'embedded' });
+    expect(stripWhiteLabelHeaders(headers).has(WL_DETAIL_VIEW_HEADER)).toBe(
+      false,
+    );
+  });
+});
+
+describe('/api on a mapped host: document and tokens through the resolver', () => {
+  const config: WhiteLabelConfig = {
+    clients: [],
+    mainHosts: ['app.example'],
+    hostClients: [
+      {
+        id: 'h1',
+        hosts: [{ host: 'space.partner.example', spaceSlug: 'space-one' }],
+      },
+    ],
+  };
+  const run = (path: string, method = 'GET') =>
+    resolve('space.partner.example', path, config, { ...OPTIONS, method });
+
+  it('serves documents/<slug>/ (trailing slash) and slugs with special characters', () => {
+    for (const path of [
+      '/api/v1/documents/my-proposal-1a2b3c4d/',
+      '/api/v1/documents/my-proposal-1a2b3c4d',
+      "/api/v1/documents/what's-this_(1)-1a2b3c4d/",
+    ]) {
+      expect(run(path).kind, path).toBe('api-allow');
+    }
+    expect(run('/api/v1/tokens').kind).toBe('api-allow');
+  });
+
+  it('refuses writes to both and nested paths', () => {
+    expect(run('/api/v1/documents/x', 'POST').kind).toBe('not-found');
+    expect(run('/api/v1/tokens', 'POST').kind).toBe('not-found');
+    expect(run('/api/v1/documents/x/extra').kind).toBe('not-found');
+  });
+});
+
+describe('link guard: served detail pages', () => {
+  const here = 'https://space.partner.example';
+  const app = 'https://app.example';
+  const host = (detailView?: View): WhiteLabelLinkContext => ({
+    mode: 'host',
+    spaceSlug: 'space-one',
+    lang: 'en',
+    fullAppOrigin: app,
+    ...(detailView ? { detailView } : {}),
+  });
+  const embed = (detailView?: View): WhiteLabelLinkContext => ({
+    mode: 'embed',
+    spaceSlug: 'space-one',
+    lang: 'en',
+    ...(detailView ? { detailView } : {}),
+  });
+  const locales = OPTIONS.locales;
+
+  it('the list of served patterns is just the proposal for now', () => {
+    expect(WL_SERVED_DETAIL_PATTERNS).toEqual([
+      ['agreements', 'proposal', ':'],
+    ]);
+  });
+
+  it('host: a proposal link (main-app or host shaped) stays on the host', () => {
+    for (const href of [
+      '/en/dho/space-one/agreements/proposal/p1',
+      '/en/agreements/proposal/p1',
+      '/agreements/proposal/p1',
+    ]) {
+      expect(classifyLink(href, host(), here, locales), href).toEqual({
+        kind: 'internal',
+        href: '/en/agreements/proposal/p1',
+      });
+    }
+    expect(
+      classifyLink('/en/agreements/proposal/p1?x=1#h', host(), here, locales),
+    ).toEqual({ kind: 'internal', href: '/en/agreements/proposal/p1?x=1' });
+  });
+
+  it('embed: a proposal link stays in the frame', () => {
+    const expected = {
+      kind: 'internal',
+      href: '/embed/space-one/en/agreements/proposal/p1',
+    };
+    expect(
+      classifyLink(
+        '/en/dho/space-one/agreements/proposal/p1',
+        embed(),
+        app,
+        locales,
+      ),
+    ).toEqual(expected);
+    expect(
+      classifyLink(
+        '/embed/space-one/en/agreements/proposal/p1',
+        embed(),
+        app,
+        locales,
+      ),
+    ).toEqual(expected);
+  });
+
+  it('detailView full-app: the proposal link leaves, in the main-app shape', () => {
+    const main = `${app}/en/dho/space-one/agreements/proposal/p1`;
+    expect(
+      classifyLink(
+        '/en/dho/space-one/agreements/proposal/p1',
+        host('full-app'),
+        here,
+        locales,
+      ),
+    ).toEqual({ kind: 'external', href: main });
+    // A host-shaped link too: never the bare host path on the full app.
+    expect(
+      classifyLink(
+        '/en/agreements/proposal/p1',
+        host('full-app'),
+        here,
+        locales,
+      ),
+    ).toEqual({ kind: 'external', href: main });
+    expect(
+      classifyLink(
+        '/embed/space-one/en/agreements/proposal/p1',
+        embed('full-app'),
+        app,
+        locales,
+      ),
+    ).toEqual({
+      kind: 'external',
+      href: '/en/dho/space-one/agreements/proposal/p1',
+    });
+  });
+
+  it('the voters link bug: a host-shaped unserved path leaves with /dho/<slug>', () => {
+    expect(
+      classifyLink('/en/agreements/proposal/p1/voters', host(), here, locales),
+    ).toEqual({
+      kind: 'external',
+      href: `${app}/en/dho/space-one/agreements/proposal/p1/voters`,
+    });
+    // Without a locale: the page's own is used.
+    expect(classifyLink('/members/person/jane', host(), here, locales)).toEqual(
+      {
+        kind: 'external',
+        href: `${app}/en/dho/space-one/members/person/jane`,
+      },
+    );
+    // Another locale in the link is kept; query and hash survive.
+    expect(
+      classifyLink(
+        '/pt/agreements/proposal/p1/voters?a=1#b',
+        host(),
+        here,
+        locales,
+      ),
+    ).toEqual({
+      kind: 'external',
+      href: `${app}/pt/dho/space-one/agreements/proposal/p1/voters?a=1#b`,
+    });
+    // Embed: the frame is on the full app's origin, so a relative path is right.
+    expect(
+      classifyLink(
+        '/embed/space-one/en/agreements/proposal/p1/voters',
+        embed(),
+        app,
+        locales,
+      ),
+    ).toEqual({
+      kind: 'external',
+      href: '/en/dho/space-one/agreements/proposal/p1/voters',
+    });
+  });
+
+  it('main-app paths that are not host-shaped are untouched', () => {
+    expect(classifyLink('/en/profile/jane', host(), here, locales)).toEqual({
+      kind: 'external',
+      href: `${app}/en/profile/jane`,
+    });
+    expect(
+      classifyLink('/en/dho/space-one/settings', host(), here, locales),
+    ).toEqual({ kind: 'external', href: `${app}/en/dho/space-one/settings` });
+    expect(
+      classifyLink(
+        '/en/dho/other-space/agreements/proposal/p1',
+        host(),
+        here,
+        locales,
+      ),
+    ).toEqual({
+      kind: 'external',
+      href: `${app}/en/dho/other-space/agreements/proposal/p1`,
+    });
+  });
+
+  it('extra segments and create flows are not served details', () => {
+    for (const href of [
+      '/en/agreements/proposal',
+      '/en/agreements/proposal/p1/p2',
+      '/en/agreements/create/pay-for-expenses',
+    ]) {
+      expect(classifyLink(href, host(), here, locales)?.kind, href).toBe(
+        'external',
+      );
+    }
+  });
+});

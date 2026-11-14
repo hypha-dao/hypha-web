@@ -3,6 +3,13 @@
  * unit-tested and reused by middleware, layouts and (later) a registry loader.
  */
 
+/**
+ * Where a card for a detail page (proposal, person) opens: `embedded` serves
+ * the page read-only inside the white-label tree (default); `full-app` leaves
+ * to the full app in a new tab, as before the details were served.
+ */
+export type DetailView = 'embedded' | 'full-app';
+
 /** One Space a client may show in an iframe, with the origins allowed to frame it. */
 export type WhiteLabelSpaceRecord = {
   /** Space slug as in the main app. */
@@ -14,6 +21,8 @@ export type WhiteLabelSpaceRecord = {
 /** A client record of the iframe delivery. Same shape the future registry will return. */
 export type WhiteLabelClientRecord = {
   id: string;
+  /** Absent means `embedded`; an invalid value was parsed to `full-app`. */
+  detailView?: DetailView;
   spaces: WhiteLabelSpaceRecord[];
 };
 
@@ -39,6 +48,8 @@ export type WhiteLabelHostRecord = {
 /** A client record of the host delivery (A1). */
 export type WhiteLabelHostClientRecord = {
   id: string;
+  /** Absent means `embedded`; an invalid value was parsed to `full-app`. */
+  detailView?: DetailView;
   hosts: WhiteLabelHostRecord[];
 };
 
@@ -79,6 +90,11 @@ export type ResolvedSpace = {
   locale: string;
   /** Union of the approving clients' framing origins for this Space (embed only). */
   framingOrigins: string[];
+  /**
+   * Embed: `embedded` if any approving client says so (or leaves it unset),
+   * else `full-app`. Host: the owning client's value.
+   */
+  detailView: DetailView;
 };
 
 /** Host delivery: the one client that owns the host, and its Space. */

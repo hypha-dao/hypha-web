@@ -1,0 +1,11 @@
+/*
+ * The overlay shell positions itself from variables the main app's panel layout
+ * sets (menu strip height, side panels, main-column scrollbar). The white-label
+ * tree has none of those, so it sets them to zero: no strip above the overlay
+ * and no scrollbar rail beside it. The shell is portaled to `body`, so this
+ * lives on the white-label `<html>` (`.wl-root`), so the main app is never affected.
+ */
+.wl-root {
+  --menu-top-height: 0px;
+  --main-column-scrollbar-width: 0px;
+}

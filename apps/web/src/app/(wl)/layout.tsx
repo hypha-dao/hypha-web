@@ -25,6 +25,7 @@ import {
 import { WhiteLabelAuthProvider } from '@web/components/white-label/auth-seam';
 import {
   WL_AUTH_HEADER,
+  WL_DETAIL_VIEW_HEADER,
   WL_MODE_HEADER,
   WL_SPACE_HEADER,
   readAuthConfigHeader,
@@ -33,6 +34,7 @@ import {
 } from '@web/lib/white-label';
 
 import '@hypha-platform/ui-utils/global.css';
+import './wl-overlay.css';
 import 'react-tooltip/dist/react-tooltip.css';
 
 export const viewport: Viewport = {
@@ -68,6 +70,11 @@ export default async function WhiteLabelRootLayout({
     notFound();
   }
   const whiteLabelMode: WhiteLabelMode = mode;
+  // Only an explicit `embedded` serves the details (fail closed).
+  const detailView =
+    requestHeaders.get(WL_DETAIL_VIEW_HEADER) === 'embedded'
+      ? 'embedded'
+      : 'full-app';
   const authConfig =
     whiteLabelMode === 'host'
       ? readAuthConfigHeader(requestHeaders.get(WL_AUTH_HEADER))
@@ -89,11 +96,12 @@ export default async function WhiteLabelRootLayout({
           spaceSlug,
           lang: locale,
           fullAppOrigin: getAppBaseUrl(),
+          detailView,
         }
-      : { mode: 'embed', spaceSlug, lang: locale };
+      : { mode: 'embed', spaceSlug, lang: locale, detailView };
 
   return (
-    <Html lang={locale} className={hyphaFontVariables}>
+    <Html lang={locale} className={`${hyphaFontVariables} wl-root`}>
       <WhiteLabelAuthProvider mode={whiteLabelMode} authConfig={authConfig}>
         <SwrProvider skipClientErrorRetry>
           <ThemeProvider

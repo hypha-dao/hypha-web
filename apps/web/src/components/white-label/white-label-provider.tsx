@@ -24,7 +24,7 @@ export function WhiteLabelProvider({
   const fullAppOrigin = value.mode === 'host' ? value.fullAppOrigin : '';
   const memo = React.useMemo(
     () => value,
-    [value.mode, value.spaceSlug, value.lang, fullAppOrigin], // eslint-disable-line react-hooks/exhaustive-deps
+    [value.mode, value.spaceSlug, value.lang, value.detailView, fullAppOrigin], // eslint-disable-line react-hooks/exhaustive-deps
   );
   return (
     <WhiteLabelContext.Provider value={memo}>

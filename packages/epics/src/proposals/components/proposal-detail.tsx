@@ -485,6 +485,11 @@ type ProposalDetailProps = ProposalHeadProps & {
   /** Used to map whitelist addresses to member/space rows when resubmitting Issue New Token. */
   membersForWhitelist?: Person[];
   spacesForWhitelist?: Space[];
+  /**
+   * Read-only view (white-label pages): no vote, withdraw, resubmit, expire
+   * banner or discussion. Off by default, so the main app is unchanged.
+   */
+  readOnly?: boolean;
 };
 
 type DocumentsArrays = {
@@ -521,6 +526,7 @@ export const ProposalDetail = ({
   onWithdrawSuccess,
   membersForWhitelist,
   spacesForWhitelist,
+  readOnly = false,
 }: ProposalDetailProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
   const pathname = usePathname();
@@ -1313,7 +1319,7 @@ export const ProposalDetail = ({
         />
       </Skeleton>
       <ExpireProposalBanner
-        isDisplay={displayExpireProposalBanner}
+        isDisplay={displayExpireProposalBanner && !readOnly}
         quorumReached={quorumReached}
         unityReached={unityReached}
         quorumPercentage={proposalDetails?.quorumPercentage || 0}
@@ -1341,7 +1347,7 @@ export const ProposalDetail = ({
           />
         </>
       )}
-      {documentSlug ? (
+      {documentSlug && !readOnly ? (
         <ProposalDiscussionChat
           documentSlug={documentSlug}
           title={title}
@@ -1351,6 +1357,7 @@ export const ProposalDetail = ({
         />
       ) : null}
       <FormVoting
+        readOnly={readOnly}
         unity={proposalDetails?.unityPercentage || 0}
         quorum={proposalDetails?.quorumPercentage || 0}
         endTime={formattedEndTime}
