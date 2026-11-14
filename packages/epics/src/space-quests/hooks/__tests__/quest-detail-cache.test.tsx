@@ -317,4 +317,68 @@ describe('quest detail cache reuse', () => {
     );
     expect(screen.getByTestId('quest-loading').textContent).toBe('false');
   });
+
+  it('keeps an in-flight detail response when overview seeding would overlap', async () => {
+    let resolveOverview: (overview: SpaceQuestsOverview) => void = () =>
+      undefined;
+    let resolveDetail: (quest: QuestRecord) => void = () => undefined;
+    const overviewGate = new Promise<SpaceQuestsOverview>((resolve) => {
+      resolveOverview = resolve;
+    });
+    const detailGate = new Promise<QuestRecord>((resolve) => {
+      resolveDetail = resolve;
+    });
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/quests/onboarding')) {
+        const quest = await detailGate;
+        return new Response(JSON.stringify(quest), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.includes('/spaces/sandbox/quests')) {
+        const overview = await overviewGate;
+        return new Response(JSON.stringify(overview), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response('not found', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <SWRConfig value={{ dedupingInterval: 0, revalidateOnFocus: false }}>
+        <OverviewProbe />
+        <DetailProbe />
+      </SWRConfig>,
+    );
+
+    await waitFor(() => {
+      const urls = fetchMock.mock.calls.map((call) => String(call[0]));
+      expect(
+        urls.some(
+          (url) =>
+            url.includes('/spaces/sandbox/quests') &&
+            !url.includes('/quests/onboarding'),
+        ),
+      ).toBe(true);
+      expect(urls.some((url) => url.includes('/quests/onboarding'))).toBe(true);
+    });
+
+    resolveOverview(
+      overviewFor(questFixture({ name: 'Onboarding matcher (overview)' })),
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('overview-count').textContent).toBe('1');
+    });
+
+    resolveDetail(questFixture({ name: 'Onboarding matcher (detail)' }));
+    await waitFor(() => {
+      expect(screen.getByTestId('quest-name').textContent).toBe(
+        'Onboarding matcher (detail)',
+      );
+    });
+  });
 });

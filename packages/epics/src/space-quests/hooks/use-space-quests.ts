@@ -11,7 +11,12 @@ import {
   type schemaPostQuestUpdate,
   type schemaQuestCreateDraftPayload,
 } from '@hypha-platform/core/client';
-import useSWR, { mutate, unstable_serialize, useSWRConfig } from 'swr';
+import useSWR, {
+  mutate,
+  SWRConfig,
+  unstable_serialize,
+  useSWRConfig,
+} from 'swr';
 import type { z } from 'zod';
 import { personRosterDisplayLabel } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
 
@@ -35,20 +40,34 @@ export function spaceQuestDetailKey(
   ] as const;
 }
 
-/** Fill empty detail keys from a list payload. Does not overwrite a warmer detail. */
+function canSeedQuestDetailKey(
+  spaceSlug: string,
+  questSlug: string,
+  viewerKey: string,
+) {
+  const state = SWRConfig.defaultValue.cache.get(
+    unstable_serialize(spaceQuestDetailKey(spaceSlug, questSlug, viewerKey)),
+  );
+  return state?.data === undefined && !state?.isValidating;
+}
+
+/** Fill empty, idle detail keys from a list payload. Skip warmer or in-flight keys. */
 export function seedSpaceQuestDetailCache(
   spaceSlug: string,
   quests: readonly QuestRecord[],
   viewerKey: string,
 ) {
   return Promise.all(
-    quests.map((quest) =>
-      mutate(
+    quests.map((quest) => {
+      if (!canSeedQuestDetailKey(spaceSlug, quest.slug, viewerKey)) {
+        return undefined;
+      }
+      return mutate(
         spaceQuestDetailKey(spaceSlug, quest.slug, viewerKey),
         (current: QuestRecord | undefined) => current ?? quest,
         { revalidate: false },
-      ),
-    ),
+      );
+    }),
   );
 }
 
