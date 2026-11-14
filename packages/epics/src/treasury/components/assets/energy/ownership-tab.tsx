@@ -7,8 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../../../people/components/person-avatar';
 import type { EnergyParticipantProfile } from '../../../hooks/use-space-energy';
+import { useEnergySevenDaySettled } from '../../../../common/energy-seven-day-settled';
 import { useSpaceEnergyTelemetry } from '../../../hooks/use-space-energy-telemetry';
 import { BarChart, type ChartSeries } from './charts';
+import { buildProductionSeries, timeframeLabels } from './dummy-data';
+import { OWNERSHIP_COLLAPSED_PERIOD } from './energy-constants';
 import { ENERGY_PALETTE } from './energy-palette';
 import { type EnergyPerson } from './use-energy-people';
 import {
@@ -21,9 +24,10 @@ import {
 } from './format';
 import {
   buildSourceProductionSeries,
-  granularityConfig,
   granularityLabels,
+  telemetryPeriodForOwnershipWindow,
   type Granularity,
+  type OwnershipProductionWindow,
 } from './granularity';
 import { GranularityToggle } from './granularity-toggle';
 import type { EnergyTabProps } from './energy-tab-props';
@@ -46,34 +50,35 @@ type SourceGroup = {
 };
 
 /**
- * Production series for one source under a daily/weekly/monthly granularity.
- * Live interval telemetry when available; deterministic placeholder otherwise.
- * Production meters are reported sorted by meter id, which matches the order
- * sources are registered on-chain (9001 -> first source, 9002 -> second, …).
+ * Production series for one source under a daily/weekly/monthly granularity,
+ * or the collapsed-row 7d window. Live interval telemetry when available;
+ * deterministic placeholder otherwise. Production meters are reported sorted
+ * by meter id, which matches the order sources are registered on-chain
+ * (9001 -> first source, 9002 -> second, …).
  */
 const useSourceProduction = (
   sourceIndex: number,
   sourceName: string,
-  granularity: Granularity,
+  window: OwnershipProductionWindow,
   locale: string,
   spaceSlug: string,
   enabled = true,
 ) => {
-  const cfg = granularityConfig(granularity);
+  const period = telemetryPeriodForOwnershipWindow(window);
   const {
     data: telemetry,
     isLoading,
     error,
-  } = useSpaceEnergyTelemetry(cfg.period, spaceSlug, { enabled });
+  } = useSpaceEnergyTelemetry(period, spaceSlug, { enabled });
 
   const live = Boolean(
     telemetry?.enabled && telemetry.configured && !error && telemetry.dataFrom,
   );
 
   return React.useMemo(() => {
-    // Do not fall back to placeholder series while the request is in flight —
-    // that briefly renders default/fake "earned from source" amounts.
-    if (isLoading) {
+    // Disabled (waiting on 7d) and in-flight must not fall back to placeholder
+    // series — that briefly renders default/fake "earned from source" amounts.
+    if (!enabled || isLoading) {
       return {
         labels: [] as string[],
         values: [] as number[],
@@ -92,18 +97,29 @@ const useSourceProduction = (
         isLoading: false,
       };
     }
+    if (window === OWNERSHIP_COLLAPSED_PERIOD) {
+      return {
+        labels: timeframeLabels(OWNERSHIP_COLLAPSED_PERIOD, locale),
+        values:
+          buildProductionSeries([sourceName], OWNERSHIP_COLLAPSED_PERIOD)
+            .perSource[0]?.values ?? [],
+        isPlaceholder: true,
+        isLoading: false,
+      };
+    }
     return {
-      labels: granularityLabels(granularity, locale),
-      values: buildSourceProductionSeries(sourceName, granularity),
+      labels: granularityLabels(window, locale),
+      values: buildSourceProductionSeries(sourceName, window),
       isPlaceholder: true,
       isLoading: false,
     };
   }, [
+    enabled,
     live,
     telemetry,
     sourceIndex,
     sourceName,
-    granularity,
+    window,
     isLoading,
     locale,
   ]);
@@ -135,12 +151,14 @@ const OwnerEarningsChart = ({
   const locale = useLocale();
   const t = useTranslations('Energy.ownership');
   const [granularity, setGranularity] = React.useState<Granularity>('daily');
+  const sevenDaySettled = useEnergySevenDaySettled();
   const production = useSourceProduction(
     group.sourceIndex,
     group.name,
     granularity,
     locale,
     spaceSlug,
+    sevenDaySettled,
   );
 
   const earnings =
@@ -317,7 +335,7 @@ const SourceOwnershipCard = ({
   const production = useSourceProduction(
     group.sourceIndex,
     group.name,
-    'monthly',
+    OWNERSHIP_COLLAPSED_PERIOD,
     locale,
     spaceSlug,
     !earningsUnavailable,
