@@ -9,3 +9,12 @@
   --menu-top-height: 0px;
   --main-column-scrollbar-width: 0px;
 }
+
+/*
+ * The detail header is sticky at the top of the scroll panel, inside a padded
+ * wrapper, so before scrolling it sat below an empty strip. Drop the wrapper's
+ * top padding here (the main app is unchanged).
+ */
+.wl-root #proposal-overlay-panel > div {
+  padding-top: 0;
+}
