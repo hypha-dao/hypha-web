@@ -15,7 +15,6 @@ import {
 
 import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
 import { useDocumentSlug } from '@web/hooks/use-document-slug';
-import { useMembers } from '@web/hooks/use-members';
 import { useWhiteLabelSectionHref } from '@web/components/white-label/white-label-provider';
 
 /**
@@ -37,10 +36,6 @@ export function ProposalOverlay() {
   const isProposalDataPending =
     document?.web3ProposalId != null && !proposalDetails && !proposalError;
   const { space } = useSpaceBySlug(id as string);
-  const { persons, spaces } = useMembers({
-    spaceSlug: space?.slug as string,
-    paginationDisabled: true,
-  });
   const { tokens } = useDbTokens();
   const leadImage = useMemo(
     () =>
@@ -60,8 +55,6 @@ export function ProposalOverlay() {
       <ProposalDetail
         readOnly
         documentId={document?.id}
-        membersForWhitelist={persons?.data}
-        spacesForWhitelist={spaces?.data}
         closeUrl={sectionHref('agreements')}
         content={document?.description}
         creator={{
