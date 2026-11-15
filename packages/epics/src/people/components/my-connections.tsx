@@ -2923,6 +2923,9 @@ export function MyConnections({
   }
 
   async function openMember(row: ConnectionMemberRow) {
+    // A click chooses this row. Desktop otherwise opens the first row of a
+    // filter that just changed, and that open can land after the click.
+    pendingSelectFirstInboxRef.current = false;
     if (picking) {
       toggleSelected(row);
       return;
