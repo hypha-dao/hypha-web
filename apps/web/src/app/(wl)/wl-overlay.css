@@ -18,3 +18,11 @@
 .wl-root #proposal-overlay-panel > div {
   padding-top: 0;
 }
+
+/*
+ * Avatar status dots use z-10; the sticky header is z-[5], so a dot showed
+ * through the header while scrolling. Keep the header above them here.
+ */
+.wl-root #proposal-overlay-panel .sticky {
+  z-index: 20;
+}
