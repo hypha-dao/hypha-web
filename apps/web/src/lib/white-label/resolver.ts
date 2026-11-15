@@ -226,6 +226,7 @@ function resolveMappedHost(
     locale,
     localeFromPath,
     framingOrigins: [],
+    detailView: client.detailView ?? 'embedded',
     ...(record.authConfig ? { authConfig: record.authConfig } : {}),
   };
 }
@@ -290,10 +291,15 @@ export function resolve(
 
   const clientIds: string[] = [];
   const origins = new Set<string>();
+  // `embedded` wins when any approving client allows it (unset counts as it).
+  let embeddedDetails = false;
   for (const client of config.clients) {
     const matches = client.spaces.filter((s) => s.slug === slug);
     if (matches.length === 0) continue;
     clientIds.push(client.id);
+    if ((client.detailView ?? 'embedded') === 'embedded') {
+      embeddedDetails = true;
+    }
     for (const space of matches) {
       for (const origin of space.framingOrigins) origins.add(origin);
     }
@@ -331,5 +337,6 @@ export function resolve(
     spaceSlug: slug,
     locale,
     framingOrigins: [...origins],
+    detailView: embeddedDetails ? 'embedded' : 'full-app',
   };
 }

@@ -691,7 +691,15 @@ describe('/api on a mapped host', () => {
     expect(real('POST', '/api/v1/spaces')).toBe(false);
     expect(real('GET', '/api/v1/events/1')).toBe(false);
     expect(real('GET', '/api/v1/documents/x/voters/extra')).toBe(false);
-    expect(real('GET', '/api/v1/documents/voters')).toBe(false);
+    // `documents/voters` is a document with the slug `voters`: the handler decides.
+    expect(real('GET', '/api/v1/documents/voters')).toBe(true);
+    // The document row, with the trailing slash the hook sends, and the token registry.
+    expect(real('GET', '/api/v1/documents/my-proposal-1a2b3c4d')).toBe(true);
+    expect(real('GET', '/api/v1/documents/my-proposal-1a2b3c4d/')).toBe(true);
+    expect(real('GET', '/api/v1/tokens')).toBe(true);
+    expect(real('POST', '/api/v1/documents/my-proposal-1a2b3c4d')).toBe(false);
+    expect(real('GET', '/api/v1/tokens/extra/path/x')).toBe(false);
+    expect(real('GET', '/api/v1/documents')).toBe(false);
     expect(real('GET', '/api/v1/documents/a%b/voters')).toBe(false);
     expect(real('GET', '/api/v1/documents/a b/voters')).toBe(false);
     // The path of another document is not the Space check: handler's job.
@@ -788,7 +796,6 @@ describe('link guard: host mode', () => {
   it('links that leave the Space open the full app, not the host', () => {
     for (const href of [
       '/en/dho/space-one/members/person/jane',
-      '/en/dho/space-one/agreements/proposal/p1',
       '/en/dho/space-one/agreements/create/pay-for-expenses',
       '/en/dho/other-space/overview',
       '/en/profile/jane',

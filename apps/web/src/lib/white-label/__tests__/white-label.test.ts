@@ -425,10 +425,9 @@ describe('link classification', () => {
     });
   });
 
-  it('sends person pages, proposals, other Spaces and create flows to the full app', () => {
+  it('sends person pages, other Spaces and create flows to the full app', () => {
     for (const href of [
       '/en/dho/space-one/members/person/jane',
-      '/en/dho/space-one/agreements/proposal/p1',
       '/en/dho/space-one/agreements/create/pay-for-expenses',
       '/en/dho/other-space/overview',
       '/en/profile/jane',

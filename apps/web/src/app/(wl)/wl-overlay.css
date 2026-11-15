@@ -1,0 +1,28 @@
+/*
+ * The overlay shell positions itself from variables the main app's panel layout
+ * sets (menu strip height, side panels, main-column scrollbar). The white-label
+ * tree has none of those, so it sets them to zero: no strip above the overlay
+ * and no scrollbar rail beside it. The shell is portaled to `body`, so this
+ * lives on the white-label `<html>` (`.wl-root`), so the main app is never affected.
+ */
+.wl-root {
+  --menu-top-height: 0px;
+  --main-column-scrollbar-width: 0px;
+}
+
+/*
+ * The detail header is sticky at the top of the scroll panel, inside a padded
+ * wrapper, so before scrolling it sat below an empty strip. Drop the wrapper's
+ * top padding here (the main app is unchanged).
+ */
+.wl-root #proposal-overlay-panel > div {
+  padding-top: 0;
+}
+
+/*
+ * Avatar status dots use z-10; the sticky header is z-[5], so a dot showed
+ * through the header while scrolling. Keep the header above them here.
+ */
+.wl-root #proposal-overlay-panel .sticky {
+  z-index: 20;
+}

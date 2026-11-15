@@ -24,7 +24,7 @@ export function WhiteLabelProvider({
   const fullAppOrigin = value.mode === 'host' ? value.fullAppOrigin : '';
   const memo = React.useMemo(
     () => value,
-    [value.mode, value.spaceSlug, value.lang, fullAppOrigin], // eslint-disable-line react-hooks/exhaustive-deps
+    [value.mode, value.spaceSlug, value.lang, value.detailView, fullAppOrigin], // eslint-disable-line react-hooks/exhaustive-deps
   );
   return (
     <WhiteLabelContext.Provider value={memo}>
@@ -56,8 +56,8 @@ export function useWhiteLabelSectionHref(): (
  * wrapper maps a click on any link: this Space stays in the white-label tree
  * (`/embed`, or the host root), every other destination opens the full app in
  * a new tab (in the iframe the main app can not be framed; on a mapped host it
- * is another origin). Plain modified clicks (new tab, download) are left to
- * the browser.
+ * is another origin). Middle and Ctrl/Cmd/Shift clicks open the mapped URL in a new tab;
+ * Alt-click (download) is left to the browser.
  */
 export function WhiteLabelLinkGuard({
   children,
@@ -67,19 +67,15 @@ export function WhiteLabelLinkGuard({
   const ctx = useWhiteLabel();
   const router = useRouter();
 
-  const onClickCapture = React.useCallback(
-    (event: React.MouseEvent<HTMLElement>) => {
-      if (!ctx || event.defaultPrevented || event.button !== 0) return;
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-        return;
-      }
+  const handle = React.useCallback(
+    (event: React.MouseEvent<HTMLElement>, newTab: boolean) => {
       const target = event.target as Element | null;
       const anchor = target?.closest?.('a[href]') as HTMLAnchorElement | null;
       if (!anchor || anchor.hasAttribute('download')) return;
 
       const decision = classifyLink(
         anchor.getAttribute('href') ?? '',
-        ctx,
+        ctx as WhiteLabelLinkContext,
         window.location.origin,
         routing.locales,
       );
@@ -87,17 +83,42 @@ export function WhiteLabelLinkGuard({
 
       event.preventDefault();
       event.stopPropagation();
-      if (decision.kind === 'internal') {
+      if (decision.kind === 'internal' && !newTab) {
         router.push(decision.href);
       } else {
+        // Left click on an outside link, or a new-tab click (middle button,
+        // Ctrl/Cmd/Shift): open the mapped URL, never the main-app shape.
         window.open(decision.href, '_blank', 'noopener,noreferrer');
       }
     },
     [ctx, router],
   );
 
+  const onClickCapture = React.useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      if (!ctx || event.defaultPrevented || event.button !== 0) return;
+      const modified =
+        event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
+      if (event.altKey) return; // download shortcut: left to the browser
+      handle(event, modified);
+    },
+    [ctx, handle],
+  );
+
+  const onAuxClickCapture = React.useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      if (!ctx || event.defaultPrevented || event.button !== 1) return;
+      handle(event, true);
+    },
+    [ctx, handle],
+  );
+
   return (
-    <div className="contents" onClickCapture={onClickCapture}>
+    <div
+      className="contents"
+      onClickCapture={onClickCapture}
+      onAuxClickCapture={onAuxClickCapture}
+    >
       {children}
     </div>
   );

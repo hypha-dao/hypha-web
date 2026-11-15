@@ -15,6 +15,8 @@ export const WL_MODE_HEADER = 'x-hypha-wl-mode';
 export const WL_CLIENT_HEADER = 'x-hypha-wl-client';
 /** JSON of the host's auth config (host mode, when configured). Public values only. */
 export const WL_AUTH_HEADER = 'x-hypha-wl-auth';
+/** How a card opens a detail page: `embedded` (overlay on the host) or `full-app`. */
+export const WL_DETAIL_VIEW_HEADER = 'x-hypha-wl-detail-view';
 /** Set on requests middleware sends to the white-label 404 (see global-not-found). */
 export const WL_NOT_FOUND_HEADER = 'x-hypha-wl-not-found';
 export const WL_REQUEST_HEADERS = [
@@ -22,6 +24,7 @@ export const WL_REQUEST_HEADERS = [
   WL_MODE_HEADER,
   WL_CLIENT_HEADER,
   WL_AUTH_HEADER,
+  WL_DETAIL_VIEW_HEADER,
   WL_NOT_FOUND_HEADER,
 ] as const;
 

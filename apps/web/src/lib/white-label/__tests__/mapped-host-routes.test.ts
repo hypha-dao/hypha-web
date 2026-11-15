@@ -47,6 +47,7 @@ vi.mock('@hypha-platform/core/client', () => ({
 import { NextRequest } from 'next/server';
 import { GET as getEvents } from '../../../app/api/v1/events/route';
 import { GET as getSpaces } from '../../../app/api/v1/spaces/route';
+import { GET as getDocument } from '../../../app/api/v1/documents/[documentSlug]/route';
 import { GET as getVoters } from '../../../app/api/v1/documents/[documentSlug]/voters/route';
 import { resetMappedHostScopeCache } from '../mapped-host-scope';
 import { WL_SPACE_HEADER } from '../constants';
@@ -256,6 +257,7 @@ describe('GET /api/v1/documents/:documentSlug/voters', () => {
     expect(res.status).toBe(200);
     expect((await res.json()).voters).toHaveLength(1);
     expect(findDocument.mock.calls[0]?.[0].columns).toEqual({
+      id: true,
       spaceId: true,
       web3ProposalId: true,
     });
@@ -290,5 +292,63 @@ describe('GET /api/v1/documents/:documentSlug/voters', () => {
     expect(readContract).toHaveBeenCalledWith({ proposalId: 5n });
     expect(findDocument).not.toHaveBeenCalled();
     expect(findSpace).not.toHaveBeenCalled();
+  });
+});
+
+describe('GET /api/v1/documents/:documentSlug', () => {
+  const get = (mapped = true, slug = 'doc-1') =>
+    getDocument(request(`/api/v1/documents/${slug}`, mapped), {
+      params: Promise.resolve({ documentSlug: slug }),
+    });
+  const DOC = { id: 3, title: 'T', creator: { name: 'A' } };
+
+  it('mapped: a document of the own Space is returned, and it is the row that passed the check', async () => {
+    findDocument.mockResolvedValue({ id: 3, spaceId: 7, web3ProposalId: 11 });
+    findDocumentBySlug.mockResolvedValue(DOC);
+    const res = await get();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(DOC);
+    expect(findDocument.mock.calls[0]?.[0].columns).toEqual({
+      id: true,
+      spaceId: true,
+      web3ProposalId: true,
+    });
+  });
+
+  it('mapped: a document of another Space, or an unknown one, is 404 and is not read in full', async () => {
+    findDocument.mockResolvedValue({ id: 3, spaceId: 8, web3ProposalId: 11 });
+    expect((await get()).status).toBe(404);
+    findDocument.mockResolvedValue(undefined);
+    expect((await get()).status).toBe(404);
+    expect(findDocumentBySlug).not.toHaveBeenCalled();
+  });
+
+  it('mapped: a different row between the two lookups is 404', async () => {
+    findDocument.mockResolvedValue({ id: 3, spaceId: 7, web3ProposalId: 11 });
+    findDocumentBySlug.mockResolvedValue({ ...DOC, id: 4 });
+    expect((await get()).status).toBe(404);
+    findDocumentBySlug.mockResolvedValue(null);
+    expect((await get()).status).toBe(404);
+  });
+
+  it('mapped: an unknown host Space is 404', async () => {
+    findSpace.mockResolvedValue(null);
+    expect((await get()).status).toBe(404);
+  });
+
+  it('main app (no header, or a forged-looking request without it): unchanged, any document, no scope lookups', async () => {
+    findDocumentBySlug.mockResolvedValue(DOC);
+    const res = await get(false);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(DOC);
+    expect(findDocument).not.toHaveBeenCalled();
+    expect(findSpace).not.toHaveBeenCalled();
+  });
+
+  it('main app: a missing document is null, as before', async () => {
+    findDocumentBySlug.mockResolvedValue(null);
+    const res = await get(false);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toBeNull();
   });
 });

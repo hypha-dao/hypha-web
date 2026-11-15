@@ -73,12 +73,20 @@ export async function resolveMappedHostScope(
 export async function findDocumentSpace(
   key: { id: number } | { slug: string },
   { db }: DbConfig,
-): Promise<{ spaceId: number; web3ProposalId: number | null } | null> {
+): Promise<{
+  id: number;
+  spaceId: number;
+  web3ProposalId: number | null;
+} | null> {
   const row = await db.query.documents.findFirst({
-    columns: { spaceId: true, web3ProposalId: true },
+    columns: { id: true, spaceId: true, web3ProposalId: true },
     where: (documents, { eq }) =>
       'id' in key ? eq(documents.id, key.id) : eq(documents.slug, key.slug),
   });
   if (!row || row.spaceId === null) return null;
-  return { spaceId: row.spaceId, web3ProposalId: row.web3ProposalId };
+  return {
+    id: row.id,
+    spaceId: row.spaceId,
+    web3ProposalId: row.web3ProposalId,
+  };
 }

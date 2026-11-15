@@ -127,6 +127,7 @@ export const FormVoting = ({
   spacesForUpdateTokenResubmit,
   dbSpacesForUpdateTokenResubmit,
   isOwnershipTokenForUpdateTokenResubmit,
+  readOnly = false,
 }: {
   unity: number;
   quorum: number;
@@ -169,6 +170,8 @@ export const FormVoting = ({
   dbSpacesForUpdateTokenResubmit?: Space[];
   /** When DB has no type yet, use for whitelist from/to mapping (ownership = receive-only UI) */
   isOwnershipTokenForUpdateTokenResubmit?: boolean;
+  /** No vote, withdraw or resubmit controls (white-label pages). Off by default. */
+  readOnly?: boolean;
 }) => {
   const tCommon = useTranslations('Common');
   const tProposalDetails = useTranslations('ProposalDetails');
@@ -629,7 +632,8 @@ export const FormVoting = ({
               )}
             </div>
           </div>
-          {isVoteFinalized(executed, expired, proposalStatus) ? null : (
+          {readOnly ||
+          isVoteFinalized(executed, expired, proposalStatus) ? null : (
             <div className="flex flex-col gap-2 items-end">
               <div className="flex gap-2">
                 <Button
@@ -667,7 +671,7 @@ export const FormVoting = ({
           )}
         </Skeleton>
       </div>
-      {showWithdrawBlock && (
+      {!readOnly && showWithdrawBlock && (
         <WithdrawResubmitBanner
           onWithdraw={handleWithdraw}
           onResubmit={handleResubmit}

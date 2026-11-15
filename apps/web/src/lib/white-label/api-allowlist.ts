@@ -33,6 +33,12 @@ export const WL_API_READ_ALLOWLIST: readonly string[] = [
   '/api/v1/events',
   '/api/v1/spaces',
   '/api/v1/documents/:documentSlug/voters',
+  // `documents/:documentSlug` (a proposal's own row): own Space's documents only
+  // on a host (guard in the route); the row has no email or sub.
+  '/api/v1/documents/:documentSlug',
+  // The token registry (rows belong to Spaces). Not guarded: shareable registry
+  // data, answered the same as on the main app.
+  '/api/v1/tokens',
   // Read from the hooks of sections not exercised by that run (pipeline is
   // off for the test Space): kept until they are measured, then confirm or drop.
   '/api/v1/spaces/:slug/pipeline/config',
