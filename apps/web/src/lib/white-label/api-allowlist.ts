@@ -39,6 +39,11 @@ export const WL_API_READ_ALLOWLIST: readonly string[] = [
   // The token registry (rows belong to Spaces). Not guarded: shareable registry
   // data, answered the same as on the main app.
   '/api/v1/tokens',
+  // A person of the host's own Space (card, beneficiary names): members only on
+  // a host, without email or sub (guard in each route). `:personSlug` never
+  // matches a sibling route of `people` (`me`, `search`, ...).
+  '/api/v1/people/:personSlug',
+  '/api/v1/people/by-web3-address/:address',
   // Read from the hooks of sections not exercised by that run (pipeline is
   // off for the test Space): kept until they are measured, then confirm or drop.
   '/api/v1/spaces/:slug/pipeline/config',
@@ -94,6 +99,14 @@ export function apiAllowlistFor(loginEnabled: boolean): readonly string[] {
 const PARAM_SEGMENT = /^[A-Za-z0-9_.-]{1,200}$/;
 /** Document slugs come from `slugify` and may hold a few more characters. */
 const DOCUMENT_SLUG_SEGMENT = /^[A-Za-z0-9_.~+*$()'!:@-]{1,255}$/;
+/** Static routes under `/api/v1/people` that `:personSlug` must not reach. */
+const RESERVED_PERSON_SEGMENTS = new Set([
+  'me',
+  'search',
+  'create-profile',
+  'edit-profile',
+  'by-web3-address',
+]);
 const ALLOWED_METHODS = new Set(['GET', 'HEAD']);
 
 function matches(
@@ -111,6 +124,12 @@ function matches(
         ownSlug !== undefined &&
         actual === ownSlug &&
         PARAM_SEGMENT.test(actual)
+      );
+    }
+    if (part === ':personSlug') {
+      return (
+        DOCUMENT_SLUG_SEGMENT.test(actual) &&
+        !RESERVED_PERSON_SEGMENTS.has(actual)
       );
     }
     if (part === ':documentSlug') return DOCUMENT_SLUG_SEGMENT.test(actual);
