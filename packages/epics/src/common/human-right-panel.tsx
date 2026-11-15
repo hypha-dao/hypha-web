@@ -5278,16 +5278,15 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     if (signalDismissUntilClosedRef.current) return;
 
     // Proposal, quest, space, context, ecosystem, and network chats are not
-    // signal threads. A leftover `?signal=` on `/messages` is a deep link and
-    // would replace the room that was just opened (desktop keeps the panel
-    // mounted, so the replacement runs; mobile opens the row on its own).
-    // The coherence board owns `?signal=` itself — do not strip it there.
-    if (
-      mode === 'coherence' &&
-      !channelSyncsSignalQuery(coherenceChannel) &&
-      !/^\/[^/]+\/dho\/[^/]+\/coherence(?:\/|$)/.test(pathname)
-    ) {
-      if (readSignalDeepLinkSlug(searchParams)) {
+    // signal threads. Stop before the writer below, including on the coherence
+    // board, or a quest slug is stored in `?signal=`. Off that board a leftover
+    // `?signal=` is a deep link and would replace the room that was just
+    // opened. The board owns its query, so leave that value in place.
+    if (mode === 'coherence' && !channelSyncsSignalQuery(coherenceChannel)) {
+      const onCoherenceBoard = /^\/[^/]+\/dho\/[^/]+\/coherence(?:\/|$)/.test(
+        pathname,
+      );
+      if (!onCoherenceBoard && readSignalDeepLinkSlug(searchParams)) {
         signalDeepLinkEpochRef.current += 1;
         const cleaned = setSignalSearchParam(
           pathname,
