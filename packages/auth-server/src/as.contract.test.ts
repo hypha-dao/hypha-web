@@ -511,6 +511,9 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
     const meta = await res.json();
     expect(meta.issuer).toBe(h.ISSUER);
     expect(meta.jwks_uri).toBe(`${h.ISSUER}/api/auth/jwks.json`);
+    expect(
+      Object.keys(meta).filter((k) => k.startsWith('introspection')),
+    ).toEqual([]);
     expect(meta.code_challenge_methods_supported).toEqual(['S256']);
     expect(meta.client_id_metadata_document_supported).toBe(true);
     expect(meta.authorization_response_iss_parameter_supported).toBe(true);

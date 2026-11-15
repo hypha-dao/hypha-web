@@ -55,7 +55,11 @@ export function createAuthServerHandler(
     if (!isAllowedAuthServerPath(url.pathname, request.method.toUpperCase()))
       return notFound();
     try {
-      const response = await getServer(config).auth.handler(request);
+      const server = getServer(config);
+      const response =
+        url.pathname === WELL_KNOWN
+          ? await metadataWithoutDisabledEndpoints(server, request)
+          : await server.auth.handler(request);
       return withCors(request, response, config);
     } catch (error) {
       // Never echo the error: it can carry request data.
@@ -69,4 +73,22 @@ export function createAuthServerHandler(
       });
     }
   };
+}
+
+/**
+ * The library advertises introspection, but that path is disabled and not in the allowlist. Do not
+ * advertise endpoints this server does not serve.
+ */
+async function metadataWithoutDisabledEndpoints(
+  server: AuthServer,
+  request: Request,
+): Promise<Response> {
+  const res = await server.auth.handler(request);
+  if (res.status !== 200) return res;
+  const meta = (await res.json()) as Record<string, unknown>;
+  for (const key of Object.keys(meta))
+    if (key.startsWith('introspection_endpoint')) delete meta[key];
+  const headers = new Headers(res.headers);
+  headers.delete('content-length');
+  return new Response(JSON.stringify(meta), { status: 200, headers });
 }
