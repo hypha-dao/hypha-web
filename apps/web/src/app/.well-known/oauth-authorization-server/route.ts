@@ -5,3 +5,4 @@ export const dynamic = 'force-dynamic';
 
 // RFC 8414 metadata for the path-less issuer. 404 on any other host.
 export const GET = handleAuthServerRequest;
+export const OPTIONS = handleAuthServerRequest; // CORS preflight, answered in the package

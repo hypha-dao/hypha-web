@@ -49,6 +49,12 @@ export type AuthServerConfig = {
   allowedPersonIds: ReadonlySet<string>;
   /** Resource indicators (RFC 8707) access tokens may be issued for. */
   resources: readonly string[];
+  /**
+   * Browser origins allowed to call the token and registration endpoints cross-origin (dev
+   * tools such as MCP Inspector). Exact origins, default empty. Metadata and JWKS are public
+   * and answer any origin regardless of this list.
+   */
+  corsAllowedOrigins: readonly string[];
 };
 
 export type AuthServerDisabled = { enabled: false; reason: string };
@@ -62,6 +68,25 @@ export function parseList(value: string | undefined): string[] {
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+/** Exact origins only (scheme + host + port, no path); anything else is dropped. No wildcards. */
+export function parseOrigins(value: string | undefined): string[] {
+  const out = new Set<string>();
+  for (const item of parseList(value)) {
+    try {
+      const url = new URL(item);
+      if (
+        (url.protocol === 'https:' || url.protocol === 'http:') &&
+        !url.hostname.includes('*') &&
+        url.origin === item.replace(/\/$/, '')
+      )
+        out.add(url.origin);
+    } catch {
+      /* dropped */
+    }
+  }
+  return [...out];
 }
 
 export function parseIssuer(raw: string): string | null {
@@ -131,5 +156,6 @@ export function loadAuthServerConfig(
         : undefined,
     allowedPersonIds: new Set(parseList(env.AUTH_SERVER_ALLOWED_PERSON_IDS)),
     resources: parseList(env.AUTH_SERVER_RESOURCES),
+    corsAllowedOrigins: parseOrigins(env.AUTH_SERVER_CORS_ORIGINS),
   };
 }

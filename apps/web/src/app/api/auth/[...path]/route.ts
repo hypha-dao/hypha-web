@@ -7,3 +7,4 @@ export const dynamic = 'force-dynamic';
 // path outside the allowlist in the auth-server package.
 export const GET = handleAuthServerRequest;
 export const POST = handleAuthServerRequest;
+export const OPTIONS = handleAuthServerRequest; // CORS preflight, answered in the package

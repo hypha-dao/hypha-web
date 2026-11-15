@@ -7,6 +7,7 @@ import {
 import { blockUnlessAuthServerHost, notFound } from './gate';
 import type { AuthServer } from './auth';
 import { redactingLog } from './redact';
+import { corsPreflight, withCors } from './cors';
 
 /**
  * The only HTTP surface the server exposes. Everything else Better Auth ships (client
@@ -47,10 +48,15 @@ export function createAuthServerHandler(
     const blocked = blockUnlessAuthServerHost(request, config);
     if (blocked || !config.enabled) return blocked ?? notFound();
     const url = new URL(request.url);
+    if (request.method.toUpperCase() === 'OPTIONS') {
+      // Preflight: answered only where cross-origin access is deliberate, plain 404 elsewhere.
+      return corsPreflight(request, config) ?? notFound();
+    }
     if (!isAllowedAuthServerPath(url.pathname, request.method.toUpperCase()))
       return notFound();
     try {
-      return await getServer(config).auth.handler(request);
+      const response = await getServer(config).auth.handler(request);
+      return withCors(request, response, config);
     } catch (error) {
       // Never echo the error: it can carry request data.
       redactingLog('error', 'request failed', error);
