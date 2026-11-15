@@ -8,6 +8,7 @@ import { blockUnlessAuthServerHost, notFound } from './gate';
 import type { AuthServer } from './auth';
 import { redactingLog } from './redact';
 import { corsPreflight, withCors } from './cors';
+import { guardRegistration, narrowRegisteredClient } from './registration';
 
 /**
  * The only HTTP surface the server exposes. Everything else Better Auth ships (client
@@ -20,6 +21,8 @@ const ALLOWED: ReadonlyArray<{ path: string; methods: readonly string[] }> = [
   { path: '/oauth2/continue', methods: ['POST'] },
   { path: '/oauth2/token', methods: ['POST'] },
   { path: '/oauth2/revoke', methods: ['POST'] },
+  // Restricted dynamic client registration, guarded in registration.ts.
+  { path: '/oauth2/register', methods: ['POST'] },
   { path: AUTH_SERVER_JWKS_PATH, methods: ['GET'] },
   { path: '/provider/sign-in', methods: ['POST'] },
 ];
@@ -59,7 +62,9 @@ export function createAuthServerHandler(
       const response =
         url.pathname === WELL_KNOWN
           ? await metadataWithoutDisabledEndpoints(server, request)
-          : await server.auth.handler(request);
+          : url.pathname === `${AUTH_SERVER_API_BASE_PATH}/oauth2/register`
+            ? await handleRegistration(server, request)
+            : await server.auth.handler(request);
       return withCors(request, response, config);
     } catch (error) {
       // Never echo the error: it can carry request data.
@@ -91,4 +96,23 @@ async function metadataWithoutDisabledEndpoints(
   const headers = new Headers(res.headers);
   headers.delete('content-length');
   return new Response(JSON.stringify(meta), { status: 200, headers });
+}
+
+async function handleRegistration(
+  server: AuthServer,
+  request: Request,
+): Promise<Response> {
+  const verdict = await guardRegistration(request, server.pool);
+  if (!verdict.ok) return verdict.response;
+  const res = await server.auth.handler(verdict.request);
+  if (res.status !== 201) return res;
+  // Narrow what was stored and what is reported to the scopes the profile granted.
+  const body = (await res.json()) as Record<string, unknown>;
+  if (typeof body.client_id === 'string') {
+    await narrowRegisteredClient(server.pool, body.client_id, verdict.scopes);
+    body.scope = verdict.scopes.join(' ');
+  }
+  const headers = new Headers(res.headers);
+  headers.delete('content-length');
+  return new Response(JSON.stringify(body), { status: 201, headers });
 }

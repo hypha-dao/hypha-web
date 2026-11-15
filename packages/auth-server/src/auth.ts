@@ -70,14 +70,14 @@ export function createAuthServer(
     verification: { modelName: 'as_verification' },
     emailAndPassword: { enabled: false },
     // Second layer behind the HTTP allowlist in handler.ts: library endpoints this server must
-    // never serve (client management, registration, userinfo/introspection, sessions listing).
+    // never serve (client management, userinfo/introspection, sessions listing). Registration is
+    // open only for the restricted DCR experiment (see registration.ts).
     disabledPaths: [
       '/oauth2/create-client',
       '/oauth2/get-clients',
       '/oauth2/get-client',
       '/oauth2/update-client',
       '/oauth2/delete-client',
-      '/oauth2/register',
       '/oauth2/introspect',
       '/oauth2/userinfo',
       '/sign-up/email',
@@ -118,11 +118,16 @@ export function createAuthServer(
         clientRegistrationDefaultScopes: ['spaces:read'],
         clientRegistrationAllowedScopes: [...AUTH_SERVER_SCOPES],
         grantTypes: ['authorization_code', 'refresh_token'],
-        // No client management over HTTP for anyone: clients are CIMD documents only.
+        // No client management over HTTP for anyone. Anonymous registration (below) never reaches
+        // this hook: the handler strips cookies from register requests, so it only ever sees
+        // management calls, which stay denied.
         clientPrivileges: () => false,
         resourcePrivileges: () => false,
-        allowDynamicClientRegistration: false,
-        allowUnauthenticatedClientRegistration: false,
+        // EXPERIMENT (#2608 DCR): anonymous, public clients only; body rules in registration.ts.
+        allowDynamicClientRegistration: true,
+        allowUnauthenticatedClientRegistration: true,
+        // loopback http redirects make a client native, https ones web; registration.ts bounds both.
+        clientRegistrationDefaultApplicationType: 'infer',
         accessTokenExpiresIn:
           deps.accessTokenExpiresIn ?? ACCESS_TOKEN_TTL_SECONDS,
         refreshTokenExpiresIn: REFRESH_TOKEN_TTL_SECONDS,

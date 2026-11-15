@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import * as h from './testing/harness';
 import { createAuthServerHandler } from './handler';
 import { parseOrigins } from './config';
+import { resetRegistrationLimiter } from './registration';
 
 const run = h.TEST_DB_URL ? describe : describe.skip;
 const DEV = 'http://localhost:6274';
@@ -35,6 +36,7 @@ run('CORS: narrow, per endpoint', () => {
   afterAll(async () => {
     await s.pool.end();
   });
+  beforeEach(() => resetRegistrationLimiter());
 
   const call = (path: string, init: RequestInit = {}) =>
     handle(h.req(path, init));
@@ -46,15 +48,6 @@ run('CORS: narrow, per endpoint', () => {
         'access-control-request-method': method,
         'access-control-request-headers': 'content-type',
       },
-    });
-  const tokenPost = (origin: string) =>
-    call('/api/auth/oauth2/token', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/x-www-form-urlencoded',
-        origin,
-      },
-      body: 'grant_type=authorization_code',
     });
 
   it('metadata and JWKS answer any origin with *, no credentials', async () => {
@@ -73,30 +66,63 @@ run('CORS: narrow, per endpoint', () => {
     }
   });
 
-  it('token: only a listed origin, echoed, with Vary; others get nothing', async () => {
-    const path = '/api/auth/oauth2/token';
-    const pre = await preflight(path, DEV, 'POST');
-    expect(pre.status).toBe(204);
-    expect(pre.headers.get('access-control-allow-origin')).toBe(DEV);
-    expect(pre.headers.get('vary')).toContain('Origin');
-    expect(pre.headers.get('access-control-allow-methods')).toBe('POST');
-    expect(pre.headers.get('access-control-allow-headers')).toBe(
-      'Content-Type',
-    );
-    expect(pre.headers.get('access-control-allow-credentials')).toBeNull();
+  it('token and register: only a listed origin, echoed, with Vary; others get nothing', async () => {
+    for (const path of [
+      '/api/auth/oauth2/token',
+      '/api/auth/oauth2/register',
+    ]) {
+      const pre = await preflight(path, DEV, 'POST');
+      expect(pre.status, path).toBe(204);
+      expect(pre.headers.get('access-control-allow-origin')).toBe(DEV);
+      expect(pre.headers.get('vary')).toContain('Origin');
+      expect(pre.headers.get('access-control-allow-methods')).toBe('POST');
+      expect(pre.headers.get('access-control-allow-headers')).toBe(
+        'Content-Type',
+      );
+      expect(pre.headers.get('access-control-allow-credentials')).toBeNull();
 
-    const refused = await preflight(path, OTHER, 'POST');
-    expect(refused.status).toBe(404);
-    expect(refused.headers.get('access-control-allow-origin')).toBeNull();
-    const wrongMethod = await preflight(path, DEV, 'GET');
-    expect(wrongMethod.status).toBe(404);
+      const refused = await preflight(path, OTHER, 'POST');
+      expect(refused.status, path).toBe(404);
+      expect(refused.headers.get('access-control-allow-origin')).toBeNull();
+      const wrongMethod = await preflight(path, DEV, 'GET');
+      expect(wrongMethod.status, path).toBe(404);
+    }
   });
 
-  it('real token responses carry the headers, errors included; unlisted origins get none', async () => {
-    const tok = await tokenPost(DEV);
+  it('real responses carry the headers, errors included; unlisted origins get none', async () => {
+    const body = JSON.stringify({
+      redirect_uris: ['http://localhost:6274/cb'],
+    });
+    const json = { 'content-type': 'application/json' };
+    const ok = await call('/api/auth/oauth2/register', {
+      method: 'POST',
+      headers: { ...json, origin: DEV },
+      body,
+    });
+    expect(ok.status).toBe(201);
+    expect(ok.headers.get('access-control-allow-origin')).toBe(DEV);
+    const bad = await call('/api/auth/oauth2/register', {
+      method: 'POST',
+      headers: { ...json, origin: DEV },
+      body: '{}',
+    });
+    expect(bad.status).toBe(400);
+    expect(bad.headers.get('access-control-allow-origin')).toBe(DEV);
+    const tok = await call('/api/auth/oauth2/token', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        origin: DEV,
+      },
+      body: 'grant_type=authorization_code',
+    });
     expect(tok.status).toBeGreaterThanOrEqual(400);
     expect(tok.headers.get('access-control-allow-origin')).toBe(DEV);
-    const other = await tokenPost(OTHER);
+    const other = await call('/api/auth/oauth2/register', {
+      method: 'POST',
+      headers: { ...json, origin: OTHER },
+      body,
+    });
     expect(other.headers.get('access-control-allow-origin')).toBeNull();
   });
 
@@ -105,7 +131,6 @@ run('CORS: narrow, per endpoint', () => {
       '/api/auth/oauth2/authorize',
       '/api/auth/oauth2/consent',
       '/api/auth/oauth2/revoke',
-      '/api/auth/oauth2/register',
       '/api/auth/provider/sign-in',
       '/api/auth/oauth2/introspect',
     ]) {
@@ -115,7 +140,7 @@ run('CORS: narrow, per endpoint', () => {
     }
   });
 
-  it('with the list empty (default) nothing is allowed on token', async () => {
+  it('with the list empty (default) nothing is allowed on token and register', async () => {
     const empty = await h.makeServer({
       AUTH_SERVER_SECRET: 'contract-test-secret-'.padEnd(48, 'x'),
     });
