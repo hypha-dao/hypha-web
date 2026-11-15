@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  channelSyncsSignalQuery,
   escapeCssSelector,
   findSignalCardElement,
   pickSignalDeepLinkTarget,
@@ -23,6 +24,19 @@ describe('signal-deep-link-dom', () => {
 
   it('escapes special characters in slug selectors', () => {
     expect(escapeCssSelector('coh-"test"')).toContain('\\"');
+  });
+
+  it('lets only a signal chat publish or follow ?signal=', () => {
+    expect(channelSyncsSignalQuery('signal')).toBe(true);
+    expect(channelSyncsSignalQuery(null)).toBe(true);
+    expect(channelSyncsSignalQuery('')).toBe(true);
+    expect(channelSyncsSignalQuery('proposal')).toBe(false);
+    expect(channelSyncsSignalQuery('quest')).toBe(false);
+    expect(channelSyncsSignalQuery('space')).toBe(false);
+    expect(channelSyncsSignalQuery('space-public')).toBe(false);
+    expect(channelSyncsSignalQuery('context')).toBe(false);
+    expect(channelSyncsSignalQuery('ecosystem')).toBe(false);
+    expect(channelSyncsSignalQuery('network')).toBe(false);
   });
 
   it('reads the live signal slug from the current URL', () => {

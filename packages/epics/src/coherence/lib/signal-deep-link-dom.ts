@@ -55,6 +55,20 @@ export function shouldWriteOpenChatToSignalUrl(
   return url !== chat;
 }
 
+/**
+ * `?signal=` is a signal-thread deep link. Only a signal chat — or a chat
+ * with no Messages channel tag, such as the signal page itself — may write
+ * that query or follow one already in the URL. Proposal, quest, space,
+ * context, ecosystem, and network chats keep their own room. On `/messages`
+ * the query is resolved by replacing whatever room was just opened.
+ */
+export function channelSyncsSignalQuery(
+  channel: string | null | undefined,
+): boolean {
+  const kind = channel?.trim() ?? '';
+  return kind.length === 0 || kind === 'signal';
+}
+
 /** Live `?signal=` — `useSearchParams()` can lag behind `history.replaceState`. */
 export function readLiveSignalSlugFromUrl(): string | null {
   if (typeof window === 'undefined') return null;

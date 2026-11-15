@@ -217,6 +217,7 @@ import {
 } from './human-chat-panel/human-chat-display-mention';
 import { setSignalSearchParam } from './human-chat-panel/human-chat-message-link';
 import {
+  channelSyncsSignalQuery,
   readLiveSignalSlugFromUrl,
   pickSignalDeepLinkTarget,
   shouldWriteOpenChatToSignalUrl,
@@ -5276,8 +5277,33 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     // the signals screen reopens the thread.
     if (signalDismissUntilClosedRef.current) return;
 
+    // Proposal, quest, space, context, ecosystem, and network chats are not
+    // signal threads. Stop before the writer below, including on the coherence
+    // board, or a quest slug is stored in `?signal=`. Off that board a leftover
+    // `?signal=` is a deep link and would replace the room that was just
+    // opened. The board owns its query, so leave that value in place.
+    if (mode === 'coherence' && !channelSyncsSignalQuery(coherenceChannel)) {
+      const onCoherenceBoard = /^\/[^/]+\/dho\/[^/]+\/coherence(?:\/|$)/.test(
+        pathname,
+      );
+      if (!onCoherenceBoard && readSignalDeepLinkSlug(searchParams)) {
+        signalDeepLinkEpochRef.current += 1;
+        const cleaned = setSignalSearchParam(
+          pathname,
+          typeof window !== 'undefined'
+            ? window.location.search
+            : searchParams?.toString() ?? '',
+          null,
+        );
+        if (typeof window !== 'undefined') {
+          window.history.replaceState(window.history.state, '', cleaned);
+        }
+        router.replace(cleaned, { scroll: false });
+      }
+      return;
+    }
+
     if (mode === 'coherence' && coherenceSlug?.trim()) {
-      if (coherenceChannel === 'quest') return;
       const slug = coherenceSlug.trim();
       const currentSpace = spaceSlug?.trim();
       if (coherenceRoomId?.trim() && currentSpace) {
@@ -5371,6 +5397,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [searchParams]);
 
   useEffect(() => {
+    if (!channelSyncsSignalQuery(coherenceChannel)) return;
     if (!spaceSlug?.trim()) return;
     const qpSignal = readSignalDeepLinkSlug(searchParams);
     const qpMsg =
@@ -5468,6 +5495,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     mode,
     spaceSlug,
     coherenceSlug,
+    coherenceChannel,
     coherenceRoomId,
     pathname,
     router,

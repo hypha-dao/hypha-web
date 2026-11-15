@@ -491,10 +491,22 @@ export function resolveInboxPlace(
   });
   if (!isInboxChannelKind(kind)) return null;
   const alias = placeFromAliases(snapshot.aliases);
-  const signal = signalByRoomId(context.signals, snapshot.roomId);
-  const quest = questByRoomId(context.quests, snapshot.roomId);
-  const proposal = proposalByRoomId(context.proposals, snapshot.roomId);
-  const section = contextSectionByRoomId(context.contexts, snapshot.roomId);
+  // A label is this room's identity only when the room is that channel.
+  // Sharing a room id with a signal must not stamp signalSlug onto a proposal
+  // (or the reverse): the Messages panel writes `?signal=` from that slug and
+  // the deep link then replaces the room that was opened.
+  const signal =
+    kind === 'signal' ? signalByRoomId(context.signals, snapshot.roomId) : null;
+  const quest =
+    kind === 'quest' ? questByRoomId(context.quests, snapshot.roomId) : null;
+  const proposal =
+    kind === 'proposal'
+      ? proposalByRoomId(context.proposals, snapshot.roomId)
+      : null;
+  const section =
+    kind === 'context'
+      ? contextSectionByRoomId(context.contexts, snapshot.roomId)
+      : null;
   const owner = signal ?? quest ?? proposal ?? section;
   const byRoom = spaceByRoomId(context.spaces, snapshot.roomId);
   const bySlug = spaceBySlug(
@@ -530,14 +542,17 @@ export function resolveInboxPlace(
 }
 
 /**
- * Slug the opened room belongs to. Quest rooms are not signals: Messages
- * must pass the quest slug or the discussion helper has nothing to load.
+ * Slug the chat panel needs to open this channel as its own thread.
+ * Signals use `signalSlug` and quests use `questSlug`. Every other channel,
+ * including proposals, opens by room id. A slug on those rows is written to
+ * `?signal=` and the deep link then replaces the room.
  */
 export function inboxCoherenceSlug(
   place: Pick<InboxPlace, 'kind' | 'signalSlug' | 'questSlug'>,
 ): string {
+  if (place.kind === 'signal') return place.signalSlug?.trim() ?? '';
   if (place.kind === 'quest') return place.questSlug?.trim() ?? '';
-  return place.signalSlug?.trim() ?? '';
+  return '';
 }
 
 export function inboxContextLine(

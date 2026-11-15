@@ -349,6 +349,104 @@ describe('messages inbox context', () => {
     expect(inboxContextLine(rows[0]!.inbox, null)).toBe(
       'Hypha Platform · Hypha',
     );
+    expect(inboxCoherenceSlug(rows[0]!.inbox)).toBe('');
+  });
+
+  it('opens a proposal room as itself when that room is also labeled as a signal', () => {
+    // A signal message can mention a proposal. The proposal row still has to
+    // open its own room: copying the signal slug makes Messages write
+    // `?signal=` and the desktop panel then replaces the proposal thread.
+    const shared = {
+      ...context,
+      signals: [
+        ...context.signals,
+        {
+          roomId: '!shared:hs',
+          title: 'Improvement for the Space overview page',
+          type: 'Need',
+          slug: 'coh-bf941f78',
+          spaceSlug: 'hypha-platform',
+          spaceTitle: 'Hypha Platform',
+          rootSlug: 'hypha',
+          rootTitle: 'Hypha',
+          notified: true,
+        },
+      ],
+      proposals: [
+        {
+          roomId: '!shared:hs',
+          title: 'Antipartido x Hypha',
+          slug: 'antipartido-x-hypha-d7265be4',
+          spaceSlug: 'hypha-platform',
+          spaceTitle: 'Hypha Platform',
+          rootSlug: 'hypha',
+          rootTitle: 'Hypha',
+        },
+        {
+          roomId: '!proposal:hs',
+          title: 'Garden vote',
+          slug: 'garden-vote',
+          spaceSlug: 'hypha-platform',
+          spaceTitle: 'Hypha Platform',
+          rootSlug: 'hypha',
+          rootTitle: 'Hypha',
+        },
+      ],
+    };
+    const rows = channelRowsFromSnapshots(
+      [
+        {
+          roomId: '!shared:hs',
+          roomType: 'io.hypha.room.proposal',
+          name: 'Antipartido x Hypha',
+          aliases: [],
+          preview: 'You mentioned proposal discussion',
+          mine: true,
+          lastTs: recent,
+          unread: 0,
+        },
+        {
+          roomId: '!proposal:hs',
+          roomType: 'io.hypha.room.proposal',
+          name: 'Garden vote',
+          aliases: [],
+          preview: 'please vote',
+          mine: false,
+          lastTs: recent,
+          unread: 0,
+        },
+        {
+          roomId: '!signal:hs',
+          roomType: 'io.hypha.room.signal',
+          name: 'Roadmap page',
+          aliases: [],
+          preview: 'hello',
+          mine: false,
+          lastTs: recent,
+          unread: 0,
+        },
+      ],
+      shared,
+      'Network',
+      now,
+    );
+    const proposal = rows.find((row) => row.roomId === '!shared:hs');
+    const otherProposal = rows.find((row) => row.roomId === '!proposal:hs');
+    const signal = rows.find((row) => row.roomId === '!signal:hs');
+    expect(proposal?.inbox.kind).toBe('proposal');
+    expect(proposal?.name).toBe('Antipartido x Hypha');
+    expect(proposal?.inbox.proposalSlug).toBe('antipartido-x-hypha-d7265be4');
+    expect(proposal?.inbox.signalSlug).toBeNull();
+    expect(inboxCoherenceSlug(proposal!.inbox)).toBe('');
+    expect(inboxCoherenceSlug(otherProposal!.inbox)).toBe('');
+    expect(signal?.inbox.kind).toBe('signal');
+    expect(inboxCoherenceSlug(signal!.inbox)).toBe('roadmap-page');
+    expect(
+      rows
+        .filter((row) => row.inbox.kind === 'proposal')
+        .map((row) => row.roomId)
+        .sort(),
+    ).toEqual(['!proposal:hs', '!shared:hs']);
   });
 
   it('hides proposal chats that still have no messages', () => {
@@ -837,6 +935,9 @@ describe('inboxContextHref', () => {
     expect(inboxCoherenceSlug({ ...place, kind: 'signal' })).toBe(
       'roadmap-page',
     );
+    expect(inboxCoherenceSlug({ ...place, kind: 'proposal' })).toBe('');
+    expect(inboxCoherenceSlug({ ...place, kind: 'space' })).toBe('');
+    expect(inboxCoherenceSlug({ ...place, kind: 'context' })).toBe('');
   });
 
   it('leaves direct chats in the inbox', () => {
