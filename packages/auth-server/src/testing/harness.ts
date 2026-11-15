@@ -91,8 +91,14 @@ export type Harness = Awaited<ReturnType<typeof makeServer>>;
 export async function seedPeople(pool: Harness['pool'], subs: string[]) {
   for (const sub of subs) {
     await pool.query(
-      `insert into people (sub, name, surname, email) values ($1,'Test','User',$2) on conflict (sub) do nothing`,
-      [sub, `${sub.replace(/\W/g, '')}@example.org`],
+      // Distinct names: on a database with the app's full schema a trigger derives the unique
+      // people.slug from the name.
+      `insert into people (sub, name, surname, email) values ($1,$2,'User',$3) on conflict (sub) do nothing`,
+      [
+        sub,
+        `Test${sub.replace(/\W/g, '')}`,
+        `${sub.replace(/\W/g, '')}@example.org`,
+      ],
     );
   }
 }
