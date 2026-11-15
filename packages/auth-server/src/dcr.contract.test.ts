@@ -163,6 +163,7 @@ run('dynamic client registration (experiment): limits and flow', () => {
     );
     const r = rows[0];
     expect(r.name.length).toBeLessThanOrEqual(100);
+    // eslint-disable-next-line no-control-regex
     expect(r.name).not.toMatch(/[<>\u0000\n\t]/);
     expect(r.uri).toBeNull();
     expect(r.icon).toBeNull();

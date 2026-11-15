@@ -84,7 +84,7 @@ export function isAcceptableRedirectUri(value: unknown): value is string {
 export function sanitizeText(value: unknown, max: number): string | undefined {
   if (!isString(value)) return undefined;
   const clean = value
-    // eslint-disable-next-line no-control-regex
+    // eslint-disable-next-line no-control-regex, no-irregular-whitespace
     .replace(/[\u0000-\u001f\u007f-\u009f​-‏‪-‮<>]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
