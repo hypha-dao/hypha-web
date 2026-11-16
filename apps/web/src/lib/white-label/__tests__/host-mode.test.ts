@@ -697,6 +697,14 @@ describe('/api on a mapped host', () => {
     expect(real('GET', '/api/v1/documents/my-proposal-1a2b3c4d')).toBe(true);
     expect(real('GET', '/api/v1/documents/my-proposal-1a2b3c4d/')).toBe(true);
     expect(real('GET', '/api/v1/tokens')).toBe(true);
+    // A person by wallet: readable, and the handler restricts it to members.
+    expect(real('GET', '/api/v1/people/by-web3-address/0xAbC123')).toBe(true);
+    expect(real('POST', '/api/v1/people/by-web3-address/0xAbC123')).toBe(false);
+    // A person by slug is not served (no person page on a host).
+    expect(real('GET', '/api/v1/people/jane-doe')).toBe(false);
+    expect(real('GET', '/api/v1/people/jane-doe/spaces')).toBe(false);
+    expect(real('GET', '/api/v1/people/by-web3-address')).toBe(false);
+    expect(real('GET', '/api/v1/people/by-web3-address/a/b')).toBe(false);
     expect(real('POST', '/api/v1/documents/my-proposal-1a2b3c4d')).toBe(false);
     expect(real('GET', '/api/v1/tokens/extra/path/x')).toBe(false);
     expect(real('GET', '/api/v1/documents')).toBe(false);
@@ -795,7 +803,7 @@ describe('link guard: host mode', () => {
 
   it('links that leave the Space open the full app, not the host', () => {
     for (const href of [
-      '/en/dho/space-one/members/person/jane',
+      '/en/dho/space-one/members/person/jane/extra',
       '/en/dho/space-one/agreements/create/pay-for-expenses',
       '/en/dho/other-space/overview',
       '/en/profile/jane',

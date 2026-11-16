@@ -39,6 +39,9 @@ export const WL_API_READ_ALLOWLIST: readonly string[] = [
   // The token registry (rows belong to Spaces). Not guarded: shareable registry
   // data, answered the same as on the main app.
   '/api/v1/tokens',
+  // A person by wallet (beneficiary names in proposals): members of the host's
+  // own Space only on a host, without email or sub (guard in the route).
+  '/api/v1/people/by-web3-address/:address',
   // Read from the hooks of sections not exercised by that run (pipeline is
   // off for the test Space): kept until they are measured, then confirm or drop.
   '/api/v1/spaces/:slug/pipeline/config',

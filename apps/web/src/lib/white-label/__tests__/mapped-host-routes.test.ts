@@ -9,6 +9,7 @@ const {
   getAllSpaces,
   findDocumentBySlug,
   findPeopleByWeb3Addresses,
+  findPersonByWeb3Address,
   readContract,
 } = vi.hoisted(() => ({
   findSpace: vi.fn(),
@@ -19,6 +20,7 @@ const {
   getAllSpaces: vi.fn(),
   findDocumentBySlug: vi.fn(),
   findPeopleByWeb3Addresses: vi.fn(),
+  findPersonByWeb3Address: vi.fn(),
   readContract: vi.fn(),
 }));
 
@@ -37,10 +39,12 @@ vi.mock('@hypha-platform/core/server', () => ({
   getAllSpaces,
   findDocumentBySlug,
   findPeopleByWeb3Addresses,
+  findPersonByWeb3Address,
 }));
 vi.mock('@hypha-platform/core/client', () => ({
   EVENT_ENTITY_TYPES: ['person', 'space', 'document', 'token'],
   getProposalVoters: (args: unknown) => args,
+  isMember: (args: unknown) => args,
   publicClient: { readContract },
 }));
 
@@ -49,6 +53,7 @@ import { GET as getEvents } from '../../../app/api/v1/events/route';
 import { GET as getSpaces } from '../../../app/api/v1/spaces/route';
 import { GET as getDocument } from '../../../app/api/v1/documents/[documentSlug]/route';
 import { GET as getVoters } from '../../../app/api/v1/documents/[documentSlug]/voters/route';
+import { GET as getPersonByAddress } from '../../../app/api/v1/people/by-web3-address/[address]/route';
 import { resetMappedHostScopeCache } from '../mapped-host-scope';
 import { WL_SPACE_HEADER } from '../constants';
 
@@ -351,4 +356,106 @@ describe('GET /api/v1/documents/:documentSlug', () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toBeNull();
   });
+});
+
+describe('people routes on a mapped host', () => {
+  const ADDR = '0x' + 'a'.repeat(40);
+  const PERSON = {
+    id: 5,
+    slug: 'jane',
+    name: 'Jane',
+    address: ADDR,
+    email: 'jane@example.org',
+    sub: 'did:privy:1',
+  };
+  const byAddress = (mapped = true, address = ADDR) =>
+    getPersonByAddress(
+      request(`/api/v1/people/by-web3-address/${address}`, mapped),
+      { params: Promise.resolve({ address }) },
+    );
+
+  beforeEach(() => {
+    findPersonByWeb3Address.mockResolvedValue(PERSON);
+    readContract.mockResolvedValue(true);
+  });
+
+  for (const [name, call] of [
+    ['people/by-web3-address/:address', byAddress],
+  ] as const) {
+    describe(name, () => {
+      it('mapped: a member of the own Space is returned without email and sub', async () => {
+        const res = await call();
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body).toEqual({
+          id: 5,
+          slug: 'jane',
+          name: 'Jane',
+          address: ADDR,
+        });
+        expect('email' in body).toBe(false);
+        expect('sub' in body).toBe(false);
+        // The membership read is on-chain, for the host's own on-chain id.
+        expect(readContract).toHaveBeenCalledWith({
+          spaceId: 42n,
+          memberAddress: ADDR,
+        });
+      });
+
+      it('mapped: a person who is not a member is 404 (same answer as an unknown person)', async () => {
+        readContract.mockResolvedValue(false);
+        const notMember = await call();
+        expect(notMember.status).toBe(404);
+        findPersonByWeb3Address.mockResolvedValue(null);
+        const unknown = await call();
+        expect(unknown.status).toBe(404);
+        expect(await notMember.json()).toEqual(await unknown.json());
+      });
+
+      it('mapped: a person without a wallet, or with a malformed one, is 404 and no chain read', async () => {
+        for (const address of [
+          null,
+          undefined,
+          '',
+          '0xabc',
+          'not-an-address',
+        ]) {
+          findPersonByWeb3Address.mockResolvedValue({ ...PERSON, address });
+          expect((await call()).status).toBe(404);
+        }
+        expect(readContract).not.toHaveBeenCalled();
+      });
+
+      it('mapped: a Space without an on-chain id, or an unknown host Space, is 404', async () => {
+        findSpace.mockResolvedValue({ id: 7, web3SpaceId: null });
+        expect((await call()).status).toBe(404);
+        resetMappedHostScopeCache();
+        findSpace.mockResolvedValue(null);
+        expect((await call()).status).toBe(404);
+        expect(readContract).not.toHaveBeenCalled();
+      });
+
+      it('mapped: a chain read error is a 500, never read as member', async () => {
+        readContract.mockRejectedValue(new Error('rpc down'));
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        expect((await call()).status).toBe(500);
+        spy.mockRestore();
+      });
+
+      it('main app (no header): unchanged, full row, no scope or chain lookups', async () => {
+        const res = await call(false);
+        expect(res.status).toBe(200);
+        expect(await res.json()).toEqual(PERSON);
+        expect(findSpace).not.toHaveBeenCalled();
+        expect(readContract).not.toHaveBeenCalled();
+      });
+
+      it('main app: an unknown person answers as before (null, 200)', async () => {
+        findPersonByWeb3Address.mockResolvedValue(null);
+        const res = await call(false);
+        expect(res.status).toBe(200);
+        expect(await res.json()).toBeNull();
+      });
+    });
+  }
 });

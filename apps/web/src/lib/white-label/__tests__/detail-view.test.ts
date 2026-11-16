@@ -174,10 +174,61 @@ describe('link guard: served detail pages', () => {
   });
   const locales = OPTIONS.locales;
 
-  it('the list of served patterns is just the proposal for now', () => {
+  it('the served patterns: proposal and its voters', () => {
     expect(WL_SERVED_DETAIL_PATTERNS).toEqual([
       ['agreements', 'proposal', ':'],
+      ['agreements', 'proposal', ':', 'voters'],
     ]);
+  });
+
+  it('voters links stay on the host, in every shape', () => {
+    for (const [href, expected] of [
+      [
+        '/en/agreements/proposal/p1/voters',
+        '/en/agreements/proposal/p1/voters',
+      ],
+      [
+        '/en/dho/space-one/agreements/proposal/p1/voters',
+        '/en/agreements/proposal/p1/voters',
+      ],
+      [
+        '/pt/agreements/proposal/p1/voters?a=1',
+        '/pt/agreements/proposal/p1/voters?a=1',
+      ],
+    ] as const) {
+      expect(classifyLink(href, host(), here, locales), href).toEqual({
+        kind: 'internal',
+        href: expected,
+      });
+    }
+  });
+
+  it('voters links stay in the frame', () => {
+    expect(
+      classifyLink(
+        '/embed/space-one/en/agreements/proposal/p1/voters',
+        embed(),
+        app,
+        locales,
+      ),
+    ).toEqual({
+      kind: 'internal',
+      href: '/embed/space-one/en/agreements/proposal/p1/voters',
+    });
+  });
+
+  it('detailView full-app: voters links leave in the main-app shape', () => {
+    expect(
+      classifyLink(
+        '/en/agreements/proposal/p1/voters',
+        host('full-app'),
+        here,
+        locales,
+      ),
+    ).toEqual({
+      kind: 'external',
+      href: `${app}/en/dho/space-one/agreements/proposal/p1/voters`,
+    });
   });
 
   it('host: a proposal link (main-app or host shaped) stays on the host', () => {
@@ -251,43 +302,43 @@ describe('link guard: served detail pages', () => {
     });
   });
 
-  it('the voters link bug: a host-shaped unserved path leaves with /dho/<slug>', () => {
+  it('a host-shaped unserved path (the old voters link bug) leaves with /dho/<slug>', () => {
     expect(
-      classifyLink('/en/agreements/proposal/p1/voters', host(), here, locales),
+      classifyLink('/en/agreements/proposal/p1/other', host(), here, locales),
     ).toEqual({
       kind: 'external',
-      href: `${app}/en/dho/space-one/agreements/proposal/p1/voters`,
+      href: `${app}/en/dho/space-one/agreements/proposal/p1/other`,
     });
     // Without a locale: the page's own is used.
-    expect(classifyLink('/members/person/jane', host(), here, locales)).toEqual(
-      {
-        kind: 'external',
-        href: `${app}/en/dho/space-one/members/person/jane`,
-      },
-    );
+    expect(
+      classifyLink('/members/person/jane/extra', host(), here, locales),
+    ).toEqual({
+      kind: 'external',
+      href: `${app}/en/dho/space-one/members/person/jane/extra`,
+    });
     // Another locale in the link is kept; query and hash survive.
     expect(
       classifyLink(
-        '/pt/agreements/proposal/p1/voters?a=1#b',
+        '/pt/agreements/proposal/p1/other?a=1#b',
         host(),
         here,
         locales,
       ),
     ).toEqual({
       kind: 'external',
-      href: `${app}/pt/dho/space-one/agreements/proposal/p1/voters?a=1#b`,
+      href: `${app}/pt/dho/space-one/agreements/proposal/p1/other?a=1#b`,
     });
     // Embed: the frame is on the full app's origin, so a relative path is right.
     expect(
       classifyLink(
-        '/embed/space-one/en/agreements/proposal/p1/voters',
+        '/embed/space-one/en/agreements/proposal/p1/other',
         embed(),
         app,
         locales,
       ),
     ).toEqual({
       kind: 'external',
-      href: '/en/dho/space-one/agreements/proposal/p1/voters',
+      href: '/en/dho/space-one/agreements/proposal/p1/other',
     });
   });
 
