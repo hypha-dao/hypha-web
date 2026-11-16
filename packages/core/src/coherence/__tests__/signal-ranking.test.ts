@@ -131,73 +131,77 @@ describe('time frame totals', () => {
 });
 
 describe('rankSignals', () => {
+  // Day after `none`, so the week window holds `none` and `week` only.
+  const now = new Date('2026-11-02T00:00:00.000Z');
   const signals = [none, old, crowd, week];
   const ids = (sort: SignalSort, timeFrame: SignalTimeFrame = 'all') =>
-    rankSignals(signals, { sort, timeFrame }).map((signal) => signal.id);
+    rankSignals(signals, { sort, timeFrame, now }).map((signal) => signal.id);
 
   it('lists newest first for New', () => {
     expect(ids('new', 'today')).toEqual(['none', 'week', 'crowd', 'old']);
   });
 
   it('ranks by voting power inside the time frame', () => {
-    expect(ids('top-power', 'week')).toEqual(['week', 'none', 'crowd', 'old']);
-    expect(ids('top-power', 'month')).toEqual(['crowd', 'week', 'none', 'old']);
+    expect(ids('top-power', 'week')).toEqual(['week', 'none']);
+    expect(ids('top-power', 'month')).toEqual(['crowd', 'week', 'none']);
     expect(ids('top-power', 'all')).toEqual(['old', 'crowd', 'week', 'none']);
   });
 
-  it('breaks an equal voting-power window by newest signal, not all-time power', () => {
-    // Product Demo is older and has far more all-time power. Structuring
-    // matches it inside every window, so the windowed list must put it first.
+  it('keeps signals created in the window and ranks equal power by newest', () => {
+    // 16 Nov 2026 12:00. Week starts 9 Nov; Product Demo (3 Jul) is outside
+    // it, Structuring (14 Nov) is inside. Both carry the same window power.
+    const now = new Date('2026-11-16T12:00:00.000Z');
+    const windowVotes = {
+      today: { power: '176366', voters: 2 },
+      week: { power: '176366', voters: 2 },
+      month: { power: '176366', voters: 2 },
+      year: { power: '176366', voters: 2 },
+    };
     const productDemo = {
       id: 'product-demo',
       createdAt: new Date('2026-07-03'),
-      upvotes: upvotes(
-        { power: '1500000', voters: 8 },
-        {
-          today: { power: '176366', voters: 2 },
-          week: { power: '176366', voters: 2 },
-          month: { power: '176366', voters: 2 },
-          year: { power: '176366', voters: 2 },
-        },
-      ),
+      upvotes: upvotes({ power: '1500000', voters: 8 }, windowVotes),
     };
     const structuring = {
       id: 'structuring',
       createdAt: new Date('2026-11-14'),
+      upvotes: upvotes({ power: '176366', voters: 2 }, windowVotes),
+    };
+    const alsoThisWeek = {
+      id: 'also-this-week',
+      createdAt: new Date('2026-11-10'),
       upvotes: upvotes(
-        { power: '176366', voters: 2 },
-        {
-          today: { power: '176366', voters: 2 },
-          week: { power: '176366', voters: 2 },
-          month: { power: '176366', voters: 2 },
-          year: { power: '176366', voters: 2 },
-        },
+        { power: '1500000', voters: 8 },
+        { week: { power: '176366', voters: 2 } },
       ),
     };
     const tied = [productDemo, structuring];
-    for (const timeFrame of ['today', 'week', 'month', 'year'] as const) {
+    for (const sort of ['top-power', 'top-voters'] as const) {
       expect(
-        rankSignals(tied, { sort: 'top-power', timeFrame }).map(
+        rankSignals(tied, { sort, timeFrame: 'week', now }).map(
           (signal) => signal.id,
         ),
-      ).toEqual(['structuring', 'product-demo']);
+      ).toEqual(['structuring']);
     }
     expect(
       rankSignals([structuring, productDemo], {
         sort: 'top-power',
         timeFrame: 'all',
+        now,
       }).map((signal) => signal.id),
     ).toEqual(['product-demo', 'structuring']);
+    expect(
+      rankSignals([productDemo, alsoThisWeek, structuring], {
+        sort: 'top-power',
+        timeFrame: 'week',
+        now,
+      }).map((signal) => signal.id),
+    ).toEqual(['structuring', 'also-this-week']);
   });
 
   it('ranks by voter count inside the time frame', () => {
     expect(ids('top-voters', 'all')).toEqual(['crowd', 'week', 'old', 'none']);
-    expect(ids('top-voters', 'today')).toEqual([
-      'week',
-      'crowd',
-      'old',
-      'none',
-    ]);
+    expect(ids('top-voters', 'today')).toEqual(['none']);
   });
 
   it('does not mutate the input', () => {
@@ -483,7 +487,7 @@ describe('filterSignalsByTitle', () => {
     const quiet = {
       id: 'quiet-garden',
       title: 'Quiet garden',
-      createdAt: new Date('2026-03-01'),
+      createdAt: new Date('2026-10-02'),
       upvotes: upvotes(
         { power: '1', voters: 1 },
         { week: { power: '1', voters: 1 } },
@@ -492,7 +496,7 @@ describe('filterSignalsByTitle', () => {
     const loud = {
       id: 'loud-garden',
       title: 'Loud garden',
-      createdAt: new Date('2026-04-01'),
+      createdAt: new Date('2026-10-04'),
       upvotes: upvotes(
         { power: '9', voters: 1 },
         { week: { power: '9', voters: 1 } },
@@ -518,10 +522,12 @@ describe('filterSignalsByTitle', () => {
       'loud-garden',
     ]);
     expect(
-      rankSignals(visible, { sort: 'top-power', timeFrame: 'week' }).map(
-        (signal) => signal.id,
-      ),
-    ).toEqual(['loud-garden', 'quiet-garden', 'path', 'alpha']);
+      rankSignals(visible, {
+        sort: 'top-power',
+        timeFrame: 'week',
+        now: new Date('2026-10-08T00:00:00.000Z'),
+      }).map((signal) => signal.id),
+    ).toEqual(['loud-garden', 'quiet-garden', 'path']);
   });
 
   it('returns a copy of every signal when the query is blank', () => {
