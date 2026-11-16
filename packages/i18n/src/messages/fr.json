@@ -601,6 +601,7 @@
     "openProject": "Ouvrir le projet"
   },
   "Common": {
+    "openInFullApp": "Ouvrir dans l'application complète",
     "Assignments": "Affectations",
     "Members": "Membres",
     "memberRoleLabel": "Membre",

@@ -1,5 +1,6 @@
 {
   "Common": {
+    "openInFullApp": "Open in the full app",
     "Assignments": "Assignments",
     "Members": "Members",
     "memberRoleLabel": "Member",

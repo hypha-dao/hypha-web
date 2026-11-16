@@ -601,6 +601,7 @@
     "openProject": "Åpne prosjekt"
   },
   "Common": {
+    "openInFullApp": "Åpne i hele appen",
     "Assignments": "Oppdrag",
     "Members": "Medlemmer",
     "memberRoleLabel": "Medlem",

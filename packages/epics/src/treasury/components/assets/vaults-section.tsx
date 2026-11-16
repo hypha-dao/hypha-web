@@ -5,6 +5,7 @@ import { useVaults, type Vault } from '../../hooks/use-vaults';
 import { VaultCollateralCard } from './vault-collateral-card';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { Empty } from '../../../common';
+import { ActionGate } from '../../../common/action-capabilities';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import { Button } from '@hypha-platform/ui';
@@ -51,14 +52,22 @@ const SingleVaultSection: FC<{
           </h3>
           <p className="mt-1 text-2 text-muted-foreground">{totalLabel}</p>
         </div>
-        {!canLogin ? null : canUpdateVault ? (
-          <Link href={perVaultUpdateHref} scroll={false}>
-            <Button>{tTreasury('vaultsSection.updateBackingVault')}</Button>
-          </Link>
-        ) : (
-          <Button disabled title={updateDisabledTitle}>
-            {tTreasury('vaultsSection.updateBackingVault')}
-          </Button>
+        {!canLogin ? null : (
+          <ActionGate
+            kind="create-flow"
+            fullAppPath={perVaultUpdateHref}
+            label={tTreasury('vaultsSection.updateBackingVault')}
+          >
+            {canUpdateVault ? (
+              <Link href={perVaultUpdateHref} scroll={false}>
+                <Button>{tTreasury('vaultsSection.updateBackingVault')}</Button>
+              </Link>
+            ) : (
+              <Button disabled title={updateDisabledTitle}>
+                {tTreasury('vaultsSection.updateBackingVault')}
+              </Button>
+            )}
+          </ActionGate>
         )}
       </div>
       <div className="w-full">

@@ -8,6 +8,7 @@ import { Button } from '@hypha-platform/ui';
 import { CopyIcon, RadiobuttonIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { Empty } from '../../../common';
+import { ActionGate } from '../../../common/action-capabilities';
 import { Input } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useSpaceMember } from '../../../spaces';
@@ -87,42 +88,54 @@ export const AssetsSection: FC<AssetSectionProps> = ({
       </div>
       {canLogin ? (
         <div className="flex w-full items-center justify-end gap-2 lg:w-auto lg:shrink-0">
-          {isDisabled ? (
-            <Button
-              colorVariant="accent"
-              variant="outline"
-              disabled
-              title={tooltipMessage || ''}
-            >
-              <RadiobuttonIcon />
-              {tTreasury('newToken')}
-            </Button>
-          ) : (
-            <Button
-              asChild
-              colorVariant="accent"
-              variant="outline"
-              title={tooltipMessage || ''}
-            >
-              <Link
-                href={`${basePath}/create/issue-new-token?hideBack=true`}
-                scroll={false}
+          <ActionGate
+            kind="create-flow"
+            fullAppPath={`${basePath}/create/issue-new-token?hideBack=true`}
+            label={tTreasury('newToken')}
+          >
+            {isDisabled ? (
+              <Button
+                colorVariant="accent"
+                variant="outline"
+                disabled
+                title={tooltipMessage || ''}
               >
                 <RadiobuttonIcon />
                 {tTreasury('newToken')}
-              </Link>
-            </Button>
-          )}
+              </Button>
+            ) : (
+              <Button
+                asChild
+                colorVariant="accent"
+                variant="outline"
+                title={tooltipMessage || ''}
+              >
+                <Link
+                  href={`${basePath}/create/issue-new-token?hideBack=true`}
+                  scroll={false}
+                >
+                  <RadiobuttonIcon />
+                  {tTreasury('newToken')}
+                </Link>
+              </Button>
+            )}
+          </ActionGate>
 
-          <Button
-            className={cn(isDisabled && 'cursor-not-allowed')}
-            title={tooltipMessage || ''}
-            onClick={fundWallet}
-            disabled={isDisabled}
+          <ActionGate
+            kind="wallet-action"
+            fullAppPath={basePath}
+            label={tTreasury('depositFunds')}
           >
-            <CopyIcon />
-            {tTreasury('depositFunds')}
-          </Button>
+            <Button
+              className={cn(isDisabled && 'cursor-not-allowed')}
+              title={tooltipMessage || ''}
+              onClick={fundWallet}
+              disabled={isDisabled}
+            >
+              <CopyIcon />
+              {tTreasury('depositFunds')}
+            </Button>
+          </ActionGate>
         </div>
       ) : null}
     </div>

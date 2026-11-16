@@ -601,6 +601,7 @@
     "openProject": "Abrir proyecto"
   },
   "Common": {
+    "openInFullApp": "Abrir en la aplicación completa",
     "createdOn": "Creado el {date}",
     "spaceBannerDescriptionAria": "Descripción de {title}",
     "acceptedOn": "Aceptado el {date}",

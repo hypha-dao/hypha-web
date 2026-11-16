@@ -19,6 +19,7 @@ import { useIsDelegate } from '@hypha-platform/core/client';
 import { useEffect } from 'react';
 import { mutate as mutateCache, type Key } from 'swr';
 import { useFormatter, useTranslations } from 'next-intl';
+import { ActionGate } from '../../common/action-capabilities';
 import { Locale } from '@hypha-platform/i18n';
 import { LOCAL_DATE_SHORT_FORMAT_OPTIONS } from '@hypha-platform/ui-utils';
 import {
@@ -184,32 +185,38 @@ export const MemberCard: React.FC<MemberCardProps> = ({
 
           <div className="flex w-[7.75rem] shrink-0 flex-col items-end gap-2 @min-[24rem]/member:w-auto @min-[24rem]/member:max-w-[16rem]">
             {localIsDelegate && canLogin ? (
-              <Skeleton width="96px" height="32px" loading={isLoading}>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  colorVariant="neutral"
-                  disabled={isDisabled}
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    try {
-                      await undelegate({
-                        spaceId: space?.web3SpaceId as number,
-                      });
-                      setLocalIsDelegate(false);
-                      if (delegateCacheKey) {
-                        await mutateCache(delegateCacheKey);
+              <ActionGate
+                kind="member-action"
+                fullAppPath={`/${lang}/dho/${spaceSlug}/members`}
+                label="Undelegate"
+              >
+                <Skeleton width="96px" height="32px" loading={isLoading}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    colorVariant="neutral"
+                    disabled={isDisabled}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      try {
+                        await undelegate({
+                          spaceId: space?.web3SpaceId as number,
+                        });
+                        setLocalIsDelegate(false);
+                        if (delegateCacheKey) {
+                          await mutateCache(delegateCacheKey);
+                        }
+                      } catch (error) {
+                        console.error('Undelegate failed:', error);
                       }
-                    } catch (error) {
-                      console.error('Undelegate failed:', error);
-                    }
-                  }}
-                  title={tooltipMessage}
-                >
-                  {isUndelegating ? 'Undelegating...' : 'Undelegate'}
-                </Button>
-              </Skeleton>
+                    }}
+                    title={tooltipMessage}
+                  >
+                    {isUndelegating ? 'Undelegating...' : 'Undelegate'}
+                  </Button>
+                </Skeleton>
+              </ActionGate>
             ) : null}
             {showConnect ? (
               <MemberConnectActions

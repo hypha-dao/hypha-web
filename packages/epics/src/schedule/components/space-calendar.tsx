@@ -39,6 +39,7 @@ import {
   type ScheduledItem,
 } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { ActionGate, useActionStatus } from '../../common/action-capabilities';
 import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
@@ -171,7 +172,11 @@ export function SpaceCalendar({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { resolvedTheme } = useTheme();
-  const { isAuthenticated } = useAuthentication();
+  const { isAuthenticated: isSignedIn } = useAuthentication();
+  // Writes (create, edit, drag) also need the delivery to support them; the
+  // main app has no capability provider, so there this is just `isSignedIn`.
+  const calendarWrite = useActionStatus('calendar-write');
+  const isAuthenticated = isSignedIn && calendarWrite === 'live';
 
   const view = React.useMemo((): CalendarView => {
     // Week, day, and agenda views are not ready — keep month until they ship.
@@ -535,21 +540,27 @@ export function SpaceCalendar({
               </span>
             ) : null}
           </h1>
-          {isAuthenticated ? (
+          {isSignedIn ? (
             <div className="shrink-0">
-              <Button
-                type="button"
-                onClick={() =>
-                  openCreate(
-                    new Date(),
-                    new Date(Date.now() + 3_600_000),
-                    false,
-                  )
-                }
+              <ActionGate
+                kind="calendar-write"
+                fullAppPath={`/${lang}/dho/${spaceSlug}/calendar`}
+                label={t('newItem')}
               >
-                <Plus className="mr-2 h-4 w-4" />
-                {t('newItem')}
-              </Button>
+                <Button
+                  type="button"
+                  onClick={() =>
+                    openCreate(
+                      new Date(),
+                      new Date(Date.now() + 3_600_000),
+                      false,
+                    )
+                  }
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t('newItem')}
+                </Button>
+              </ActionGate>
             </div>
           ) : null}
         </header>

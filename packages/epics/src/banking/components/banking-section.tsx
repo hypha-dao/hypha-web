@@ -1,7 +1,8 @@
 'use client';
 
 import { FC, useCallback, useMemo, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { ActionGate, useActionStatus } from '../../common/action-capabilities';
 import {
   useIsDelegate,
   useMe,
@@ -58,7 +59,10 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const t = useTranslations('BankingTab');
   const tCommon = useTranslations('Common');
   const tNotStarted = useTranslations('BankingTab.notStarted');
+  const locale = useLocale();
   const { isAuthenticated } = useAuthentication();
+  const bankingStatus = useActionStatus('banking-write');
+  const tSpaces = useTranslations('Spaces');
   const { space } = useSpaceBySlug(spaceSlug);
   const { person } = useMe();
   const {
@@ -244,6 +248,25 @@ export const BankingSection: FC<BankingSectionProps> = ({
 
   if (!isAuthenticated) {
     return <SpaceAccessDenied userState={UserSpaceState.NOT_LOGGED_IN} />;
+  }
+
+  // A delivery that cannot perform the banking writes (transfers, onboarding,
+  // KYC, payout accounts) shows none of the tools. Live in the main app.
+  if (bankingStatus !== 'live') {
+    return (
+      <Empty>
+        <div className="flex flex-col items-center gap-4">
+          <p>{tSpaces('accessDeniedReadOnly')}</p>
+          <ActionGate
+            kind="banking-write"
+            fullAppPath={`/${locale}/dho/${spaceSlug}/banking`}
+            label={tCommon('openInFullApp')}
+          >
+            {null}
+          </ActionGate>
+        </div>
+      </Empty>
+    );
   }
 
   if (isStatusError) {

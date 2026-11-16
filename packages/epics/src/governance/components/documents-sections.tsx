@@ -5,6 +5,7 @@ import { DocumentSection } from './document-section';
 import { useSpaceDocumentsWithStatuses } from '../hooks/use-space-documents-with-statuses';
 import { Document, Order, useSpaceBySlug } from '@hypha-platform/core/client';
 import { useFormatter, useTranslations } from 'next-intl';
+import { ActionGate } from '../../common/action-capabilities';
 import {
   Tabs,
   TabsContent,
@@ -64,14 +65,21 @@ export function DocumentsSections({
   const createProposalPath = `${basePath}/select-create-action`;
   const canCreateProposal =
     !isUserStateLoading && userState === UserSpaceState.LOGGED_IN_SPACE;
-  const renderCreateProposalButton = () =>
-    canCreateProposal ? (
-      <Button asChild>
-        <Link href={createProposalPath}>{t('newProposal')}</Link>
-      </Button>
-    ) : (
-      <Button disabled>{t('newProposal')}</Button>
-    );
+  const renderCreateProposalButton = () => (
+    <ActionGate
+      kind="create-flow"
+      fullAppPath={createProposalPath}
+      label={t('newProposal')}
+    >
+      {canCreateProposal ? (
+        <Button asChild>
+          <Link href={createProposalPath}>{t('newProposal')}</Link>
+        </Button>
+      ) : (
+        <Button disabled>{t('newProposal')}</Button>
+      )}
+    </ActionGate>
+  );
 
   return (
     <Tabs

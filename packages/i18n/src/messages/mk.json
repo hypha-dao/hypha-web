@@ -601,6 +601,7 @@
     "openProject": "Отвори го проектот"
   },
   "Common": {
+    "openInFullApp": "Отвори во целосната апликација",
     "Assignments": "Задачи",
     "Members": "Членови",
     "memberRoleLabel": "Член",

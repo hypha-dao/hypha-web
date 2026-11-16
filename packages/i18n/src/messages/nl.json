@@ -601,6 +601,7 @@
     "openProject": "Project openen"
   },
   "Common": {
+    "openInFullApp": "Openen in de volledige app",
     "Assignments": "Opdrachten",
     "Members": "Leden",
     "memberRoleLabel": "Lid",

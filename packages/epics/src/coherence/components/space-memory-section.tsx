@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Button, Input } from '@hypha-platform/ui';
 import { Empty } from '../../common';
+import { ActionGate } from '../../common/action-capabilities';
 import React from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 import {
@@ -353,21 +354,27 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
           leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
           className="min-w-0 flex-1"
         />
-        {canMutate ? (
-          <Button asChild variant="default" colorVariant="accent">
-            <Link href={newMemoryHref} scroll={false}>
+        <ActionGate
+          kind="create-flow"
+          fullAppPath={newMemoryHref}
+          label={t('newMemory')}
+        >
+          {canMutate ? (
+            <Button asChild variant="default" colorVariant="accent">
+              <Link href={newMemoryHref} scroll={false}>
+                {t('newMemory')}
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              colorVariant="accent"
+              disabled={isMutateLoading || !canMutate}
+            >
               {t('newMemory')}
-            </Link>
-          </Button>
-        ) : (
-          <Button
-            variant="default"
-            colorVariant="accent"
-            disabled={isMutateLoading || !canMutate}
-          >
-            {t('newMemory')}
-          </Button>
-        )}
+            </Button>
+          )}
+        </ActionGate>
       </div>
 
       {error ? (

@@ -22,6 +22,7 @@ vi.mock('@hypha-platform/core/client', () => ({
 }));
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
+  useLocale: () => 'en',
 }));
 vi.mock('../join-space', () => ({ JoinSpace: () => null }));
 vi.mock('../../hooks/use-user-space-state.web3.rpc', () => ({
@@ -32,6 +33,7 @@ vi.mock('../../../common/empty', () => ({
 }));
 
 import { SpaceAccessDenied } from '../space-access-denied';
+import { ActionCapabilitiesProvider } from '../../../common/action-capabilities';
 
 const render = () =>
   renderToStaticMarkup(
@@ -57,6 +59,23 @@ describe('SpaceAccessDenied, signed out', () => {
     expect(html).toContain('accessDeniedReadOnly');
     expect(html).not.toContain('accessDeniedNotLoggedIn');
     expect(html).not.toContain('<button');
+    expect(html).not.toContain('getStarted');
+  });
+
+  it('login host: Sign in stays, the separate Get started is hidden', () => {
+    const html = renderToStaticMarkup(
+      <ActionCapabilitiesProvider
+        value={{
+          unsupportedActions: 'hide',
+          fullAppOrigin: 'https://app.example',
+          pipelineData: true,
+        }}
+      >
+        <SpaceAccessDenied userState={'NOT_LOGGED_IN' as never} spaceSlug="x" />
+      </ActionCapabilitiesProvider>,
+    );
+    expect(html).toContain('accessDeniedNotLoggedIn');
+    expect(html).toContain('signIn');
     expect(html).not.toContain('getStarted');
   });
 });

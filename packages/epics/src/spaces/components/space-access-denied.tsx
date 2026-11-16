@@ -2,11 +2,12 @@
 
 import { Button } from '@hypha-platform/ui';
 import { Empty } from '../../common/empty';
+import { ActionGate } from '../../common/action-capabilities';
 import { UserSpaceState } from '../hooks/use-user-space-state.web3.rpc';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useSpacesByWeb3Ids } from '@hypha-platform/core/client';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { JoinSpace } from './join-space';
 
 type SpaceAccessDeniedProps = {
@@ -23,6 +24,7 @@ export function SpaceAccessDenied({
   className,
 }: SpaceAccessDeniedProps) {
   const t = useTranslations('Spaces');
+  const locale = useLocale();
   const { login, canLogin } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug || '');
   const effectiveSpaceId = spaceId || space?.web3SpaceId;
@@ -49,7 +51,13 @@ export function SpaceAccessDenied({
             <Button variant="outline" onClick={login}>
               {t('signIn')}
             </Button>
-            <Button onClick={login}>{t('getStarted')}</Button>
+            <ActionGate
+              kind="get-started"
+              fullAppPath=""
+              label={t('getStarted')}
+            >
+              <Button onClick={login}>{t('getStarted')}</Button>
+            </ActionGate>
           </div>
         </div>
       </Empty>
@@ -67,11 +75,17 @@ export function SpaceAccessDenied({
           {/* FR-4 / D-2: web3 identity is enough — do not require DB space.id */}
           {effectiveSpaceId ? (
             <div className="flex items-center justify-center">
-              <JoinSpace
-                spaceId={resolvedSpaceId}
-                web3SpaceId={effectiveSpaceId}
-                hideWhenMember
-              />
+              <ActionGate
+                kind="join"
+                fullAppPath={`/${locale}/dho/${spaceSlug ?? ''}`}
+                label={t('requestInvite')}
+              >
+                <JoinSpace
+                  spaceId={resolvedSpaceId}
+                  web3SpaceId={effectiveSpaceId}
+                  hideWhenMember
+                />
+              </ActionGate>
             </div>
           ) : null}
         </div>

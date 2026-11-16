@@ -7,6 +7,7 @@ import { defaultMessages } from '@hypha-platform/i18n/messages';
 import { Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { TooltipProvider } from '@hypha-platform/ui';
 import {
+  ActionCapabilitiesProvider,
   GlobalCallDockProvider,
   MemberPresenceProvider,
   PanelProviders,
@@ -29,6 +30,7 @@ import {
   WL_MODE_HEADER,
   WL_SPACE_HEADER,
   WL_UNSUPPORTED_ACTIONS_HEADER,
+  authKindFor,
   readAuthConfigHeader,
   type WhiteLabelLinkContext,
   type WhiteLabelMode,
@@ -128,23 +130,37 @@ export default async function WhiteLabelRootLayout({
             <LocalizedIntlProvider locale={locale} messages={messages}>
               <TooltipProvider>
                 <WhiteLabelProvider value={linkContext}>
-                  {/* Context providers the shared sections read. Matrix, chat
+                  <ActionCapabilitiesProvider
+                    value={{
+                      unsupportedActions,
+                      // The iframe is on the full app's origin: relative links work.
+                      fullAppOrigin:
+                        linkContext.mode === 'host'
+                          ? linkContext.fullAppOrigin
+                          : '',
+                      // Only a signed-in member can read the pipeline.
+                      pipelineData:
+                        authKindFor(whiteLabelMode, authConfig) === 'privy',
+                    }}
+                  >
+                    {/* Context providers the shared sections read. Matrix, chat
                       panels, notifications and the call dock UI are not mounted. */}
-                  <ConditionalMatrixProvider enabled={false}>
-                    <MemberPresenceProvider>
-                      <PanelProviders>
-                        <SpacesRailProvider>
-                          <GlobalCallDockProvider>
-                            <WhiteLabelLinkGuard>
-                              <div className="w-full min-h-screen bg-page-background">
-                                {children}
-                              </div>
-                            </WhiteLabelLinkGuard>
-                          </GlobalCallDockProvider>
-                        </SpacesRailProvider>
-                      </PanelProviders>
-                    </MemberPresenceProvider>
-                  </ConditionalMatrixProvider>
+                    <ConditionalMatrixProvider enabled={false}>
+                      <MemberPresenceProvider>
+                        <PanelProviders>
+                          <SpacesRailProvider>
+                            <GlobalCallDockProvider>
+                              <WhiteLabelLinkGuard>
+                                <div className="w-full min-h-screen bg-page-background">
+                                  {children}
+                                </div>
+                              </WhiteLabelLinkGuard>
+                            </GlobalCallDockProvider>
+                          </SpacesRailProvider>
+                        </PanelProviders>
+                      </MemberPresenceProvider>
+                    </ConditionalMatrixProvider>
+                  </ActionCapabilitiesProvider>
                 </WhiteLabelProvider>
               </TooltipProvider>
             </LocalizedIntlProvider>
