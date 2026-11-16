@@ -13,6 +13,7 @@ const WELL_KNOWN = '/.well-known/oauth-authorization-server';
 const API = AUTH_SERVER_API_BASE_PATH;
 
 type Policy = { methods: readonly string[]; any: boolean };
+type CorsConfig = Pick<AuthServerConfig, 'corsAllowedOrigins' | 'dcrEnabled'>;
 
 const POLICIES: Record<string, Policy> = {
   [WELL_KNOWN]: { methods: ['GET', 'HEAD'], any: true },
@@ -20,13 +21,20 @@ const POLICIES: Record<string, Policy> = {
   [`${API}/oauth2/token`]: { methods: ['POST'], any: false },
   [`${API}/oauth2/register`]: { methods: ['POST'], any: false },
 };
+const REGISTER = `${API}/oauth2/register`;
+
+/** Registration gets no CORS at all while DCR is off. */
+function policyFor(pathname: string, config: CorsConfig): Policy | undefined {
+  if (pathname === REGISTER && !config.dcrEnabled) return undefined;
+  return POLICIES[pathname];
+}
 
 const MAX_AGE = '600';
 
 function allowedOrigin(
   policy: Policy,
   origin: string | null,
-  config: Pick<AuthServerConfig, 'corsAllowedOrigins'>,
+  config: CorsConfig,
 ): string | null {
   if (policy.any) return '*';
   if (origin && config.corsAllowedOrigins.includes(origin)) return origin;
@@ -42,9 +50,9 @@ function baseHeaders(policy: Policy, allow: string): Headers {
 /** Answer to an OPTIONS request, or null when this path/origin gets no CORS (plain 404 then). */
 export function corsPreflight(
   request: Request,
-  config: Pick<AuthServerConfig, 'corsAllowedOrigins'>,
+  config: CorsConfig,
 ): Response | null {
-  const policy = POLICIES[new URL(request.url).pathname];
+  const policy = policyFor(new URL(request.url).pathname, config);
   if (!policy) return null;
   const allow = allowedOrigin(policy, request.headers.get('origin'), config);
   const method = request.headers.get('access-control-request-method');
@@ -62,9 +70,9 @@ export function corsPreflight(
 export function withCors(
   request: Request,
   response: Response,
-  config: Pick<AuthServerConfig, 'corsAllowedOrigins'>,
+  config: CorsConfig,
 ): Response {
-  const policy = POLICIES[new URL(request.url).pathname];
+  const policy = policyFor(new URL(request.url).pathname, config);
   if (!policy) return response;
   const allow = allowedOrigin(policy, request.headers.get('origin'), config);
   const headers = new Headers(response.headers);

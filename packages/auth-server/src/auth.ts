@@ -71,8 +71,9 @@ export function createAuthServer(
     emailAndPassword: { enabled: false },
     // Second layer behind the HTTP allowlist in handler.ts: library endpoints this server must
     // never serve (client management, userinfo/introspection, sessions listing). Registration is
-    // open only for the restricted DCR experiment (see registration.ts).
+    // open only when AUTH_SERVER_DCR_ENABLED is "true" (restricted, see registration.ts).
     disabledPaths: [
+      ...(config.dcrEnabled ? [] : ['/oauth2/register']),
       '/oauth2/create-client',
       '/oauth2/get-clients',
       '/oauth2/get-client',
@@ -123,9 +124,10 @@ export function createAuthServer(
         // management calls, which stay denied.
         clientPrivileges: () => false,
         resourcePrivileges: () => false,
-        // EXPERIMENT (#2608 DCR): anonymous, public clients only; body rules in registration.ts.
-        allowDynamicClientRegistration: true,
-        allowUnauthenticatedClientRegistration: true,
+        // Restricted dynamic registration, behind AUTH_SERVER_DCR_ENABLED: anonymous, public
+        // clients only; body rules in registration.ts. Off means the library does not advertise it.
+        allowDynamicClientRegistration: config.dcrEnabled,
+        allowUnauthenticatedClientRegistration: config.dcrEnabled,
         // loopback http redirects make a client native, https ones web; registration.ts bounds both.
         clientRegistrationDefaultApplicationType: 'infer',
         accessTokenExpiresIn:

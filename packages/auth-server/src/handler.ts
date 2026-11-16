@@ -15,14 +15,16 @@ import { guardRegistration, narrowRegisteredClient } from './registration';
  * management, introspection, userinfo, session and account endpoints, ...) is unreachable
  * from outside, even though the library registers it. Paths are relative to the API base path.
  */
+const REGISTER_PATH = '/oauth2/register';
 const ALLOWED: ReadonlyArray<{ path: string; methods: readonly string[] }> = [
   { path: '/oauth2/authorize', methods: ['GET', 'POST'] },
   { path: '/oauth2/consent', methods: ['POST'] },
   { path: '/oauth2/continue', methods: ['POST'] },
   { path: '/oauth2/token', methods: ['POST'] },
   { path: '/oauth2/revoke', methods: ['POST'] },
-  // Restricted dynamic client registration, guarded in registration.ts.
-  { path: '/oauth2/register', methods: ['POST'] },
+  // Restricted dynamic client registration (guarded in registration.ts); served only when
+  // AUTH_SERVER_DCR_ENABLED is "true" (see isAllowedAuthServerPath).
+  { path: REGISTER_PATH, methods: ['POST'] },
   { path: AUTH_SERVER_JWKS_PATH, methods: ['GET'] },
   { path: '/provider/sign-in', methods: ['POST'] },
 ];
@@ -31,10 +33,12 @@ const WELL_KNOWN = '/.well-known/oauth-authorization-server';
 export function isAllowedAuthServerPath(
   pathname: string,
   method: string,
+  dcrEnabled = false,
 ): boolean {
   if (pathname === WELL_KNOWN) return method === 'GET' || method === 'HEAD';
   if (!pathname.startsWith(`${AUTH_SERVER_API_BASE_PATH}/`)) return false;
   const rel = pathname.slice(AUTH_SERVER_API_BASE_PATH.length);
+  if (rel === REGISTER_PATH && !dcrEnabled) return false;
   return ALLOWED.some((a) => a.path === rel && a.methods.includes(method));
 }
 
@@ -55,16 +59,26 @@ export function createAuthServerHandler(
       // Preflight: answered only where cross-origin access is deliberate, plain 404 elsewhere.
       return corsPreflight(request, config) ?? notFound();
     }
-    if (!isAllowedAuthServerPath(url.pathname, request.method.toUpperCase()))
+    if (
+      !isAllowedAuthServerPath(
+        url.pathname,
+        request.method.toUpperCase(),
+        config.dcrEnabled,
+      )
+    )
       return notFound();
     try {
       const server = getServer(config);
       const response =
         url.pathname === WELL_KNOWN
-          ? await metadataWithoutDisabledEndpoints(server, request)
+          ? await metadataWithoutDisabledEndpoints(
+              server,
+              request,
+              config.dcrEnabled,
+            )
           : url.pathname === `${AUTH_SERVER_API_BASE_PATH}/oauth2/register`
-            ? await handleRegistration(server, request)
-            : await server.auth.handler(request);
+          ? await handleRegistration(server, request)
+          : await server.auth.handler(request);
       return withCors(request, response, config);
     } catch (error) {
       // Never echo the error: it can carry request data.
@@ -87,12 +101,15 @@ export function createAuthServerHandler(
 async function metadataWithoutDisabledEndpoints(
   server: AuthServer,
   request: Request,
+  dcrEnabled: boolean,
 ): Promise<Response> {
   const res = await server.auth.handler(request);
   if (res.status !== 200) return res;
   const meta = (await res.json()) as Record<string, unknown>;
   for (const key of Object.keys(meta))
     if (key.startsWith('introspection_endpoint')) delete meta[key];
+  // Belt and braces: never advertise registration unless it is on.
+  if (!dcrEnabled) delete meta.registration_endpoint;
   const headers = new Headers(res.headers);
   headers.delete('content-length');
   return new Response(JSON.stringify(meta), { status: 200, headers });

@@ -22,6 +22,7 @@ run('dynamic client registration (experiment): limits and flow', () => {
     s = await h.makeServer({
       AUTH_SERVER_SECRET: SECRET,
       AUTH_SERVER_RESOURCES: `${h.RESOURCE},${MCP}`,
+      AUTH_SERVER_DCR_ENABLED: 'true',
     });
     await h.resetAsTables(s.pool);
     await h.seedPeople(s.pool, [h.PERSON]);
@@ -285,5 +286,103 @@ run('dynamic client registration (experiment): limits and flow', () => {
     });
     const res = await s.handler(h.req(u.pathname + u.search));
     expect(res.headers.get('location')).toContain('error=invalid_scope');
+  });
+});
+
+const DEV = 'http://localhost:6274';
+
+run('dynamic client registration: the kill switch', () => {
+  const build = async (flag: string | undefined) => {
+    const srv = await h.makeServer({
+      AUTH_SERVER_SECRET: SECRET,
+      AUTH_SERVER_CORS_ORIGINS: DEV,
+      ...(flag === undefined ? {} : { AUTH_SERVER_DCR_ENABLED: flag }),
+    });
+    const handle = createAuthServerHandler(
+      () => srv.config,
+      () => srv,
+    );
+    const post = () =>
+      handle(
+        h.req('/api/auth/oauth2/register', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', origin: DEV },
+          body: JSON.stringify({ redirect_uris: [CB] }),
+        }),
+      );
+    const preflight = () =>
+      handle(
+        h.req('/api/auth/oauth2/register', {
+          method: 'OPTIONS',
+          headers: {
+            origin: DEV,
+            'access-control-request-method': 'POST',
+          },
+        }),
+      );
+    const meta = async () =>
+      (await handle(h.req('/.well-known/oauth-authorization-server'))).json();
+    return { srv, handle, post, preflight, meta };
+  };
+
+  beforeEach(() => resetRegistrationLimiter());
+
+  it('is off in code and for anything but the exact string "true"', async () => {
+    for (const flag of [undefined, '', 'TRUE', 'True', '1', 'yes', ' true']) {
+      const k = await build(flag);
+      try {
+        expect(k.srv.config.dcrEnabled, String(flag)).toBe(false);
+        expect((await k.post()).status, String(flag)).toBe(404);
+      } finally {
+        await k.srv.pool.end();
+      }
+    }
+  });
+
+  it('off: no registration_endpoint, register is 404 (also straight at the library), CORS inert', async () => {
+    const k = await build(undefined);
+    try {
+      await h.resetAsTables(k.srv.pool);
+      expect((await k.meta()).registration_endpoint).toBeUndefined();
+      const res = await k.post();
+      expect(res.status).toBe(404);
+      expect(res.headers.get('access-control-allow-origin')).toBeNull();
+      const pre = await k.preflight();
+      expect(pre.status).toBe(404);
+      expect(pre.headers.get('access-control-allow-origin')).toBeNull();
+      // Second layer: the library itself has the path in disabledPaths.
+      const direct = await k.srv.handler(
+        h.req('/api/auth/oauth2/register', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ redirect_uris: [CB] }),
+        }),
+      );
+      expect(direct.status).toBe(404);
+      const rows = await k.srv.pool.query(
+        'select count(*)::int as n from as_oauth_client',
+      );
+      expect(rows.rows[0].n).toBe(0);
+    } finally {
+      await k.srv.pool.end();
+    }
+  });
+
+  it('on: registration_endpoint advertised, register served, CORS for a listed origin', async () => {
+    const k = await build('true');
+    try {
+      await h.resetAsTables(k.srv.pool);
+      expect((await k.meta()).registration_endpoint).toBe(
+        `${h.ISSUER}/api/auth/oauth2/register`,
+      );
+      const pre = await k.preflight();
+      expect(pre.status).toBe(204);
+      expect(pre.headers.get('access-control-allow-origin')).toBe(DEV);
+      const res = await k.post();
+      expect(res.status).toBe(201);
+      expect(res.headers.get('access-control-allow-origin')).toBe(DEV);
+    } finally {
+      await k.srv.pool.end();
+    }
   });
 });

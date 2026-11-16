@@ -55,6 +55,12 @@ export type AuthServerConfig = {
    * and answer any origin regardless of this list.
    */
   corsAllowedOrigins: readonly string[];
+  /**
+   * Dynamic client registration (RFC 7591, restricted in registration.ts). Off in code: only the
+   * exact string "true" in AUTH_SERVER_DCR_ENABLED turns it on. Off means no `registration_endpoint`
+   * in the metadata, the register path answers 404, and cross-origin access to it is not granted.
+   */
+  dcrEnabled: boolean;
 };
 
 export type AuthServerDisabled = { enabled: false; reason: string };
@@ -157,5 +163,6 @@ export function loadAuthServerConfig(
     allowedPersonIds: new Set(parseList(env.AUTH_SERVER_ALLOWED_PERSON_IDS)),
     resources: parseList(env.AUTH_SERVER_RESOURCES),
     corsAllowedOrigins: parseOrigins(env.AUTH_SERVER_CORS_ORIGINS),
+    dcrEnabled: env.AUTH_SERVER_DCR_ENABLED === 'true',
   };
 }

@@ -516,9 +516,8 @@ run('authorization server: host block, surface, kill switch, redaction', () => {
     expect(meta.code_challenge_methods_supported).toEqual(['S256']);
     expect(meta.client_id_metadata_document_supported).toBe(true);
     expect(meta.authorization_response_iss_parameter_supported).toBe(true);
-    expect(meta.registration_endpoint).toBe(
-      `${h.ISSUER}/api/auth/oauth2/register`,
-    );
+    // DCR is off unless AUTH_SERVER_DCR_ENABLED is "true" (dcr.contract.test.ts covers both).
+    expect(meta.registration_endpoint).toBeUndefined();
   });
 
   it('library endpoints outside the allowlist are not reachable', async () => {

@@ -26,6 +26,7 @@ run('CORS: narrow, per endpoint', () => {
     s = await h.makeServer({
       AUTH_SERVER_SECRET: 'contract-test-secret-'.padEnd(48, 'x'),
       AUTH_SERVER_CORS_ORIGINS: DEV,
+      AUTH_SERVER_DCR_ENABLED: 'true',
     });
     await h.resetAsTables(s.pool);
     handle = createAuthServerHandler(
