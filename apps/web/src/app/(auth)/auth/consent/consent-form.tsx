@@ -2,7 +2,11 @@
 
 import * as React from 'react';
 import { Button, Checkbox } from '@hypha-platform/ui';
-import { AUTH_SERVER_API_BASE_PATH } from '@hypha-platform/auth-server/client';
+import {
+  AUTH_SERVER_API_BASE_PATH,
+  describeClient,
+  type ClientKind,
+} from '@hypha-platform/auth-server/client';
 
 type Scope = {
   scope: string;
@@ -20,7 +24,12 @@ export function ConsentForm({
 }: {
   oauthQuery: string;
   personName: string;
-  client: { name: string; host: string; redirectHost: string };
+  client: {
+    kind: ClientKind;
+    name: string;
+    host: string;
+    redirectHost: string;
+  };
   scopes: Scope[];
 }) {
   const [granted, setGranted] = React.useState<Set<string>>(
@@ -74,17 +83,13 @@ export function ConsentForm({
     <main className="mx-auto flex max-w-md flex-col gap-4 px-4 py-12">
       <h1 className="text-4 font-medium">Approve {client.name}?</h1>
       <p role="note" className="border border-warning-8 p-3 text-2">
-        Hypha has not verified this app. It calls itself{' '}
-        <strong>{client.name}</strong>
-        {client.host ? (
-          <>
-            {' '}
-            and identifies itself from <strong>{client.host}</strong>
-          </>
-        ) : null}
-        . After you approve, you are sent back to{' '}
-        <strong>{client.redirectHost}</strong>. Only approve apps you started
-        yourself.
+        {describeClient({ ...client }).map((seg, i) =>
+          seg.strong ? (
+            <strong key={i}>{seg.text}</strong>
+          ) : (
+            <React.Fragment key={i}>{seg.text}</React.Fragment>
+          ),
+        )}
       </p>
       <p className="text-2 text-neutral-11">
         Signed in as {personName}. This app is asking to:

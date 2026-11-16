@@ -244,5 +244,37 @@ run(
       expect(res.status).toBe(400);
       expect((await res.json()).error).toBe('invalid_request');
     });
+
+    it('identity: CIMD offers its proven host; DCR offers no host and never exposes logo or policy links', async () => {
+      const cimd = await view(
+        await toConsent(h.CLIENT_ID, h.REDIRECT_URI, ALL, h.RESOURCE),
+      );
+      expect(cimd.client.host).toBe('client.example.com');
+
+      const res = await handle(
+        h.req('/api/auth/oauth2/register', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            client_name: 'Claimed Name',
+            client_uri: 'https://claimed.example.com',
+            logo_uri: 'https://claimed.example.com/logo.png',
+            tos_uri: 'https://claimed.example.com/tos',
+            policy_uri: 'https://claimed.example.com/policy',
+            redirect_uris: [CB],
+            scope: ALL,
+          }),
+        }),
+      );
+      const id = (await res.json()).client_id as string;
+      const v = await view(await toConsent(id, CB));
+      expect(v.client.kind).toBe('dcr');
+      expect(v.client.name).toBe('Claimed Name');
+      expect(v.client.host).toBe('');
+      const wire = JSON.stringify(v);
+      expect(wire).not.toContain('logo');
+      expect(wire).not.toContain('/tos');
+      expect(wire).not.toContain('/policy');
+    });
   },
 );

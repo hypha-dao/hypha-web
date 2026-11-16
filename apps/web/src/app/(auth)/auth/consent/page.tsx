@@ -43,6 +43,7 @@ export default async function AuthServerConsentPage({
       oauthQuery={request.oauthQuery}
       personName={clip(request.person.name, 80)}
       client={{
+        kind: request.client.kind,
         name: clip(request.client.name, 80),
         host: clip(request.client.host, 120),
         redirectHost: clip(request.client.redirectHost, 120),

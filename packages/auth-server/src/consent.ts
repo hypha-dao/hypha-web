@@ -90,7 +90,14 @@ export async function loadConsentRequest(
     client: {
       clientId,
       name: row.name || hostOf(clientId) || 'Unnamed app',
-      host: hostOf(row.uri) || hostOf(clientId),
+      // CIMD: the host of the https client id is the one thing that is proven. DCR: nothing about
+      // the app is proven (its stored link is a claim), so no host is offered as identity.
+      host:
+        kind === 'cimd'
+          ? hostOf(clientId)
+          : kind === 'dcr'
+          ? ''
+          : hostOf(row.uri) || hostOf(clientId),
       redirectHost: hostOf(redirectUri),
       verified: false,
       kind,

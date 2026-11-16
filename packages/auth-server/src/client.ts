@@ -5,3 +5,5 @@ export {
   AUTH_SERVER_SCOPES,
 } from './config';
 export { describeScope } from './scope-copy';
+export { describeClient, type CopySegment } from './client-copy';
+export type { ClientKind } from './consent';
