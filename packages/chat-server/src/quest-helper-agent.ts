@@ -200,6 +200,9 @@ export function createQuestHelperAgentTools(state: QuestHelperAgentState) {
         const given = fields ? limitQuestPatchToStep(fields, section) : {};
         if (!hasFields(given)) {
           if (pending && pending.step === section && hasFields(pending.patch)) {
+            if (!milestoneDescriptionsReady(section, pending.patch)) {
+              return { ok: false, error: MILESTONE_DESCRIPTION_ERROR };
+            }
             state.saved = { ...pending, source: 'pending' };
             if (state.suggestion?.step === section) state.suggestion = null;
             return { ok: true, saved: label };

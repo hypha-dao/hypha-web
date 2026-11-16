@@ -21,6 +21,21 @@ describe('quest milestone descriptions', () => {
     expect(questMilestoneDescriptionAddsDetail(title, null)).toBe(false);
   });
 
+  it('accepts a description written without spaces', () => {
+    expect(
+      questMilestoneDescriptionAddsDetail(
+        '培训课程',
+        '完成新成员入职教材并交由核心团队审核。',
+      ),
+    ).toBe(true);
+    expect(questMilestoneDescriptionAddsDetail('培训课程', '培训课程。')).toBe(
+      false,
+    );
+    expect(
+      questMilestoneDescriptionAddsDetail('培训课程', '培训课程完成'),
+    ).toBe(false);
+  });
+
   it('rejects a light rephrase that adds no new detail', () => {
     expect(
       questMilestoneDescriptionAddsDetail(

@@ -29,9 +29,28 @@ export function questMilestoneDescriptionText(
   return body;
 }
 
+const UNSPACED_SCRIPT =
+  /\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}|\p{Script=Hangul}|\p{Script=Thai}|\p{Script=Lao}|\p{Script=Khmer}|\p{Script=Myanmar}/u;
+
 /**
- * A milestone description the Helper may propose: not the title, and at
- * least two content words the title does not already use.
+ * Scripts that do not separate words with spaces. A handful of characters
+ * the title does not already use counts as new detail.
+ */
+function unspacedDescriptionAddsDetail(name: string, body: string): boolean {
+  const titleChars = new Set([
+    ...normalizeQuestMilestoneText(name).replace(/\s/g, ''),
+  ]);
+  let extra = 0;
+  for (const char of normalizeQuestMilestoneText(body).replace(/\s/g, '')) {
+    if (!titleChars.has(char)) extra += 1;
+  }
+  return extra >= 4;
+}
+
+/**
+ * A milestone description the Helper may propose. Spaced languages need two
+ * content words the title does not use. Unspaced writing needs characters
+ * the title does not already contain.
  */
 export function questMilestoneDescriptionAddsDetail(
   name: string,
@@ -52,5 +71,8 @@ export function questMilestoneDescriptionAddsDetail(
         !MILESTONE_DESCRIPTION_STOP.has(word) &&
         !nameWords.has(word),
     );
-  return extra.length >= 2;
+  if (extra.length >= 2) return true;
+  return (
+    UNSPACED_SCRIPT.test(body) && unspacedDescriptionAddsDetail(name, body)
+  );
 }
