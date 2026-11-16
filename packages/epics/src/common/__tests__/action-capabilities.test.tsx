@@ -20,6 +20,7 @@ const KINDS: ActionKind[] = [
   'banking-write',
   'get-started',
   'upvote',
+  'deal-link',
   'pipeline-data',
 ];
 

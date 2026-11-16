@@ -1,5 +1,10 @@
 'use client';
 
+import { useParams } from 'next/navigation';
+import {
+  useActionStatus,
+  useFullAppHref,
+} from '../../common/action-capabilities';
 import type React from 'react';
 import type { Deal, ProbabilityMatrix } from '@hypha-platform/core/client';
 import { effectiveSuccessRate } from '@hypha-platform/core/client';
@@ -41,14 +46,29 @@ export function DealCard({
   const weighted = (deal.value * probability) / 100;
   const isOverride = deal.successRate != null;
 
+  // Read-only: inert, unless the client opted in with `unsupportedActions:
+  // 'full-app'`: then the card links to the deal in the full app (new tab).
+  const dealLink = useActionStatus('deal-link');
+  const fullAppHref = useFullAppHref();
+  const params = useParams<{ id?: string; lang?: string }>();
+  const linkHref =
+    readOnly && dealLink === 'full-app' && params?.id && params?.lang
+      ? fullAppHref(`/${params.lang}/dho/${params.id}/pipeline/deal/${deal.id}`)
+      : null;
   const className = cn(
-    readOnly ? 'craft-card' : 'craft-card-interactive',
+    readOnly && !linkHref ? 'craft-card' : 'craft-card-interactive',
     'w-full p-3 text-left',
     active && 'border-foreground/35 shadow-none',
     deal.blocked && 'opacity-80',
   );
-  const Root = readOnly ? 'div' : 'button';
-  const rootProps = readOnly
+  const Root = linkHref ? 'a' : readOnly ? 'div' : 'button';
+  const rootProps = linkHref
+    ? {
+        href: linkHref,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      }
+    : readOnly
     ? {}
     : {
         type: 'button' as const,

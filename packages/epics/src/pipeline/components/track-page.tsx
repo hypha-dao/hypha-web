@@ -1,5 +1,6 @@
 'use client';
 
+import { PipelineUnavailable } from './pipeline-unavailable';
 import React from 'react';
 import Link from 'next/link';
 import {
@@ -58,8 +59,16 @@ export function TrackPage({
   const { deals, isLoading } = useDeals({ spaceSlug });
   const { moveDealToStatus } = useDealMutations(spaceSlug);
   const { countryFocus } = usePipelineSettings(spaceSlug);
-  const { tracks, stages, probabilities, itemPlural } =
-    usePipelineConfig(spaceSlug);
+  const {
+    tracks,
+    stages,
+    probabilities,
+    itemPlural,
+    hasConfig,
+    isRefused,
+    isLoading: isConfigLoading,
+    refresh: refreshConfig,
+  } = usePipelineConfig(spaceSlug);
   const trackName = findTrackName(tracks, swimlane);
   const { collapsedLanes, toggleLane } = useCollapsedPipelineLanes(spaceSlug);
 
@@ -80,6 +89,18 @@ export function TrackPage({
     },
     [deals, moveDealToStatus],
   );
+
+  if (readOnly && !hasConfig) {
+    if (isConfigLoading) return null;
+    return (
+      <PipelineUnavailable
+        refused={isRefused}
+        onRetry={() => {
+          void refreshConfig();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="relative flex min-w-0 flex-col gap-4 pb-16">

@@ -32,6 +32,8 @@ export type ActionKind =
   | 'get-started'
   /** Upvote on a signal. */
   | 'upvote'
+  /** Opening a pipeline deal (a link to the deal page of the full app). */
+  | 'deal-link'
   /** The pipeline (members only; needs a signed-in visitor). */
   | 'pipeline-data';
 

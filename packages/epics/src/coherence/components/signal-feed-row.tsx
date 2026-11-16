@@ -13,6 +13,7 @@ import type {
 import { cn, stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import { SignalTypeBadge } from './signal-type-badge';
 import { SignalUpvoteButton } from './signal-upvote-button';
+import { ActionGate } from '../../common/action-capabilities';
 import { SignalMediaChips } from './signal-media-chips';
 import { countSignalMedia } from '../utils/signal-media';
 import type { SignalRoomActivity } from '../hooks/use-signal-room-activity';
@@ -124,21 +125,23 @@ export function SignalFeedRow({
           data-testid="signal-card-meta"
           className="mt-2.5 flex flex-wrap items-center gap-y-1.5 text-1 text-muted-foreground gap-x-[clamp(1.5rem,6cqi,5rem)] @min-[720px]:gap-x-[clamp(1.5rem,6vw,5rem)]"
         >
-          <SignalUpvoteButton
-            slug={signal.slug}
-            spaceSlug={spaceSlug}
-            upvotes={signal.upvotes}
-            votingMode={votingMode}
-            votingModeStatus={votingModeStatus}
-            onRetryVotingMode={onRetryVotingMode}
-            isNonMember={isNonMember}
-            isMembershipPending={isMembershipPending}
-            refresh={refresh}
-            archived={signal.archived}
-            sort={sort}
-            summaryState={summaryState}
-            className="relative z-10"
-          />
+          <ActionGate kind="upvote" fullAppPath="" label={null}>
+            <SignalUpvoteButton
+              slug={signal.slug}
+              spaceSlug={spaceSlug}
+              upvotes={signal.upvotes}
+              votingMode={votingMode}
+              votingModeStatus={votingModeStatus}
+              onRetryVotingMode={onRetryVotingMode}
+              isNonMember={isNonMember}
+              isMembershipPending={isMembershipPending}
+              refresh={refresh}
+              archived={signal.archived}
+              sort={sort}
+              summaryState={summaryState}
+              className="relative z-10"
+            />
+          </ActionGate>
           {created ? (
             <span className="inline-flex items-center gap-1.5">
               <Clock className="craft-icon-sm" aria-hidden />
