@@ -6,4 +6,5 @@ export * from './health-display';
 export * from './proposal-list-status';
 export * from './types';
 export * from './markdown';
+export * from './milestone-description';
 export * from './validation';

@@ -312,6 +312,103 @@ describe('quest helper agent turn', () => {
     }
   });
 
+  it('includes each milestone description in the proposal and the confirmation', async () => {
+    const milestones = [
+      {
+        name: 'Training curriculum designed with the core team',
+        description:
+          'Draft the onboarding curriculum and review it with the core team',
+      },
+      {
+        name: '4 weekly training sessions delivered',
+        description:
+          'Run four weekly sessions with the pilot group and record who attended',
+      },
+    ];
+    const proposed = await settle(
+      'propose the milestones',
+      { draft: draftWithGoal, pending: null, currentStep: 'milestones' },
+      {
+        reply: 'Milestones drafted on the checkpoints you named.',
+        helper: {
+          suggestion: { step: 'milestones', patch: { milestones } },
+          saved: null,
+          discarded: false,
+        },
+      },
+    ).result;
+    expect(proposed?.wrote).toBe(false);
+    expect(proposed?.reply).toContain('Not saved yet');
+    expect(proposed?.reply).toContain(
+      'M1 · Training curriculum designed with the core team\nDraft the onboarding curriculum and review it with the core team',
+    );
+    expect(proposed?.reply).toContain(
+      'Run four weekly sessions with the pilot group and record who attended',
+    );
+    expect(proposed?.reply).toContain(
+      'Do you want that to be in the Milestones?',
+    );
+    expect(proposed?.pending?.patch.milestones?.[0]?.description).toBe(
+      milestones[0]?.description,
+    );
+
+    const confirmed = await settle(
+      'yes',
+      {
+        draft: proposed?.draft ?? draftWithGoal,
+        pending: proposed?.pending ?? null,
+        currentStep: 'milestones',
+      },
+      {
+        reply: 'Milestones are in.',
+        helper: {
+          suggestion: null,
+          saved: {
+            step: 'milestones',
+            patch: { milestones },
+            source: 'pending',
+          },
+          discarded: false,
+        },
+      },
+    ).result;
+    expect(confirmed?.wrote).toBe(true);
+    expect(
+      confirmed?.draft.milestones.map((milestone) => milestone.description),
+    ).toEqual([milestones[0]?.description, milestones[1]?.description]);
+    expect(confirmed?.reply).toContain('Added that to the Milestones.');
+    expect(confirmed?.reply).toContain(milestones[0]?.description);
+    expect(confirmed?.reply).toContain(milestones[1]?.description);
+    expect(confirmed?.reply).toContain('Milestones are in.');
+  });
+
+  it('reads a saved milestone description back with its title', async () => {
+    const filled: QuestDraftStateSnapshot = {
+      ...draftWithGoal,
+      milestones: [
+        {
+          name: 'QA pass',
+          description:
+            'Record whether the sandbox checklist passes for a new member',
+          dueDate: '2026-12-01',
+          ownerName: null,
+          status: 'not_started',
+        },
+      ],
+    };
+    const { result, loadModel } = settle(
+      'show me the milestones',
+      { draft: filled, pending: null, currentStep: 'milestones' },
+      null,
+    );
+    const turn = await result;
+    expect(loadModel).not.toHaveBeenCalled();
+    expect(turn?.reply).toContain('M1 · QA pass');
+    expect(turn?.reply).toContain(
+      'Record whether the sandbox checklist passes for a new member',
+    );
+  });
+
   it('says when the asked section is empty instead of inventing one', async () => {
     const { result, loadModel } = settle(
       'what is the scope?',

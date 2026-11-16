@@ -809,6 +809,76 @@ describe('quest-draft-assistant', () => {
     expect(titledDash.milestones?.[0]?.dueDate).toBeUndefined();
   });
 
+  it('shows each milestone description in the proposal, not only the title', () => {
+    const milestones = [
+      {
+        name: 'Training curriculum designed with the core team',
+        description:
+          'Draft the onboarding curriculum and review it with the core team',
+      },
+      {
+        name: '4 weekly training sessions delivered',
+        description:
+          'Run four weekly sessions with the pilot group and record who attended',
+      },
+    ];
+    const patch = { milestones };
+    const preview = formatPendingQuestPatch(patch);
+    expect(preview).toContain(
+      'M1 · Training curriculum designed with the core team\nDraft the onboarding curriculum and review it with the core team',
+    );
+    expect(preview).toContain(
+      'M2 · 4 weekly training sessions delivered\nRun four weekly sessions with the pilot group and record who attended',
+    );
+    const titledOnly =
+      'Milestones drafted on the checkpoints you named.\n\nM1 · Training curriculum designed with the core team\nM2 · 4 weekly training sessions delivered';
+    const reply = replyWithSectionApprovalAsk(titledOnly, 'milestones', patch);
+    expect(reply).toContain(
+      'Draft the onboarding curriculum and review it with the core team',
+    );
+    expect(reply).toContain(
+      'Run four weekly sessions with the pilot group and record who attended',
+    );
+    expect(reply).toContain('Do you want that to be in the Milestones?');
+
+    const { next } = applyPatchToQuestDraftState({
+      current: emptyDraft,
+      patch,
+      spaceMembers: [],
+      viewerDisplayName: 'Ada Lovelace',
+    });
+    expect(next.milestones.map((milestone) => milestone.description)).toEqual([
+      milestones[0]?.description,
+      milestones[1]?.description,
+    ]);
+
+    const copied = applyPatchToQuestDraftState({
+      current: emptyDraft,
+      patch: {
+        milestones: [
+          {
+            name: 'Training curriculum designed with the core team',
+            description: 'Training curriculum designed with the core team',
+          },
+        ],
+      },
+      spaceMembers: [],
+      viewerDisplayName: 'Ada Lovelace',
+    });
+    expect(copied.next.milestones[0]?.description).toBe('');
+    const copiedPreview = formatPendingQuestPatch({
+      milestones: [
+        {
+          name: 'Training curriculum designed with the core team',
+          description: 'Training curriculum designed with the core team',
+        },
+      ],
+    });
+    expect(copiedPreview).toBe(
+      'M1 · Training curriculum designed with the core team',
+    );
+  });
+
   it('does not invent member responsibilities', () => {
     const patch = buildLocalQuestDraftPatch({
       message: 'Ada Lovelace',

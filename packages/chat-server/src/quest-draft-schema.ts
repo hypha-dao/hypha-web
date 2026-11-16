@@ -29,7 +29,14 @@ export const draftPatchSchema = z.object({
       z.object({
         name: z.string().trim().min(1).max(160),
         dueDate: z.string().trim().max(64).optional(),
-        description: z.string().trim().max(1000).optional(),
+        description: z
+          .string()
+          .trim()
+          .max(1000)
+          .optional()
+          .describe(
+            'One or two sentences on what this checkpoint produces. Ground it in the goal, scope, and earlier conversation. Must add detail the title does not; never copy the title.',
+          ),
         ownerName: z.string().trim().max(120).optional(),
       }),
     )

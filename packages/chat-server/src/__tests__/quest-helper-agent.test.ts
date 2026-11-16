@@ -145,6 +145,65 @@ describe('quest helper agent tools', () => {
     });
   });
 
+  it('rejects a milestone whose description repeats the title', async () => {
+    const state = agentState();
+    const t = tools(state);
+    const title = 'Training curriculum designed with the core team';
+    expect(
+      await t.suggest_section.execute({
+        section: 'milestones',
+        fields: {
+          milestones: [{ name: title, description: title }],
+        },
+      }),
+    ).toMatchObject({ ok: false });
+    expect(state.suggestion).toBeNull();
+
+    const description =
+      'Draft the onboarding curriculum and review it with the core team';
+    expect(
+      await t.suggest_section.execute({
+        section: 'milestones',
+        fields: { milestones: [{ name: title, description }] },
+      }),
+    ).toMatchObject({ ok: true });
+    expect(state.suggestion).toEqual({
+      step: 'milestones',
+      patch: { milestones: [{ name: title, description }] },
+    });
+  });
+
+  it('does not save a waiting milestone card whose description repeats the title', async () => {
+    const title = 'Training curriculum designed with the core team';
+    const copied = agentState({
+      pending: {
+        step: 'milestones',
+        patch: { milestones: [{ name: title, description: title }] },
+      },
+    });
+    expect(
+      await tools(copied).save_section.execute({ section: 'milestones' }),
+    ).toMatchObject({ ok: false });
+    expect(copied.saved).toBeNull();
+
+    const description =
+      'Draft the onboarding curriculum and review it with the core team';
+    const grounded = agentState({
+      pending: {
+        step: 'milestones',
+        patch: { milestones: [{ name: title, description }] },
+      },
+    });
+    expect(
+      await tools(grounded).save_section.execute({ section: 'milestones' }),
+    ).toMatchObject({ ok: true });
+    expect(grounded.saved).toEqual({
+      step: 'milestones',
+      patch: { milestones: [{ name: title, description }] },
+      source: 'pending',
+    });
+  });
+
   it('records a rejected card', async () => {
     const state = agentState({ pending: { step: 'scope', patch: scopePatch } });
     await tools(state).discard_suggestion.execute({});
@@ -177,6 +236,8 @@ describe('quest helper agent prompt', () => {
       sandbox: true,
       savedQuest: false,
     });
+    expect(system).toContain('never copy or lightly rephrase the title');
+    expect(system).toContain('Ground it in the goal, the scope');
     expect(system).toContain('yes I want you to add that');
     expect(system).toContain('add that to scope');
     expect(system).toMatch(/never leave finished wording only in prose/i);

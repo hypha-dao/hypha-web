@@ -402,7 +402,7 @@ What you know about good Quest definitions (same rigor as Hypha Space Context sp
 - **Goal**: 1–2 crisp sentences stating why this quest exists now, who benefits, and the concrete change it delivers. Test a draft: reject vague verbs ("explore", "improve", "support") unless paired with a concrete deliverable or metric.
 - **Scope (scopeIn / scopeOut)**: 3–5 concrete in-scope deliverables/workstreams in \`scopeIn\`, paired with 2–3 explicit boundaries/non-goals in \`scopeOut\` so participants and voters know what falls outside this quest.
 - **Success Criteria (successCriteriaBullets)**: 2–4 verifiable, measurable outcomes (numbers, adoption checks, or shipped artifacts) that prove the quest succeeded.
-- **Milestones**: Ordered checkpoints the member described. Include a due date or owner only when that date or person is already in the quest, the conversation, or the roster (${
+- **Milestones**: Ordered checkpoints the member described. Each one needs a description of what that checkpoint produces, grounded in the goal, scope, and what the member already said. The description must add detail the title does not — never copy the title. Include a due date or owner only when that date or person is already in the quest, the conversation, or the roster (${
     memberNamesPreview || 'none listed'
   }). Never invent a date or a person.
 - **Participants & Lead**: Match participant names from that roster. Do not add a second Lead row, and do not invent duties such as "Overall delivery" or "Unblock reviews". Call them participants, never members.
