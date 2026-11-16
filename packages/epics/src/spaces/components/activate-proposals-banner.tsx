@@ -5,7 +5,7 @@ import { useSalesBanner } from '@hypha-platform/epics';
 import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter } from 'next/navigation';
-import { cleanPath } from '../utils/cleanPath';
+import { spaceSelectActivateActionPath } from '../utils/cleanPath';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 
@@ -17,7 +17,6 @@ interface ActivateProposalsBannerProps {
 
 export const ActivateProposalsBanner = ({
   spaceSlug,
-  activatePath,
   className,
 }: ActivateProposalsBannerProps) => {
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
@@ -33,9 +32,8 @@ export const ActivateProposalsBanner = ({
   const router = useRouter();
 
   const handleAction = React.useCallback(() => {
-    const path = `${cleanPath(pathname)}${activatePath}`;
-    router.push(path);
-  }, [router, activatePath, pathname]);
+    router.push(spaceSelectActivateActionPath(pathname));
+  }, [router, pathname]);
 
   if (isSpaceLoading || !space || isStatusLoading || !status) {
     return null;

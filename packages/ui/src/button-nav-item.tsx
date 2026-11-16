@@ -68,7 +68,9 @@ export const ButtonNavItem = ({
       onClick={onClick}
     >
       {!disabled && href ? (
-        <Link href={href}>{content}</Link>
+        <Link href={href} prefetch={false}>
+          {content}
+        </Link>
       ) : (
         <span>{content}</span>
       )}

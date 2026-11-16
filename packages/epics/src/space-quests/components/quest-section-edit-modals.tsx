@@ -1823,12 +1823,23 @@ export function EditQuestDeliverablesModal({
     }
   };
 
+  const requestClose = (nextOpen = false) => {
+    if (saving) return;
+    onOpenChange(nextOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen && saving) return;
+        onOpenChange(nextOpen);
+      }}
+    >
       <QuestEditDialogFrame
         title="Edit deliverables"
-        onClose={() => onOpenChange(false)}
-        onCancel={() => onOpenChange(false)}
+        onClose={() => requestClose(false)}
+        onCancel={() => requestClose(false)}
         onSave={() => {
           void handleSave();
         }}

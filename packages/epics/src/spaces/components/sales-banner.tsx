@@ -4,7 +4,7 @@ import { Button } from '@hypha-platform/ui';
 import { useSalesBanner, useSpaceMember } from '../hooks';
 import { Cross1Icon } from '@radix-ui/react-icons';
 import { usePathname } from 'next/navigation';
-import { cleanPath } from '../utils/cleanPath';
+import { spaceSelectActivateActionPath } from '../utils/cleanPath';
 import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
 import { useIsDelegate } from '@hypha-platform/core/client';
@@ -20,8 +20,6 @@ interface BannerState {
 interface SalesBannerProps {
   web3SpaceId?: number;
 }
-
-const PATH_SELECT_ACTIVATE_ACTION = '/select-activate-action';
 
 export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
   const t = useTranslations('Spaces');
@@ -93,7 +91,8 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
         <Link
           title={tooltipMessage || subtitle}
           className={isDisabled ? 'cursor-not-allowed shrink-0' : 'shrink-0'}
-          href={`${cleanPath(pathname)}${PATH_SELECT_ACTIVATE_ACTION}`}
+          prefetch={false}
+          href={spaceSelectActivateActionPath(pathname)}
         >
           <Button
             disabled={isDisabled}

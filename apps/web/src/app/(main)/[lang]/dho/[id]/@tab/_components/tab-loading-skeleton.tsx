@@ -7,6 +7,7 @@ type TabLoadingLayout =
   | 'agreements'
   | 'coherence'
   | 'treasury'
+  | 'quests'
   | 'rows';
 
 type TabLoadingSkeletonProps = {
@@ -195,6 +196,18 @@ function TreasurySkeleton({ showTitle }: { showTitle: boolean }) {
   );
 }
 
+function QuestsSkeleton() {
+  return (
+    <div className="flex flex-col gap-4 py-4" aria-hidden>
+      <Pulse className="h-20 w-full" />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <Pulse className="h-96 w-full" delayMs={40} />
+        <Pulse className="h-64 w-full" delayMs={80} />
+      </div>
+    </div>
+  );
+}
+
 function RowsSkeleton({ showTitle }: { showTitle: boolean }) {
   return (
     <div className="flex flex-col gap-3 py-4" aria-hidden>
@@ -226,6 +239,8 @@ export function TabLoadingSkeleton({
         <CoherenceSkeleton />
       ) : layout === 'treasury' ? (
         <TreasurySkeleton showTitle={showTitle} />
+      ) : layout === 'quests' ? (
+        <QuestsSkeleton />
       ) : (
         <RowsSkeleton showTitle={showTitle} />
       )}
