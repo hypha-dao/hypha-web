@@ -25,6 +25,11 @@ import {
   readRecentSpaceSlugs,
   subscribeRecentSpaceSlugs,
 } from '../../common/recent-space-history';
+import { OptimizedAvatarImage } from '../../common/optimized-avatar-image';
+import {
+  toLinkPrefetch,
+  useEnergyOverviewIdleGate,
+} from '../../common/use-after-idle';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { groupSpacesByEcosystemRecency } from './order-spaces-by-ecosystem';
 import { SPACES_RAIL_ID, useSpacesRailControl } from './spaces-rail-control';
@@ -70,6 +75,7 @@ export function MemberHomeSpacesRail({
   const { person } = useMe();
   const hideSpacesListing = person?.primaryOrientation === 'member';
   const { resolvedTheme } = useTheme();
+  const prefetchNav = useEnergyOverviewIdleGate();
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const row = layout === 'row';
   const [recentSlugs, setRecentSlugs] = useState<string[]>(() =>
@@ -118,6 +124,7 @@ export function MemberHomeSpacesRail({
               <TooltipTrigger asChild>
                 <Link
                   href={`/${lang}/my-spaces`}
+                  prefetch={toLinkPrefetch(prefetchNav)}
                   aria-label={t('openMySpaces')}
                   className={cn(
                     'grid place-items-center rounded-full border border-dashed border-border text-neutral-11',
@@ -167,6 +174,7 @@ export function MemberHomeSpacesRail({
                       <TooltipTrigger asChild>
                         <Link
                           href={`/${lang}/dho/${space.slug}/overview`}
+                          prefetch={toLinkPrefetch(prefetchNav)}
                           aria-label={space.title}
                           aria-current={active ? 'page' : undefined}
                           className={cn(
@@ -179,22 +187,21 @@ export function MemberHomeSpacesRail({
                           )}
                           style={{ width: RAIL_ICON, height: RAIL_ICON }}
                         >
-                          {iconUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={iconUrl}
-                              alt=""
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <span
-                              className="flex h-full w-full items-center justify-center text-1 font-medium text-foreground"
-                              aria-hidden
-                            >
-                              {space.title.trim().charAt(0).toUpperCase() ||
-                                '?'}
-                            </span>
-                          )}
+                          <OptimizedAvatarImage
+                            src={iconUrl ?? undefined}
+                            alt=""
+                            pixelSize={RAIL_ICON}
+                            className="h-full w-full object-cover"
+                            fallback={
+                              <span
+                                className="flex h-full w-full items-center justify-center text-1 font-medium text-foreground"
+                                aria-hidden
+                              >
+                                {space.title.trim().charAt(0).toUpperCase() ||
+                                  '?'}
+                              </span>
+                            }
+                          />
                         </Link>
                       </TooltipTrigger>
                       <TooltipContent side={tipSide}>
@@ -210,6 +217,7 @@ export function MemberHomeSpacesRail({
                 <TooltipTrigger asChild>
                   <Link
                     href={`/${lang}/my-spaces`}
+                    prefetch={toLinkPrefetch(prefetchNav)}
                     aria-label={t('openMySpaces')}
                     className={cn(
                       'grid shrink-0 place-items-center rounded-full border border-border text-neutral-11',

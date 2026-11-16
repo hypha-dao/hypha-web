@@ -12,12 +12,15 @@ type SpaceTabAccessWrapperProps = {
   spaceId?: number;
   spaceSlug?: string;
   children: React.ReactNode;
+  /** Shown while auth/on-chain access is unresolved. */
+  pendingFallback?: React.ReactNode;
 };
 
 export function SpaceTabAccessWrapper({
   spaceId,
   spaceSlug,
   children,
+  pendingFallback,
 }: SpaceTabAccessWrapperProps) {
   const { isLoading: isAuthLoading } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug || '');
@@ -44,15 +47,17 @@ export function SpaceTabAccessWrapper({
 
   if (isAccessLevelPending || access === undefined) {
     return (
-      <div
-        className="flex min-h-[12rem] flex-col gap-3 py-4"
-        aria-busy="true"
-        aria-live="polite"
-      >
-        <Skeleton loading height={28} width="40%" />
-        <Skeleton loading height={120} width="100%" />
-        <Skeleton loading height={120} width="100%" />
-      </div>
+      pendingFallback ?? (
+        <div
+          className="flex min-h-[12rem] flex-col gap-3 py-4"
+          aria-busy="true"
+          aria-live="polite"
+        >
+          <Skeleton loading height={28} width="40%" />
+          <Skeleton loading height={120} width="100%" />
+          <Skeleton loading height={120} width="100%" />
+        </div>
+      )
     );
   }
 

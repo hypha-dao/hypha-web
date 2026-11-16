@@ -4,6 +4,7 @@ import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, usePathname } from 'next/navigation';
 import {
+  OptimizedAvatarImage,
   SPACE_HEADER_ACTIONS_ATTR,
   STICKY_SPACE_CHROME_AVATAR_CLASSNAME,
   STICKY_SPACE_CHROME_TITLE_CLASSNAME,
@@ -25,7 +26,7 @@ import {
   scrollMainColumnTo,
   subscribeMainColumnScroll,
 } from '@hypha-platform/epics';
-import { Avatar, AvatarImage } from '@hypha-platform/ui';
+import { Avatar } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 const STICKY_HYSTERESIS_PX = 16;
@@ -1510,9 +1511,10 @@ export function DhoStickySpaceChrome({
         <div className="mx-auto flex h-full max-w-container-2xl items-center gap-3 px-3 sm:px-6 md:px-8">
           <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
             <Avatar className={STICKY_SPACE_CHROME_AVATAR_CLASSNAME}>
-              <AvatarImage
+              <OptimizedAvatarImage
                 src={logoSrc}
                 alt={logoAlt}
+                pixelSize={44}
                 className="object-cover"
               />
             </Avatar>

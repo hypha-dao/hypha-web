@@ -3,12 +3,13 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { UsersIcon, ZapIcon } from 'lucide-react';
-import { ENERGY_PALETTE } from './charts';
+import { ENERGY_PALETTE } from './energy-palette';
 import { SourceCard, SectionTitle } from './shared';
 import { ConsumerConsumptionCard } from './consumer-consumption-card';
 import {
   formatEnergyPricePerKwh,
   resolveEnergyParticipantDisplay,
+  resolveEnergyPersonId,
   sourceCardLabel,
 } from './format';
 import type { EnergyTabProps } from './energy-tab-props';
@@ -23,6 +24,12 @@ export const EnergyOverviewTab = ({
   const t = useTranslations('Energy.overview');
   const tShared = useTranslations('Energy.shared');
   const sources = data.sources ?? [];
+  // A failed device read leaves `deviceIds` null, so whether that member
+  // consumes is unknown; show the list as unavailable rather than guess.
+  const consumersUnavailable =
+    data.memberAddressesOk === false ||
+    (data.memberDetails ?? []).some((detail) => detail.deviceIds === null);
+  const sourcesUnavailable = data.sourcesOk === false;
 
   const deviceIdsByAddress = React.useMemo(() => {
     const map = new Map<string, number[] | null>();
@@ -57,15 +64,19 @@ export const EnergyOverviewTab = ({
           title={t('consumersTitle')}
           description={t('consumersDescription')}
           right={
-            <span className="flex items-center gap-1.5 text-1 text-neutral-11">
-              <UsersIcon size={14} />
-              {t('consumerCount', { count: consumers.length })}
-            </span>
+            consumersUnavailable ? null : (
+              <span className="flex items-center gap-1.5 text-1 text-neutral-11">
+                <UsersIcon size={14} />
+                {t('consumerCount', { count: consumers.length })}
+              </span>
+            )
           }
         />
-        {consumers.length ? (
+        {consumersUnavailable ? (
+          <p className="text-2 text-neutral-11">{t('consumersUnavailable')}</p>
+        ) : consumers.length ? (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {consumers.map((address) => {
+            {consumers.map((address, index) => {
               const display = resolveEnergyParticipantDisplay(
                 address,
                 people,
@@ -78,7 +89,11 @@ export const EnergyOverviewTab = ({
                   address={address}
                   displayName={display.displayName}
                   avatarUrl={display.avatarUrl}
-                  personId={people[address.toLowerCase()]?.id}
+                  personId={resolveEnergyPersonId(
+                    address,
+                    people,
+                    participantProfiles,
+                  )}
                   subtitle={display.subtitle}
                   isLoading={energyAvatarLoading(
                     address,
@@ -88,6 +103,7 @@ export const EnergyOverviewTab = ({
                   deviceIds={
                     deviceIdsByAddress.get(address.toLowerCase()) ?? null
                   }
+                  priority={index < 3}
                 />
               );
             })}
@@ -102,13 +118,17 @@ export const EnergyOverviewTab = ({
           title={t('sourcesTitle')}
           description={t('sourcesDescription')}
           right={
-            <span className="flex items-center gap-1.5 text-1 text-neutral-11">
-              <ZapIcon size={14} />
-              {t('sourceCount', { count: sources.length })}
-            </span>
+            sourcesUnavailable ? null : (
+              <span className="flex items-center gap-1.5 text-1 text-neutral-11">
+                <ZapIcon size={14} />
+                {t('sourceCount', { count: sources.length })}
+              </span>
+            )
           }
         />
-        {sources.length ? (
+        {sourcesUnavailable ? (
+          <p className="text-2 text-neutral-11">{t('sourcesUnavailable')}</p>
+        ) : sources.length ? (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {sources.map((source, index) => (
               <SourceCard

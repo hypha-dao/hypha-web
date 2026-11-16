@@ -1,27 +1,16 @@
 'use client';
 
-import useSWR from 'swr';
 import { useTranslations } from 'next-intl';
-import { useJwt, type MemberIntelligence } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
 
+import { useMemberIntelligence } from '../../common/member-intelligence-swr';
 import { NetworkSectionHeader } from '../../network-exchange/network-section-header';
 import { MemberHomeSpacesWidgetCard } from './member-home-chat-widgets';
 
 export function MemberSpacesStepIn({ lang }: { lang: Locale }) {
   const tSpaces = useTranslations('Spaces');
   const tHome = useTranslations('MemberHome');
-  const { jwt } = useJwt();
-  const { data, isLoading } = useSWR<MemberIntelligence | null>(
-    jwt ? ['/api/v1/people/me/intelligence', jwt] : null,
-    async ([url, token]) => {
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) return null;
-      return (await response.json()) as MemberIntelligence;
-    },
-  );
+  const { data, isLoading } = useMemberIntelligence();
   const spaces = data?.spaces ?? [];
 
   return (

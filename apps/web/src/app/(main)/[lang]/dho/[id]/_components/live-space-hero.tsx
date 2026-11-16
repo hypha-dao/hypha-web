@@ -13,7 +13,7 @@ import {
 } from '@hypha-platform/epics';
 import React from 'react';
 
-type LiveSpaceHeroBannerProps = Omit<
+export type LiveSpaceHeroBannerProps = Omit<
   CompactSpaceBannerWithStatsProps,
   | 'showSpaceStats'
   | 'logoUrl'

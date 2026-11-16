@@ -26,7 +26,10 @@ import { getDhoSpaceSlugFromPathname } from '../get-dho-space-slug-from-pathname
 import { getRootSpace } from '../get-root-space';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
 import { MemberHomeMark } from '../../people/components/member-home-mark';
-import { SpaceSwitcherOption } from '../../spaces/components/space-switcher-option';
+import {
+  SpaceSwitcherMark,
+  SpaceSwitcherOption,
+} from '../../spaces/components/space-switcher-option';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -40,10 +43,6 @@ function getDisplayIcon(
 /** Labeled identity control stays 40px inside the 70px bar. Icon chrome stays 36px. */
 const SPACE_SWITCHER_CLASS =
   'inline-flex h-[40px] w-full min-w-0 items-center justify-center gap-2 rounded-none border-0 bg-transparent px-2 text-2 font-medium leading-snug tracking-tight text-foreground';
-
-/** 32px circle — larger than the previous 24px mark, still inside the 40px control. */
-const SPACE_SWITCHER_AVATAR_CLASS =
-  'h-6 w-6 shrink-0 overflow-hidden rounded-full';
 
 export function AiPanelHeader({
   showCloseButton = true,
@@ -255,14 +254,10 @@ export function AiPanelHeader({
                   aria-label={tNavigation('mySpaces')}
                 >
                   {currentIcon ? (
-                    <span className={SPACE_SWITCHER_AVATAR_CLASS}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={currentIcon}
-                        alt={currentTitle}
-                        className="h-full w-full object-cover"
-                      />
-                    </span>
+                    <SpaceSwitcherMark
+                      iconUrl={currentIcon}
+                      alt={currentTitle}
+                    />
                   ) : (
                     <MemberHomeMark className="h-6 w-6" />
                   )}
@@ -337,14 +332,7 @@ export function AiPanelHeader({
           ) : (
             <div className={SPACE_SWITCHER_CLASS}>
               {currentIcon ? (
-                <span className={SPACE_SWITCHER_AVATAR_CLASS}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={currentIcon}
-                    alt={fallbackTitle}
-                    className="h-full w-full object-cover"
-                  />
-                </span>
+                <SpaceSwitcherMark iconUrl={currentIcon} alt={fallbackTitle} />
               ) : (
                 <MemberHomeMark className="h-6 w-6" />
               )}

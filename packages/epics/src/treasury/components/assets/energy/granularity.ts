@@ -8,9 +8,15 @@
  */
 
 import type { TelemetryPeriod } from '../../../hooks/use-space-energy-telemetry';
+import { OWNERSHIP_COLLAPSED_PERIOD } from './energy-constants';
 import { hashString, seeded } from './dummy-data';
 
 export type Granularity = 'daily' | 'weekly' | 'monthly';
+
+/** Collapsed owner rows use 7d; expanded charts keep daily/weekly/monthly. */
+export type OwnershipProductionWindow =
+  | Granularity
+  | typeof OWNERSHIP_COLLAPSED_PERIOD;
 
 export const GRANULARITIES: {
   id: Granularity;
@@ -26,6 +32,13 @@ export const GRANULARITIES: {
 
 export const granularityConfig = (granularity: Granularity) =>
   GRANULARITIES.find((g) => g.id === granularity) ?? GRANULARITIES[0]!;
+
+export const telemetryPeriodForOwnershipWindow = (
+  window: OwnershipProductionWindow,
+): TelemetryPeriod =>
+  window === OWNERSHIP_COLLAPSED_PERIOD
+    ? OWNERSHIP_COLLAPSED_PERIOD
+    : granularityConfig(window).period;
 
 /** X-axis labels for placeholder series (live telemetry ships its own). */
 export const granularityLabels = (

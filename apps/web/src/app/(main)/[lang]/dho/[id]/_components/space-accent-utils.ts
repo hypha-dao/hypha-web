@@ -1,5 +1,7 @@
 'use client';
 
+import { toCanvasSampleSrc } from '@hypha-platform/epics';
+
 export function parseHex(hex: string): [number, number, number] | null {
   const normalized = hex.trim();
   if (!/^#[0-9a-fA-F]{6}$/.test(normalized)) return null;
@@ -11,21 +13,7 @@ export function parseHex(hex: string): [number, number, number] | null {
 }
 
 export function toSampleableImageSrc(src?: string | null): string | null {
-  if (!src) return null;
-  const candidate = src.trim();
-  if (!candidate) return null;
-  if (candidate.startsWith('/')) {
-    return candidate.startsWith('//') ? null : candidate;
-  }
-  try {
-    const url = new URL(candidate);
-    if (url.protocol === 'http:' || url.protocol === 'https:') {
-      return `/_next/image?url=${encodeURIComponent(candidate)}&w=96&q=75`;
-    }
-  } catch {
-    return null;
-  }
-  return null;
+  return toCanvasSampleSrc(src ?? '', 96, 75);
 }
 
 export async function sampleAccentHex(

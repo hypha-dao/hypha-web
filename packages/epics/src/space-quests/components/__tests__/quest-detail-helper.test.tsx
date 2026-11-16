@@ -121,7 +121,7 @@ function questFixture(): QuestRecord {
 
 vi.mock('next/image', () => ({
   default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
-    <img alt={props.alt ?? ''} />
+    <img alt={props.alt ?? ''} src={props.src} />
   ),
 }));
 

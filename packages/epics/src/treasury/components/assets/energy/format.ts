@@ -144,6 +144,15 @@ export const readableSourceMetadataLabel = (source: {
   return undefined;
 };
 
+export const resolveEnergyPersonId = (
+  address: string,
+  people: Record<string, EnergyPerson | null>,
+  profiles?: Record<string, EnergyParticipantProfile>,
+) =>
+  people[address.toLowerCase()]?.id ??
+  profiles?.[address.toLowerCase()]?.personId ??
+  undefined;
+
 /** Merge Hypha person lookup with server-resolved participant profiles. */
 export const resolveEnergyParticipantDisplay = (
   address: string,

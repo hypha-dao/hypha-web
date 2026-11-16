@@ -76,6 +76,7 @@ import {
 import { countIncomingUnreadMessages } from '../../common/human-chat-panel/conversation-unread-count';
 import { playMessageReceiveSoundForEvent } from '../../common/human-chat-panel/message-receive-sound';
 import { contentMentionsMatrixUser } from '../../../../core/src/matrix/mentions';
+import { useEnergyGatedSWRKey } from '../../common/use-after-idle';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { scrollMainColumnTo } from '../../common/main-column-scroll';
 import { useChainScrollAtEdge } from '../../common/chain-scroll-at-edge';
@@ -1976,10 +1977,13 @@ export function MyConnections({
   const [listSettled, setListSettled] = useState(false);
   // Same SWR keys as Home so a prior /home visit fills this without refetch.
   // Shell + full run in parallel here; Direct list does not wait on either.
-  const { data: shell } = useSWR<MemberIntelligence | null>(
+  const shellKey = useEnergyGatedSWRKey(
     homeKeyReady
       ? (['/api/v1/people/me/intelligence', memberId, 'shell'] as const)
       : null,
+  );
+  const { data: shell } = useSWR<MemberIntelligence | null>(
+    shellKey,
     () => fetchHome('shell'),
     {
       revalidateOnFocus: false,
@@ -1989,10 +1993,13 @@ export function MyConnections({
       compare: sameMemberHome,
     },
   );
-  const { data: full, error: fullError } = useSWR<MemberIntelligence | null>(
+  const fullKey = useEnergyGatedSWRKey(
     homeKeyReady
       ? (['/api/v1/people/me/intelligence', memberId, 'full'] as const)
       : null,
+  );
+  const { data: full, error: fullError } = useSWR<MemberIntelligence | null>(
+    fullKey,
     () => fetchHome('full'),
     {
       revalidateOnFocus: false,

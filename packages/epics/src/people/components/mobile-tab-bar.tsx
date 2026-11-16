@@ -26,6 +26,10 @@ import type { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { getDhoSpaceSlugFromPathname } from '../../common/get-dho-space-slug-from-pathname';
+import {
+  toLinkPrefetch,
+  useEnergyOverviewIdleGate,
+} from '../../common/use-after-idle';
 import { useAiPanel } from '../../common/human-chat-panel-context';
 import { buildSpaceSectionNavItems } from '../../common/space-section-nav';
 import type { SpaceSectionNavKey } from '../../common/space-section-nav';
@@ -155,6 +159,7 @@ export function MobileTabBar({
   const tEnergy = useTranslations('MemberHome.energy');
   const tTreasury = useTranslations('TreasuryTab');
   const pathname = usePathname() ?? '';
+  const prefetchNav = useEnergyOverviewIdleGate();
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { person } = useMe();
@@ -437,7 +442,7 @@ export function MobileTabBar({
         inert={!createOpen}
       >
         <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-4">
-          <NetworkQuickCreate lang={lang} />
+          <NetworkQuickCreate lang={lang} enabled={createOpen} />
           <div className="mt-6 border border-border">
             <p className="border-b border-border px-3 py-2 text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
               {t('settings')}
@@ -547,6 +552,7 @@ export function MobileTabBar({
                 <Link
                   key={item.key}
                   href={item.href}
+                  prefetch={toLinkPrefetch(prefetchNav)}
                   aria-current={item.active ? 'page' : undefined}
                   className={className}
                 >
@@ -568,6 +574,7 @@ export function MobileTabBar({
               href={dashboardHref}
               label={t('myDashboard')}
               active={dashboardActive}
+              prefetch={toLinkPrefetch(prefetchNav)}
               onClick={() => setCreateOpen(false)}
               icon={<House className={iconClass} strokeWidth={1.25} />}
             />
@@ -577,6 +584,7 @@ export function MobileTabBar({
                 label={t('chat')}
                 active={connectionsActive}
                 badge={unreadCount}
+                prefetch={toLinkPrefetch(prefetchNav)}
                 onClick={() => setCreateOpen(false)}
                 icon={
                   <MessagesSquare className={iconClass} strokeWidth={1.25} />
@@ -588,6 +596,7 @@ export function MobileTabBar({
               label={t('myWallet')}
               active={walletActive}
               center
+              prefetch={toLinkPrefetch(prefetchNav)}
               onClick={() => setCreateOpen(false)}
               icon={
                 <Wallet className="block h-5 w-5 shrink-0" strokeWidth={1.25} />
@@ -598,6 +607,7 @@ export function MobileTabBar({
                 href={spacesHref}
                 label={t('mySpaces')}
                 active={spacesActive}
+                prefetch={toLinkPrefetch(prefetchNav)}
                 onClick={() => setCreateOpen(false)}
                 icon={<LayoutGrid className={iconClass} strokeWidth={1.25} />}
               />
@@ -606,6 +616,7 @@ export function MobileTabBar({
               href={networkHref}
               label={t('network')}
               active={networkActive}
+              prefetch={toLinkPrefetch(prefetchNav)}
               onClick={() => setCreateOpen(false)}
               icon={<Globe2 className={iconClass} strokeWidth={1.25} />}
             />
@@ -623,6 +634,7 @@ function TabLink({
   active,
   center,
   badge = 0,
+  prefetch = null,
   onClick,
   icon,
 }: {
@@ -631,12 +643,14 @@ function TabLink({
   active: boolean;
   center?: boolean;
   badge?: number;
+  prefetch?: boolean | null;
   onClick: () => void;
   icon: ReactNode;
 }) {
   return (
     <Link
       href={href}
+      prefetch={prefetch}
       aria-current={active ? 'page' : undefined}
       onClick={onClick}
       className={cn(

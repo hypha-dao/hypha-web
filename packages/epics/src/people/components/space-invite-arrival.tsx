@@ -1,9 +1,8 @@
 'use client';
 
-import useSWR from 'swr';
-import { useJwt, type MemberIntelligence } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
 
+import { useMemberIntelligence } from '../../common/member-intelligence-swr';
 import { MemberHomeInviteBanners } from './member-home-invite-banner';
 
 /**
@@ -17,20 +16,12 @@ export function SpaceInviteArrival({
   lang: Locale;
   token: string;
 }) {
-  const { jwt } = useJwt();
   const trimmed = token.trim();
-  const { data } = useSWR<MemberIntelligence | null>(
-    jwt && trimmed ? ['/api/v1/people/me/intelligence', jwt, trimmed] : null,
-    async ([url, accessToken]) => {
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (!response.ok) return null;
-      return (await response.json()) as MemberIntelligence;
-    },
-  );
+  const { data } = useMemberIntelligence(trimmed || null, {
+    enabled: Boolean(trimmed),
+  });
 
-  const invite = data?.invites.find((row) => row.token === trimmed);
+  const invite = data?.invites?.find((row) => row.token === trimmed);
   if (!invite) return null;
 
   return <MemberHomeInviteBanners lang={lang} invites={[invite]} />;

@@ -2,6 +2,7 @@
 
 import { SWRConfig } from 'swr';
 import type { ReactNode } from 'react';
+import { energyIntelligenceSWRMiddleware } from '@hypha-platform/epics';
 
 /** Statuses a retry cannot fix (refused or missing): do not retry them. */
 const NO_RETRY_STATUSES = new Set([401, 403, 404]);
@@ -40,6 +41,7 @@ export function SwrProvider({
         revalidateOnFocus: true,
         revalidateOnReconnect: true,
         errorRetryCount: 3,
+        use: [energyIntelligenceSWRMiddleware],
         ...(skipClientErrorRetry
           ? {
               onErrorRetry: (error, _key, config, revalidate, opts) => {

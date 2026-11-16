@@ -1,121 +1,23 @@
 'use client';
 
 import * as React from 'react';
-import { useLocale, useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
 import { ChevronDownIcon } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../../../people/components/person-avatar';
-import { useSpaceEnergyTelemetry } from '../../../hooks/use-space-energy-telemetry';
 import { shortAddr } from './format';
-import { BarChart, ENERGY_PALETTE, type ChartSeries } from './charts';
-import {
-  buildMemberConsumptionSeries,
-  granularityConfig,
-  granularityLabels,
-  type Granularity,
-} from './granularity';
-import { GranularityToggle } from './granularity-toggle';
-import { EnergyChartSkeleton, EnergyTextSkeleton } from './loading-skeletons';
+import { EnergyChartSkeleton } from './loading-skeletons';
 
-const ConsumerConsumptionChart = ({
-  address,
-  deviceIds,
-  spaceSlug,
-}: {
-  address: string;
-  deviceIds: number[] | null;
-  spaceSlug: string;
-}) => {
-  const locale = useLocale();
-  const t = useTranslations('Energy.consumerCard');
-  const tShared = useTranslations('Energy.shared');
-  const [granularity, setGranularity] = React.useState<Granularity>('daily');
-  const cfg = granularityConfig(granularity);
-  const {
-    data: telemetry,
-    isLoading,
-    error,
-  } = useSpaceEnergyTelemetry(cfg.period, spaceSlug);
-
-  const useLiveTelemetry = Boolean(
-    telemetry?.enabled && telemetry.configured && !error && telemetry.dataFrom,
-  );
-
-  const { labels, values, isPlaceholder } = React.useMemo(() => {
-    if (useLiveTelemetry && deviceIds) {
-      const meterSet = new Set(deviceIds);
-      const matched = (telemetry!.consumptionByMeter ?? []).filter((series) =>
-        meterSet.has(series.meterId),
-      );
-      const values = telemetry!.labels.map((_, i) =>
-        matched.reduce((acc, series) => acc + (series.valuesKwh[i] ?? 0), 0),
-      );
-      return { labels: telemetry!.labels, values, isPlaceholder: false };
-    }
-    return {
-      labels: granularityLabels(granularity, locale),
-      values: buildMemberConsumptionSeries(address, granularity),
-      isPlaceholder: true,
-    };
-  }, [useLiveTelemetry, telemetry, deviceIds, address, granularity, locale]);
-
-  const total = values.reduce((a, b) => a + b, 0);
-
-  const useWh = values.every((v) => v < 10);
-  const unit = useWh ? tShared('wh') : tShared('kwh');
-  const displayValues = useWh
-    ? values.map((v) => Math.round(v * 1000))
-    : values;
-  const displayTotal = useWh ? Math.round(total * 1000) : Math.round(total);
-
-  const series: ChartSeries[] = [
-    {
-      key: 'consumption',
-      label: t('consumption'),
-      color: ENERGY_PALETTE[2]!,
-      values: displayValues,
-    },
-  ];
-
-  return (
-    <div className="flex flex-col gap-3 border-t border-border px-3 pb-3 pt-3">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        {isLoading ? (
-          <EnergyTextSkeleton className="w-40" />
-        ) : (
-          <p className="text-1 text-neutral-11">
-            {tShared('overWindow', {
-              total: displayTotal.toLocaleString(locale),
-              unit,
-            })}
-          </p>
-        )}
-        <GranularityToggle value={granularity} onChange={setGranularity} />
-      </div>
-      {isLoading ? (
-        <EnergyChartSkeleton height={200} bars={10} />
-      ) : (
-        <BarChart
-          series={series}
-          labels={labels}
-          mode="grouped"
-          height={200}
-          valueSuffix={` ${unit}`}
-          showLegend={false}
-        />
-      )}
-      {isLoading ? (
-        <EnergyTextSkeleton className="w-56" />
-      ) : (
-        <p className="text-1 text-neutral-11">
-          {isPlaceholder
-            ? t('placeholderConsumption')
-            : tShared('liveMeterData', { count: deviceIds?.length ?? 0 })}
-        </p>
-      )}
-    </div>
-  );
-};
+const ConsumerConsumptionChart = dynamic(
+  () =>
+    import('./consumer-consumption-chart').then(
+      (mod) => mod.ConsumerConsumptionChart,
+    ),
+  {
+    ssr: false,
+    loading: () => <EnergyChartSkeleton height={200} bars={10} />,
+  },
+);
 
 export const ConsumerConsumptionCard = ({
   spaceSlug,
@@ -126,6 +28,7 @@ export const ConsumerConsumptionCard = ({
   subtitle,
   isLoading,
   deviceIds,
+  priority = false,
 }: {
   spaceSlug: string;
   address: string;
@@ -135,6 +38,8 @@ export const ConsumerConsumptionCard = ({
   subtitle?: string;
   isLoading?: boolean;
   deviceIds: number[] | null;
+  /** First-row portraits only — remaining cards lazy-load. */
+  priority?: boolean;
 }) => {
   const [expanded, setExpanded] = React.useState(false);
 
@@ -153,6 +58,7 @@ export const ConsumerConsumptionCard = ({
           shape="circle"
           isLoading={isLoading}
           personId={personId}
+          priority={priority}
         />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium text-foreground">{displayName}</p>

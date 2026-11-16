@@ -7,20 +7,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../../../people/components/person-avatar';
 import type { EnergyParticipantProfile } from '../../../hooks/use-space-energy';
+import { useEnergySevenDaySettled } from '../../../../common/energy-seven-day-settled';
 import { useSpaceEnergyTelemetry } from '../../../hooks/use-space-energy-telemetry';
-import { BarChart, ENERGY_PALETTE, type ChartSeries } from './charts';
+import { BarChart, type ChartSeries } from './charts';
+import { buildProductionSeries, timeframeLabels } from './dummy-data';
+import { OWNERSHIP_COLLAPSED_PERIOD } from './energy-constants';
+import { ENERGY_PALETTE } from './energy-palette';
 import { type EnergyPerson } from './use-energy-people';
 import {
   formatBpsPct,
   resolveEnergyParticipantDisplay,
+  resolveEnergyPersonId,
   sourceDisplayName,
   shortAddr,
+  UNAVAILABLE,
 } from './format';
 import {
   buildSourceProductionSeries,
-  granularityConfig,
   granularityLabels,
+  telemetryPeriodForOwnershipWindow,
   type Granularity,
+  type OwnershipProductionWindow,
 } from './granularity';
 import { GranularityToggle } from './granularity-toggle';
 import type { EnergyTabProps } from './energy-tab-props';
@@ -34,39 +41,44 @@ type SourceGroup = {
   name: string;
   /** Index of this source in the registered source list (`data.sources`). */
   sourceIndex: number;
-  /** On-chain internal price units: value / 100 = stablecoin per kWh. */
-  basePricePerKwh: number;
+  /**
+   * On-chain internal price units: value / 100 = stablecoin per kWh.
+   * Null when this source was not in the loaded source list.
+   */
+  basePricePerKwh: number | null;
   owners: Owner[];
 };
 
 /**
- * Production series for one source under a daily/weekly/monthly granularity.
- * Live interval telemetry when available; deterministic placeholder otherwise.
- * Production meters are reported sorted by meter id, which matches the order
- * sources are registered on-chain (9001 -> first source, 9002 -> second, …).
+ * Production series for one source under a daily/weekly/monthly granularity,
+ * or the collapsed-row 7d window. Live interval telemetry when available;
+ * deterministic placeholder otherwise. Production meters are reported sorted
+ * by meter id, which matches the order sources are registered on-chain
+ * (9001 -> first source, 9002 -> second, …).
  */
 const useSourceProduction = (
   sourceIndex: number,
   sourceName: string,
-  granularity: Granularity,
+  window: OwnershipProductionWindow,
   locale: string,
   spaceSlug: string,
+  enabled = true,
 ) => {
-  const cfg = granularityConfig(granularity);
+  const period = telemetryPeriodForOwnershipWindow(window);
   const {
     data: telemetry,
     isLoading,
     error,
-  } = useSpaceEnergyTelemetry(cfg.period, spaceSlug);
+  } = useSpaceEnergyTelemetry(period, spaceSlug, { enabled });
 
   const live = Boolean(
     telemetry?.enabled && telemetry.configured && !error && telemetry.dataFrom,
   );
 
   return React.useMemo(() => {
-    // Do not fall back to placeholder series while the request is in flight —
-    // that briefly renders default/fake "earned from source" amounts.
-    if (isLoading) {
+    // Disabled (waiting on 7d) and in-flight must not fall back to placeholder
+    // series — that briefly renders default/fake "earned from source" amounts.
+    if (!enabled || isLoading) {
       return {
         labels: [] as string[],
         values: [] as number[],
@@ -85,18 +97,29 @@ const useSourceProduction = (
         isLoading: false,
       };
     }
+    if (window === OWNERSHIP_COLLAPSED_PERIOD) {
+      return {
+        labels: timeframeLabels(OWNERSHIP_COLLAPSED_PERIOD, locale),
+        values:
+          buildProductionSeries([sourceName], OWNERSHIP_COLLAPSED_PERIOD)
+            .perSource[0]?.values ?? [],
+        isPlaceholder: true,
+        isLoading: false,
+      };
+    }
     return {
-      labels: granularityLabels(granularity, locale),
-      values: buildSourceProductionSeries(sourceName, granularity),
+      labels: granularityLabels(window, locale),
+      values: buildSourceProductionSeries(sourceName, window),
       isPlaceholder: true,
       isLoading: false,
     };
   }, [
+    enabled,
     live,
     telemetry,
     sourceIndex,
     sourceName,
-    granularity,
+    window,
     isLoading,
     locale,
   ]);
@@ -128,19 +151,24 @@ const OwnerEarningsChart = ({
   const locale = useLocale();
   const t = useTranslations('Energy.ownership');
   const [granularity, setGranularity] = React.useState<Granularity>('daily');
+  const sevenDaySettled = useEnergySevenDaySettled();
   const production = useSourceProduction(
     group.sourceIndex,
     group.name,
     granularity,
     locale,
     spaceSlug,
+    sevenDaySettled,
   );
 
-  const earnings = earningsFromProduction(
-    production.values,
-    group.basePricePerKwh,
-    owner.bps,
-  );
+  const earnings =
+    group.basePricePerKwh === null
+      ? []
+      : earningsFromProduction(
+          production.values,
+          group.basePricePerKwh,
+          owner.bps,
+        );
   const total = earnings.reduce((a, b) => a + b, 0);
 
   const series: ChartSeries[] = [
@@ -202,6 +230,7 @@ const OwnerEarningsRow = ({
   totalEarned,
   totalIsPlaceholder,
   earningsLoading,
+  earningsUnavailable,
 }: {
   spaceSlug: string;
   group: SourceGroup;
@@ -211,9 +240,10 @@ const OwnerEarningsRow = ({
   personId?: number;
   isLoading?: boolean;
   accent: string;
-  totalEarned: number;
+  totalEarned: number | null;
   totalIsPlaceholder: boolean;
   earningsLoading?: boolean;
+  earningsUnavailable: boolean;
 }) => {
   const t = useTranslations('Energy.ownership');
   const [expanded, setExpanded] = React.useState(false);
@@ -236,10 +266,12 @@ const OwnerEarningsRow = ({
         />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium text-foreground">{displayName}</p>
-          {earningsLoading ? (
+          {earningsUnavailable || totalEarned === null ? (
+            <p className="truncate text-1 text-neutral-11">{UNAVAILABLE}</p>
+          ) : earningsLoading ? (
             <EnergyTextSkeleton className="mt-1 w-48" />
           ) : (
-            <p className="truncate text-1 text-neutral-11">
+            <p className="min-w-0 break-words text-1 text-neutral-11">
               {t('earnedFromSource', {
                 prefix: totalIsPlaceholder ? '≈ ' : '',
                 amount: formatEarnings(totalEarned),
@@ -263,12 +295,18 @@ const OwnerEarningsRow = ({
         />
       </button>
       {expanded ? (
-        <OwnerEarningsChart
-          group={group}
-          owner={owner}
-          accent={accent}
-          spaceSlug={spaceSlug}
-        />
+        earningsUnavailable ? (
+          <p className="border-t border-border px-3 pb-3 pt-3 text-1 text-neutral-11">
+            {t('earningsUnavailable')}
+          </p>
+        ) : (
+          <OwnerEarningsChart
+            group={group}
+            owner={owner}
+            accent={accent}
+            spaceSlug={spaceSlug}
+          />
+        )
       ) : null}
     </div>
   );
@@ -281,6 +319,7 @@ const SourceOwnershipCard = ({
   people,
   participantProfiles,
   peopleLoading,
+  earningsUnavailable,
 }: {
   spaceSlug: string;
   group: SourceGroup;
@@ -288,6 +327,7 @@ const SourceOwnershipCard = ({
   people: Record<string, EnergyPerson | null>;
   participantProfiles?: Record<string, EnergyParticipantProfile>;
   peopleLoading: boolean;
+  earningsUnavailable: boolean;
 }) => {
   const locale = useLocale();
   const t = useTranslations('Energy.ownership');
@@ -295,9 +335,10 @@ const SourceOwnershipCard = ({
   const production = useSourceProduction(
     group.sourceIndex,
     group.name,
-    'monthly',
+    OWNERSHIP_COLLAPSED_PERIOD,
     locale,
     spaceSlug,
+    !earningsUnavailable,
   );
   const totalProductionKwh = production.values.reduce((a, b) => a + b, 0);
 
@@ -327,7 +368,11 @@ const SourceOwnershipCard = ({
               owner={owner}
               displayName={display.displayName}
               avatarUrl={display.avatarUrl}
-              personId={people[owner.address.toLowerCase()]?.id}
+              personId={resolveEnergyPersonId(
+                owner.address,
+                people,
+                participantProfiles,
+              )}
               isLoading={energyAvatarLoading(
                 owner.address,
                 peopleLoading,
@@ -335,16 +380,21 @@ const SourceOwnershipCard = ({
               )}
               accent={accent}
               totalEarned={
-                totalProductionKwh *
-                (group.basePricePerKwh / 100) *
-                (owner.bps / 10_000)
+                group.basePricePerKwh === null
+                  ? null
+                  : totalProductionKwh *
+                    (group.basePricePerKwh / 100) *
+                    (owner.bps / 10_000)
               }
               totalIsPlaceholder={production.isPlaceholder}
               earningsLoading={production.isLoading}
+              earningsUnavailable={earningsUnavailable}
             />
           );
         })}
-        {production.isLoading ? (
+        {earningsUnavailable ? (
+          <p className="text-1 text-neutral-11">{t('earningsUnavailable')}</p>
+        ) : production.isLoading ? (
           <EnergyTextSkeleton className="w-64" />
         ) : (
           <p className="text-1 text-neutral-11">
@@ -426,7 +476,7 @@ export const OwnershipTab = ({
             meta?.displayName,
           ),
           sourceIndex: meta?.index ?? index,
-          basePricePerKwh: meta?.basePricePerKwh ?? 0,
+          basePricePerKwh: meta ? meta.basePricePerKwh : null,
           owners: value.owners.sort((a, b) => b.bps - a.bps),
         };
       });
@@ -434,6 +484,21 @@ export const OwnershipTab = ({
   }, [details, sourceMeta, tShared]);
 
   const participantProfiles = data.participantProfiles;
+
+  if (data.memberAddressesOk === false) {
+    return (
+      <p className="text-2 text-neutral-11">
+        {tShared('memberListUnavailable')}
+      </p>
+    );
+  }
+
+  // An empty or partial grouping would misstate who owns the sources.
+  if (details.some((member) => member.ownershipsOk === false)) {
+    return (
+      <p className="text-2 text-neutral-11">{t('ownershipUnavailable')}</p>
+    );
+  }
 
   if (!groups.length) {
     return <p className="text-2 text-neutral-11">{t('noOwnership')}</p>;
@@ -450,6 +515,7 @@ export const OwnershipTab = ({
           people={people}
           participantProfiles={participantProfiles}
           peopleLoading={peopleLoading}
+          earningsUnavailable={group.basePricePerKwh === null}
         />
       ))}
     </div>

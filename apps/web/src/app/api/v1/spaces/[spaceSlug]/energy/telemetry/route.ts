@@ -8,6 +8,21 @@ import {
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
+import {
+  readStaleWhileRevalidate,
+  StaleWhileRevalidateBusyError,
+} from '@web/utils/stale-while-revalidate';
+
+/** Pool worst case (15s connect + 70s query) plus space/access lookups. */
+export const maxDuration = 90;
+
+/**
+ * Azure aggregates take 17–45s uncached. Readings land in 15-minute windows,
+ * so serve the last aggregate and refresh it after the response once it is
+ * older than this. Kept for a week so a quiet community still opens warm.
+ */
+const TELEMETRY_FRESH_MS = 5 * 60_000;
+const TELEMETRY_CACHE_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 const disabledTelemetryPayload = (
   period: ReturnType<typeof parseEnergyTelemetryPeriod>,
@@ -71,13 +86,34 @@ export async function GET(
 
     const communityId = mapping.factoryCommunityId;
 
-    const telemetry = await fetchEnergyTelemetry({
-      communityId,
-      period,
+    if (!isEnergyDbConfigured()) {
+      return NextResponse.json(
+        await fetchEnergyTelemetry({ communityId, period }),
+      );
+    }
+
+    const telemetry = await readStaleWhileRevalidate({
+      key: `energy-telemetry:v1:${communityId}:${period}`,
+      freshMs: TELEMETRY_FRESH_MS,
+      ttlSeconds: TELEMETRY_CACHE_TTL_SECONDS,
+      load: () => fetchEnergyTelemetry({ communityId, period }),
+      // Parallel cold aggregates slow each other down past the query timeout,
+      // so one instance per region queries Azure and the rest wait for it.
+      coalesce: { waitMs: 55_000, lockSeconds: maxDuration },
     });
 
-    return NextResponse.json(telemetry);
+    return NextResponse.json(telemetry, {
+      headers: {
+        'Cache-Control': 'private, max-age=30, stale-while-revalidate=60',
+      },
+    });
   } catch (error) {
+    if (error instanceof StaleWhileRevalidateBusyError) {
+      return NextResponse.json(
+        { error: 'Energy telemetry is still loading.' },
+        { status: 503, headers: { 'Retry-After': '10' } },
+      );
+    }
     console.error('[spaces/energy/telemetry] failed:', error);
     return NextResponse.json(
       { error: 'Failed to fetch energy telemetry.' },

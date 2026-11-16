@@ -9,6 +9,8 @@ export type EnergyParticipantDisplay = {
   avatarUrl?: string | null;
   subtitle?: string | null;
   profileSlug?: string | null;
+  /** Hypha person id when the wallet maps to a profile — avoids a client N+1. */
+  personId?: number | null;
   kind: 'person' | 'space' | 'institutional';
 };
 
@@ -77,6 +79,7 @@ export async function resolveEnergyParticipants(
             ? `@${person.nickname}`
             : person.location ?? null,
           profileSlug: person.slug ?? null,
+          personId: person.id ?? null,
           kind: 'person',
         };
         continue;

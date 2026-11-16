@@ -4,6 +4,8 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 
+import { ENERGY_PALETTE } from './energy-palette';
+
 /**
  * Lightweight, dependency-free SVG bar charts tuned for the Hypha dark theme.
  * Rendered into a responsive `viewBox` (wrapped in an aspect-ratio box) so they
@@ -11,14 +13,7 @@ import { cn } from '@hypha-platform/ui-utils';
  * an HTML tooltip positioned in viewBox-percentage space.
  */
 
-export const ENERGY_PALETTE = [
-  '#f5b544', // solar amber
-  '#3ecf8e', // green
-  '#5b9dff', // blue
-  '#b07cff', // violet
-  '#ff7a9c', // pink
-  '#4dd0e1', // cyan
-] as const;
+export { ENERGY_PALETTE };
 
 export type ChartSeries = {
   key: string;

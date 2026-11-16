@@ -29,29 +29,74 @@ export type CheckSpaceAccessResult = {
   authToken?: string;
 };
 
+const VISIBILITY_CACHE_TTL_MS = 30_000;
+
+async function fetchSpaceVisibility(spaceIdBigInt: bigint) {
+  return web3Client.readContract(
+    getSpaceVisibility({ spaceId: spaceIdBigInt }),
+  );
+}
+
+type SpaceVisibility = Awaited<ReturnType<typeof fetchSpaceVisibility>>;
+
+const visibilityCache = new Map<
+  string,
+  { expiresAt: number; visibility: SpaceVisibility }
+>();
+
+function spaceAccessLevel(visibility: SpaceVisibility): TransparencyLevel {
+  return Number(
+    'access' in visibility ? visibility.access : visibility[1],
+  ) as TransparencyLevel;
+}
+
+async function readSpaceVisibility(
+  spaceIdBigInt: bigint,
+  fresh: boolean,
+): Promise<SpaceVisibility> {
+  const cacheKey = spaceIdBigInt.toString();
+  const cached = fresh ? undefined : visibilityCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.visibility;
+  }
+
+  const visibility = await fetchSpaceVisibility(spaceIdBigInt);
+  // PUBLIC → restricted must re-read immediately; a cached PUBLIC row
+  // would keep granting hasAccess: true with no auth for the TTL.
+  if (spaceAccessLevel(visibility) !== TransparencyLevel.PUBLIC) {
+    visibilityCache.set(cacheKey, {
+      expiresAt: Date.now() + VISIBILITY_CACHE_TTL_MS,
+      visibility,
+    });
+  }
+  return visibility;
+}
+
 /**
  * Checks if the user has access to a space based on the transparency matrix.
  * This function enforces server-side authorization for space data.
  *
  * @param request - The incoming NextRequest
  * @param spaceId - The web3 space ID to check access for
+ * @param options.freshVisibility - Skip the 30s visibility cache, so a space
+ *   that just became restricted is enforced immediately
  * @returns Object with hasAccess boolean and optional error response
  */
 export async function checkSpaceAccess(
   request: NextRequest,
   spaceId: number | bigint,
+  options: { freshVisibility?: boolean } = {},
 ): Promise<CheckSpaceAccessResult> {
   try {
     const spaceIdBigInt =
       typeof spaceId === 'number' ? BigInt(spaceId) : spaceId;
 
-    const visibility = await web3Client.readContract(
-      getSpaceVisibility({ spaceId: spaceIdBigInt }),
+    const visibility = await readSpaceVisibility(
+      spaceIdBigInt,
+      options.freshVisibility ?? false,
     );
 
-    const accessLevel = Number(
-      'access' in visibility ? visibility.access : visibility[1],
-    ) as TransparencyLevel;
+    const accessLevel = spaceAccessLevel(visibility);
 
     if (accessLevel === TransparencyLevel.PUBLIC) {
       return { hasAccess: true };

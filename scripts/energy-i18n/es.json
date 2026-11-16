@@ -61,7 +61,7 @@
     "noOwnership": "Aún no se ha registrado la propiedad de fuentes en cadena.",
     "earningsOverWindow": "≈ {amount} EURC en este periodo",
     "earnings": "Ingresos",
-    "earnedFromSource": "{prefix}{amount} EURC obtenidos de esta fuente",
+    "earnedFromSource": "{prefix}{amount} EURC obtenidos de esta fuente en los últimos 7 días",
     "placeholderEstimate": "Estimación provisional — la telemetría de producción en vivo aún no está conectada.",
     "liveEstimate": "Estimado a partir de telemetría de producción en vivo × precio base × participación de propiedad.",
     "earningsHint": "Los ingresos se estiman en los últimos 12 meses a partir de datos de producción {dataType}. Haz clic en un propietario para ver el detalle diario, semanal o mensual.",

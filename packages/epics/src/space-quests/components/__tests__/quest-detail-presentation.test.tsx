@@ -41,7 +41,9 @@ import {
 } from '../space-quests-section';
 
 vi.mock('next/image', () => ({
-  default: (props: { alt?: string }) => <img alt={props.alt ?? ''} />,
+  default: (props: { alt?: string; src?: string }) => (
+    <img alt={props.alt ?? ''} src={props.src} />
+  ),
 }));
 
 vi.mock('next-intl', () => ({

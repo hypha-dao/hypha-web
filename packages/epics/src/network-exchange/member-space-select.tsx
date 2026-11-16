@@ -5,6 +5,7 @@ import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
 import { Combobox } from '@hypha-platform/ui';
+import { toNextImageOptimizerSrc } from '../common/optimize-remote-image';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
 import type { MemberNamedSpace } from './use-member-named-spaces';
 
@@ -15,7 +16,11 @@ function SpaceMark({
   title: string;
   logoUrl?: string | null;
 }) {
-  const src = logoUrl || DEFAULT_SPACE_AVATAR_IMAGE;
+  const src = toNextImageOptimizerSrc(
+    logoUrl || DEFAULT_SPACE_AVATAR_IMAGE,
+    48,
+    70,
+  );
   return (
     <>
       {/* Plain img: next/image drops remote space logos that the rail already shows. */}

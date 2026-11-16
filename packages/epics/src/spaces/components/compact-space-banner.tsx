@@ -2,8 +2,9 @@ import * as React from 'react';
 import { ChevronDown } from 'lucide-react';
 import { LinkIcon } from '../../common/link-icon';
 import { LinkLabel } from '../../common/link-label';
-import { Avatar, AvatarImage } from '@hypha-platform/ui';
+import { Avatar } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { OptimizedAvatarImage } from '../../common/optimized-avatar-image';
 import { CompactSpaceBannerLead } from './compact-space-banner-lead';
 import { isSafeExternalUrl, isSafeImageUrl } from '../utils/safe-image-url';
 import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../../common/chrome-radius';
@@ -216,7 +217,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
       )}
       aria-label={title}
     >
-      {/* Lead image — Image + preload avoids grey decode flash; overlays unchanged */}
+      {/* Lead image — next/image with sized srcset; overlays unchanged */}
       {textureSrc ? (
         <>
           <CompactSpaceBannerLead src={textureSrc} />
@@ -237,9 +238,11 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
         <div className="flex min-h-[5.5rem] flex-col justify-center md:min-h-[6.5rem]">
           <div className="flex flex-wrap items-center gap-3 md:gap-4">
             <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
-              <AvatarImage
+              <OptimizedAvatarImage
                 src={safeLogoSrc}
                 alt={logoAlt}
+                pixelSize={56}
+                priority
                 className="object-cover"
               />
             </Avatar>

@@ -1,211 +1,72 @@
 import 'server-only';
 
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
 import { getEnergyDbConfigFromEnv } from './azure-db-config';
 import {
-  ENERGY_TELEMETRY_PERIODS,
-  PRODUCTION_METER_LABELS,
-  type EnergyTelemetryMeterSeries,
-  type EnergyTelemetryPeriod,
-  type EnergyTelemetryResponse,
-  type EnergyTelemetrySourceSeries,
-} from './telemetry-types';
+  assembleEnergyTelemetry,
+  emptyEnergyTelemetryResponse,
+  parseEnergyTelemetryPeriod,
+  type EnergyTelemetryAggregateRow,
+} from './telemetry-assemble';
+import type { EnergyTelemetryResponse } from './telemetry-types';
+import {
+  missingTelemetryRange,
+  storeTelemetryRowsByDay,
+  telemetryPeriodDayKeys,
+  utcDayKeysInRange,
+} from './telemetry-window';
+import { createTtlCache } from './ttl-cache';
 
-type AggregateRow = {
-  bucket: string;
-  kind: 'consumption' | 'production' | 'import' | 'export';
-  meter_id: number;
-  total_wh: string;
-};
+/** Keep assembled period payloads for the same freshness window as the route. */
+export const ENERGY_TELEMETRY_CACHE_TTL_MS = 5 * 60_000;
+/** Daily buckets are reused across 7d/30d/12m on the same instance. */
+const ENERGY_TELEMETRY_DAY_TTL_MS = 10 * 60_000;
 
-const PERIOD_CONFIG: Record<
-  EnergyTelemetryPeriod,
-  { points: number; unit: 'day' | 'week' | 'month'; intervalSql: string }
-> = {
-  '7d': { points: 7, unit: 'day', intervalSql: "interval '7 days'" },
-  '30d': { points: 30, unit: 'day', intervalSql: "interval '30 days'" },
-  '90d': { points: 90, unit: 'day', intervalSql: "interval '90 days'" },
-  '12w': { points: 12, unit: 'week', intervalSql: "interval '12 weeks'" },
-  '12m': { points: 12, unit: 'month', intervalSql: "interval '12 months'" },
-};
+const telemetryCache = createTtlCache<EnergyTelemetryResponse>(
+  ENERGY_TELEMETRY_CACHE_TTL_MS,
+);
+const telemetryDayCache = createTtlCache<EnergyTelemetryAggregateRow[]>(
+  ENERGY_TELEMETRY_DAY_TTL_MS,
+);
 
-function parsePeriod(raw: string | null | undefined): EnergyTelemetryPeriod {
-  if (raw && ENERGY_TELEMETRY_PERIODS.includes(raw as EnergyTelemetryPeriod)) {
-    return raw as EnergyTelemetryPeriod;
-  }
-  return '30d';
-}
+const communityWindowLoads = new Map<number, Promise<void>>();
 
-function whToKwh(wh: number): number {
-  return Math.round((wh / 1000) * 100) / 100;
-}
+let energyDbPool: Pool | undefined;
 
-function formatDayLabel(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getUTCDate()}/${d.getUTCMonth() + 1}`;
-}
-
-const MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
-
-function formatMonthLabel(iso: string): string {
-  const d = new Date(iso);
-  return MONTHS[d.getUTCMonth()] ?? iso;
-}
-
-function buildBucketKeys(
-  period: EnergyTelemetryPeriod,
-  dataFrom: Date | null,
-  dataTo: Date | null,
-): { keys: string[]; labels: string[] } {
-  const cfg = PERIOD_CONFIG[period];
-  const end = dataTo ?? new Date();
-  const keys: string[] = [];
-  const labels: string[] = [];
-
-  if (cfg.unit === 'month') {
-    for (let i = cfg.points - 1; i >= 0; i--) {
-      const d = new Date(
-        Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - i, 1),
-      );
-      const key = d.toISOString().slice(0, 7);
-      keys.push(key);
-      labels.push(formatMonthLabel(d.toISOString()));
-    }
-    return { keys, labels };
-  }
-
-  if (cfg.unit === 'week') {
-    // Postgres date_trunc('week', …) buckets start on Monday (ISO weeks).
-    const monday = new Date(end);
-    monday.setUTCHours(0, 0, 0, 0);
-    monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
-    for (let i = cfg.points - 1; i >= 0; i--) {
-      const d = new Date(monday);
-      d.setUTCDate(monday.getUTCDate() - i * 7);
-      const key = d.toISOString().slice(0, 10);
-      keys.push(key);
-      labels.push(formatDayLabel(d.toISOString()));
-    }
-    return { keys, labels };
-  }
-
-  for (let i = cfg.points - 1; i >= 0; i--) {
-    const d = new Date(end);
-    d.setUTCDate(end.getUTCDate() - i);
-    d.setUTCHours(0, 0, 0, 0);
-    const key = d.toISOString().slice(0, 10);
-    keys.push(key);
-    labels.push(formatDayLabel(d.toISOString()));
-  }
-
-  if (dataFrom) {
-    // keys already span ending at dataTo; sparse early buckets stay zero
-  }
-
-  return { keys, labels };
-}
-
-function bucketKeyFromRow(
-  bucketIso: string,
-  unit: 'day' | 'week' | 'month',
-): string {
-  return unit === 'month' ? bucketIso.slice(0, 7) : bucketIso.slice(0, 10);
-}
-
-function emptyResponse(
-  period: EnergyTelemetryPeriod,
-  communityId: number | null,
-  configured: boolean,
-): EnergyTelemetryResponse {
-  const { keys, labels } = buildBucketKeys(period, null, null);
-  return {
-    enabled: false,
-    configured,
-    period,
-    labels,
-    consumptionKwh: keys.map(() => 0),
-    consumptionByMeter: [],
-    productionBySource: [],
-    gridImportKwh: keys.map(() => 0),
-    gridExportKwh: keys.map(() => 0),
-    totals: {
-      producedKwh: 0,
-      consumedKwh: 0,
-      netKwh: 0,
-      gridImportedKwh: 0,
-      gridExportedKwh: 0,
-    },
-    dataFrom: null,
-    dataTo: null,
-    communityId,
-  };
-}
-
-export async function fetchEnergyTelemetry(input: {
-  communityId: number;
-  period?: string | null;
-  sourceLabels?: Record<number, string>;
-}): Promise<EnergyTelemetryResponse> {
-  const period = parsePeriod(input.period);
-  const cfg = PERIOD_CONFIG[period];
+function getEnergyDbPool(): Pool | null {
   const dbConfig = getEnergyDbConfigFromEnv();
-
-  if (!dbConfig) {
-    return emptyResponse(period, input.communityId, false);
+  if (!dbConfig) return null;
+  if (!energyDbPool) {
+    energyDbPool = new Pool({
+      host: dbConfig.host,
+      port: dbConfig.port,
+      database: dbConfig.database,
+      user: dbConfig.user,
+      password: dbConfig.password,
+      ssl: dbConfig.ssl ? { rejectUnauthorized: false } : undefined,
+      max: 8,
+      idleTimeoutMillis: 15_000,
+      // Cold Azure connects can take 8–15s. Same-key loads coalesce in
+      // the TTL cache, so pool slots are for distinct community:period
+      // keys. 30d aggregates have reached ~43s; 15s connect + 70s query
+      // fits the 90s route budget. `query_timeout` only stops waiting on our
+      // side; `statement_timeout` makes Azure cancel the query too, so an
+      // abandoned aggregate does not keep loading the database.
+      connectionTimeoutMillis: 15_000,
+      statement_timeout: 65_000,
+      query_timeout: 70_000,
+    });
+    energyDbPool.on('error', (error) => {
+      console.warn('[energy/telemetry] pool error', error);
+    });
   }
+  return energyDbPool;
+}
 
-  const client = new Client({
-    host: dbConfig.host,
-    port: dbConfig.port,
-    database: dbConfig.database,
-    user: dbConfig.user,
-    password: dbConfig.password,
-    ssl: dbConfig.ssl ? { rejectUnauthorized: false } : undefined,
-    connectionTimeoutMillis: 15_000,
-    query_timeout: 20_000,
-  });
-
-  await client.connect();
-
-  try {
-    const rangeSql = `
-      select min(interval_start) as min_t, max(interval_start) as max_t
-      from accounting.interval_readings
-      where community_id = $1
-    `;
-    const rangeResult = await client.query<{
-      min_t: Date | null;
-      max_t: Date | null;
-    }>(rangeSql, [input.communityId]);
-    const minT = rangeResult.rows[0]?.min_t ?? null;
-    const maxT = rangeResult.rows[0]?.max_t ?? null;
-
-    if (!minT || !maxT) {
-      return {
-        ...emptyResponse(period, input.communityId, true),
-        enabled: true,
-      };
-    }
-
-    const truncateUnit =
-      cfg.unit === 'month' ? 'month' : cfg.unit === 'week' ? 'week' : 'day';
-    const aggregateSql = `
+const AGGREGATE_SQL = `
       select
-        date_trunc('${truncateUnit}', interval_start at time zone 'UTC')::text as bucket,
+        date_trunc('day', interval_start at time zone 'UTC')::text as bucket,
         case
           when direction = 'production'
             or (direction is null and meter_id in (9001, 9002, 9003))
@@ -214,142 +75,171 @@ export async function fetchEnergyTelemetry(input: {
             or (direction is null and meter_id between 1 and 5)
             then 'consumption'
           when direction = 'import' then 'import'
-          when direction = 'export' then 'export'
-          else null
+          else 'export'
         end as kind,
         meter_id,
-        sum(energy_wh)::bigint as total_wh
+        sum(energy_wh)::bigint as total_wh,
+        to_char(
+          min(interval_start) at time zone 'UTC',
+          'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
+        ) as first_reading,
+        to_char(
+          max(interval_start) at time zone 'UTC',
+          'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
+        ) as last_reading
       from accounting.interval_readings
       where community_id = $1
-        and interval_start >= (now() at time zone 'utc') - ${cfg.intervalSql}
+        and interval_start >= $2
+        and interval_start < $3
         and (
           direction in ('consumption', 'production', 'import', 'export')
-          or direction is null
+          or (
+            direction is null
+            and (
+              meter_id between 1 and 5
+              or meter_id in (9001, 9002, 9003)
+            )
+          )
         )
       group by 1, 2, 3
-      having case
-          when direction = 'production'
-            or (direction is null and meter_id in (9001, 9002, 9003))
-            then 'production'
-          when direction = 'consumption'
-            or (direction is null and meter_id between 1 and 5)
-            then 'consumption'
-          when direction = 'import' then 'import'
-          when direction = 'export' then 'export'
-          else null
-        end is not null
       order by 1 asc
     `;
 
-    const aggResult = await client.query<AggregateRow>(aggregateSql, [
-      input.communityId,
-    ]);
+function dayCacheKey(communityId: number, dayKey: string) {
+  return `${communityId}:${dayKey}`;
+}
 
-    const { keys, labels } = buildBucketKeys(period, minT, maxT);
-    const keyIndex = new Map(keys.map((k, i) => [k, i]));
-    const consumptionWh = keys.map(() => 0);
-    const gridImportWh = keys.map(() => 0);
-    const gridExportWh = keys.map(() => 0);
-    const productionByMeter = new Map<number, number[]>();
-    const consumptionByMeterWh = new Map<number, number[]>();
-
-    for (const row of aggResult.rows) {
-      const key = bucketKeyFromRow(row.bucket, cfg.unit);
-      const idx = keyIndex.get(key);
-      if (idx === undefined) continue;
-
-      const wh = Number(row.total_wh);
-      if (row.kind === 'consumption') {
-        consumptionWh[idx] = (consumptionWh[idx] ?? 0) + wh;
-        const series =
-          consumptionByMeterWh.get(row.meter_id) ?? keys.map(() => 0);
-        series[idx] = (series[idx] ?? 0) + wh;
-        consumptionByMeterWh.set(row.meter_id, series);
-      } else if (row.kind === 'production') {
-        const series = productionByMeter.get(row.meter_id) ?? keys.map(() => 0);
-        series[idx] = (series[idx] ?? 0) + wh;
-        productionByMeter.set(row.meter_id, series);
-      } else if (row.kind === 'import') {
-        gridImportWh[idx] = (gridImportWh[idx] ?? 0) + wh;
-      } else if (row.kind === 'export') {
-        gridExportWh[idx] = (gridExportWh[idx] ?? 0) + wh;
-      }
+function cachedDaysFor(communityId: number, dayKeys: string[]): Set<string> {
+  const cached = new Set<string>();
+  for (const day of dayKeys) {
+    if (telemetryDayCache.get(dayCacheKey(communityId, day))) {
+      cached.add(day);
     }
+  }
+  return cached;
+}
 
-    for (let i = 0; i < keys.length; i++) {
-      if (gridImportWh[i]! > 0 || gridExportWh[i]! > 0) continue;
+async function queryTelemetryWindow(
+  pool: Pool,
+  communityId: number,
+  from: Date,
+  to: Date,
+): Promise<EnergyTelemetryAggregateRow[]> {
+  const started = Date.now();
+  const result = await pool.query<EnergyTelemetryAggregateRow>(AGGREGATE_SQL, [
+    communityId,
+    from.toISOString(),
+    to.toISOString(),
+  ]);
+  console.info(
+    `[energy/telemetry] community ${communityId} ${from.toISOString()}–${to.toISOString()} ${
+      result.rowCount
+    } rows in ${Date.now() - started}ms`,
+  );
+  return result.rows;
+}
 
-      let producedWh = 0;
-      for (const values of productionByMeter.values()) {
-        producedWh += values[i] ?? 0;
-      }
-      const consumedWh = consumptionWh[i] ?? 0;
-      if (consumedWh === 0 && producedWh === 0) continue;
-
-      if (consumedWh > producedWh) {
-        gridImportWh[i] = consumedWh - producedWh;
-      } else if (producedWh > consumedWh) {
-        gridExportWh[i] = producedWh - consumedWh;
-      }
-    }
-
-    const productionBySource: EnergyTelemetrySourceSeries[] = [
-      ...productionByMeter.entries(),
-    ]
-      .sort(([a], [b]) => a - b)
-      .map(([meterId, valuesWh]) => ({
-        meterId,
-        label:
-          input.sourceLabels?.[meterId] ??
-          PRODUCTION_METER_LABELS[meterId] ??
-          `Source ${meterId}`,
-        valuesKwh: valuesWh.map((wh) => whToKwh(wh)),
-      }));
-
-    const consumptionByMeter: EnergyTelemetryMeterSeries[] = [
-      ...consumptionByMeterWh.entries(),
-    ]
-      .sort(([a], [b]) => a - b)
-      .map(([meterId, valuesWh]) => ({
-        meterId,
-        valuesKwh: valuesWh.map((wh) => whToKwh(wh)),
-      }));
-
-    const consumptionKwh = consumptionWh.map((wh) => whToKwh(wh));
-    const gridImportKwh = gridImportWh.map((wh) => whToKwh(wh));
-    const gridExportKwh = gridExportWh.map((wh) => whToKwh(wh));
-    const producedKwh = productionBySource.reduce(
-      (acc, s) => acc + s.valuesKwh.reduce((a, b) => a + b, 0),
-      0,
+async function fillMissingTelemetryDays(
+  pool: Pool,
+  communityId: number,
+  dayKeys: string[],
+): Promise<void> {
+  const run = async () => {
+    const missing = missingTelemetryRange(
+      dayKeys,
+      cachedDaysFor(communityId, dayKeys),
     );
-    const consumedKwh = consumptionKwh.reduce((a, b) => a + b, 0);
-    const gridImportedKwh = gridImportKwh.reduce((a, b) => a + b, 0);
-    const gridExportedKwh = gridExportKwh.reduce((a, b) => a + b, 0);
+    if (!missing) return;
 
-    return {
-      enabled: true,
-      configured: true,
-      period,
-      labels,
-      consumptionKwh,
-      consumptionByMeter,
-      productionBySource,
-      gridImportKwh,
-      gridExportKwh,
-      totals: {
-        producedKwh: Math.round(producedKwh * 100) / 100,
-        consumedKwh: Math.round(consumedKwh * 100) / 100,
-        netKwh: Math.round((producedKwh - consumedKwh) * 100) / 100,
-        gridImportedKwh: Math.round(gridImportedKwh * 100) / 100,
-        gridExportedKwh: Math.round(gridExportedKwh * 100) / 100,
+    const rows = await queryTelemetryWindow(
+      pool,
+      communityId,
+      missing.from,
+      missing.to,
+    );
+    storeTelemetryRowsByDay(
+      rows,
+      (day, dayRows) => {
+        telemetryDayCache.set(dayCacheKey(communityId, day), dayRows);
       },
-      dataFrom: minT.toISOString(),
-      dataTo: maxT.toISOString(),
-      communityId: input.communityId,
-    };
+      utcDayKeysInRange(missing.from, missing.to),
+    );
+  };
+
+  const previous = communityWindowLoads.get(communityId);
+  const chained = previous ? previous.then(run, run) : run();
+  communityWindowLoads.set(communityId, chained);
+  try {
+    await chained;
   } finally {
-    await client.end();
+    if (communityWindowLoads.get(communityId) === chained) {
+      communityWindowLoads.delete(communityId);
+    }
+  }
+
+  if (missingTelemetryRange(dayKeys, cachedDaysFor(communityId, dayKeys))) {
+    await fillMissingTelemetryDays(pool, communityId, dayKeys);
   }
 }
 
-export { parsePeriod as parseEnergyTelemetryPeriod };
+function rowsForDays(
+  communityId: number,
+  dayKeys: string[],
+): EnergyTelemetryAggregateRow[] {
+  const rows: EnergyTelemetryAggregateRow[] = [];
+  for (const day of dayKeys) {
+    const dayRows = telemetryDayCache.get(dayCacheKey(communityId, day));
+    if (dayRows) rows.push(...dayRows);
+  }
+  return rows;
+}
+
+async function queryEnergyTelemetryUncached(input: {
+  communityId: number;
+  period: ReturnType<typeof parseEnergyTelemetryPeriod>;
+  sourceLabels?: Record<number, string>;
+}): Promise<EnergyTelemetryResponse> {
+  const pool = getEnergyDbPool();
+  if (!pool) {
+    return emptyEnergyTelemetryResponse(input.period, input.communityId, false);
+  }
+
+  const dayKeys = telemetryPeriodDayKeys(input.period);
+  await fillMissingTelemetryDays(pool, input.communityId, dayKeys);
+
+  return assembleEnergyTelemetry({
+    period: input.period,
+    communityId: input.communityId,
+    configured: true,
+    rows: rowsForDays(input.communityId, dayKeys),
+    sourceLabels: input.sourceLabels,
+  });
+}
+
+export async function fetchEnergyTelemetry(input: {
+  communityId: number;
+  period?: string | null;
+  sourceLabels?: Record<number, string>;
+}): Promise<EnergyTelemetryResponse> {
+  const period = parseEnergyTelemetryPeriod(input.period);
+  if (!getEnergyDbConfigFromEnv()) {
+    return emptyEnergyTelemetryResponse(period, input.communityId, false);
+  }
+
+  const cacheKey = `${input.communityId}:${period}`;
+  const telemetry = await telemetryCache.getOrLoad(cacheKey, () =>
+    queryEnergyTelemetryUncached({
+      communityId: input.communityId,
+      period,
+      sourceLabels: input.sourceLabels,
+    }),
+  );
+  return structuredClone(telemetry);
+}
+
+/** Test helper. */
+export function clearEnergyTelemetryCache() {
+  telemetryCache.clear();
+  telemetryDayCache.clear();
+  communityWindowLoads.clear();
+}

@@ -1,3 +1,4 @@
+import { getImageProps } from 'next/image';
 import {
   SpaceCallJoinHeroBanner,
   SpaceModeLabel,
@@ -5,80 +6,55 @@ import {
   SubscriptionBadge,
   SpaceAccentPortalBridge,
   SpaceCreatedOnText,
+  isLikelyGifSrc,
   isSafeImageUrl,
+  SPACE_BANNER_IMAGE_QUALITY,
+  SPACE_BANNER_IMAGE_SIZES,
 } from '@hypha-platform/epics';
 import '../../_shared/space-accent.css';
 import { Locale } from '@hypha-platform/i18n';
-import {
-  findSpaceBySlug,
-  readEnergyCommunityMemberAddresses,
-} from '@hypha-platform/core/server';
+import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { getDhoPathAgreements } from './@tab/agreements/constants';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   DEFAULT_SPACE_LEAD_IMAGE,
-  fetchSpaceDetails,
-  fetchSpaceProposalsIds,
 } from '@hypha-platform/core/client';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
-import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
-import { LiveSpaceHero } from './_components/live-space-hero';
+import { LiveSpaceHeroBanner } from './_components/live-space-hero-with-counts';
 import { DhoStickySpaceChrome } from './_components/dho-sticky-space-chrome';
 import { SpaceMainNav } from './_components/space-main-nav';
 import { SpaceActivityGatedBanners } from './_components/space-activity-gated-banners';
 import { SpaceMembershipCtaUnderHero } from './_components/space-membership-cta-under-hero';
 
-async function getSpaceMemberAndAgreementCounts(web3SpaceId: unknown): Promise<{
-  /** null when enrichment failed — do not treat as “zero members” */
-  members: number | null;
-  memberAddresses: readonly string[];
-  agreements: number | null;
-}> {
-  if (!canConvertToBigInt(web3SpaceId)) {
-    return { members: null, memberAddresses: [], agreements: null };
+function sizedHeroBannerPreload(href: string) {
+  if (!href || href === DEFAULT_SPACE_LEAD_IMAGE || isLikelyGifSrc(href)) {
+    return null;
   }
-  const id = BigInt(web3SpaceId);
-  const [memberResult, agreements] = await Promise.all([
-    (async () => {
-      try {
-        const [spaceDetails] = await fetchSpaceDetails({
-          spaceIds: [id],
-        });
-        const memberAddresses = spaceDetails?.members ?? [];
-        return {
-          members: memberAddresses.length,
-          memberAddresses,
-        };
-      } catch (error) {
-        console.error(
-          `Failed to get space details for a space ${web3SpaceId}:`,
-          error,
-        );
-        return { members: null, memberAddresses: [] as readonly string[] };
-      }
-    })(),
-    (async () => {
-      try {
-        const [proposals] = await fetchSpaceProposalsIds({
-          spaceIds: [id],
-        });
-        return proposals?.accepted?.length ?? 0;
-      } catch (error) {
-        console.error(
-          `Failed to get space proposals for a space ${web3SpaceId}:`,
-          error,
-        );
-        return null;
-      }
-    })(),
-  ]);
-  return {
-    members: memberResult.members,
-    memberAddresses: memberResult.memberAddresses,
-    agreements,
-  };
+  try {
+    const { props } = getImageProps({
+      src: href,
+      alt: '',
+      width: 1280,
+      height: 480,
+      sizes: SPACE_BANNER_IMAGE_SIZES,
+      quality: SPACE_BANNER_IMAGE_QUALITY,
+    });
+    return (
+      <link
+        rel="preload"
+        as="image"
+        href={props.src}
+        imageSrcSet={props.srcSet}
+        imageSizes={props.sizes}
+        fetchPriority="high"
+      />
+    );
+  } catch (error) {
+    console.error('Failed to build sized hero banner preload:', error);
+    return null;
+  }
 }
 
 export default async function DhoLayout({
@@ -105,25 +81,6 @@ export default async function DhoLayout({
       ? spaceFromDb.web3SpaceId
       : undefined;
   const spaceFlags = spaceFromDb.flags ?? [];
-
-  const [memberCounts, energyMembers] = await Promise.all([
-    getSpaceMemberAndAgreementCounts(spaceFromDb.web3SpaceId),
-    readEnergyCommunityMemberAddresses(daoSlug, { db }).catch((error) => {
-      console.error('Failed to read energy community members:', error);
-      return { status: 'unavailable' as const };
-    }),
-  ]);
-  const {
-    members: rawSpaceMembers,
-    memberAddresses,
-    agreements: spaceAgreements,
-  } = memberCounts;
-  const spaceMembers =
-    energyMembers.status === 'ok' && rawSpaceMembers !== null
-      ? memberAddresses.filter((address) =>
-          energyMembers.addresses.has(address.toLowerCase()),
-        ).length
-      : rawSpaceMembers;
 
   const rawLead = spaceFromDb.leadImage?.trim();
   const heroBannerImageHref =
@@ -164,15 +121,9 @@ export default async function DhoLayout({
             className="pointer-events-none sticky top-0 z-0 h-0"
           />
           <div className="relative z-[1]">
-            {/* React 19+: link rel="preload" is hoisted to document head */}
-            {heroBannerImageHref !== DEFAULT_SPACE_LEAD_IMAGE ? (
-              <link
-                rel="preload"
-                as="image"
-                href={heroBannerImageHref}
-                fetchPriority="high"
-              />
-            ) : null}
+            {/* React 19+: link rel="preload" is hoisted to document head.
+                Sized /_next/image URL only — never the UploadThing original. */}
+            {sizedHeroBannerPreload(heroBannerImageHref)}
             <DhoStickySpaceChrome
               title={spaceFromDb.title}
               logoUrl={accentLogoHref}
@@ -212,7 +163,8 @@ export default async function DhoLayout({
                 </>
               }
               banner={
-                <LiveSpaceHero
+                <LiveSpaceHeroBanner
+                  web3SpaceId={spaceFromDb.web3SpaceId}
                   spaceSlug={daoSlug}
                   title={spaceFromDb.title}
                   description={spaceFromDb.description}
@@ -222,8 +174,8 @@ export default async function DhoLayout({
                   links={spaceFromDb.links}
                   leadImageUrl={heroBannerImageHref}
                   defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
-                  memberCount={spaceMembers}
-                  agreementCount={spaceAgreements}
+                  memberCount={null}
+                  agreementCount={null}
                   createdOnText={
                     <SpaceCreatedOnText createdAt={spaceFromDb.createdAt} />
                   }

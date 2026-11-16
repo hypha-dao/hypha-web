@@ -5067,10 +5067,12 @@
       "consumersDescription": "Mensen die deelnemen aan de energiepool van deze gemeenschap. Klik op een lid om zijn verbruik te zien.",
       "consumerCount": "{count, plural, one {# consument} other {# consumenten}}",
       "noConsumers": "Er zijn nog geen consumenten geregistreerd.",
+      "consumersUnavailable": "De lijst met consumenten is tijdelijk niet beschikbaar.",
       "sourcesTitle": "Lokale energiebronnen",
       "sourcesDescription": "Opwekkings- en opslagmiddelen die de gemeenschap voeden.",
       "sourceCount": "{count, plural, one {# bron} other {# bronnen}}",
-      "noSources": "Nog geen bronnen geregistreerd."
+      "noSources": "Nog geen bronnen geregistreerd.",
+      "sourcesUnavailable": "De lijst met bronnen is tijdelijk niet beschikbaar."
     },
     "credits": {
       "noBalances": "Er zijn nog geen ledenafrekeningssaldi beschikbaar.",
@@ -5113,9 +5115,11 @@
     },
     "ownership": {
       "noOwnership": "Er is nog geen broneigendom vastgelegd in de keten.",
+      "ownershipUnavailable": "Eigendomsgegevens zijn tijdelijk niet beschikbaar.",
+      "earningsUnavailable": "Opbrengsten zijn tijdelijk niet beschikbaar omdat de bronnenlijst niet kon worden geladen.",
       "earningsOverWindow": "≈ {amount} EURC over dit venster",
       "earnings": "Inkomsten",
-      "earnedFromSource": "{prefix}{amount} EURC verdiend uit deze bron",
+      "earnedFromSource": "{prefix}{amount} EURC verdiend uit deze bron in de afgelopen 7 dagen",
       "placeholderEstimate": "Placeholderschatting: live productietelemetrie is nog niet verbonden.",
       "liveEstimate": "Geschat op basis van live productietelemetrie × huidige prijs × eigendomsaandeel.",
       "earningsHint": "De inkomsten worden over de afgelopen twaalf maanden geschat op basis van productiegegevens van {dataType}. Klik op een eigenaar voor dagelijkse, wekelijkse of maandelijkse details.",
@@ -5142,6 +5146,7 @@
       "settleHint": "Schulden afwikkelen keurt het PPA-contract goed om de genoteerde USDC uit uw slimme portemonnee te halen en roept vervolgens <code>settleOwnDebt</code> aan."
     },
     "shared": {
+      "memberListUnavailable": "De ledenlijst is tijdelijk niet beschikbaar.",
       "gridOperatorName": "Lokale netbeheerder",
       "gridOperatorSubtitle": "Externe energieleverancier",
       "basePerKwh": "Basis / kWh",
