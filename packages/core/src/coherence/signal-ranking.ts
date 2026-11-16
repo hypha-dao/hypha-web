@@ -191,31 +191,67 @@ function createdAtMs(signal: Pick<Coherence, 'createdAt'>): number {
   return Number.isNaN(ms) ? 0 : ms;
 }
 
+/**
+ * Same trailing edge as a recent-upvote window: a timestamp on the boundary
+ * counts, anything older does not. An unparseable `createdAt` is outside.
+ */
+function createdInRecentWindow(
+  createdAt: Date | string,
+  timeFrame: Exclude<SignalTimeFrame, 'all'>,
+  nowMs: number,
+): boolean {
+  const created = new Date(createdAt).getTime();
+  if (Number.isNaN(created)) return false;
+  return created >= nowMs - SIGNAL_RECENT_WINDOW_MS[timeFrame];
+}
+
 function compareDesc(a: bigint | number, b: bigint | number): number {
   return a === b ? 0 : b > a ? 1 : -1;
 }
 
 /**
- * `new` is newest first. Top sorts rank by net support (up minus down)
- * received inside the time frame; ties fall back to all-time net support,
- * then newest first, so quiet time frames still read as a sensible list.
+ * `new` is newest first across the whole list. Its control does not offer a
+ * time frame, so that sort ignores the window. Top sorts keep signals whose
+ * `createdAt` falls in Today, Week, Month, or Year — the same trailing
+ * durations as recent upvotes (24 hours, 7, 30, and 365 days). All time
+ * keeps every signal. Inside a window, top by voting power ranks by window
+ * power and breaks a tie by newest `createdAt`. Top by voters falls back to
+ * all-time net support, then newest first.
  */
 export function rankSignals<T extends Pick<Coherence, 'createdAt' | 'upvotes'>>(
   signals: readonly T[],
-  { sort, timeFrame }: { sort: SignalSort; timeFrame: SignalTimeFrame },
+  {
+    sort,
+    timeFrame,
+    now = Date.now(),
+  }: {
+    sort: SignalSort;
+    timeFrame: SignalTimeFrame;
+    now?: number | Date;
+  },
 ): T[] {
+  const nowMs = now instanceof Date ? now.getTime() : now;
+  const inWindow =
+    sort !== 'new' && timeFrame !== 'all'
+      ? signals.filter((signal) =>
+          createdInRecentWindow(signal.createdAt, timeFrame, nowMs),
+        )
+      : signals;
   const score =
     sort === 'top-voters'
       ? (signal: T, frame: SignalTimeFrame) =>
           signalVotersInTimeFrame(signal.upvotes, frame)
       : (signal: T, frame: SignalTimeFrame) =>
           signalVotingPowerInTimeFrame(signal.upvotes, frame);
-  return [...signals].sort((a, b) => {
+  const windowedPower = sort === 'top-power' && timeFrame !== 'all';
+  return [...inWindow].sort((a, b) => {
     if (sort !== 'new') {
       const inFrame = compareDesc(score(a, timeFrame), score(b, timeFrame));
       if (inFrame !== 0) return inFrame;
-      const allTime = compareDesc(score(a, 'all'), score(b, 'all'));
-      if (allTime !== 0) return allTime;
+      if (!windowedPower) {
+        const allTime = compareDesc(score(a, 'all'), score(b, 'all'));
+        if (allTime !== 0) return allTime;
+      }
     }
     return createdAtMs(b) - createdAtMs(a);
   });
