@@ -37,6 +37,23 @@ export type ConsentRequest = {
   }[];
 };
 
+/**
+ * Tells an expired signed query from a bad one, so the page can say "start again" instead of a
+ * generic error. Only the clock is read here; the signature check is the library's.
+ */
+export async function inspectConsentQuery(
+  rawQuery: string,
+  secret: string,
+): Promise<'valid' | 'expired' | 'invalid'> {
+  const query = rawQuery.startsWith('?') ? rawQuery.slice(1) : rawQuery;
+  if (await verifyOAuthQueryParams(query, secret)) return 'valid';
+  const params = new URLSearchParams(query);
+  const exp = Number(params.get('exp'));
+  return params.get('sig') && Number.isFinite(exp) && exp * 1000 < Date.now()
+    ? 'expired'
+    : 'invalid';
+}
+
 export function classifyClient(
   clientId: string,
   registration: unknown,

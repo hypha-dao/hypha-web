@@ -23,7 +23,15 @@ export const AUTH_SERVER_WRITE_SCOPES: readonly AuthServerScope[] = [
 export const ACCESS_TOKEN_TTL_SECONDS = 10 * 60;
 /** Sliding: each refresh issues a new token valid for this long, so 90 days of inactivity ends the connection. */
 export const REFRESH_TOKEN_TTL_SECONDS = 90 * 24 * 60 * 60;
+/** Lifetime of an authorization code: it is exchanged by the app right after the redirect. */
 export const AUTH_CODE_TTL_SECONDS = 60;
+/**
+ * How long the signed login/consent query stays valid: the time a person may take to sign in and
+ * read the approval page. Separate from the code lifetime above. The library derives both from one
+ * option (`codeExpiresIn`), so this value goes there and the 60 s code lifetime is enforced at the
+ * token endpoint (see auth.ts, `hypha-code-ttl`).
+ */
+export const AUTH_QUERY_TTL_SECONDS = 10 * 60;
 /**
  * Grace window for a rotated refresh token (K61): inside it the same refresh request gets the
  * same token response again, so requests in flight at a rotation do not log the person out.

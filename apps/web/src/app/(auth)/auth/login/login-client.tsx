@@ -3,13 +3,17 @@
 import * as React from 'react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Button } from '@hypha-platform/ui';
-import { AUTH_SERVER_API_BASE_PATH } from '@hypha-platform/auth-server/client';
+import {
+  APPROVAL_EXPIRED_MESSAGE,
+  AUTH_SERVER_API_BASE_PATH,
+} from '@hypha-platform/auth-server/client';
 
 type Phase =
   | 'idle'
   | 'signing-in'
   | 'denied'
   | 'expired'
+  | 'approval-expired'
   | 'unavailable'
   | 'failed';
 
@@ -47,9 +51,15 @@ export function LoginClient() {
       const body = (await res.json().catch(() => ({}))) as {
         url?: string;
         message?: string;
+        error?: string;
       };
       if (res.ok && body.url) {
         window.location.assign(body.url);
+        return;
+      }
+      // The signed link from the app ran out; signing in again will not help, the app must restart.
+      if (body.error === 'invalid_signature') {
+        setPhase('approval-expired');
         return;
       }
       if (res.status === 403) {
@@ -99,6 +109,10 @@ export function LoginClient() {
             Use a different account
           </Button>
         </>
+      ) : phase === 'approval-expired' ? (
+        <p role="alert" className="text-2">
+          {APPROVAL_EXPIRED_MESSAGE}
+        </p>
       ) : phase === 'expired' ? (
         <>
           <p role="alert" className="text-2">

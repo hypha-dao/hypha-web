@@ -12,6 +12,7 @@ import type { ClientMetadataResourceFetch } from '@better-auth/oauth-provider';
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   AUTH_CODE_TTL_SECONDS,
+  AUTH_QUERY_TTL_SECONDS,
   AUTH_SERVER_API_BASE_PATH,
   AUTH_SERVER_CONSENT_PATH,
   AUTH_SERVER_JWKS_PATH,
@@ -134,7 +135,10 @@ export function createAuthServer(
           deps.accessTokenExpiresIn ?? ACCESS_TOKEN_TTL_SECONDS,
         refreshTokenExpiresIn: REFRESH_TOKEN_TTL_SECONDS,
         refreshTokenReuseInterval: REFRESH_TOKEN_REUSE_INTERVAL_SECONDS,
-        codeExpiresIn: AUTH_CODE_TTL_SECONDS,
+        // The library uses this one option for the signed login/consent query AND the code row's
+        // expiry. It carries the (longer) query lifetime; the code is cut back to
+        // AUTH_CODE_TTL_SECONDS at the token endpoint by the `hypha-code-ttl` hook below.
+        codeExpiresIn: AUTH_QUERY_TTL_SECONDS,
         resources: [...config.resources],
         // CIMD clients are unregistered, so they cannot be linked to resources one by one.
         enforcePerClientResources: false,
@@ -192,6 +196,28 @@ export function createAuthServer(
                 if (!scopes.includes('offline_access')) {
                   target.scope = [...scopes, 'offline_access'].join(' ');
                 }
+              }),
+            },
+          ],
+        },
+      },
+      {
+        // Authorization codes live AUTH_CODE_TTL_SECONDS, not the query lifetime the library gave the
+        // row. Before every token request, cap each code row's expiry at issue time + 60 s (the
+        // row's updatedAt is its issue time). Idempotent; only ever shortens.
+        id: 'hypha-code-ttl',
+        hooks: {
+          before: [
+            {
+              matcher: (ctx) => ctx.path === '/oauth2/token',
+              handler: createAuthMiddleware(async () => {
+                await pool.query(
+                  `update as_verification
+                      set "expiresAt" = "updatedAt" + ($1::int * interval '1 second')
+                    where value like '{"type":"authorization_code"%'
+                      and "expiresAt" > "updatedAt" + ($1::int * interval '1 second')`,
+                  [AUTH_CODE_TTL_SECONDS],
+                );
               }),
             },
           ],

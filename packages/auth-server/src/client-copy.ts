@@ -1,5 +1,9 @@
 import type { ClientKind } from './consent';
 
+/** Shown when the signed login/consent query has run out (see AUTH_QUERY_TTL_SECONDS). */
+export const APPROVAL_EXPIRED_MESSAGE =
+  'This approval expired. Go back to the app and start again.';
+
 export type CopySegment = { text: string; strong?: boolean };
 
 /**

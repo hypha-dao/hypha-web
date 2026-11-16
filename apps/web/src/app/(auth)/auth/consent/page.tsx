@@ -1,8 +1,12 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { loadConsentRequest } from '@hypha-platform/auth-server/server';
+import {
+  inspectConsentQuery,
+  loadConsentRequest,
+} from '@hypha-platform/auth-server/server';
 import { requireAuthServerHost } from '../_lib/host-gate';
 import { getAuthServer } from '../_lib/server';
+import { APPROVAL_EXPIRED_MESSAGE } from '@hypha-platform/auth-server/client';
 import { ConsentForm } from './consent-form';
 
 export const dynamic = 'force-dynamic';
@@ -28,6 +32,18 @@ export default async function AuthServerConsentPage({
       ? []
       : [value];
     for (const v of values) query.append(key, v);
+  }
+  if (
+    (await inspectConsentQuery(query.toString(), config.secret)) === 'expired'
+  ) {
+    return (
+      <main className="mx-auto flex max-w-md flex-col gap-4 px-4 py-12">
+        <h1 className="text-4 font-medium">Approval expired</h1>
+        <p role="alert" className="text-2">
+          {APPROVAL_EXPIRED_MESSAGE}
+        </p>
+      </main>
+    );
   }
   const request = await loadConsentRequest(
     getAuthServer(config),

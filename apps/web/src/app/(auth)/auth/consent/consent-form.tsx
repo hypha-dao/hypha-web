@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { Button, Checkbox } from '@hypha-platform/ui';
 import {
+  APPROVAL_EXPIRED_MESSAGE,
   AUTH_SERVER_API_BASE_PATH,
   describeClient,
   type ClientKind,
@@ -63,9 +64,18 @@ export function ConsentForm({
           oauth_query: oauthQuery,
         }),
       });
-      const body = (await res.json().catch(() => ({}))) as { url?: string };
+      const body = (await res.json().catch(() => ({}))) as {
+        url?: string;
+        error?: string;
+      };
       if (body.url) {
         window.location.assign(body.url);
+        return;
+      }
+      // The signed approval link ran out while the page was open.
+      if (body.error === 'invalid_signature') {
+        setError(APPROVAL_EXPIRED_MESSAGE);
+        setBusy(false);
         return;
       }
       setError('Something went wrong. Please start again from the app.');
