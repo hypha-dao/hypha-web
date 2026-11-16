@@ -267,7 +267,7 @@ describe('link guard: served detail pages', () => {
     });
   });
 
-  it('coherence pages that are not served still leave (new signal, another Space)', () => {
+  it('coherence pages that are not served still leave (another Space); new signal is a create flow', () => {
     expect(
       classifyLink(
         '/en/dho/space-one/coherence/new-signal',
@@ -275,10 +275,7 @@ describe('link guard: served detail pages', () => {
         here,
         locales,
       ),
-    ).toEqual({
-      kind: 'external',
-      href: `${app}/en/dho/space-one/coherence/new-signal`,
-    });
+    ).toEqual({ kind: 'blocked' });
     expect(
       classifyLink(
         '/en/dho/other-space/coherence/signal/s1',
@@ -508,11 +505,19 @@ describe('link guard: served detail pages', () => {
     for (const href of [
       '/en/agreements/proposal',
       '/en/agreements/proposal/p1/p2',
-      '/en/agreements/create/pay-for-expenses',
     ]) {
       expect(classifyLink(href, host(), here, locales)?.kind, href).toBe(
         'external',
       );
     }
+    // A create flow is not a served detail: blocked by default.
+    expect(
+      classifyLink(
+        '/en/agreements/create/pay-for-expenses',
+        host(),
+        here,
+        locales,
+      ),
+    ).toEqual({ kind: 'blocked' });
   });
 });

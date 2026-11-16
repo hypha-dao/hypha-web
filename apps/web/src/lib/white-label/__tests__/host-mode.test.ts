@@ -804,7 +804,6 @@ describe('link guard: host mode', () => {
   it('links that leave the Space open the full app, not the host', () => {
     for (const href of [
       '/en/dho/space-one/members/person/jane/extra',
-      '/en/dho/space-one/agreements/create/pay-for-expenses',
       '/en/dho/other-space/overview',
       '/en/profile/jane',
     ]) {

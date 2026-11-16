@@ -1,5 +1,6 @@
 {
   "Common": {
+    "openInFullApp": "Open in the full app",
     "Assignments": "Assignments",
     "Members": "Members",
     "memberRoleLabel": "Member",
@@ -5431,6 +5432,9 @@
     "removeFilter": "Remove {label}",
     "weightedAbbr": "w",
     "openTrack": "Open track",
+    "membersOnly": "The pipeline is for members of this Space only.",
+    "membersOnlySignIn": "Sign in to see it.",
+    "signIn": "Sign in",
     "laneCollapse": "Collapse category",
     "laneExpand": "Expand category",
     "backToBoard": "Back to board",

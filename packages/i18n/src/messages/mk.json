@@ -601,6 +601,7 @@
     "openProject": "Отвори го проектот"
   },
   "Common": {
+    "openInFullApp": "Отвори во целосната апликација",
     "Assignments": "Задачи",
     "Members": "Членови",
     "memberRoleLabel": "Член",
@@ -5382,6 +5383,9 @@
     "removeFilter": "Отстрани {label}",
     "weightedAbbr": "понд.",
     "openTrack": "Отвори трака",
+    "membersOnly": "Пајплајнот е само за членови на овој Space.",
+    "membersOnlySignIn": "Најавете се за да го видите.",
+    "signIn": "Најави се",
     "laneCollapse": "Собери категорија",
     "laneExpand": "Отвори категорија",
     "backToBoard": "Назад кон табла",

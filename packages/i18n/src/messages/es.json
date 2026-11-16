@@ -601,6 +601,7 @@
     "openProject": "Abrir proyecto"
   },
   "Common": {
+    "openInFullApp": "Abrir en la aplicación completa",
     "createdOn": "Creado el {date}",
     "spaceBannerDescriptionAria": "Descripción de {title}",
     "acceptedOn": "Aceptado el {date}",
@@ -5409,6 +5410,9 @@
     "removeFilter": "Quitar {label}",
     "weightedAbbr": "pond.",
     "openTrack": "Abrir pista",
+    "membersOnly": "El pipeline es solo para miembros de este Space.",
+    "membersOnlySignIn": "Inicia sesión para verlo.",
+    "signIn": "Iniciar sesión",
     "laneCollapse": "Contraer categoría",
     "laneExpand": "Expandir categoría",
     "backToBoard": "Volver al tablero",

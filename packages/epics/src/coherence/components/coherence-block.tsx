@@ -22,6 +22,7 @@ import { Button, ErrorAlert, Skeleton } from '@hypha-platform/ui';
 import { CoherenceOrder } from '../types';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { getSignalPath } from '../../common/get-path-function';
+import { ActionGate } from '../../common/action-capabilities';
 import { signalSpaceMembership } from '../hooks/use-is-signal-space-non-member';
 import { useSignalProvisioningNotice } from '../hooks/use-signal-provisioning-notice';
 import { useSignalRoomActivity } from '../hooks/use-signal-room-activity';
@@ -208,14 +209,20 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
         action={
           canMutate ? (
             <div className="shrink-0">
-              <Button asChild variant="default" colorVariant="accent">
-                <Link
-                  href={`/${lang}/dho/${spaceSlug}/coherence/new-signal`}
-                  scroll={false}
-                >
-                  {t('newSignal')}
-                </Link>
-              </Button>
+              <ActionGate
+                kind="create-flow"
+                fullAppPath={`/${lang}/dho/${spaceSlug}/coherence/new-signal`}
+                label={t('newSignal')}
+              >
+                <Button asChild variant="default" colorVariant="accent">
+                  <Link
+                    href={`/${lang}/dho/${spaceSlug}/coherence/new-signal`}
+                    scroll={false}
+                  >
+                    {t('newSignal')}
+                  </Link>
+                </Button>
+              </ActionGate>
             </div>
           ) : null
         }

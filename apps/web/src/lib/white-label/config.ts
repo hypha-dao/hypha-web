@@ -1,5 +1,6 @@
 import type {
   DetailView,
+  UnsupportedActions,
   WhiteLabelAuthConfig,
   WhiteLabelClientRecord,
   WhiteLabelConfig,
@@ -67,6 +68,18 @@ export function parseDetailView(value: unknown): { detailView?: DetailView } {
   };
 }
 
+/**
+ * `unsupportedActions` of a client record. Absent: not set (`hide` applies at
+ * resolve time). Present but not one of the two values: `hide` (fail closed:
+ * nothing is shown that the delivery cannot perform).
+ */
+export function parseUnsupportedActions(value: unknown): {
+  unsupportedActions?: UnsupportedActions;
+} {
+  if (value === undefined) return {};
+  return { unsupportedActions: value === 'full-app' ? 'full-app' : 'hide' };
+}
+
 function parseSpace(input: unknown): WhiteLabelSpaceRecord | null {
   if (typeof input !== 'object' || input === null) return null;
   const { slug, framingOrigins } = input as Record<string, unknown>;
@@ -85,14 +98,22 @@ function parseSpace(input: unknown): WhiteLabelSpaceRecord | null {
 
 function parseClient(input: unknown): WhiteLabelClientRecord | null {
   if (typeof input !== 'object' || input === null) return null;
-  const { id, spaces, detailView } = input as Record<string, unknown>;
+  const { id, spaces, detailView, unsupportedActions } = input as Record<
+    string,
+    unknown
+  >;
   if (typeof id !== 'string' || !CLIENT_ID_PATTERN.test(id)) return null;
   if (!Array.isArray(spaces)) return null;
   const parsed = spaces
     .map(parseSpace)
     .filter((space): space is WhiteLabelSpaceRecord => space !== null);
   if (parsed.length === 0) return null;
-  return { id, ...parseDetailView(detailView), spaces: parsed };
+  return {
+    id,
+    ...parseDetailView(detailView),
+    ...parseUnsupportedActions(unsupportedActions),
+    spaces: parsed,
+  };
 }
 
 export const EMPTY_WHITE_LABEL_CONFIG: WhiteLabelConfig = {
@@ -227,14 +248,22 @@ function parseHostRecord(input: unknown): WhiteLabelHostRecord | null {
 
 function parseHostClient(input: unknown): WhiteLabelHostClientRecord | null {
   if (typeof input !== 'object' || input === null) return null;
-  const { id, hosts, detailView } = input as Record<string, unknown>;
+  const { id, hosts, detailView, unsupportedActions } = input as Record<
+    string,
+    unknown
+  >;
   if (typeof id !== 'string' || !CLIENT_ID_PATTERN.test(id)) return null;
   if (!Array.isArray(hosts)) return null;
   const parsed = hosts
     .map(parseHostRecord)
     .filter((record): record is WhiteLabelHostRecord => record !== null);
   if (parsed.length === 0) return null;
-  return { id, ...parseDetailView(detailView), hosts: parsed };
+  return {
+    id,
+    ...parseDetailView(detailView),
+    ...parseUnsupportedActions(unsupportedActions),
+    hosts: parsed,
+  };
 }
 
 /** Pure parser (testable). Invalid entries and ambiguous hosts are dropped. */

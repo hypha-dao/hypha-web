@@ -15,7 +15,8 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { useSpaceMember } from '../../../spaces';
 import { useParams } from 'next/navigation';
 import { useSWRConfig } from 'swr';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { ActionGate } from '../../../common/action-capabilities';
 
 const HYPHA_TOKEN_ADDRESS = '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3';
 
@@ -45,6 +46,7 @@ export const SpacePendingRewardsSection: FC<
 }) => {
   const tTreasury = useTranslations('TreasuryTab');
   const { id: spaceSlug } = useParams<{ id: string }>();
+  const locale = useLocale();
   const { mutate } = useSWRConfig();
   const { isAuthenticated, canLogin } = useAuthentication();
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({ spaceId: web3SpaceId });
@@ -188,22 +190,30 @@ export const SpacePendingRewardsSection: FC<
         <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
           {toolbarActions}
           {canLogin ? (
-            <Button
-              title={
-                !isAuthenticated
-                  ? tTreasury('rewardsSection.signInToClaimRewards')
-                  : !isMember
-                  ? tTreasury('rewardsSection.onlySpaceMembersCanClaimRewards')
-                  : !hasRewards
-                  ? tTreasury('rewardsSection.noRewardsToClaim')
-                  : ''
-              }
-              disabled={!canClaim || disableClaimButton}
-              onClick={onHandleClaim}
+            <ActionGate
+              kind="claim"
+              fullAppPath={`/${locale}/dho/${spaceSlug}/treasury`}
+              label={tTreasury('rewardsSection.claim')}
             >
-              {isClaiming && <Loader2 className="animate-spin w-4 h-4" />}
-              {tTreasury('rewardsSection.claim')}
-            </Button>
+              <Button
+                title={
+                  !isAuthenticated
+                    ? tTreasury('rewardsSection.signInToClaimRewards')
+                    : !isMember
+                    ? tTreasury(
+                        'rewardsSection.onlySpaceMembersCanClaimRewards',
+                      )
+                    : !hasRewards
+                    ? tTreasury('rewardsSection.noRewardsToClaim')
+                    : ''
+                }
+                disabled={!canClaim || disableClaimButton}
+                onClick={onHandleClaim}
+              >
+                {isClaiming && <Loader2 className="animate-spin w-4 h-4" />}
+                {tTreasury('rewardsSection.claim')}
+              </Button>
+            </ActionGate>
           ) : null}
         </div>
       </div>

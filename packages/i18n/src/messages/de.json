@@ -601,6 +601,7 @@
     "openProject": "Projekt öffnen"
   },
   "Common": {
+    "openInFullApp": "In der vollständigen App öffnen",
     "Assignments": "Zuweisungen",
     "Members": "Mitglieder",
     "memberRoleLabel": "Mitglied",
@@ -5395,6 +5396,9 @@
     "removeFilter": "{label} entfernen",
     "weightedAbbr": "gew.",
     "openTrack": "Track öffnen",
+    "membersOnly": "Die Pipeline ist nur für Mitglieder dieses Spaces sichtbar.",
+    "membersOnlySignIn": "Melde dich an, um sie zu sehen.",
+    "signIn": "Anmelden",
     "laneCollapse": "Kategorie einklappen",
     "laneExpand": "Kategorie ausklappen",
     "backToBoard": "Zurück zum Board",

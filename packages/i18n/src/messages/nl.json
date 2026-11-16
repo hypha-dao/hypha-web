@@ -601,6 +601,7 @@
     "openProject": "Project openen"
   },
   "Common": {
+    "openInFullApp": "Openen in de volledige app",
     "Assignments": "Opdrachten",
     "Members": "Leden",
     "memberRoleLabel": "Lid",
@@ -5401,6 +5402,9 @@
     "removeFilter": "{label} verwijderen",
     "weightedAbbr": "gew.",
     "openTrack": "Open track",
+    "membersOnly": "De pipeline is alleen voor leden van deze Space.",
+    "membersOnlySignIn": "Log in om hem te zien.",
+    "signIn": "Inloggen",
     "laneCollapse": "Categorie inklappen",
     "laneExpand": "Categorie uitklappen",
     "backToBoard": "Terug naar bord",

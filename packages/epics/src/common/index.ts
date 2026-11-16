@@ -281,3 +281,4 @@ export {
   useEnergyOverviewIdleGate,
 } from './use-after-idle';
 export * from './composer';
+export * from './action-capabilities';

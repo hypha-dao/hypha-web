@@ -9,6 +9,7 @@ import { SpaceMemberInviteButton } from './space-member-invite-button';
 import { useMembersSection } from '../hooks/use-members-section';
 import { ExitSpace, UseMembers, useSpaceMember } from '../../spaces';
 import { Empty } from '../../common';
+import { ActionGate } from '../../common/action-capabilities';
 import { Button, Input } from '@hypha-platform/ui';
 import {
   useSpaceBySlug,
@@ -44,6 +45,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
 }) => {
   const tCommon = useTranslations('Common');
   const tMembers = useTranslations('MembersTab');
+  const tSpaces = useTranslations('Spaces');
   const tCoherence = useTranslations('CoherenceTab');
   const format = useFormatter();
   const [entityFilter, setEntityFilter] = useState<'member' | 'space' | 'ai'>(
@@ -135,31 +137,52 @@ export const MembersSection: FC<MemberSectionProps> = ({
         />
         <div className="flex w-full items-center justify-end gap-2 lg:w-auto">
           {isMember && spaceSlug ? (
-            <SpaceMemberInviteButton spaceSlug={spaceSlug} lang={lang} />
+            <ActionGate
+              kind="member-action"
+              fullAppPath={`/${lang}/dho/${spaceSlug}/members`}
+              label={tMembers('inviteMember')}
+            >
+              <SpaceMemberInviteButton spaceSlug={spaceSlug} lang={lang} />
+            </ActionGate>
           ) : null}
           {/* No login here (read-only host): nothing to exit or delegate. */}
           {canLogin ? (
-            <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
+            <ActionGate
+              kind="member-action"
+              fullAppPath={`/${lang}/dho/${spaceSlug ?? ''}/members`}
+              label={tSpaces('exitSpace')}
+            >
+              <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
+            </ActionGate>
           ) : null}
           {canLogin && !isDelegate ? (
-            canDelegateLink ? (
-              <Link
-                title={tooltipMessage || ''}
-                className={isDisabled ? 'cursor-not-allowed' : ''}
-                href={`${basePath}/${person!.slug}`}
-                scroll={false}
-              >
-                <Button disabled={isDisabled || isMemberLoading}>
-                  {tMembers('delegateVoting')}
-                </Button>
-              </Link>
-            ) : (
-              <div title={tooltipMessage || ''} className="cursor-not-allowed">
-                <Button disabled={isDisabled || isMemberLoading}>
-                  {tMembers('delegateVoting')}
-                </Button>
-              </div>
-            )
+            <ActionGate
+              kind="member-action"
+              fullAppPath={`/${lang}/dho/${spaceSlug ?? ''}/members`}
+              label={tMembers('delegateVoting')}
+            >
+              {canDelegateLink ? (
+                <Link
+                  title={tooltipMessage || ''}
+                  className={isDisabled ? 'cursor-not-allowed' : ''}
+                  href={`${basePath}/${person!.slug}`}
+                  scroll={false}
+                >
+                  <Button disabled={isDisabled || isMemberLoading}>
+                    {tMembers('delegateVoting')}
+                  </Button>
+                </Link>
+              ) : (
+                <div
+                  title={tooltipMessage || ''}
+                  className="cursor-not-allowed"
+                >
+                  <Button disabled={isDisabled || isMemberLoading}>
+                    {tMembers('delegateVoting')}
+                  </Button>
+                </div>
+              )}
+            </ActionGate>
           ) : null}
         </div>
       </div>

@@ -10,6 +10,13 @@
  */
 export type DetailView = 'embedded' | 'full-app';
 
+/**
+ * What a visitor sees for an action the delivery cannot perform (create flows,
+ * Claim, Join, ...): `hide` (default) shows nothing; `full-app` shows the
+ * control as a link to the same Space in the full app (new tab).
+ */
+export type UnsupportedActions = 'hide' | 'full-app';
+
 /** One Space a client may show in an iframe, with the origins allowed to frame it. */
 export type WhiteLabelSpaceRecord = {
   /** Space slug as in the main app. */
@@ -23,6 +30,8 @@ export type WhiteLabelClientRecord = {
   id: string;
   /** Absent means `embedded`; an invalid value was parsed to `full-app`. */
   detailView?: DetailView;
+  /** Absent means `hide`; an invalid value was parsed to `hide`. */
+  unsupportedActions?: UnsupportedActions;
   spaces: WhiteLabelSpaceRecord[];
 };
 
@@ -50,6 +59,8 @@ export type WhiteLabelHostClientRecord = {
   id: string;
   /** Absent means `embedded`; an invalid value was parsed to `full-app`. */
   detailView?: DetailView;
+  /** Absent means `hide`; an invalid value was parsed to `hide`. */
+  unsupportedActions?: UnsupportedActions;
   hosts: WhiteLabelHostRecord[];
 };
 
@@ -95,6 +106,11 @@ export type ResolvedSpace = {
    * else `full-app`. Host: the owning client's value.
    */
   detailView: DetailView;
+  /**
+   * Embed: `full-app` only if every approving client says so (`hide` wins).
+   * Host: the owning client's value, `hide` when unset.
+   */
+  unsupportedActions: UnsupportedActions;
 };
 
 /** Host delivery: the one client that owns the host, and its Space. */

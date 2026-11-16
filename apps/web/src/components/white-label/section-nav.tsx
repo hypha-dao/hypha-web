@@ -9,6 +9,7 @@ import {
   SPACE_DASHBOARD_BOARD_PARAM,
   SPACE_DASHBOARD_BOARD_VALUE,
   SPACE_SECTION_NAV_ICONS,
+  useActionStatus,
   useSpaceEnergy,
   type SpaceSectionNavKey,
 } from '@hypha-platform/epics';
@@ -46,12 +47,14 @@ export function WhiteLabelSectionNav({
   const tCoherence = useTranslations('CoherenceTab');
   const { data: energy } = useSpaceEnergy(spaceSlug);
   const { space } = useSpaceBySlug(spaceSlug);
+  // The pipeline is members only: on a delivery without login it never has data.
+  const pipelineLive = useActionStatus('pipeline-data') === 'live';
 
   const keys = React.useMemo(() => {
     const list: SpaceSectionNavKey[] = [...ALWAYS];
     if (energy?.enabled) list.splice(1, 0, 'energy');
     if (coherenceEnabled) list.push('coherence');
-    if (space?.pipelineEnabled) list.push('pipeline');
+    if (space?.pipelineEnabled && pipelineLive) list.push('pipeline');
     if (memoryEnabled) list.push('memory');
     list.push('calendar', 'rewards', 'ecosystem-navigation');
     return list;
@@ -59,6 +62,7 @@ export function WhiteLabelSectionNav({
     energy?.enabled,
     coherenceEnabled,
     space?.pipelineEnabled,
+    pipelineLive,
     memoryEnabled,
   ]);
 

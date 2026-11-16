@@ -1,5 +1,6 @@
 'use client';
 
+import { PipelineUnavailable } from './pipeline-unavailable';
 import React from 'react';
 import Link from 'next/link';
 import {
@@ -68,6 +69,8 @@ export function IntegratedBoard({
     error: configError,
     refresh: refreshConfig,
     isLoading: isConfigLoading,
+    hasConfig,
+    isRefused,
   } = usePipelineConfig(spaceSlug);
   const { collapsedLanes, toggleLane } = useCollapsedPipelineLanes(spaceSlug);
   const defaultTrack = resolveDefaultTrackSlug(tracks);
@@ -99,6 +102,20 @@ export function IntegratedBoard({
     },
     [deals, moveDealToStatus],
   );
+
+  // Read-only: only the Space's own config builds lanes, labels and links;
+  // never the default fallback (wrong for a Space with custom tracks).
+  if (readOnly && !hasConfig) {
+    if (isConfigLoading) return null;
+    return (
+      <PipelineUnavailable
+        refused={isRefused}
+        onRetry={() => {
+          void refreshConfig();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="relative flex min-w-0 flex-col gap-4 pb-16">
