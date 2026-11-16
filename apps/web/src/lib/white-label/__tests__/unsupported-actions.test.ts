@@ -254,6 +254,25 @@ describe('link guard: create flows by delivery and setting', () => {
     });
   });
 
+  it('a Space whose slug looks like a create marker is not a create flow', () => {
+    for (const setting of [undefined, 'hide', 'full-app'] as const) {
+      const ctx = { ...hostCtx(setting), spaceSlug: 'create' };
+      expect(
+        classifyLink('/en/dho/create/agreements', ctx, here, locales),
+      ).toEqual({ kind: 'internal', href: '/en/agreements' });
+      expect(isCreateFlow(['dho', 'create', 'agreements'])).toBe(false);
+    }
+    // a real create flow of that Space is still a create flow
+    expect(
+      classifyLink(
+        '/en/dho/create/agreements/create/x',
+        { ...hostCtx(), spaceSlug: 'create' },
+        here,
+        locales,
+      ),
+    ).toEqual({ kind: 'blocked' });
+  });
+
   it('other links are unchanged by the setting', () => {
     for (const setting of [undefined, 'hide', 'full-app'] as const) {
       const ctx = hostCtx(setting);

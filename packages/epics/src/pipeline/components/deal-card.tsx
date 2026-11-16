@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import {
+  FULL_APP_EXIT_ATTR,
   useActionStatus,
   useFullAppHref,
 } from '../../common/action-capabilities';
@@ -64,6 +65,7 @@ export function DealCard({
   const Root = linkHref ? 'a' : readOnly ? 'div' : 'button';
   const rootProps = linkHref
     ? {
+        [FULL_APP_EXIT_ATTR]: '',
         href: linkHref,
         target: '_blank',
         rel: 'noopener noreferrer',

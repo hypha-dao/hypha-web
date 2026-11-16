@@ -75,6 +75,7 @@ describe('action capabilities', () => {
       );
       expect(html).toContain('target="_blank"');
       expect(html).toContain('noopener');
+      expect(html).toContain('data-wl-full-app-exit');
       expect(html).not.toContain('live control');
     }
   });

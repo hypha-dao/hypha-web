@@ -79,6 +79,7 @@ describe('read-only deal card', () => {
       'href="https://app.example/en/dho/s1/pipeline/deal/7"',
     );
     expect(html).toContain('target="_blank"');
+    expect(html).toContain('data-wl-full-app-exit');
     expect(html).toContain('noopener');
   });
 

@@ -706,6 +706,7 @@ export function SpaceCalendar({
         onOpenChange={setEventSheetOpen}
         spaceSlug={spaceSlug}
         lang={lang}
+        canEdit={calendarWrite === 'live'}
         onEdit={(item) => {
           if (!isAuthenticated) return;
           openEdit(item);

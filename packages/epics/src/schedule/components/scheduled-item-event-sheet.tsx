@@ -24,6 +24,8 @@ type ScheduledItemEventSheetProps = {
   onOpenChange: (open: boolean) => void;
   spaceSlug: string;
   lang?: string;
+  /** Offer the Edit button. Default on (main app); off where calendar writes are not supported. */
+  canEdit?: boolean;
   onEdit: (item: ScheduledItem) => void;
 };
 
@@ -33,6 +35,7 @@ export function ScheduledItemEventSheet({
   onOpenChange,
   spaceSlug,
   lang = 'en',
+  canEdit = true,
   onEdit,
 }: ScheduledItemEventSheetProps) {
   const t = useTranslations('Calendar');
@@ -107,17 +110,19 @@ export function ScheduledItemEventSheet({
           >
             {t('close')}
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              onOpenChange(false);
-              onEdit(item);
-            }}
-          >
-            <Pencil className="size-4" />
-            {t('editDetails')}
-          </Button>
+          {canEdit ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                onOpenChange(false);
+                onEdit(item);
+              }}
+            >
+              <Pencil className="size-4" />
+              {t('editDetails')}
+            </Button>
+          ) : null}
         </DialogFooter>
       </DialogContent>
     </Dialog>

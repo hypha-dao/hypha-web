@@ -37,6 +37,13 @@ export type ActionKind =
   /** The pipeline (members only; needs a signed-in visitor). */
   | 'pipeline-data';
 
+/**
+ * Marks an anchor as an explicit exit to the full app. The white-label link
+ * guard leaves it to the browser (new tab); otherwise, in the iframe, the
+ * relative full-app URL of a served section would be mapped back into the frame.
+ */
+export const FULL_APP_EXIT_ATTR = 'data-wl-full-app-exit';
+
 export type ActionStatus = 'live' | 'hidden' | 'full-app';
 
 export type ActionCapabilitiesValue = {
@@ -130,6 +137,7 @@ export function ActionGate({
       className={className}
     >
       <a
+        {...{ [FULL_APP_EXIT_ATTR]: '' }}
         href={fullAppHref(fullAppPath)}
         target="_blank"
         rel="noopener noreferrer"

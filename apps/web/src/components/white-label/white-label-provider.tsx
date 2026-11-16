@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { routing } from '@hypha-platform/i18n';
+import { FULL_APP_EXIT_ATTR } from '@hypha-platform/epics';
 import {
   classifyLink,
   sectionHref,
@@ -81,6 +82,9 @@ export function WhiteLabelLinkGuard({
       const target = event.target as Element | null;
       const anchor = target?.closest?.('a[href]') as HTMLAnchorElement | null;
       if (!anchor || anchor.hasAttribute('download')) return;
+      // An explicit exit to the full app (`unsupportedActions: 'full-app'`):
+      // the browser opens it in a new tab, the destination is not remapped.
+      if (anchor.hasAttribute(FULL_APP_EXIT_ATTR)) return;
 
       const decision = classifyLink(
         anchor.getAttribute('href') ?? '',

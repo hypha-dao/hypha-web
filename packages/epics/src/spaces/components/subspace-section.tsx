@@ -9,6 +9,7 @@ import { Button } from '@hypha-platform/ui';
 import type { UseMembers } from '../hooks';
 import { useCanMutateInSpace } from '../hooks/use-can-mutate-in-space.web3.rpc';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { ActionGate } from '../../common/action-capabilities';
 
 interface SubspaceSectionProps {
@@ -28,6 +29,7 @@ export const SubspaceSection = ({
   currentSpaceSlug,
   useMembers,
 }: SubspaceSectionProps) => {
+  const tSpaces = useTranslations('Spaces');
   const { canMutate, isLoading } = useCanMutateInSpace({
     spaceId: currentSpaceWeb3Id,
     spaceSlug: currentSpaceSlug,
@@ -42,7 +44,7 @@ export const SubspaceSection = ({
           <ActionGate
             kind="create-flow"
             fullAppPath={`/${lang}/dho/${currentSpaceSlug ?? ''}/space/create`}
-            label="Add Space"
+            label={tSpaces('addSpace')}
           >
             <Link
               href={canMutate && !isLoading ? 'space/create' : '#'}

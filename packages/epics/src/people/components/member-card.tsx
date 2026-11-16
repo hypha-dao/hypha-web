@@ -66,6 +66,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   onVideo,
 }) => {
   const tCommon = useTranslations('Common');
+  const tMembers = useTranslations('MembersTab');
   const tHome = useTranslations('MemberHome');
   const format = useFormatter();
   const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
@@ -188,7 +189,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
               <ActionGate
                 kind="member-action"
                 fullAppPath={`/${lang}/dho/${spaceSlug}/members`}
-                label="Undelegate"
+                label={tMembers('delegateSection.undelegate')}
               >
                 <Skeleton width="96px" height="32px" loading={isLoading}>
                   <Button

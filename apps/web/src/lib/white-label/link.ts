@@ -107,6 +107,9 @@ const CREATE_FLOW_SEGMENTS: readonly string[] = [
 
 /** `own` = the segments after the locale (and the Space, in the main-app shape). */
 export function isCreateFlow(own: readonly string[]): boolean {
+  // A main-app URL (`dho/<slug>/...`): the second segment is the Space slug,
+  // which may look like a marker. The main-app branch reads it past the slug.
+  if (own[0] === 'dho') return false;
   const marker = own[1];
   return marker !== undefined && CREATE_FLOW_SEGMENTS.includes(marker);
 }

@@ -94,6 +94,8 @@ export function usePipelineConfig(spaceSlug?: string) {
 
   const config = data ?? DEFAULT_PIPELINE_CONFIG;
   const errorStatus = (error as { status?: number } | undefined)?.status;
+  const isRefused =
+    errorStatus === 401 || errorStatus === 403 || errorStatus === 404;
 
   return {
     config,
@@ -106,14 +108,14 @@ export function usePipelineConfig(spaceSlug?: string) {
     stages: config.stages,
     probabilities: config.probabilities,
     /**
-     * True once the Space's own config was read. `config` falls back to the
+     * True once the Space's own config was read and no later refusal
+     * invalidated it. `config` falls back to the
      * default tracks and stages when it was not: a read-only view must not
      * build lanes or links from that fallback.
      */
-    hasConfig: data !== undefined,
+    hasConfig: data !== undefined && !isRefused,
     /** The request was refused (not signed in, not a member, not served). */
-    isRefused:
-      errorStatus === 401 || errorStatus === 403 || errorStatus === 404,
+    isRefused,
     isLoading,
     error,
     refresh,
