@@ -141,6 +141,12 @@ run('authorization server: protocol, gate, revocation, storage', () => {
       });
 
     it('inside the window the old token gets the same response again; the new token still works', async () => {
+      // Tokens left by earlier tests for the same person and client must not count: remember
+      // them and look only at the family this test creates.
+      const before = await s.pool.query(
+        'select id from as_oauth_refresh_token where "userId" = $1 and "clientId" = $2',
+        [h.PERSON, h.CLIENT_ID],
+      );
       const f = await h.fullFlow(s);
       const rt0 = f.token!.body.refresh_token as string;
       const first = await refresh(rt0);
@@ -152,8 +158,8 @@ run('authorization server: protocol, gate, revocation, storage', () => {
       expect(replay.body.access_token).toBe(first.body.access_token);
       // the family was not extended: still one live token, and it refreshes
       const live = await s.pool.query(
-        'select count(*)::int as n from as_oauth_refresh_token where "userId" = $1 and "clientId" = $2 and revoked is null',
-        [h.PERSON, h.CLIENT_ID],
+        'select count(*)::int as n from as_oauth_refresh_token where "userId" = $1 and "clientId" = $2 and revoked is null and id <> all($3::text[])',
+        [h.PERSON, h.CLIENT_ID, before.rows.map((r) => r.id)],
       );
       const next = await refresh(first.body.refresh_token);
       expect(next.res.status).toBe(200);
