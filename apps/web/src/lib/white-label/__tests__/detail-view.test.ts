@@ -174,10 +174,12 @@ describe('link guard: served detail pages', () => {
   });
   const locales = OPTIONS.locales;
 
-  it('the served patterns: proposal and its voters', () => {
+  it('the served patterns: proposal, voters, signal, pipeline track', () => {
     expect(WL_SERVED_DETAIL_PATTERNS).toEqual([
       ['agreements', 'proposal', ':'],
       ['agreements', 'proposal', ':', 'voters'],
+      ['coherence', 'signal', ':'],
+      ['pipeline', 'track', ':'],
     ]);
   });
 
@@ -228,6 +230,145 @@ describe('link guard: served detail pages', () => {
     ).toEqual({
       kind: 'external',
       href: `${app}/en/dho/space-one/agreements/proposal/p1/voters`,
+    });
+  });
+
+  it('signal detail links stay on the host, in every shape', () => {
+    for (const [href, expected] of [
+      ['/en/coherence/signal/s1', '/en/coherence/signal/s1'],
+      ['/en/dho/space-one/coherence/signal/s1', '/en/coherence/signal/s1'],
+      ['/pt/coherence/signal/a%20b?x=1', '/pt/coherence/signal/a%20b?x=1'],
+    ] as const) {
+      expect(classifyLink(href, host(), here, locales), href).toEqual({
+        kind: 'internal',
+        href: expected,
+      });
+    }
+  });
+
+  it('signal detail links stay in the frame (main-app and frame shapes)', () => {
+    for (const href of [
+      '/embed/space-one/en/coherence/signal/s1',
+      '/en/dho/space-one/coherence/signal/s1',
+    ]) {
+      expect(classifyLink(href, embed(), app, locales), href).toEqual({
+        kind: 'internal',
+        href: '/embed/space-one/en/coherence/signal/s1',
+      });
+    }
+  });
+
+  it('detailView full-app: a signal link leaves in the main-app shape', () => {
+    expect(
+      classifyLink('/en/coherence/signal/s1', host('full-app'), here, locales),
+    ).toEqual({
+      kind: 'external',
+      href: `${app}/en/dho/space-one/coherence/signal/s1`,
+    });
+  });
+
+  it('coherence pages that are not served still leave (new signal, another Space)', () => {
+    expect(
+      classifyLink(
+        '/en/dho/space-one/coherence/new-signal',
+        host(),
+        here,
+        locales,
+      ),
+    ).toEqual({
+      kind: 'external',
+      href: `${app}/en/dho/space-one/coherence/new-signal`,
+    });
+    expect(
+      classifyLink(
+        '/en/dho/other-space/coherence/signal/s1',
+        host(),
+        here,
+        locales,
+      ),
+    ).toEqual({
+      kind: 'external',
+      href: `${app}/en/dho/other-space/coherence/signal/s1`,
+    });
+  });
+
+  it('a main-app detail link keeps its own locale (host and frame)', () => {
+    for (const rest of [
+      'coherence/signal/s1',
+      'pipeline/track/sales',
+      'agreements/proposal/p1',
+    ]) {
+      expect(
+        classifyLink(`/pt/dho/space-one/${rest}`, host(), here, locales),
+        rest,
+      ).toEqual({ kind: 'internal', href: `/pt/${rest}` });
+      expect(
+        classifyLink(`/pt/dho/space-one/${rest}`, embed(), app, locales),
+        rest,
+      ).toEqual({
+        kind: 'internal',
+        href: `/embed/space-one/pt/${rest}`,
+      });
+    }
+  });
+
+  it('pipeline track links stay on the host, in every shape', () => {
+    for (const [href, expected] of [
+      ['/en/pipeline/track/sales', '/en/pipeline/track/sales'],
+      ['/en/dho/space-one/pipeline/track/sales', '/en/pipeline/track/sales'],
+      ['/pt/pipeline/track/a%20b?x=1', '/pt/pipeline/track/a%20b?x=1'],
+    ] as const) {
+      expect(classifyLink(href, host(), here, locales), href).toEqual({
+        kind: 'internal',
+        href: expected,
+      });
+    }
+  });
+
+  it('pipeline track links stay in the frame (main-app and frame shapes)', () => {
+    for (const href of [
+      '/embed/space-one/en/pipeline/track/sales',
+      '/en/dho/space-one/pipeline/track/sales',
+    ]) {
+      expect(classifyLink(href, embed(), app, locales), href).toEqual({
+        kind: 'internal',
+        href: '/embed/space-one/en/pipeline/track/sales',
+      });
+    }
+  });
+
+  it('detailView full-app: a track link leaves in the main-app shape', () => {
+    expect(
+      classifyLink('/en/pipeline/track/sales', host('full-app'), here, locales),
+    ).toEqual({
+      kind: 'external',
+      href: `${app}/en/dho/space-one/pipeline/track/sales`,
+    });
+  });
+
+  it('pipeline pages that are not served still leave (deal, new deal)', () => {
+    for (const rest of ['pipeline/deal/5', 'pipeline/new-deal']) {
+      expect(
+        classifyLink('/en/dho/space-one/' + rest, host(), here, locales),
+        rest,
+      ).toEqual({
+        kind: 'external',
+        href: `${app}/en/dho/space-one/${rest}`,
+      });
+    }
+  });
+
+  it('a track link of another Space is not mapped onto this one', () => {
+    expect(
+      classifyLink(
+        '/en/dho/other-space/pipeline/track/sales',
+        host(),
+        here,
+        locales,
+      ),
+    ).toEqual({
+      kind: 'external',
+      href: `${app}/en/dho/other-space/pipeline/track/sales`,
     });
   });
 

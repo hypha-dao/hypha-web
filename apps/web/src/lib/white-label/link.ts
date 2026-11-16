@@ -36,6 +36,8 @@ const SERVED_SECTIONS: readonly string[] = WL_SECTIONS;
 export const WL_SERVED_DETAIL_PATTERNS: readonly (readonly string[])[] = [
   ['agreements', 'proposal', ':'],
   ['agreements', 'proposal', ':', 'voters'],
+  ['coherence', 'signal', ':'],
+  ['pipeline', 'track', ':'],
 ];
 
 function isServedDetail(
@@ -223,7 +225,14 @@ export function classifyLink(
     if (isServedDetail(ctx, parts.slice(3))) {
       return {
         kind: 'internal',
-        href: detailHref(ctx, parts.slice(3), url.search),
+        // Keep the locale the link names (as the host-shaped branch does).
+        href: detailHref(
+          parts[0] !== undefined && locales.includes(parts[0])
+            ? { ...ctx, lang: parts[0] }
+            : ctx,
+          parts.slice(3),
+          url.search,
+        ),
       };
     }
   }

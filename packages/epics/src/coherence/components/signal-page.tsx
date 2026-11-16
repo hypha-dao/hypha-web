@@ -269,6 +269,12 @@ export type SignalPageProps = {
   spaceSlug: string;
   signalSlug: string;
   humanChatEnabled?: boolean;
+  /**
+   * Display only: no upvote, no creator actions (edit, delete) and no write on
+   * mount (the assignment acknowledgement). Default off, so the main app is
+   * unchanged.
+   */
+  readOnly?: boolean;
 };
 
 export function SignalPage({
@@ -276,6 +282,7 @@ export function SignalPage({
   spaceSlug,
   signalSlug,
   humanChatEnabled = false,
+  readOnly = false,
 }: SignalPageProps) {
   const t = useTranslations('CoherenceTab');
   const format = useFormatter();
@@ -389,6 +396,7 @@ export function SignalPage({
   const { acknowledgeCoherenceAssignment } = useCoherenceMutationsWeb2Rsc(jwt);
   const acknowledgedRef = React.useRef<string | null>(null);
   React.useEffect(() => {
+    if (readOnly) return;
     const slug = signal?.slug?.trim();
     if (!slug || !person?.id || !jwt) return;
     const assignees = Array.isArray(signal?.assigneeIds)
@@ -402,7 +410,7 @@ export function SignalPage({
       acknowledgedRef.current = null;
       console.warn('Could not acknowledge signal assignment:', error);
     });
-  }, [acknowledgeCoherenceAssignment, jwt, person?.id, signal]);
+  }, [acknowledgeCoherenceAssignment, jwt, person?.id, readOnly, signal]);
 
   const [isRetrying, setIsRetrying] = React.useState(false);
   const retryLoad = React.useCallback(async () => {
@@ -533,35 +541,39 @@ export function SignalPage({
               <h1 className="m-0 min-w-0 text-4 leading-tight text-foreground">
                 {signal.title}
               </h1>
-              <SignalUpvoteButton
-                slug={signal.slug}
-                spaceSlug={spaceSlug}
-                upvotes={signal.upvotes}
-                votingMode={votingMode}
-                votingModeStatus={votingModeStatus}
-                onRetryVotingMode={retryVotingMode}
-                isNonMember={isNonMember}
-                isMembershipPending={isMembershipPending}
-                refresh={refresh}
-                archived={signal.archived}
-                variant="page"
-                summaryState={signalListUpvoteSummaryState({
-                  hasSettledList: Boolean(coherences),
-                  isLoading: isSignalsLoading,
-                  hasError: signalsError != null,
-                })}
-                className="self-start"
-              />
+              {readOnly ? null : (
+                <SignalUpvoteButton
+                  slug={signal.slug}
+                  spaceSlug={spaceSlug}
+                  upvotes={signal.upvotes}
+                  votingMode={votingMode}
+                  votingModeStatus={votingModeStatus}
+                  onRetryVotingMode={retryVotingMode}
+                  isNonMember={isNonMember}
+                  isMembershipPending={isMembershipPending}
+                  refresh={refresh}
+                  archived={signal.archived}
+                  variant="page"
+                  summaryState={signalListUpvoteSummaryState({
+                    hasSettledList: Boolean(coherences),
+                    isLoading: isSignalsLoading,
+                    hasError: signalsError != null,
+                  })}
+                  className="self-start"
+                />
+              )}
             </div>
-            <div className="flex shrink-0 flex-wrap items-center gap-2 self-start">
-              <SignalCreatorActions
-                lang={lang}
-                spaceSlug={spaceSlug}
-                slug={signal.slug ?? ''}
-                creatorId={signal.creatorId}
-                className="flex items-center gap-2"
-              />
-            </div>
+            {readOnly ? null : (
+              <div className="flex shrink-0 flex-wrap items-center gap-2 self-start">
+                <SignalCreatorActions
+                  lang={lang}
+                  spaceSlug={spaceSlug}
+                  slug={signal.slug ?? ''}
+                  creatorId={signal.creatorId}
+                  className="flex items-center gap-2"
+                />
+              </div>
+            )}
           </div>
 
           <dl
