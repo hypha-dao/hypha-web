@@ -147,4 +147,27 @@ describe('quest proposal modal body', () => {
     expect(source).not.toContain('QUEST REWARD');
     expect(source).not.toContain('showMilestones');
   });
+
+  it('uses the standard proposal overlay width, not a narrower quest max-width', () => {
+    const testsDir = dirname(fileURLToPath(import.meta.url));
+    const mainOverlay = readFileSync(
+      join(
+        testsDir,
+        '../../../../../../apps/web/src/app/(main)/[lang]/dho/[id]/@aside/agreements/proposal/[documentSlug]/page.tsx',
+      ),
+      'utf8',
+    );
+    const wlOverlay = readFileSync(
+      join(
+        testsDir,
+        '../../../../../../apps/web/src/app/(wl)/wl/[id]/[lang]/agreements/@aside/proposal/[documentSlug]/proposal-overlay.tsx',
+      ),
+      'utf8',
+    );
+
+    expect(mainOverlay).toContain('<ProposalOverlayShell>');
+    expect(wlOverlay).toContain('<ProposalOverlayShell>');
+    expect(mainOverlay).not.toContain('md:max-w-[560px]');
+    expect(wlOverlay).not.toContain('md:max-w-[560px]');
+  });
 });

@@ -170,9 +170,7 @@ export default function Agreements() {
   };
 
   return (
-    <ProposalOverlayShell
-      className={document?.label === 'Quest' ? 'md:max-w-[560px]' : undefined}
-    >
+    <ProposalOverlayShell>
       <LoadingBackdrop
         progress={progress}
         isLoading={isVoting || !!voteError}

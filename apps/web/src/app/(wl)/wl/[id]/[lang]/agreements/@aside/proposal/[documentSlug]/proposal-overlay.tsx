@@ -49,9 +49,7 @@ export function ProposalOverlay() {
   );
 
   return (
-    <ProposalOverlayShell
-      className={document?.label === 'Quest' ? 'md:max-w-[560px]' : undefined}
-    >
+    <ProposalOverlayShell>
       <ProposalDetail
         readOnly
         documentId={document?.id}
