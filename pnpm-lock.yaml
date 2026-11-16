@@ -793,6 +793,9 @@ importers:
       '@hypha-platform/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@hypha-platform/mcp-server':
+        specifier: workspace:*
+        version: link:../../packages/mcp-server
       '@hypha-platform/notifications':
         specifier: workspace:*
         version: link:../../packages/notifications

@@ -25,6 +25,7 @@
     "typescript": "^5.7.3"
   },
   "exports": {
-    "./http": "./src/http/index.ts"
+    "./http": "./src/http/index.ts",
+    "./http/defaults": "./src/http/defaults.ts"
   }
 }
