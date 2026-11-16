@@ -174,10 +174,11 @@ describe('link guard: served detail pages', () => {
   });
   const locales = OPTIONS.locales;
 
-  it('the served patterns: proposal, its voters, pipeline track', () => {
+  it('the served patterns: proposal, voters, signal, pipeline track', () => {
     expect(WL_SERVED_DETAIL_PATTERNS).toEqual([
       ['agreements', 'proposal', ':'],
       ['agreements', 'proposal', ':', 'voters'],
+      ['coherence', 'signal', ':'],
       ['pipeline', 'track', ':'],
     ]);
   });
@@ -229,6 +230,65 @@ describe('link guard: served detail pages', () => {
     ).toEqual({
       kind: 'external',
       href: `${app}/en/dho/space-one/agreements/proposal/p1/voters`,
+    });
+  });
+
+  it('signal detail links stay on the host, in every shape', () => {
+    for (const [href, expected] of [
+      ['/en/coherence/signal/s1', '/en/coherence/signal/s1'],
+      ['/en/dho/space-one/coherence/signal/s1', '/en/coherence/signal/s1'],
+      ['/pt/coherence/signal/a%20b?x=1', '/pt/coherence/signal/a%20b?x=1'],
+    ] as const) {
+      expect(classifyLink(href, host(), here, locales), href).toEqual({
+        kind: 'internal',
+        href: expected,
+      });
+    }
+  });
+
+  it('signal detail links stay in the frame (main-app and frame shapes)', () => {
+    for (const href of [
+      '/embed/space-one/en/coherence/signal/s1',
+      '/en/dho/space-one/coherence/signal/s1',
+    ]) {
+      expect(classifyLink(href, embed(), app, locales), href).toEqual({
+        kind: 'internal',
+        href: '/embed/space-one/en/coherence/signal/s1',
+      });
+    }
+  });
+
+  it('detailView full-app: a signal link leaves in the main-app shape', () => {
+    expect(
+      classifyLink('/en/coherence/signal/s1', host('full-app'), here, locales),
+    ).toEqual({
+      kind: 'external',
+      href: `${app}/en/dho/space-one/coherence/signal/s1`,
+    });
+  });
+
+  it('coherence pages that are not served still leave (new signal, another Space)', () => {
+    expect(
+      classifyLink(
+        '/en/dho/space-one/coherence/new-signal',
+        host(),
+        here,
+        locales,
+      ),
+    ).toEqual({
+      kind: 'external',
+      href: `${app}/en/dho/space-one/coherence/new-signal`,
+    });
+    expect(
+      classifyLink(
+        '/en/dho/other-space/coherence/signal/s1',
+        host(),
+        here,
+        locales,
+      ),
+    ).toEqual({
+      kind: 'external',
+      href: `${app}/en/dho/other-space/coherence/signal/s1`,
     });
   });
 
