@@ -11,6 +11,13 @@ export const AUTH_SERVER_SCOPES = [
   'offline_access',
 ] as const;
 export type AuthServerScope = (typeof AUTH_SERVER_SCOPES)[number];
+/**
+ * Scopes that let an app act (prepare votes), as opposed to read. For clients that are not
+ * pre-approved the consent page shows them unticked, with a stronger warning.
+ */
+export const AUTH_SERVER_WRITE_SCOPES: readonly AuthServerScope[] = [
+  'agreements:vote',
+];
 
 /** Product defaults (reported for confirmation). Seconds. */
 export const ACCESS_TOKEN_TTL_SECONDS = 10 * 60;

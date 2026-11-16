@@ -1,6 +1,16 @@
 import { verifyOAuthQueryParams } from '@better-auth/oauth-provider';
 import type { AuthServer } from './auth';
+import { AUTH_SERVER_WRITE_SCOPES } from './config';
 import { describeScope } from './scope-copy';
+
+/**
+ * How the app was identified, which decides the defaults on the consent page:
+ * - `registered`: pre-registered with Hypha (tier A); keeps the product defaults;
+ * - `cimd`: no registration, identified by an https `client_id` that serves its own metadata;
+ * - `dcr`: registered itself through dynamic registration; its name is a claim, not checked.
+ * Only `registered` is pre-approved.
+ */
+export type ClientKind = 'registered' | 'cimd' | 'dcr';
 
 export type ConsentRequest = {
   oauthQuery: string;
@@ -14,9 +24,27 @@ export type ConsentRequest = {
     redirectHost: string;
     /** Every app that connects without being registered with Hypha is unverified. */
     verified: false;
+    kind: ClientKind;
   };
-  scopes: { scope: string; title: string; detail: string }[];
+  scopes: {
+    scope: string;
+    title: string;
+    detail: string;
+    /** Ticked when the page opens. Write scopes start unticked for clients that are not pre-approved. */
+    defaultGranted: boolean;
+    /** Stronger warning shown with the scope, for write scopes of clients that are not pre-approved. */
+    warning?: string;
+  }[];
 };
+
+export function classifyClient(
+  clientId: string,
+  registration: unknown,
+): ClientKind {
+  if (registration === 'dcr') return 'dcr';
+  if (/^https:\/\//i.test(clientId)) return 'cimd';
+  return 'registered';
+}
 
 /**
  * Everything the consent page shows, read on the server from verified data only: the signed
@@ -40,7 +68,8 @@ export async function loadConsentRequest(
   if (!clientId || !redirectUri) return null;
 
   const { rows } = await pool.query(
-    'select name, uri from as_oauth_client where "clientId" = $1 limit 1',
+    `select name, uri, metadata->>'registration' as registration
+       from as_oauth_client where "clientId" = $1 limit 1`,
     [clientId],
   );
   const row = rows[0];
@@ -53,6 +82,7 @@ export async function loadConsentRequest(
       return '';
     }
   };
+  const kind = classifyClient(clientId, row.registration);
   const requested = (params.get('scope') ?? '').split(/\s+/).filter(Boolean);
   return {
     oauthQuery,
@@ -63,7 +93,20 @@ export async function loadConsentRequest(
       host: hostOf(row.uri) || hostOf(clientId),
       redirectHost: hostOf(redirectUri),
       verified: false,
+      kind,
     },
-    scopes: requested.map((scope) => ({ scope, ...describeScope(scope) })),
+    scopes: requested.map((scope) => {
+      const write = (AUTH_SERVER_WRITE_SCOPES as readonly string[]).includes(
+        scope,
+      );
+      const copy = describeScope(scope);
+      return {
+        scope,
+        ...copy,
+        defaultGranted: !(write && kind !== 'registered'),
+        warning:
+          write && kind !== 'registered' ? copy.unverifiedWarning : undefined,
+      };
+    }),
   };
 }

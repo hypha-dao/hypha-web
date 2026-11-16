@@ -198,6 +198,29 @@ export function createAuthServer(
         },
       },
       {
+        // The library treats an omitted `scope` on consent as "grant everything requested". The
+        // granted scope must be exactly what the person ticked, so an accept without one is refused.
+        id: 'hypha-explicit-consent',
+        hooks: {
+          before: [
+            {
+              matcher: (ctx) => ctx.path === '/oauth2/consent',
+              handler: createAuthMiddleware(async (ctx) => {
+                const body = ctx.body as
+                  | { accept?: unknown; scope?: unknown }
+                  | undefined;
+                if (body?.accept === true && typeof body.scope !== 'string') {
+                  throw new APIError('BAD_REQUEST', {
+                    error: 'invalid_request',
+                    error_description: 'scope is required when approving',
+                  });
+                }
+              }),
+            },
+          ],
+        },
+      },
+      {
         id: 'hypha-gate',
         hooks: {
           before: [

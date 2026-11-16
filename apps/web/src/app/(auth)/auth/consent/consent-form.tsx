@@ -4,7 +4,13 @@ import * as React from 'react';
 import { Button, Checkbox } from '@hypha-platform/ui';
 import { AUTH_SERVER_API_BASE_PATH } from '@hypha-platform/auth-server/client';
 
-type Scope = { scope: string; title: string; detail: string };
+type Scope = {
+  scope: string;
+  title: string;
+  detail: string;
+  defaultGranted: boolean;
+  warning?: string;
+};
 
 export function ConsentForm({
   oauthQuery,
@@ -18,7 +24,7 @@ export function ConsentForm({
   scopes: Scope[];
 }) {
   const [granted, setGranted] = React.useState<Set<string>>(
-    () => new Set(scopes.map((s) => s.scope)),
+    () => new Set(scopes.filter((s) => s.defaultGranted).map((s) => s.scope)),
   );
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState('');
@@ -94,6 +100,14 @@ export function ConsentForm({
             <label htmlFor={`scope-${s.scope}`} className="flex flex-col">
               <span className="text-2 font-medium">{s.title}</span>
               <span className="text-1 text-neutral-11">{s.detail}</span>
+              {s.warning ? (
+                <span
+                  role="note"
+                  className="text-1 font-medium text-warning-11"
+                >
+                  {s.warning}
+                </span>
+              ) : null}
             </label>
           </li>
         ))}
