@@ -292,6 +292,26 @@ describe('link guard: served detail pages', () => {
     });
   });
 
+  it('a main-app detail link keeps its own locale (host and frame)', () => {
+    for (const rest of [
+      'coherence/signal/s1',
+      'pipeline/track/sales',
+      'agreements/proposal/p1',
+    ]) {
+      expect(
+        classifyLink(`/pt/dho/space-one/${rest}`, host(), here, locales),
+        rest,
+      ).toEqual({ kind: 'internal', href: `/pt/${rest}` });
+      expect(
+        classifyLink(`/pt/dho/space-one/${rest}`, embed(), app, locales),
+        rest,
+      ).toEqual({
+        kind: 'internal',
+        href: `/embed/space-one/pt/${rest}`,
+      });
+    }
+  });
+
   it('pipeline track links stay on the host, in every shape', () => {
     for (const [href, expected] of [
       ['/en/pipeline/track/sales', '/en/pipeline/track/sales'],
