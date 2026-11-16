@@ -1,6 +1,7 @@
 // temp(mcp) #2559: resource-side wiring of the HTTP MCP endpoint (guard + handler), kept in small
 // functions so moving the route to its own host later is a small change (a different env value).
 import {
+  AUTH_SERVER_SCOPES,
   guardResource,
   type AuthServerConfig,
   type AuthServerDisabled,
@@ -137,7 +138,9 @@ export function createMcpRoute(options: McpRouteOptions) {
         protectedResourceMetadata({
           resource,
           issuer: config.issuer,
-          scopes: [MCP_SCOPE],
+          // What the authorization server can grant, not only what this endpoint requires: clients ask
+          // for the advertised scopes, and the consent page decides what the person ticks.
+          scopes: AUTH_SERVER_SCOPES,
         }),
       ),
       {

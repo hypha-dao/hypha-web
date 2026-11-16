@@ -233,7 +233,7 @@ describe('protected-resource metadata', () => {
     expect(await res.json()).toEqual({
       resource: RESOURCE,
       authorization_servers: [ISSUER],
-      scopes_supported: ['spaces:read'],
+      scopes_supported: ['spaces:read', 'agreements:vote', 'offline_access'],
       bearer_methods_supported: ['header'],
     });
     expect(res.headers.get('access-control-allow-origin')).toBe('*');
