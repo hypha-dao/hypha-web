@@ -227,6 +227,7 @@ function resolveMappedHost(
     localeFromPath,
     framingOrigins: [],
     detailView: client.detailView ?? 'embedded',
+    unsupportedActions: client.unsupportedActions ?? 'hide',
     ...(record.authConfig ? { authConfig: record.authConfig } : {}),
   };
 }
@@ -293,10 +294,13 @@ export function resolve(
   const origins = new Set<string>();
   // `embedded` wins when any approving client allows it (unset counts as it).
   let embeddedDetails = false;
+  // `hide` wins: `full-app` only if every approving client says so.
+  let allFullApp = true;
   for (const client of config.clients) {
     const matches = client.spaces.filter((s) => s.slug === slug);
     if (matches.length === 0) continue;
     clientIds.push(client.id);
+    if (client.unsupportedActions !== 'full-app') allFullApp = false;
     if ((client.detailView ?? 'embedded') === 'embedded') {
       embeddedDetails = true;
     }
@@ -338,5 +342,6 @@ export function resolve(
     locale,
     framingOrigins: [...origins],
     detailView: embeddedDetails ? 'embedded' : 'full-app',
+    unsupportedActions: allFullApp ? 'full-app' : 'hide',
   };
 }

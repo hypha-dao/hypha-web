@@ -1,5 +1,5 @@
 import { EMBED_PREFIX, LANDING_SECTION, WL_SECTIONS } from './constants';
-import type { DetailView } from './types';
+import type { DetailView, UnsupportedActions } from './types';
 
 /**
  * How a link renders inside a white-label tree. The context is set once by the
@@ -10,20 +10,30 @@ import type { DetailView } from './types';
  *   origin, so links that leave the Space need its origin.
  */
 export type WhiteLabelLinkContext =
-  | { mode: 'embed'; spaceSlug: string; lang: string; detailView?: DetailView }
+  | {
+      mode: 'embed';
+      spaceSlug: string;
+      lang: string;
+      detailView?: DetailView;
+      /** Absent means `hide`: create-flow links do nothing. */
+      unsupportedActions?: UnsupportedActions;
+    }
   | {
       mode: 'host';
       spaceSlug: string;
       lang: string;
       fullAppOrigin: string;
       detailView?: DetailView;
+      unsupportedActions?: UnsupportedActions;
     };
 
 export type LinkDecision =
   /** Stays in the white-label tree: client-side navigation to `href`. */
   | { kind: 'internal'; href: string }
   /** Leaves the Space: open the full app in a new tab. */
-  | { kind: 'external'; href: string };
+  | { kind: 'external'; href: string }
+  /** A create flow the delivery cannot perform, with `unsupportedActions: 'hide'`: the click does nothing. */
+  | { kind: 'blocked' };
 
 const SERVED_SECTIONS: readonly string[] = WL_SECTIONS;
 
@@ -77,6 +87,44 @@ function mainAppPageOf(
   url: URL,
 ): LinkDecision {
   return leaveSpace(ctx, url, `/${lang}/dho/${ctx.spaceSlug}/${own.join('/')}`);
+}
+
+/**
+ * Segments (the one after the section name) that mark a create flow: New
+ * proposal (`agreements/select-create-action`, `agreements/create/...`,
+ * `treasury/create/...`), New signal, New memory, calendar new and edit. Only
+ * that position is read, so a proposal or signal slug that happens to look
+ * like one is not a create flow.
+ */
+const CREATE_FLOW_SEGMENTS: readonly string[] = [
+  'create',
+  'select-create-action',
+  'new-signal',
+  'new-memory',
+  'new-scheduled-item',
+  'edit-scheduled-item',
+];
+
+/** `own` = the segments after the locale (and the Space, in the main-app shape). */
+export function isCreateFlow(own: readonly string[]): boolean {
+  const marker = own[1];
+  return marker !== undefined && CREATE_FLOW_SEGMENTS.includes(marker);
+}
+
+/**
+ * A create-flow link: nothing happens by default (`hide`); with `full-app` it
+ * leaves to the same page of the full app. `mainShape` is true when the href
+ * is already a main-app URL.
+ */
+function createFlowDecision(
+  ctx: WhiteLabelLinkContext,
+  lang: string,
+  own: readonly string[],
+  url: URL,
+  mainShape: boolean,
+): LinkDecision {
+  if (ctx.unsupportedActions !== 'full-app') return { kind: 'blocked' };
+  return mainShape ? leaveSpace(ctx, url) : mainAppPageOf(ctx, lang, own, url);
 }
 
 /** Public URL of a section of the Space: under `/embed`, or at the host root. */
@@ -176,6 +224,9 @@ export function classifyLink(
     if (isServedDetail(ctx, own)) {
       return { kind: 'internal', href: detailHref(linkCtx, own, url.search) };
     }
+    if (isCreateFlow(own)) {
+      return createFlowDecision(ctx, linkCtx.lang, own, url, false);
+    }
     // Shaped like a page of this tree (`/<lang>/<section>/...`) but not served:
     // the full app has it under `/dho/<slug>`.
     if (only !== undefined && SERVED_SECTIONS.includes(only)) {
@@ -199,6 +250,9 @@ export function classifyLink(
       isServedDetail(ctx, own)
     ) {
       return { kind: 'internal', href: url.pathname + url.search };
+    }
+    if (isCreateFlow(own)) {
+      return createFlowDecision(ctx, lang, own, url, false);
     }
     return mainAppPageOf(ctx, lang, own, url);
   }
@@ -234,6 +288,9 @@ export function classifyLink(
           url.search,
         ),
       };
+    }
+    if (isCreateFlow(parts.slice(3))) {
+      return createFlowDecision(ctx, parts[0] ?? ctx.lang, parts, url, true);
     }
   }
   return leaveSpace(ctx, url);

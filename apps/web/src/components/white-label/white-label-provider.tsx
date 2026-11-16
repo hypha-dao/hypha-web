@@ -24,7 +24,15 @@ export function WhiteLabelProvider({
   const fullAppOrigin = value.mode === 'host' ? value.fullAppOrigin : '';
   const memo = React.useMemo(
     () => value,
-    [value.mode, value.spaceSlug, value.lang, value.detailView, fullAppOrigin], // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      value.mode,
+      value.spaceSlug,
+      value.lang,
+      value.detailView,
+      value.unsupportedActions,
+      fullAppOrigin,
+    ],
   );
   return (
     <WhiteLabelContext.Provider value={memo}>
@@ -56,7 +64,8 @@ export function useWhiteLabelSectionHref(): (
  * wrapper maps a click on any link: this Space stays in the white-label tree
  * (`/embed`, or the host root), every other destination opens the full app in
  * a new tab (in the iframe the main app can not be framed; on a mapped host it
- * is another origin). Middle and Ctrl/Cmd/Shift clicks open the mapped URL in a new tab;
+ * is another origin), except create flows, which do nothing unless the client
+ * set `unsupportedActions: 'full-app'`. Middle and Ctrl/Cmd/Shift clicks open the mapped URL in a new tab;
  * Alt-click (download) is left to the browser.
  */
 export function WhiteLabelLinkGuard({
@@ -83,6 +92,8 @@ export function WhiteLabelLinkGuard({
 
       event.preventDefault();
       event.stopPropagation();
+      // A create flow this delivery cannot perform: the click does nothing.
+      if (decision.kind === 'blocked') return;
       if (decision.kind === 'internal' && !newTab) {
         router.push(decision.href);
       } else {

@@ -17,6 +17,8 @@ export const WL_CLIENT_HEADER = 'x-hypha-wl-client';
 export const WL_AUTH_HEADER = 'x-hypha-wl-auth';
 /** How a card opens a detail page: `embedded` (overlay on the host) or `full-app`. */
 export const WL_DETAIL_VIEW_HEADER = 'x-hypha-wl-detail-view';
+/** What a visitor sees for an action the delivery cannot perform: `hide` or `full-app`. */
+export const WL_UNSUPPORTED_ACTIONS_HEADER = 'x-hypha-wl-unsupported-actions';
 /** Set on requests middleware sends to the white-label 404 (see global-not-found). */
 export const WL_NOT_FOUND_HEADER = 'x-hypha-wl-not-found';
 export const WL_REQUEST_HEADERS = [
@@ -25,6 +27,7 @@ export const WL_REQUEST_HEADERS = [
   WL_CLIENT_HEADER,
   WL_AUTH_HEADER,
   WL_DETAIL_VIEW_HEADER,
+  WL_UNSUPPORTED_ACTIONS_HEADER,
   WL_NOT_FOUND_HEADER,
 ] as const;
 

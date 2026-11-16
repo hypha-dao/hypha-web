@@ -28,6 +28,7 @@ import {
   WL_DETAIL_VIEW_HEADER,
   WL_MODE_HEADER,
   WL_SPACE_HEADER,
+  WL_UNSUPPORTED_ACTIONS_HEADER,
   readAuthConfigHeader,
   type WhiteLabelLinkContext,
   type WhiteLabelMode,
@@ -75,6 +76,11 @@ export default async function WhiteLabelRootLayout({
     requestHeaders.get(WL_DETAIL_VIEW_HEADER) === 'embedded'
       ? 'embedded'
       : 'full-app';
+  // Only an explicit `full-app` shows unsupported actions (fail closed: hide).
+  const unsupportedActions =
+    requestHeaders.get(WL_UNSUPPORTED_ACTIONS_HEADER) === 'full-app'
+      ? 'full-app'
+      : 'hide';
   const authConfig =
     whiteLabelMode === 'host'
       ? readAuthConfigHeader(requestHeaders.get(WL_AUTH_HEADER))
@@ -97,8 +103,15 @@ export default async function WhiteLabelRootLayout({
           lang: locale,
           fullAppOrigin: getAppBaseUrl(),
           detailView,
+          unsupportedActions,
         }
-      : { mode: 'embed', spaceSlug, lang: locale, detailView };
+      : {
+          mode: 'embed',
+          spaceSlug,
+          lang: locale,
+          detailView,
+          unsupportedActions,
+        };
 
   return (
     <Html lang={locale} className={`${hyphaFontVariables} wl-root`}>

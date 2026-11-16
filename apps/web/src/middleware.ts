@@ -14,6 +14,7 @@ import {
   WL_AUTH_HEADER,
   WL_CLIENT_HEADER,
   WL_DETAIL_VIEW_HEADER,
+  WL_UNSUPPORTED_ACTIONS_HEADER,
   WL_LOCALE_COOKIE,
   WL_MODE_HEADER,
   WL_NOT_FOUND_HEADER,
@@ -226,6 +227,7 @@ export function middleware(request: NextRequest) {
     headers.set(WL_MODE_HEADER, decision.mode);
     headers.set(INTL_LOCALE_HEADER, decision.locale);
     headers.set(WL_DETAIL_VIEW_HEADER, decision.detailView);
+    headers.set(WL_UNSUPPORTED_ACTIONS_HEADER, decision.unsupportedActions);
     if (decision.mode === 'host') {
       headers.set(WL_CLIENT_HEADER, decision.clientId);
       if (decision.authConfig) {
