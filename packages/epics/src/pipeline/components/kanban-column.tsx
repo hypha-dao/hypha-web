@@ -33,11 +33,13 @@ type KanbanColumnProps = {
   label?: string;
   deals: Deal[];
   onDealClick?: (deal: Deal) => void;
-  onDropDeal: (dealId: number, status: PipelineStatus) => void;
+  onDropDeal?: (dealId: number, status: PipelineStatus) => void;
   activeDealId?: number | null;
   wide?: boolean;
   probabilities?: ProbabilityMatrix;
   stages?: PipelineStageDefinition[];
+  /** Display only: no drop target, cards are inert. Default off. */
+  readOnly?: boolean;
 };
 
 export function KanbanColumn({
@@ -50,6 +52,7 @@ export function KanbanColumn({
   wide = false,
   probabilities,
   stages,
+  readOnly = false,
 }: KanbanColumnProps) {
   const columnRef = React.useRef<HTMLDivElement>(null);
   const format = useFormatter();
@@ -81,6 +84,26 @@ export function KanbanColumn({
       .join(' + ');
   };
 
+  const dropHandlers = {
+    onDragOver: (event: React.DragEvent<HTMLDivElement>) => {
+      handleColumnDragOver(event);
+      setIsOver(true);
+    },
+    onDragLeave: (event: React.DragEvent<HTMLDivElement>) => {
+      if (isDragLeaveColumn(event, columnRef.current)) {
+        setIsOver(false);
+      }
+    },
+    onDrop: (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      setIsOver(false);
+      const dealId = getDealDragId(event);
+      if (dealId != null) {
+        onDropDeal?.(dealId, status);
+      }
+    },
+  };
+
   return (
     <div
       ref={columnRef}
@@ -92,23 +115,7 @@ export function KanbanColumn({
         isOver && 'bg-foreground/[0.03]',
       )}
       onWheel={handlePipelineColumnShellWheel}
-      onDragOver={(event) => {
-        handleColumnDragOver(event);
-        setIsOver(true);
-      }}
-      onDragLeave={(event) => {
-        if (isDragLeaveColumn(event, columnRef.current)) {
-          setIsOver(false);
-        }
-      }}
-      onDrop={(event) => {
-        event.preventDefault();
-        setIsOver(false);
-        const dealId = getDealDragId(event);
-        if (dealId != null) {
-          onDropDeal(dealId, status);
-        }
-      }}
+      {...(readOnly ? {} : dropHandlers)}
     >
       <div className="flex shrink-0 flex-col gap-0.5 border-b border-border/40 px-3 py-2">
         <div className="truncate text-2 font-medium text-neutral-12">
@@ -131,6 +138,7 @@ export function KanbanColumn({
             onClick={onDealClick}
             active={activeDealId === deal.id}
             probabilities={probabilities}
+            readOnly={readOnly}
           />
         ))}
       </div>

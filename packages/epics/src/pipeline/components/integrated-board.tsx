@@ -35,8 +35,13 @@ type IntegratedBoardProps = {
   lang: string;
   useMembers: UseMembers;
   activeDealId?: number | null;
-  onDealOpen: (dealId: number) => void;
+  onDealOpen?: (dealId: number) => void;
   getTrackHref: (swimlane: PipelineSwimlane) => string;
+  /**
+   * Display only: no new-deal controls, no saved views, no drag and drop, and
+   * inert cards. Default off, so the main app is unchanged.
+   */
+  readOnly?: boolean;
 };
 
 export function IntegratedBoard({
@@ -45,6 +50,7 @@ export function IntegratedBoard({
   activeDealId,
   onDealOpen,
   getTrackHref,
+  readOnly = false,
 }: IntegratedBoardProps) {
   const t = useTranslations('Pipeline');
   const [filters, setFilters] = React.useState<DealFilters>({});
@@ -117,11 +123,13 @@ export function IntegratedBoard({
               <Download className="mr-1 size-3.5" />
               {t('exportXlsx')}
             </Button>
-            <SavedViewsMenu
-              spaceSlug={spaceSlug}
-              filters={filters}
-              onApply={setFilters}
-            />
+            {readOnly ? null : (
+              <SavedViewsMenu
+                spaceSlug={spaceSlug}
+                filters={filters}
+                onApply={setFilters}
+              />
+            )}
           </div>
         </div>
       </header>
@@ -181,17 +189,19 @@ export function IntegratedBoard({
                 onToggle={() => toggleLane(track.slug)}
                 actions={
                   <>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setNewSwimlane(track.slug);
-                        setNewOpen(true);
-                      }}
-                    >
-                      <Plus className="size-3.5" />
-                    </Button>
+                    {readOnly ? null : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setNewSwimlane(track.slug);
+                          setNewOpen(true);
+                        }}
+                      >
+                        <Plus className="size-3.5" />
+                      </Button>
+                    )}
                     <Link
                       href={getTrackHref(track.slug)}
                       className="text-1 whitespace-nowrap text-accent-11 hover:underline"
@@ -204,10 +214,11 @@ export function IntegratedBoard({
                 <KanbanBoard
                   deals={laneDeals}
                   stages={stages}
-                  onDealClick={(deal) => onDealOpen(deal.id)}
+                  onDealClick={(deal) => onDealOpen?.(deal.id)}
                   onMoveStatus={onMoveStatus}
                   activeDealId={activeDealId}
                   probabilities={probabilities}
+                  readOnly={readOnly}
                 />
               </PipelineLaneSection>
             );
@@ -223,29 +234,34 @@ export function IntegratedBoard({
               <KanbanBoard
                 deals={unmatchedDeals}
                 stages={stages}
-                onDealClick={(deal) => onDealOpen(deal.id)}
+                onDealClick={(deal) => onDealOpen?.(deal.id)}
                 onMoveStatus={onMoveStatus}
                 activeDealId={activeDealId}
                 probabilities={probabilities}
+                readOnly={readOnly}
               />
             </PipelineLaneSection>
           ) : null}
         </div>
       )}
 
-      <DealCreateFab
-        onClick={() => {
-          setNewSwimlane(defaultTrack);
-          setNewOpen(true);
-        }}
-      />
-      <NewDealDialog
-        spaceSlug={spaceSlug}
-        useMembers={useMembers}
-        open={newOpen}
-        onOpenChange={setNewOpen}
-        defaultSwimlane={newSwimlane || defaultTrack}
-      />
+      {readOnly ? null : (
+        <>
+          <DealCreateFab
+            onClick={() => {
+              setNewSwimlane(defaultTrack);
+              setNewOpen(true);
+            }}
+          />
+          <NewDealDialog
+            spaceSlug={spaceSlug}
+            useMembers={useMembers}
+            open={newOpen}
+            onOpenChange={setNewOpen}
+            defaultSwimlane={newSwimlane || defaultTrack}
+          />
+        </>
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import type React from 'react';
 import type { Deal, ProbabilityMatrix } from '@hypha-platform/core/client';
 import { effectiveSuccessRate } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
@@ -12,6 +13,11 @@ type DealCardProps = {
   draggable?: boolean;
   active?: boolean;
   probabilities?: ProbabilityMatrix;
+  /**
+   * Display only: not draggable, no click, no pointer or hover styling (a
+   * plain element, not a button). Default off, so the main app is unchanged.
+   */
+  readOnly?: boolean;
 };
 
 const priorityClass: Record<string, string> = {
@@ -27,6 +33,7 @@ export function DealCard({
   draggable = true,
   active = false,
   probabilities,
+  readOnly = false,
 }: DealCardProps) {
   const format = useFormatter();
   const t = useTranslations('Pipeline');
@@ -34,21 +41,27 @@ export function DealCard({
   const weighted = (deal.value * probability) / 100;
   const isOverride = deal.successRate != null;
 
+  const className = cn(
+    readOnly ? 'craft-card' : 'craft-card-interactive',
+    'w-full p-3 text-left',
+    active && 'border-foreground/35 shadow-none',
+    deal.blocked && 'opacity-80',
+  );
+  const Root = readOnly ? 'div' : 'button';
+  const rootProps = readOnly
+    ? {}
+    : {
+        type: 'button' as const,
+        draggable,
+        onDragStart: (event: React.DragEvent<HTMLElement>) => {
+          if (!draggable) return;
+          setDealDragData(event, deal.id);
+        },
+        onClick: () => onClick?.(deal),
+      };
+
   return (
-    <button
-      type="button"
-      draggable={draggable}
-      onDragStart={(event) => {
-        if (!draggable) return;
-        setDealDragData(event, deal.id);
-      }}
-      onClick={() => onClick?.(deal)}
-      className={cn(
-        'craft-card-interactive w-full p-3 text-left',
-        active && 'border-foreground/35 shadow-none',
-        deal.blocked && 'opacity-80',
-      )}
-    >
+    <Root {...rootProps} className={className}>
       <div className="flex items-start justify-between gap-2">
         <span className="text-2 font-medium text-neutral-12 line-clamp-2">
           {deal.title}
@@ -90,6 +103,6 @@ export function DealCard({
       {deal.blocked ? (
         <div className="mt-2 text-1 text-red-11">Blocked</div>
       ) : null}
-    </button>
+    </Root>
   );
 }

@@ -14,10 +14,12 @@ type KanbanBoardProps = {
   deals: Deal[];
   stages: PipelineStageDefinition[];
   onDealClick?: (deal: Deal) => void;
-  onMoveStatus: (dealId: number, status: PipelineStatus) => void;
+  onMoveStatus?: (dealId: number, status: PipelineStatus) => void;
   activeDealId?: number | null;
   wide?: boolean;
   probabilities?: ProbabilityMatrix;
+  /** Display only: no drag and drop, cards are inert. Default off. */
+  readOnly?: boolean;
 };
 
 export function KanbanBoard({
@@ -28,6 +30,7 @@ export function KanbanBoard({
   activeDealId,
   wide = false,
   probabilities,
+  readOnly = false,
 }: KanbanBoardProps) {
   return (
     <div
@@ -50,6 +53,7 @@ export function KanbanBoard({
           wide={wide}
           probabilities={probabilities}
           stages={stages}
+          readOnly={readOnly}
         />
       ))}
     </div>

@@ -35,7 +35,12 @@ type TrackPageProps = {
   boardHref: string;
   useMembers: UseMembers;
   activeDealId?: number | null;
-  onDealOpen: (dealId: number) => void;
+  onDealOpen?: (dealId: number) => void;
+  /**
+   * Display only: no new-deal controls, no saved views, no drag and drop, and
+   * inert cards. Default off, so the main app is unchanged.
+   */
+  readOnly?: boolean;
 };
 
 export function TrackPage({
@@ -45,6 +50,7 @@ export function TrackPage({
   useMembers,
   activeDealId,
   onDealOpen,
+  readOnly = false,
 }: TrackPageProps) {
   const t = useTranslations('Pipeline');
   const [filters, setFilters] = React.useState<DealFilters>({ swimlane });
@@ -105,11 +111,13 @@ export function TrackPage({
             <Download className="mr-1 size-3.5" />
             {t('exportXlsx')}
           </Button>
-          <SavedViewsMenu
-            spaceSlug={spaceSlug}
-            filters={filters}
-            onApply={setFilters}
-          />
+          {readOnly ? null : (
+            <SavedViewsMenu
+              spaceSlug={spaceSlug}
+              filters={filters}
+              onApply={setFilters}
+            />
+          )}
         </div>
       </div>
 
@@ -145,23 +153,28 @@ export function TrackPage({
           <KanbanBoard
             deals={filtered}
             stages={stages}
-            onDealClick={(deal) => onDealOpen(deal.id)}
+            onDealClick={(deal) => onDealOpen?.(deal.id)}
             onMoveStatus={onMoveStatus}
             activeDealId={activeDealId}
             wide
             probabilities={probabilities}
+            readOnly={readOnly}
           />
         </PipelineLaneSection>
       )}
 
-      <DealCreateFab onClick={() => setNewOpen(true)} />
-      <NewDealDialog
-        spaceSlug={spaceSlug}
-        useMembers={useMembers}
-        open={newOpen}
-        onOpenChange={setNewOpen}
-        defaultSwimlane={swimlane}
-      />
+      {readOnly ? null : (
+        <>
+          <DealCreateFab onClick={() => setNewOpen(true)} />
+          <NewDealDialog
+            spaceSlug={spaceSlug}
+            useMembers={useMembers}
+            open={newOpen}
+            onOpenChange={setNewOpen}
+            defaultSwimlane={swimlane}
+          />
+        </>
+      )}
     </div>
   );
 }

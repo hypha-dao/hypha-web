@@ -36,6 +36,7 @@ const SERVED_SECTIONS: readonly string[] = WL_SECTIONS;
 export const WL_SERVED_DETAIL_PATTERNS: readonly (readonly string[])[] = [
   ['agreements', 'proposal', ':'],
   ['agreements', 'proposal', ':', 'voters'],
+  ['pipeline', 'track', ':'],
 ];
 
 function isServedDetail(
