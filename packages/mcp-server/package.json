@@ -7,7 +7,8 @@
     "lint": "eslint .",
     "check-types": "tsc --noEmit",
     "start": "node --import tsx src/main.ts",
-    "dev": "tsx watch src/main.ts"
+    "dev": "tsx watch src/main.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@hypha-platform/chat-server": "workspace:*",
@@ -22,5 +23,8 @@
     "@hypha-platform/config-typescript": "workspace:*",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
+  },
+  "exports": {
+    "./http": "./src/http/index.ts"
   }
 }
