@@ -197,8 +197,10 @@ function compareDesc(a: bigint | number, b: bigint | number): number {
 
 /**
  * `new` is newest first. Top sorts rank by net support (up minus down)
- * received inside the time frame; ties fall back to all-time net support,
- * then newest first, so quiet time frames still read as a sensible list.
+ * received inside the time frame. Top by voting power inside Today, Week,
+ * Month, or Year breaks an equal window score by newest `createdAt`.
+ * All time, and top by voters, still fall back to all-time net support,
+ * then newest first.
  */
 export function rankSignals<T extends Pick<Coherence, 'createdAt' | 'upvotes'>>(
   signals: readonly T[],
@@ -210,12 +212,15 @@ export function rankSignals<T extends Pick<Coherence, 'createdAt' | 'upvotes'>>(
           signalVotersInTimeFrame(signal.upvotes, frame)
       : (signal: T, frame: SignalTimeFrame) =>
           signalVotingPowerInTimeFrame(signal.upvotes, frame);
+  const windowedPower = sort === 'top-power' && timeFrame !== 'all';
   return [...signals].sort((a, b) => {
     if (sort !== 'new') {
       const inFrame = compareDesc(score(a, timeFrame), score(b, timeFrame));
       if (inFrame !== 0) return inFrame;
-      const allTime = compareDesc(score(a, 'all'), score(b, 'all'));
-      if (allTime !== 0) return allTime;
+      if (!windowedPower) {
+        const allTime = compareDesc(score(a, 'all'), score(b, 'all'));
+        if (allTime !== 0) return allTime;
+      }
     }
     return createdAtMs(b) - createdAtMs(a);
   });

@@ -140,9 +140,54 @@ describe('rankSignals', () => {
   });
 
   it('ranks by voting power inside the time frame', () => {
-    expect(ids('top-power', 'week')).toEqual(['week', 'old', 'crowd', 'none']);
-    expect(ids('top-power', 'month')).toEqual(['crowd', 'week', 'old', 'none']);
+    expect(ids('top-power', 'week')).toEqual(['week', 'none', 'crowd', 'old']);
+    expect(ids('top-power', 'month')).toEqual(['crowd', 'week', 'none', 'old']);
     expect(ids('top-power', 'all')).toEqual(['old', 'crowd', 'week', 'none']);
+  });
+
+  it('breaks an equal voting-power window by newest signal, not all-time power', () => {
+    // Product Demo is older and has far more all-time power. Structuring
+    // matches it inside every window, so the windowed list must put it first.
+    const productDemo = {
+      id: 'product-demo',
+      createdAt: new Date('2026-07-03'),
+      upvotes: upvotes(
+        { power: '1500000', voters: 8 },
+        {
+          today: { power: '176366', voters: 2 },
+          week: { power: '176366', voters: 2 },
+          month: { power: '176366', voters: 2 },
+          year: { power: '176366', voters: 2 },
+        },
+      ),
+    };
+    const structuring = {
+      id: 'structuring',
+      createdAt: new Date('2026-11-14'),
+      upvotes: upvotes(
+        { power: '176366', voters: 2 },
+        {
+          today: { power: '176366', voters: 2 },
+          week: { power: '176366', voters: 2 },
+          month: { power: '176366', voters: 2 },
+          year: { power: '176366', voters: 2 },
+        },
+      ),
+    };
+    const tied = [productDemo, structuring];
+    for (const timeFrame of ['today', 'week', 'month', 'year'] as const) {
+      expect(
+        rankSignals(tied, { sort: 'top-power', timeFrame }).map(
+          (signal) => signal.id,
+        ),
+      ).toEqual(['structuring', 'product-demo']);
+    }
+    expect(
+      rankSignals([structuring, productDemo], {
+        sort: 'top-power',
+        timeFrame: 'all',
+      }).map((signal) => signal.id),
+    ).toEqual(['product-demo', 'structuring']);
   });
 
   it('ranks by voter count inside the time frame', () => {
