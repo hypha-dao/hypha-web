@@ -116,6 +116,8 @@ export default async function WhiteLabelSpaceLayout({
               defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
               memberCount={counts.members}
               agreementCount={counts.agreements}
+              // Room for the sign in / out icon at the top right (login hosts).
+              className={showAuthControl ? 'pr-14 md:pr-16' : undefined}
               createdOnText={<SpaceCreatedOnText createdAt={space.createdAt} />}
               membersLabel={tCommon('Members')}
               agreementsLabel={tCommon('Agreements')}
@@ -124,16 +126,14 @@ export default async function WhiteLabelSpaceLayout({
               })}
               revealMetaLabel={tCommon('spaceBannerRevealMeta')}
             />
-            <div className="flex w-full min-w-0 items-start gap-2">
-              <div className="min-w-0 flex-1">
-                <WhiteLabelSectionNav
-                  spaceSlug={slug}
-                  coherenceEnabled={coherenceEnabled}
-                  memoryEnabled={memoryEnabled}
-                />
-              </div>
-              {showAuthControl ? <WhiteLabelAuthControl /> : null}
+            <div className="w-full min-w-0">
+              <WhiteLabelSectionNav
+                spaceSlug={slug}
+                coherenceEnabled={coherenceEnabled}
+                memoryEnabled={memoryEnabled}
+              />
             </div>
+            {showAuthControl ? <WhiteLabelAuthControl /> : null}
             {children}
           </div>
         </div>
