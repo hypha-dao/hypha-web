@@ -8,6 +8,7 @@ import { blockUnlessAuthServerHost, notFound } from './gate';
 import type { AuthServer } from './auth';
 import { redactingLog } from './redact';
 import { corsPreflight, withCors } from './cors';
+import { authServerErrorPage } from './error-page';
 import { guardRegistration, narrowRegisteredClient } from './registration';
 
 /**
@@ -58,6 +59,14 @@ export function createAuthServerHandler(
     if (request.method.toUpperCase() === 'OPTIONS') {
       // Preflight: answered only where cross-origin access is deliberate, plain 404 elsewhere.
       return corsPreflight(request, config) ?? notFound();
+    }
+    const method = request.method.toUpperCase();
+    if (
+      url.pathname === `${AUTH_SERVER_API_BASE_PATH}/error` &&
+      (method === 'GET' || method === 'HEAD')
+    ) {
+      // Where the library sends errors it cannot return to the app; served here, never by the library.
+      return authServerErrorPage(request);
     }
     if (
       !isAllowedAuthServerPath(
