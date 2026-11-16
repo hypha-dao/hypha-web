@@ -1,12 +1,14 @@
 /**
- * Invite and Quest proposals skip a document lead image. Prefer the
- * document's own image when set; otherwise use the hosting space banner
- * so those cards don't fall back to the generic Hypha document placeholder.
+ * Prefer the document's own lead image. When a proposal has none, use the
+ * hosting space banner so cards and detail views don't fall back to the
+ * generic Hypha placeholder. The static placeholder is only used when the
+ * space itself has no image (callers keep their own fallback in that case).
+ *
+ * `label` and `title` are accepted for callers that still pass them; fallback
+ * is no longer limited to Invite or Quest.
  */
 export function resolveInviteLeadImage({
   leadImage,
-  label,
-  title,
   spaceLeadImage,
 }: {
   leadImage?: string | null;
@@ -16,13 +18,6 @@ export function resolveInviteLeadImage({
 }): string | undefined {
   const existing = leadImage?.trim();
   if (existing) return existing;
-
-  const usesSpaceBanner =
-    label === 'Invite' ||
-    label === 'Quest' ||
-    title === 'Invite Member' ||
-    title === 'Invite Space';
-  if (!usesSpaceBanner) return undefined;
 
   const spaceImage = spaceLeadImage?.trim();
   return spaceImage || undefined;

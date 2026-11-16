@@ -52,21 +52,41 @@ describe('resolveInviteLeadImage', () => {
     ).toBe('https://cdn.example/quest.jpg');
   });
 
-  it('does not override non-invite proposals', () => {
+  it('uses the space banner for Contribution proposals without a document image', () => {
     expect(
       resolveInviteLeadImage({
         label: 'Contribution',
         title: 'Pay contributor',
         spaceLeadImage: 'https://cdn.example/space.jpg',
       }),
-    ).toBeUndefined();
+    ).toBe('https://cdn.example/space.jpg');
   });
 
-  it('returns undefined when invite has no space banner (caller keeps card fallback)', () => {
+  it('uses the space banner for any proposal type without a document image', () => {
     expect(
       resolveInviteLeadImage({
-        label: 'Invite',
-        title: 'Invite Member',
+        label: 'Voting Method',
+        title: 'Increase voting period',
+        spaceLeadImage: 'https://cdn.example/space.jpg',
+      }),
+    ).toBe('https://cdn.example/space.jpg');
+  });
+
+  it('trims whitespace-only document images before falling back to the space banner', () => {
+    expect(
+      resolveInviteLeadImage({
+        leadImage: '   ',
+        label: 'Contribution',
+        spaceLeadImage: 'https://cdn.example/space.jpg',
+      }),
+    ).toBe('https://cdn.example/space.jpg');
+  });
+
+  it('returns undefined when there is no space banner (caller keeps card fallback)', () => {
+    expect(
+      resolveInviteLeadImage({
+        label: 'Contribution',
+        title: 'Pay contributor',
         spaceLeadImage: '   ',
       }),
     ).toBeUndefined();

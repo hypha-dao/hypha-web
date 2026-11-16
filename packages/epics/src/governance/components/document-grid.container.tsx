@@ -6,7 +6,7 @@ import { resolveInviteLeadImage } from '../utils/resolve-invite-lead-image';
 type DocumentGridContainerProps = {
   basePath: string;
   web3SpaceId: number;
-  /** Hosting space banner — used when Invite docs have no leadImage. */
+  /** Hosting space banner — used when a document has no leadImage. */
   spaceLeadImage?: string | null;
   pagination: {
     page: number;
