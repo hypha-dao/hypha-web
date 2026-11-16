@@ -30,11 +30,6 @@ export type MemberDetailProps = {
   member: MemberType;
   isLoading: boolean;
   spaces: Space[];
-  /**
-   * Leaves out the call, video and chat buttons (default off). Set where the
-   * page is read-only, such as a white-label host: nothing to connect with.
-   */
-  hideConnect?: boolean;
 };
 
 export const MemberDetail = ({
@@ -43,14 +38,13 @@ export const MemberDetail = ({
   closeUrl,
   member,
   spaces,
-  hideConnect = false,
 }: MemberDetailProps) => {
   const tCommon = useTranslations('Common');
   const tHome = useTranslations('MemberHome');
   const { person: me } = useMe();
   const directoryPerson = useMemo(
     () =>
-      member.id == null || hideConnect
+      member.id == null
         ? []
         : [
             {
@@ -60,7 +54,7 @@ export const MemberDetail = ({
               nickname: member.nickname,
             },
           ],
-    [hideConnect, member.id, member.name, member.nickname, member.surname],
+    [member.id, member.name, member.nickname, member.surname],
   );
   const { openChat, openCall, openVideo, notice } =
     useMemberDirectoryConnect(directoryPerson);
@@ -68,8 +62,7 @@ export const MemberDetail = ({
     [member.name, member.surname].filter(Boolean).join(' ').trim() ||
     member.nickname ||
     tCommon('memberRoleLabel');
-  const canConnect =
-    !hideConnect && !isLoading && member.id != null && member.id !== me?.id;
+  const canConnect = !isLoading && member.id != null && member.id !== me?.id;
 
   return (
     <div className="flex flex-col gap-5">

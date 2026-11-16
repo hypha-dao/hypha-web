@@ -9,7 +9,6 @@ const {
   getAllSpaces,
   findDocumentBySlug,
   findPeopleByWeb3Addresses,
-  findPersonBySlug,
   findPersonByWeb3Address,
   readContract,
 } = vi.hoisted(() => ({
@@ -21,7 +20,6 @@ const {
   getAllSpaces: vi.fn(),
   findDocumentBySlug: vi.fn(),
   findPeopleByWeb3Addresses: vi.fn(),
-  findPersonBySlug: vi.fn(),
   findPersonByWeb3Address: vi.fn(),
   readContract: vi.fn(),
 }));
@@ -41,7 +39,6 @@ vi.mock('@hypha-platform/core/server', () => ({
   getAllSpaces,
   findDocumentBySlug,
   findPeopleByWeb3Addresses,
-  findPersonBySlug,
   findPersonByWeb3Address,
 }));
 vi.mock('@hypha-platform/core/client', () => ({
@@ -56,7 +53,6 @@ import { GET as getEvents } from '../../../app/api/v1/events/route';
 import { GET as getSpaces } from '../../../app/api/v1/spaces/route';
 import { GET as getDocument } from '../../../app/api/v1/documents/[documentSlug]/route';
 import { GET as getVoters } from '../../../app/api/v1/documents/[documentSlug]/voters/route';
-import { GET as getPerson } from '../../../app/api/v1/people/[personSlug]/route';
 import { GET as getPersonByAddress } from '../../../app/api/v1/people/by-web3-address/[address]/route';
 import { resetMappedHostScopeCache } from '../mapped-host-scope';
 import { WL_SPACE_HEADER } from '../constants';
@@ -372,10 +368,6 @@ describe('people routes on a mapped host', () => {
     email: 'jane@example.org',
     sub: 'did:privy:1',
   };
-  const bySlug = (mapped = true, slug = 'jane') =>
-    getPerson(request(`/api/v1/people/${slug}`, mapped), {
-      params: Promise.resolve({ personSlug: slug }),
-    });
   const byAddress = (mapped = true, address = ADDR) =>
     getPersonByAddress(
       request(`/api/v1/people/by-web3-address/${address}`, mapped),
@@ -383,13 +375,11 @@ describe('people routes on a mapped host', () => {
     );
 
   beforeEach(() => {
-    findPersonBySlug.mockResolvedValue(PERSON);
     findPersonByWeb3Address.mockResolvedValue(PERSON);
     readContract.mockResolvedValue(true);
   });
 
   for (const [name, call] of [
-    ['people/:personSlug', bySlug],
     ['people/by-web3-address/:address', byAddress],
   ] as const) {
     describe(name, () => {
@@ -416,7 +406,6 @@ describe('people routes on a mapped host', () => {
         readContract.mockResolvedValue(false);
         const notMember = await call();
         expect(notMember.status).toBe(404);
-        findPersonBySlug.mockResolvedValue(null);
         findPersonByWeb3Address.mockResolvedValue(null);
         const unknown = await call();
         expect(unknown.status).toBe(404);
@@ -424,8 +413,13 @@ describe('people routes on a mapped host', () => {
       });
 
       it('mapped: a person without a wallet, or with a malformed one, is 404 and no chain read', async () => {
-        for (const address of [null, undefined, '', '0xabc', 'not-an-address']) {
-          findPersonBySlug.mockResolvedValue({ ...PERSON, address });
+        for (const address of [
+          null,
+          undefined,
+          '',
+          '0xabc',
+          'not-an-address',
+        ]) {
           findPersonByWeb3Address.mockResolvedValue({ ...PERSON, address });
           expect((await call()).status).toBe(404);
         }
@@ -457,7 +451,6 @@ describe('people routes on a mapped host', () => {
       });
 
       it('main app: an unknown person answers as before (null, 200)', async () => {
-        findPersonBySlug.mockResolvedValue(null);
         findPersonByWeb3Address.mockResolvedValue(null);
         const res = await call(false);
         expect(res.status).toBe(200);

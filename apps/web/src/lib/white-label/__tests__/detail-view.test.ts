@@ -174,15 +174,14 @@ describe('link guard: served detail pages', () => {
   });
   const locales = OPTIONS.locales;
 
-  it('the served patterns: proposal, its voters, a person', () => {
+  it('the served patterns: proposal and its voters', () => {
     expect(WL_SERVED_DETAIL_PATTERNS).toEqual([
       ['agreements', 'proposal', ':'],
       ['agreements', 'proposal', ':', 'voters'],
-      ['members', 'person', ':'],
     ]);
   });
 
-  it('voters and person links stay on the host, in every shape', () => {
+  it('voters links stay on the host, in every shape', () => {
     for (const [href, expected] of [
       [
         '/en/agreements/proposal/p1/voters',
@@ -192,12 +191,10 @@ describe('link guard: served detail pages', () => {
         '/en/dho/space-one/agreements/proposal/p1/voters',
         '/en/agreements/proposal/p1/voters',
       ],
-      ['/members/person/jane', '/en/members/person/jane'],
       [
-        '/en/dho/space-one/members/person/jane',
-        '/en/members/person/jane',
+        '/pt/agreements/proposal/p1/voters?a=1',
+        '/pt/agreements/proposal/p1/voters?a=1',
       ],
-      ['/pt/members/person/jane?a=1', '/pt/members/person/jane?a=1'],
     ] as const) {
       expect(classifyLink(href, host(), here, locales), href).toEqual({
         kind: 'internal',
@@ -206,7 +203,7 @@ describe('link guard: served detail pages', () => {
     }
   });
 
-  it('voters and person links stay in the frame', () => {
+  it('voters links stay in the frame', () => {
     expect(
       classifyLink(
         '/embed/space-one/en/agreements/proposal/p1/voters',
@@ -218,20 +215,9 @@ describe('link guard: served detail pages', () => {
       kind: 'internal',
       href: '/embed/space-one/en/agreements/proposal/p1/voters',
     });
-    expect(
-      classifyLink(
-        '/en/dho/space-one/members/person/jane',
-        embed(),
-        app,
-        locales,
-      ),
-    ).toEqual({
-      kind: 'internal',
-      href: '/embed/space-one/en/members/person/jane',
-    });
   });
 
-  it('detailView full-app: voters and person links leave in the main-app shape', () => {
+  it('detailView full-app: voters links leave in the main-app shape', () => {
     expect(
       classifyLink(
         '/en/agreements/proposal/p1/voters',
@@ -242,17 +228,6 @@ describe('link guard: served detail pages', () => {
     ).toEqual({
       kind: 'external',
       href: `${app}/en/dho/space-one/agreements/proposal/p1/voters`,
-    });
-    expect(
-      classifyLink(
-        '/en/dho/space-one/members/person/jane',
-        host('full-app'),
-        here,
-        locales,
-      ),
-    ).toEqual({
-      kind: 'external',
-      href: `${app}/en/dho/space-one/members/person/jane`,
     });
   });
 
@@ -335,12 +310,12 @@ describe('link guard: served detail pages', () => {
       href: `${app}/en/dho/space-one/agreements/proposal/p1/other`,
     });
     // Without a locale: the page's own is used.
-    expect(classifyLink('/members/person/jane/extra', host(), here, locales)).toEqual(
-      {
-        kind: 'external',
-        href: `${app}/en/dho/space-one/members/person/jane/extra`,
-      },
-    );
+    expect(
+      classifyLink('/members/person/jane/extra', host(), here, locales),
+    ).toEqual({
+      kind: 'external',
+      href: `${app}/en/dho/space-one/members/person/jane/extra`,
+    });
     // Another locale in the link is kept; query and hash survive.
     expect(
       classifyLink(

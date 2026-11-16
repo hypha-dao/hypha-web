@@ -36,7 +36,7 @@ export async function isMemberOfMappedSpace(
 export function toHostPerson<T extends object>(
   person: T,
 ): Omit<T, 'email' | 'sub'> {
-  const copy: Record<string, unknown> = { ...person };
+  const copy = { ...(person as Record<string, unknown>) };
   delete copy['email'];
   delete copy['sub'];
   return copy as Omit<T, 'email' | 'sub'>;

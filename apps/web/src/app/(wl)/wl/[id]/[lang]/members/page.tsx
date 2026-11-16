@@ -26,7 +26,7 @@ export default async function WhiteLabelMembersPage(
           count={space.memberCount ?? null}
           lang={lang}
         />
-        {/* The card link is a main-app href; the link guard maps it to the person overlay. */}
+        {/* Person pages are not served here: the link opens the full app. */}
         <MembersSection
           basePath={`/${lang}/dho/${slug}/members/person`}
           useMembers={useMembers}
