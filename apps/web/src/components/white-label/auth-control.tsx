@@ -4,6 +4,7 @@ import * as React from 'react';
 import { LogIn, LogOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { shouldReloadAfterSignOut } from '@web/lib/white-label/sign-out';
 
 /**
  * Sign in / sign out of a mapped host, top right of the Space header (there is
@@ -19,6 +20,18 @@ import { useAuthentication } from '@hypha-platform/authentication';
 export function WhiteLabelAuthControl() {
   const t = useTranslations('Navigation');
   const { isAuthenticated, isLoading, login, logout } = useAuthentication();
+
+  // Reload after a sign-out (see `shouldReloadAfterSignOut`). Watching the
+  // transition, not the click: Privy finishes clearing the session after
+  // `logout` returns.
+  const wasAuthenticated = React.useRef<boolean | undefined>(undefined);
+  React.useEffect(() => {
+    const current = isLoading ? undefined : isAuthenticated;
+    if (shouldReloadAfterSignOut(wasAuthenticated.current, current)) {
+      window.location.reload();
+    }
+    if (current !== undefined) wasAuthenticated.current = current;
+  }, [isAuthenticated, isLoading]);
 
   if (isLoading) return null;
 
