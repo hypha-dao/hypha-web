@@ -41,6 +41,7 @@ import { useSignalMediaSummary } from './signal-media-chips';
 import { useSignalShortDate } from './signal-feed-row';
 import { SignalTypeBadge } from './signal-type-badge';
 import { SignalUpvoteButton } from './signal-upvote-button';
+import { useVoteEnabled } from '../../common/action-capabilities';
 import { SignalVideoPlayer } from './signal-video-player';
 import { LegacySignalFieldsDetail } from './legacy-signal-fields/legacy-signal-fields-detail';
 
@@ -392,6 +393,9 @@ export function SignalPage({
   }, [closeOpenedSignalChat]);
 
   const { person } = useMe();
+  const voteEnabled = useVoteEnabled();
+  // Display-only, except where this delivery can vote (host with login).
+  const canUpvote = !readOnly || voteEnabled;
   const { jwt } = useJwt();
   const { acknowledgeCoherenceAssignment } = useCoherenceMutationsWeb2Rsc(jwt);
   const acknowledgedRef = React.useRef<string | null>(null);
@@ -541,7 +545,7 @@ export function SignalPage({
               <h1 className="m-0 min-w-0 text-4 leading-tight text-foreground">
                 {signal.title}
               </h1>
-              {readOnly ? null : (
+              {!canUpvote ? null : (
                 <SignalUpvoteButton
                   slug={signal.slug}
                   spaceSlug={spaceSlug}

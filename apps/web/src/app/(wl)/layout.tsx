@@ -141,6 +141,9 @@ export default async function WhiteLabelRootLayout({
                       // Only a signed-in member can read the pipeline.
                       pipelineData:
                         authKindFor(whiteLabelMode, authConfig) === 'privy',
+                      // Only a host with login can vote (a signed-in member).
+                      voteLive:
+                        authKindFor(whiteLabelMode, authConfig) === 'privy',
                     }}
                   >
                     {/* Context providers the shared sections read. Matrix, chat

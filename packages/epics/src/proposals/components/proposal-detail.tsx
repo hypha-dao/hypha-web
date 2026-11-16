@@ -51,6 +51,7 @@ import { stripExchangeDetailsBlock } from '../../governance/utils/strip-exchange
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
 import { ProposalDiscussionChat } from './proposal-discussion-chat';
+import { useVoteEnabled } from '../../common/action-capabilities';
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import { ProposalActivateSpacesData } from '../../governance/components/proposal-activate-spaces-data';
@@ -544,6 +545,9 @@ export const ProposalDetail = ({
     spaceId: effectiveWeb3SpaceId,
   });
   const { isAuthenticated } = useAuthentication();
+  // Display-only page, except where this delivery can vote (host with login).
+  const voteEnabled = useVoteEnabled();
+  const canAct = !readOnly || voteEnabled;
   const { documents: documentsArrays } = useSpaceDocumentsWithStatuses({
     spaceId: effectiveWeb3SpaceId,
     spaceSlug,
@@ -1319,7 +1323,7 @@ export const ProposalDetail = ({
         />
       </Skeleton>
       <ExpireProposalBanner
-        isDisplay={displayExpireProposalBanner && !readOnly}
+        isDisplay={displayExpireProposalBanner && canAct}
         quorumReached={quorumReached}
         unityReached={unityReached}
         quorumPercentage={proposalDetails?.quorumPercentage || 0}

@@ -30,8 +30,10 @@ export type ActionKind =
   | 'banking-write'
   /** The separate "Get started" button next to "Sign in". */
   | 'get-started'
-  /** Upvote on a signal. */
+  /** Upvote on a signal (needs a signed-in member; Server Actions). */
   | 'upvote'
+  /** Vote on a proposal, expire it and withdraw it (smart-wallet transactions). */
+  | 'vote'
   /** Opening a pipeline deal (a link to the deal page of the full app). */
   | 'deal-link'
   /** The pipeline (members only; needs a signed-in visitor). */
@@ -53,10 +55,12 @@ export type ActionCapabilitiesValue = {
   fullAppOrigin: string;
   /** True where a signed-in visitor can read the pipeline (a host with login). */
   pipelineData: boolean;
+  /** True where a signed-in member can vote (a host with login). */
+  voteLive: boolean;
 };
 
 /** Kinds that never become a link to the full app: they are hidden. */
-const ALWAYS_HIDDEN: readonly ActionKind[] = ['get-started', 'upvote'];
+const ALWAYS_HIDDEN: readonly ActionKind[] = ['get-started'];
 
 /** Pure: what one action is for a delivery. `null` value = the main app. */
 export function resolveActionStatus(
@@ -65,6 +69,10 @@ export function resolveActionStatus(
 ): ActionStatus {
   if (!value) return 'live';
   if (kind === 'pipeline-data') return value.pipelineData ? 'live' : 'hidden';
+  // Voting is live or hidden; never a link (there is no deep URL for it).
+  if (kind === 'vote' || kind === 'upvote') {
+    return value.voteLive ? 'live' : 'hidden';
+  }
   if (ALWAYS_HIDDEN.includes(kind)) return 'hidden';
   return value.unsupportedActions === 'full-app' ? 'full-app' : 'hidden';
 }
@@ -80,10 +88,10 @@ export function ActionCapabilitiesProvider({
   value: ActionCapabilitiesValue;
   children: React.ReactNode;
 }) {
-  const { unsupportedActions, fullAppOrigin, pipelineData } = value;
+  const { unsupportedActions, fullAppOrigin, pipelineData, voteLive } = value;
   const memo = React.useMemo(
-    () => ({ unsupportedActions, fullAppOrigin, pipelineData }),
-    [unsupportedActions, fullAppOrigin, pipelineData],
+    () => ({ unsupportedActions, fullAppOrigin, pipelineData, voteLive }),
+    [unsupportedActions, fullAppOrigin, pipelineData, voteLive],
   );
   return (
     <ActionCapabilitiesContext.Provider value={memo}>
@@ -96,6 +104,15 @@ export function ActionCapabilitiesProvider({
 export function useActionStatus(kind: ActionKind): ActionStatus {
   const value = React.useContext(ActionCapabilitiesContext);
   return resolveActionStatus(value, kind);
+}
+
+/**
+ * True only inside a white-label tree that can vote (provider mounted, host
+ * with login). Without a provider it is false: `readOnly` stays display-only
+ * wherever no capability says otherwise.
+ */
+export function useVoteEnabled(): boolean {
+  return React.useContext(ActionCapabilitiesContext)?.voteLive === true;
 }
 
 /** Full-app URL of a main-app path (`/<lang>/dho/<slug>/...`). */

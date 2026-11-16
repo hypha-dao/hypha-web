@@ -31,6 +31,7 @@ import {
 import { useSpaceMember } from '../../spaces';
 import { getDurationParts } from '@hypha-platform/ui-utils';
 import { useTheme } from 'next-themes';
+import { useVoteEnabled } from '../../common/action-capabilities';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -180,6 +181,10 @@ export const FormVoting = ({
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
   const { space: spaceFromDb } = useSpaceBySlug(spaceSlug ?? '');
   const { theme } = useTheme();
+  // `readOnly` keeps the page display-only, except where this delivery can vote
+  // (a host with login): vote, withdraw follow the `vote` capability.
+  const voteEnabled = useVoteEnabled();
+  const canAct = !readOnly || voteEnabled;
   const { person } = useMe();
   const { jwt } = useJwt();
   const router = useRouter();
@@ -632,7 +637,7 @@ export const FormVoting = ({
               )}
             </div>
           </div>
-          {readOnly ||
+          {!canAct ||
           isVoteFinalized(executed, expired, proposalStatus) ? null : (
             <div className="flex flex-col gap-2 items-end">
               <div className="flex gap-2">
@@ -671,14 +676,16 @@ export const FormVoting = ({
           )}
         </Skeleton>
       </div>
-      {!readOnly && showWithdrawBlock && (
+      {canAct && showWithdrawBlock && (
         <WithdrawResubmitBanner
           onWithdraw={handleWithdraw}
           onResubmit={handleResubmit}
           isWithdrawing={isWithdrawing}
           hideResubmit={
+            readOnly ||
             getCreateRouteSegmentForProposalLabel(label) ===
-              'issue-new-token' || label === 'Quest'
+              'issue-new-token' ||
+            label === 'Quest'
           }
         />
       )}

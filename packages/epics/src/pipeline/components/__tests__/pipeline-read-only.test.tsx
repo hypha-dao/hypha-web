@@ -48,6 +48,7 @@ const withCaps = (
         unsupportedActions,
         fullAppOrigin: 'https://app.example',
         pipelineData: true,
+        voteLive: false,
       }}
     >
       {node}
