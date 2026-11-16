@@ -15,6 +15,7 @@ import {
   type SignalVoteDirection,
   type SignalVotingMode,
 } from '@hypha-platform/core/client';
+import { useAuthentication } from '@hypha-platform/authentication';
 import { Button, PopoverContent, Separator, Slider } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
@@ -146,6 +147,8 @@ export function SignalUpvoteButton({
   const locale = useLocale();
   const format = useFormatter();
   const { jwt } = useJwt();
+  // `useJwt` keeps the last token after sign-out; only a live session may vote.
+  const { isAuthenticated } = useAuthentication();
   const resolvedSpaceSlug = useSignalSpaceSlug(spaceSlug);
   const { votingPower: myVotingPower } = useMySignalVotingPower({
     spaceSlug: votingMode === 'token' ? resolvedSpaceSlug : null,
@@ -193,6 +196,7 @@ export function SignalUpvoteButton({
   const canVote =
     Boolean(slug?.trim()) &&
     Boolean(jwt) &&
+    isAuthenticated &&
     !archived &&
     !disabled &&
     !isBlockedNonMember &&

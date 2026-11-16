@@ -117,7 +117,7 @@ export default async function WhiteLabelSpaceLayout({
               memberCount={counts.members}
               agreementCount={counts.agreements}
               // Room for the sign in / out icon at the top right (login hosts).
-              className={showAuthControl ? 'pr-14 md:pr-16' : undefined}
+              className={showAuthControl ? 'pr-14 md:pr-28' : undefined}
               createdOnText={<SpaceCreatedOnText createdAt={space.createdAt} />}
               membersLabel={tCommon('Members')}
               agreementsLabel={tCommon('Agreements')}

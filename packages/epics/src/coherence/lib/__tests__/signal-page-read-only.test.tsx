@@ -3,6 +3,7 @@ import { cleanup, render } from '@testing-library/react';
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SignalPage } from '../../components/signal-page';
+import { ActionCapabilitiesProvider } from '../../../common/action-capabilities';
 
 const h = vi.hoisted(() => ({
   acknowledge: vi.fn(() => Promise.resolve()),
@@ -136,5 +137,30 @@ describe('SignalPage readOnly', () => {
   it('readOnly still shows the signal itself', () => {
     const { getByText } = render(<SignalPage {...props} readOnly />);
     expect(getByText('A signal', { selector: 'h1' })).toBeTruthy();
+  });
+
+  const withCapability = (voteLive: boolean) => (
+    <ActionCapabilitiesProvider
+      value={{
+        unsupportedActions: 'hide',
+        fullAppOrigin: '',
+        pipelineData: false,
+        voteLive,
+      }}
+    >
+      <SignalPage {...props} readOnly />
+    </ActionCapabilitiesProvider>
+  );
+
+  it('readOnly on a host that can vote: upvote shows, the rest stays hidden', () => {
+    const { queryByTestId } = render(withCapability(true));
+    expect(queryByTestId('upvote')).not.toBeNull();
+    expect(queryByTestId('creator-actions')).toBeNull();
+    expect(h.acknowledge).not.toHaveBeenCalled();
+  });
+
+  it('readOnly on a host that cannot vote: no upvote', () => {
+    const { queryByTestId } = render(withCapability(false));
+    expect(queryByTestId('upvote')).toBeNull();
   });
 });

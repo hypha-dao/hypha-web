@@ -4,12 +4,14 @@ import * as React from 'react';
 import { LogIn, LogOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { shouldReloadAfterSignOut } from '@web/lib/white-label/sign-out';
 
 /**
  * Sign in / sign out of a mapped host, top right of the Space header (there is
  * no navbar on a host, and the header is always visible, also on a phone).
- * Icon only, no background, so it interrupts the banner as little as possible;
- * the label is the accessible name and the tooltip. White with a soft shadow
+ * An icon on a phone, a text button ("Sign in" / "Sign out") from `md` up; no
+ * background, so it interrupts the banner as little as possible; the label is
+ * also the accessible name and the tooltip. White with a soft shadow
  * so it reads on any banner image. Goes through the same `useAuthentication`
  * seam as the shared sections. Rendered only on a host with login settings.
  * Sign out stays on the host: the main app's default (redirect to its network
@@ -18,6 +20,18 @@ import { useAuthentication } from '@hypha-platform/authentication';
 export function WhiteLabelAuthControl() {
   const t = useTranslations('Navigation');
   const { isAuthenticated, isLoading, login, logout } = useAuthentication();
+
+  // Reload after a sign-out (see `shouldReloadAfterSignOut`). Watching the
+  // transition, not the click: Privy finishes clearing the session after
+  // `logout` returns.
+  const wasAuthenticated = React.useRef<boolean | undefined>(undefined);
+  React.useEffect(() => {
+    const current = isLoading ? undefined : isAuthenticated;
+    if (shouldReloadAfterSignOut(wasAuthenticated.current, current)) {
+      window.location.reload();
+    }
+    if (current !== undefined) wasAuthenticated.current = current;
+  }, [isAuthenticated, isLoading]);
 
   if (isLoading) return null;
 
@@ -33,9 +47,10 @@ export function WhiteLabelAuthControl() {
         if (isAuthenticated) void logout(false);
         else void login();
       }}
-      className="absolute right-1 top-1 z-20 flex size-10 items-center justify-center rounded-full text-white/85 [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.6))] transition-colors hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 md:right-2 md:top-2"
+      className="absolute right-1 top-1 z-20 flex size-10 items-center justify-center rounded-full text-white/85 md:size-auto md:px-3 md:py-1.5 md:text-2 md:font-medium [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.6))] transition-colors hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 md:right-2 md:top-2"
     >
-      <Icon className="size-5" strokeWidth={1.75} aria-hidden />
+      <Icon className="size-5 md:hidden" strokeWidth={1.75} aria-hidden />
+      <span className="hidden md:inline">{label}</span>
     </button>
   );
 }

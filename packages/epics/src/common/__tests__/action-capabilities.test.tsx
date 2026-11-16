@@ -20,6 +20,7 @@ const KINDS: ActionKind[] = [
   'banking-write',
   'get-started',
   'upvote',
+  'vote',
   'deal-link',
   'pipeline-data',
 ];
@@ -30,6 +31,7 @@ const value = (
   unsupportedActions: 'hide',
   fullAppOrigin: 'https://app.example',
   pipelineData: false,
+  voteLive: false,
   ...extra,
 });
 
@@ -67,7 +69,7 @@ describe('action capabilities', () => {
 
   it('full-app turns most actions into a link to the same Space in the full app', () => {
     for (const kind of KINDS.filter(
-      (k) => !['get-started', 'upvote', 'pipeline-data'].includes(k),
+      (k) => !['get-started', 'upvote', 'vote', 'pipeline-data'].includes(k),
     )) {
       const html = gate(kind, value({ unsupportedActions: 'full-app' }));
       expect(html, kind).toContain(
@@ -80,11 +82,28 @@ describe('action capabilities', () => {
     }
   });
 
-  it('get-started and upvote stay hidden under full-app', () => {
-    for (const kind of ['get-started', 'upvote'] as const) {
-      expect(
-        resolveActionStatus(value({ unsupportedActions: 'full-app' }), kind),
-      ).toBe('hidden');
+  it('get-started stays hidden under full-app', () => {
+    expect(
+      resolveActionStatus(
+        value({ unsupportedActions: 'full-app' }),
+        'get-started',
+      ),
+    ).toBe('hidden');
+  });
+
+  it('voting follows voteLive, never becomes a link', () => {
+    for (const kind of ['vote', 'upvote'] as const) {
+      for (const setting of ['hide', 'full-app'] as const) {
+        expect(
+          resolveActionStatus(value({ unsupportedActions: setting }), kind),
+        ).toBe('hidden');
+        expect(
+          resolveActionStatus(
+            value({ unsupportedActions: setting, voteLive: true }),
+            kind,
+          ),
+        ).toBe('live');
+      }
     }
   });
 

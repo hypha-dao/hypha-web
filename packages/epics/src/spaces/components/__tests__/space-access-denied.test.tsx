@@ -69,6 +69,7 @@ describe('SpaceAccessDenied, signed out', () => {
           unsupportedActions: 'hide',
           fullAppOrigin: 'https://app.example',
           pipelineData: true,
+          voteLive: false,
         }}
       >
         <SpaceAccessDenied userState={'NOT_LOGGED_IN' as never} spaceSlug="x" />
