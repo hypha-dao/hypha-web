@@ -12,6 +12,7 @@ import {
   QUEST_DRAFT_READY_REPLY,
   QUEST_EDIT_NOT_FILED_REPLY,
   formatPendingQuestPatch,
+  replyWithConfirmedMilestones,
   questSectionApprovalQuestion,
   questStepSectionLabel,
   replyWithoutUnbackedEditClaim,
@@ -255,7 +256,12 @@ export function savedQuestSectionReply(patch: QuestPatch): string {
     return 'Saved the Scope.';
   }
   if (patch.successCriteria !== undefined) return 'Saved the Success criteria.';
-  if (patch.milestones !== undefined) return 'Saved the Milestones.';
+  if (patch.milestones !== undefined) {
+    return replyWithConfirmedMilestones(
+      'Saved the Milestones.',
+      patch.milestones,
+    );
+  }
   if (patch.members !== undefined) return 'Saved the Participants.';
   if (patch.leadName !== undefined || patch.leadPersonId !== undefined) {
     return 'Saved the Lead.';

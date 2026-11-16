@@ -7,6 +7,7 @@ import {
   questDraftCoachedStep,
   questDraftPatchSection,
   questEditRequestSection,
+  questMilestoneDescriptionText,
   questPendingYesNotice,
   questWordingRevisionStep,
   scopeBoundaryLists,
@@ -499,17 +500,7 @@ function formatSavedQuestSection(
       return lines.join('\n\n');
     }
     case 'milestones':
-      return draft.milestones
-        .map((milestone, index) => {
-          const name = milestone.name.trim();
-          if (!name) return '';
-          const when = milestone.dueDate?.trim();
-          const owner = milestone.ownerName?.trim();
-          const detail = [when, owner].filter(Boolean).join(' · ');
-          return `M${index + 1} · ${name}${detail ? ` (${detail})` : ''}`;
-        })
-        .filter(Boolean)
-        .join('\n');
+      return formatQuestMilestoneLines(draft.milestones);
     case 'members':
       return draft.members
         .map((member) => member.memberName.trim())
@@ -783,6 +774,74 @@ export function questAssistHistoryEntries(
   }));
 }
 
+/**
+ * One line per milestone, then its description when that description adds
+ * something the title does not. The same string is what gets stored.
+ */
+export function formatQuestMilestoneLines(
+  milestones: ReadonlyArray<{
+    name?: string | null;
+    dueDate?: string | null;
+    description?: string | null;
+    ownerName?: string | null;
+  }>,
+): string {
+  return milestones
+    .map((milestone, index) => {
+      const name = milestone.name?.trim() ?? '';
+      if (!name) return '';
+      const when = milestone.dueDate?.trim();
+      const owner = milestone.ownerName?.trim();
+      const detail = [when, owner].filter(Boolean).join(' · ');
+      const title = `M${index + 1} · ${name}${detail ? ` (${detail})` : ''}`;
+      const description = questMilestoneDescriptionText(
+        name,
+        milestone.description,
+      );
+      return description ? `${title}\n${description}` : title;
+    })
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+/**
+ * After a milestone save, the reply names each description that was written.
+ * A reply that already quotes those descriptions is left as it is.
+ */
+export function replyWithConfirmedMilestones(
+  reply: string,
+  milestones: ReadonlyArray<{
+    name?: string | null;
+    dueDate?: string | null;
+    description?: string | null;
+    ownerName?: string | null;
+  }>,
+): string {
+  const descriptions = milestones
+    .map((milestone) =>
+      questMilestoneDescriptionText(
+        milestone.name ?? '',
+        milestone.description,
+      ),
+    )
+    .filter(Boolean);
+  if (descriptions.length === 0) return reply;
+  if (descriptions.every((description) => reply.includes(description))) {
+    return reply;
+  }
+  const detail = formatQuestMilestoneLines(milestones);
+  if (!detail) return reply;
+  for (const marker of [
+    'Added that to the Milestones.',
+    'Saved the Milestones.',
+  ]) {
+    if (reply.includes(marker)) {
+      return reply.replace(marker, `${marker}\n\n${detail}`);
+    }
+  }
+  return `${reply}\n\n${detail}`;
+}
+
 export function formatPendingQuestPatch(patch: QuestDraftPatchInput): string {
   const lines: string[] = [];
   if (patch.name?.trim()) lines.push(patch.name.trim());
@@ -797,18 +856,8 @@ export function formatPendingQuestPatch(patch: QuestDraftPatchInput): string {
     lines.push(bulletsToMarkdownList(patch.successCriteriaBullets));
   }
   if (patch.milestones && patch.milestones.length > 0) {
-    lines.push(
-      patch.milestones
-        .map((milestone, index) => {
-          const when = milestone.dueDate?.trim();
-          const owner = milestone.ownerName?.trim();
-          const detail = [when, owner].filter(Boolean).join(' · ');
-          return `M${index + 1} · ${milestone.name.trim()}${
-            detail ? ` (${detail})` : ''
-          }`;
-        })
-        .join('\n'),
-    );
+    const milestones = formatQuestMilestoneLines(patch.milestones);
+    if (milestones) lines.push(milestones);
   }
   if (patch.members && patch.members.length > 0) {
     lines.push(
@@ -847,7 +896,16 @@ export function replyWithSectionApprovalAsk(
     return [model, question].filter(Boolean).join('\n\n');
   }
   const snippet = preview.slice(0, Math.min(40, preview.length));
-  if (snippet.length > 0 && model.includes(snippet)) return model;
+  const dropsDescription = (patch.milestones ?? []).some((milestone) => {
+    const description = questMilestoneDescriptionText(
+      milestone.name,
+      milestone.description,
+    );
+    return description.length > 0 && !model.includes(description);
+  });
+  if (snippet.length > 0 && model.includes(snippet) && !dropsDescription) {
+    return model;
+  }
   return `${preview}\n\n${question}`;
 }
 
@@ -1452,7 +1510,7 @@ export function applyPatchToQuestDraftState({
       return {
         name: m.name.trim(),
         dueDate: m.dueDate?.trim() || null,
-        description: m.description?.trim() || m.name.trim(),
+        description: questMilestoneDescriptionText(m.name, m.description),
         ownerPersonId: matchedOwner?.personId ?? null,
         ownerName:
           matchedOwner?.name ?? m.ownerName?.trim() ?? viewerDisplayName,
@@ -2458,11 +2516,15 @@ export function runNewQuestDraftTurn({
       currentStep: step,
       updatedLabels,
     });
-    const reply = advance.complete
+    const added = advance.complete
       ? QUEST_DRAFT_READY_REPLY
       : `Added that to the ${questStepSectionLabel(
           step,
         )}. ${stewardQuestionForStep(advance.step)}`;
+    const reply =
+      step === 'milestones'
+        ? replyWithConfirmedMilestones(added, next.milestones)
+        : added;
     return {
       draft: next,
       wrote: true,
@@ -2979,6 +3041,7 @@ export function applyQuestHelperAgentTurn({
   let nextDraft = draft;
   let wrote = false;
   let savedLine: string | null = null;
+  let savedMilestones = false;
   let focusStep = currentStep;
   let complete = false;
   let keptPending: PendingQuestSectionProposal | null = helper.discarded
@@ -3001,6 +3064,7 @@ export function applyQuestHelperAgentTurn({
     wrote = true;
     const line = `Added that to the ${questStepSectionLabel(step)}.`;
     savedLine = savedLine ? `${savedLine} ${line}` : line;
+    if (step === 'milestones') savedMilestones = true;
     const advance = nextQuestStepAfterUpdate({
       draft: next,
       currentStep: step,
@@ -3022,6 +3086,10 @@ export function applyQuestHelperAgentTurn({
         ? pending.patch
         : helper.saved.patch;
     recordWrite(step, source, nextDraft);
+  }
+
+  if (savedMilestones && savedLine) {
+    savedLine = replyWithConfirmedMilestones(savedLine, nextDraft.milestones);
   }
 
   if (pendingSuggestion) {

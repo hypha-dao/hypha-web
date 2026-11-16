@@ -16,6 +16,7 @@ import {
   questHelperDraftAssistBody,
   questRecordToDraftSnapshot,
   runSavedQuestHelperTurn,
+  savedQuestSectionReply,
 } from '../quest-saved-helper';
 
 const saved = questRecordToDraftSnapshot({
@@ -95,6 +96,26 @@ function turn(options: {
 }
 
 describe('saved quest helper', () => {
+  it('confirms saved milestones with each description', () => {
+    const reply = savedQuestSectionReply({
+      milestones: [
+        {
+          name: 'Training curriculum designed with the core team',
+          description:
+            'Draft the onboarding curriculum and review it with the core team',
+          dueDate: null,
+          ownerName: null,
+          ownerPersonId: null,
+          status: 'not_started',
+        },
+      ],
+    });
+    expect(reply).toContain('Saved the Milestones.');
+    expect(reply).toContain(
+      'M1 · Training curriculum designed with the core team\nDraft the onboarding curriculum and review it with the core team',
+    );
+  });
+
   it('sends the saved quest as helper context and does not name a quest slug', () => {
     const body = questHelperDraftAssistBody({
       message: 'make the goal shorter',
