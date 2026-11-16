@@ -19,6 +19,7 @@ import {
   Separator,
   Slider,
 } from '@hypha-platform/ui';
+import { useAuthentication } from '@hypha-platform/authentication';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { formatVotingPowerCompact } from '../utils/format-voting-power';
@@ -103,7 +104,10 @@ export function SignalUpvoteControl({
     : null;
   const hasVoted = direction != null;
   const isMutating = isUpvoting || isRemovingUpvote;
-  const canVote = Boolean(slug?.trim()) && Boolean(jwt) && !disabled;
+  // `useJwt` keeps the last token after sign-out; only a live session may vote.
+  const { isAuthenticated } = useAuthentication();
+  const canVote =
+    Boolean(slug?.trim()) && Boolean(jwt) && isAuthenticated && !disabled;
 
   const [percent, setPercent] = React.useState(() => myUpvotePercent(summary));
 

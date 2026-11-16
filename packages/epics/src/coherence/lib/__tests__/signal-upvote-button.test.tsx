@@ -5,6 +5,7 @@ import { signalUpvoteCellMeasure } from '../../../../../core/src/coherence/signa
 import { SignalUpvoteButton } from '../../components/signal-upvote-button';
 
 const calls = vi.hoisted(() => ({
+  signedIn: true,
   upvote: vi.fn(),
   removeUpvote: vi.fn(),
 }));
@@ -28,6 +29,10 @@ vi.mock('@hypha-platform/core/client', () => ({
     isLoading: false,
     error: null,
   }),
+}));
+
+vi.mock('@hypha-platform/authentication', () => ({
+  useAuthentication: () => ({ isAuthenticated: calls.signedIn }),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -68,9 +73,25 @@ afterEach(() => {
   cleanup();
   calls.upvote.mockReset();
   calls.removeUpvote.mockReset();
+  calls.signedIn = true;
 });
 
 describe('SignalUpvoteButton', () => {
+  it('does not vote after sign-out even though the last token is kept', () => {
+    calls.signedIn = false;
+    const view = render(
+      <SignalUpvoteButton
+        slug="signal"
+        spaceSlug="myspace"
+        votingMode="one-member-one-vote"
+        upvotes={summary}
+      />,
+    );
+
+    fireEvent.click(view.getByTestId('signal-vote-up'));
+    expect(calls.upvote).not.toHaveBeenCalled();
+  });
+
   it('toggles a one-member vote from the arrow without a slider', () => {
     calls.upvote.mockResolvedValue({
       ...summary,
