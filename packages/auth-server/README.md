@@ -12,15 +12,15 @@ Requests on any other host get a plain 404.
 
 Names and meaning only; see `apps/web/.env.template` for the full comments.
 
-| Variable | Meaning |
-| --- | --- |
-| `AUTH_SERVER_ENABLED` | `true` turns the server on. Anything else: every route answers 404. |
-| `AUTH_SERVER_ISSUER` | Path-less issuer URL on its own host (`http://auth.localhost:3000` locally). |
-| `AUTH_SERVER_SECRET` | At least 32 random characters, dedicated to this server. Signs cookies and protects the stored signing keys; rotating it invalidates them. |
-| `AUTH_SERVER_ALLOWED_PERSON_IDS` | Comma-separated person ids (Privy user ids) allowed to connect apps. Empty allows nobody. |
-| `AUTH_SERVER_RESOURCES` | Comma-separated resource indicators (RFC 8707) tokens may be issued for. |
-| `AUTH_SERVER_CORS_ORIGINS` | Comma-separated exact browser origins allowed to call the token (and, if on, registration) endpoints cross-origin. Default empty. |
-| `AUTH_SERVER_DCR_ENABLED` | `true` enables restricted dynamic client registration. Otherwise the register path is 404 and the metadata does not advertise it. |
+| Variable                         | Meaning                                                                                                                                    |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `AUTH_SERVER_ENABLED`            | `true` turns the server on. Anything else: every route answers 404.                                                                        |
+| `AUTH_SERVER_ISSUER`             | Path-less issuer URL on its own host (`http://auth.localhost:3000` locally).                                                               |
+| `AUTH_SERVER_SECRET`             | At least 32 random characters, dedicated to this server. Signs cookies and protects the stored signing keys; rotating it invalidates them. |
+| `AUTH_SERVER_ALLOWED_PERSON_IDS` | Comma-separated person ids (Privy user ids) allowed to connect apps. Empty allows nobody.                                                  |
+| `AUTH_SERVER_RESOURCES`          | Comma-separated resource indicators (RFC 8707) tokens may be issued for.                                                                   |
+| `AUTH_SERVER_CORS_ORIGINS`       | Comma-separated exact browser origins allowed to call the token (and, if on, registration) endpoints cross-origin. Default empty.          |
+| `AUTH_SERVER_DCR_ENABLED`        | `true` enables restricted dynamic client registration. Otherwise the register path is 404 and the metadata does not advertise it.          |
 
 It also reads the app's existing database and Privy settings. The tables come from migration `0103_auth_server.sql` (all prefixed `as_`).
 
@@ -45,7 +45,7 @@ No resource is protected yet. A resource (for example the MCP server or the API)
 ## Clients and scopes
 
 - **Metadata-document clients (CIMD):** the `client_id` is an HTTPS URL; the consent page shows the proven host.
-- **Registered clients:** pre-approved by Hypha.
+- **Registered clients:** pre-approved by Hypha. A row counts as registered only when it is marked `metadata.registration = 'registered'`; a row with no marker and no metadata-document id is treated like a dynamically registered client (least trusted).
 - **Dynamically registered clients (optional):** anonymous public clients, capped, cleaned up after 7 days; the consent page shows the name as claimed, not proven.
 
 Scopes: `spaces:read`, `agreements:vote`, `offline_access`. The write scope (`agreements:vote`)
@@ -65,3 +65,10 @@ pnpm --filter @hypha-platform/auth-server test
 ```
 
 Without the variable, `pnpm test` runs the tests that need no database and skips the rest.
+
+## Consent, disconnect and secrets
+
+- **Consent is remembered** per client and scope until the person disconnects the app. It is asked again only when a request needs a scope that was not approved yet. `skip_consent` cannot be set.
+- **After a disconnect** the refresh token stops working at once, but an access token already issued stays valid for up to its 10 minute lifetime. The allowlist (`AUTH_SERVER_ALLOWED_PERSON_IDS`) is checked on every request.
+- **`AUTH_SERVER_SECRET`** also encrypts the stored signing key. Rotating it means clearing the `as_jwks` table, after which everyone signs in again.
+- **Client address:** the per-address registration budget uses only Vercel's `x-vercel-forwarded-for` header, and only when `VERCEL` is set. Anywhere else every request counts as one address.
