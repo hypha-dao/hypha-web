@@ -212,6 +212,7 @@ export function middleware(request: NextRequest) {
     localeCookie: request.cookies.get(WL_LOCALE_COOKIE)?.value ?? null,
     method: request.method,
     clientParam: request.nextUrl.searchParams.get(WL_CLIENT_PARAM),
+    referer: request.headers.get('referer'),
   };
   const decision = resolve(host, pathname, config, whiteLabelOptions);
 
@@ -256,7 +257,9 @@ export function middleware(request: NextRequest) {
     // caches must not share it.
     rewrite.headers.append(
       'Vary',
-      decision.mode === 'host' ? 'Accept-Language, Cookie' : 'Accept-Language',
+      decision.mode === 'host'
+        ? 'Accept-Language, Cookie'
+        : 'Accept-Language, Referer',
     );
     if (
       decision.mode === 'host' &&

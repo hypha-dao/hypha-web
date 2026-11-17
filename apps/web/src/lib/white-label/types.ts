@@ -99,6 +99,12 @@ export type ResolveOptions = {
    * several approve the same Space; ignored on a mapped host.
    */
   clientParam?: string | null;
+  /**
+   * Raw `Referer` header (embed only). Used only when the parameter is absent
+   * and several clients approve the Space: a best guess of the client from the
+   * embedding page's origin.
+   */
+  referer?: string | null;
   /** Value of the locale cookie. Read in host mode only (first party there). */
   localeCookie?: string | null;
   /** HTTP method; the `/api` allowlist of a mapped host is GET and HEAD only. */

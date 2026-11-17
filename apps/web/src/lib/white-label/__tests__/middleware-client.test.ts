@@ -25,8 +25,10 @@ const CONFIG = JSON.stringify([
   },
 ]);
 
-const get = (path: string) =>
-  middleware(new NextRequest(new URL(path, 'https://app.example')));
+const get = (path: string, headers?: Record<string, string>) =>
+  middleware(
+    new NextRequest(new URL(path, 'https://app.example'), { headers }),
+  );
 
 const frameAncestors = (response: Response): string | undefined =>
   response.headers
@@ -79,6 +81,15 @@ describe('middleware: client selection in the frame', () => {
     expect(forwarded(response, 'x-hypha-wl-client')).toBeNull();
     // Not a rewrite at all (a rewrite without a client header would pass the above).
     expect(forwarded(response, WL_SPACE_HEADER)).toBeNull();
+  });
+
+  it('several approving, none named: the Referer picks the client and varies the response', () => {
+    const response = get('/embed/shared/en/agreements', {
+      referer: 'https://b.example/page',
+    });
+    expect(frameAncestors(response)).toBe('frame-ancestors https://b.example');
+    expect(forwarded(response, 'x-hypha-wl-client')).toBe('client-b');
+    expect(response.headers.get('vary')).toContain('Referer');
   });
 
   it('a visitor-sent client header is dropped', () => {
