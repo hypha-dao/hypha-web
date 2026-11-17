@@ -17,6 +17,7 @@ import {
   WL_UNSUPPORTED_ACTIONS_HEADER,
   WL_CLIENT_PARAM,
   WL_CREATE_ACTIONS_HEADER,
+  WL_TABS_HEADER,
   WL_LOCALE_COOKIE,
   WL_MODE_HEADER,
   WL_NOT_FOUND_HEADER,
@@ -30,6 +31,7 @@ import {
   privyHostOrigins,
   serializeAuthConfig,
   serializeCreateActions,
+  serializeTabs,
   stripWhiteLabelHeaders,
   withPrivyHostOrigins,
   type FramingPolicy,
@@ -237,6 +239,7 @@ export function middleware(request: NextRequest) {
       WL_CREATE_ACTIONS_HEADER,
       serializeCreateActions(decision.createActions),
     );
+    headers.set(WL_TABS_HEADER, serializeTabs(decision.tabs));
     if (decision.mode === 'embed' && decision.clientId) {
       headers.set(WL_CLIENT_HEADER, decision.clientId);
     }

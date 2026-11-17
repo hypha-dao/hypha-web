@@ -31,10 +31,12 @@ import {
   WL_DETAIL_VIEW_HEADER,
   WL_MODE_HEADER,
   WL_SPACE_HEADER,
+  WL_TABS_HEADER,
   WL_UNSUPPORTED_ACTIONS_HEADER,
   authKindFor,
   readAuthConfigHeader,
   readCreateActionsHeader,
+  readTabsHeader,
   type WhiteLabelLinkContext,
   type WhiteLabelMode,
 } from '@web/lib/white-label';
@@ -97,6 +99,9 @@ export default async function WhiteLabelRootLayout({
       ? readCreateActionsHeader(requestHeaders.get(WL_CREATE_ACTIONS_HEADER))
       : [];
 
+  // Presentation only (fail open: all tabs); the resolver already refused hidden ones.
+  const tabs = readTabsHeader(requestHeaders.get(WL_TABS_HEADER));
+
   let locale = 'en';
   let messages: Record<string, unknown> = defaultMessages;
   try {
@@ -116,6 +121,7 @@ export default async function WhiteLabelRootLayout({
           detailView,
           unsupportedActions,
           createActions,
+          tabs,
         }
       : {
           mode: 'embed',
@@ -126,6 +132,7 @@ export default async function WhiteLabelRootLayout({
             : {}),
           detailView,
           unsupportedActions,
+          tabs,
         };
 
   return (

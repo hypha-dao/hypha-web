@@ -1,10 +1,11 @@
-import {
-  EMBED_PREFIX,
-  LANDING_SECTION,
-  WL_CLIENT_PARAM,
-  WL_SECTIONS,
-} from './constants';
-import type { CreateAction, DetailView, UnsupportedActions } from './types';
+import { EMBED_PREFIX, WL_CLIENT_PARAM, WL_SECTIONS } from './constants';
+import { isTabVisible, landingTab } from './tabs';
+import type {
+  CreateAction,
+  DetailView,
+  Tab,
+  UnsupportedActions,
+} from './types';
 
 /**
  * How a link renders inside a white-label tree. The context is set once by the
@@ -26,6 +27,8 @@ export type WhiteLabelLinkContext =
       unsupportedActions?: UnsupportedActions;
       /** Create flows served here; absent means none. */
       createActions?: readonly CreateAction[];
+      /** Tabs shown, in the bar's order; absent means all (see `isTabVisible`). */
+      tabs?: readonly Tab[];
     }
   | {
       mode: 'host';
@@ -35,6 +38,8 @@ export type WhiteLabelLinkContext =
       detailView?: DetailView;
       unsupportedActions?: UnsupportedActions;
       createActions?: readonly CreateAction[];
+      /** Tabs shown, in the bar's order; absent means all (see `isTabVisible`). */
+      tabs?: readonly Tab[];
     };
 
 export type LinkDecision =
@@ -58,6 +63,45 @@ export function withClient(ctx: WhiteLabelLinkContext, search: string): string {
 }
 
 const SERVED_SECTIONS: readonly string[] = WL_SECTIONS;
+
+/**
+ * Where an "Overview" link goes: overview when the client shows it, else the
+ * landing (the first tab it lists).
+ */
+function overviewTarget(ctx: WhiteLabelLinkContext): string {
+  return isTabVisible(ctx.tabs, 'overview') ? 'overview' : landingTab(ctx.tabs);
+}
+
+/**
+ * A link under a tab the client does not show (`own` = segments after the
+ * locale): the bare Overview link goes to the landing, anything else is inert
+ * (`blocked`), also under `unsupportedActions: 'full-app'`: hiding a tab is the
+ * client's choice for its pages, and an exit to the full app would show what
+ * it hid. `null` when the link is not under a hidden tab.
+ */
+function decodeSegment(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
+function hiddenTabLink(
+  ctx: WhiteLabelLinkContext,
+  own: readonly string[],
+): 'landing' | 'blocked' | null {
+  // The path is raw here; the resolver compares decoded segments, so do the same.
+  const first = own[0] === undefined ? undefined : decodeSegment(own[0]);
+  if (
+    first === undefined ||
+    !SERVED_SECTIONS.includes(first) ||
+    isTabVisible(ctx.tabs, first)
+  ) {
+    return null;
+  }
+  return first === 'overview' && own.length === 1 ? 'landing' : 'blocked';
+}
 
 /**
  * Detail pages the tree serves, as segments after the locale (`:` matches one
@@ -203,18 +247,25 @@ export function sectionHref(
 }
 
 /**
- * Section of the Space a browser pathname shows (the landing section when the
- * path names none). Both modes: `[/<lang>]/<section>`; embed has the
+ * Section of the Space a browser pathname shows (the landing tab, the first
+ * the client lists, when the path names none). Both modes: `[/<lang>]/<section>`; embed has the
  * `/embed/<slug>` prefix first.
  */
 export function sectionFromPathname(
   ctx: WhiteLabelLinkContext,
   pathname: string,
 ): string {
+  return sectionSegment(ctx, pathname) ?? landingTab(ctx.tabs);
+}
+
+/** The section named by a browser pathname, `undefined` on the bare path (the landing). */
+export function sectionSegment(
+  ctx: WhiteLabelLinkContext,
+  pathname: string,
+): string | undefined {
   const all = pathname.split('/').filter(Boolean);
   const parts = ctx.mode === 'host' ? all : all.slice(2);
-  const section = parts[0] === ctx.lang ? parts[1] : parts[0];
-  return section ?? LANDING_SECTION;
+  return parts[0] === ctx.lang ? parts[1] : parts[0];
 }
 
 /** Where a link that leaves the Space goes: the full app, not the page's own origin. */
@@ -275,7 +326,15 @@ export function classifyLink(
     if (own.length === 0) {
       return {
         kind: 'internal',
-        href: sectionHref(linkCtx, LANDING_SECTION, url.search),
+        href: sectionHref(linkCtx, landingTab(ctx.tabs), url.search),
+      };
+    }
+    const hiddenHere = hiddenTabLink(ctx, own);
+    if (hiddenHere === 'blocked') return { kind: 'blocked' };
+    if (hiddenHere === 'landing') {
+      return {
+        kind: 'internal',
+        href: sectionHref(linkCtx, landingTab(ctx.tabs), url.search),
       };
     }
     const [only] = own;
@@ -309,6 +368,14 @@ export function classifyLink(
       first !== undefined && (first === ctx.lang || locales.includes(first));
     const own = hasLocale ? afterSlug.slice(1) : afterSlug;
     const lang = hasLocale && first !== undefined ? first : ctx.lang;
+    const hiddenHere = hiddenTabLink(ctx, own);
+    if (hiddenHere === 'blocked') return { kind: 'blocked' };
+    if (hiddenHere === 'landing') {
+      return {
+        kind: 'internal',
+        href: sectionHref({ ...ctx, lang }, landingTab(ctx.tabs), url.search),
+      };
+    }
     const [section] = own;
     if (
       own.length === 0 ||
@@ -339,7 +406,15 @@ export function classifyLink(
     if (parts.length === 3) {
       return {
         kind: 'internal',
-        href: sectionHref(ctx, LANDING_SECTION, url.search),
+        href: sectionHref(ctx, overviewTarget(ctx), url.search),
+      };
+    }
+    const hiddenHere = hiddenTabLink(ctx, parts.slice(3));
+    if (hiddenHere === 'blocked') return { kind: 'blocked' };
+    if (hiddenHere === 'landing') {
+      return {
+        kind: 'internal',
+        href: sectionHref(ctx, landingTab(ctx.tabs), url.search),
       };
     }
     const section = parts[3];
