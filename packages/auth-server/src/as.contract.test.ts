@@ -257,38 +257,85 @@ run('authorization server: protocol, gate, revocation, storage', () => {
     expect(String(f.token!.body.scope).split(' ')).toContain('offline_access');
   });
 
-  it('two people with the same email can both sign in; the real address is not copied', async () => {
-    const A = 'did:privy:sameemail-a';
-    const B = 'did:privy:sameemail-b';
-    const two = await h.makeServer({
-      AUTH_SERVER_SECRET: s.config.secret,
-      AUTH_SERVER_ALLOWED_PERSON_IDS: `${A},${B}`,
+  describe('as_user.email is a synthetic address, not the person email', () => {
+    const A = 'did:privy:email-a';
+    const B = 'did:privy:email-b';
+    let two: h.Harness;
+    beforeAll(async () => {
+      two = await h.makeServer({
+        AUTH_SERVER_SECRET: s.config.secret,
+        AUTH_SERVER_ALLOWED_PERSON_IDS: `${A},${B}`,
+      });
     });
-    await h.seedPeople(two.pool, [A, B]);
-    await two.pool.query(
-      `update people set email = 'shared@example.org' where sub in ($1, $2)`,
-      [A, B],
-    );
-    for (const person of [A, B]) {
+    afterAll(async () => {
+      await two.pool.query('delete from people where sub in ($1, $2)', [A, B]);
+      await two.pool.end();
+    });
+
+    const signInAs = async (person: string) => {
       const jar = new h.CookieJar();
-      const pkce = h.makePkce();
-      const u = h.authorizeUrl(pkce);
+      const u = h.authorizeUrl(h.makePkce());
       const a = await two.handler(h.req(u.pathname + u.search, { jar }));
       const q = new URL(a.headers.get('location')!, h.ISSUER).search.slice(1);
-      const login = await h.signIn(two, jar, q, person);
-      expect(login.res.status, person).toBe(200);
-    }
-    const { rows } = await two.pool.query(
-      `select id, email, "emailVerified" from as_user where id in ($1, $2) order by id`,
-      [A, B],
-    );
-    expect(rows).toHaveLength(2);
-    expect(new Set(rows.map((r) => r.email)).size).toBe(2);
-    for (const r of rows) {
-      expect(r.email).not.toBe('shared@example.org');
-      expect(r.emailVerified).toBe(false);
-    }
-    await two.pool.end();
+      return h.signIn(two, jar, q, person);
+    };
+    const asUser = async (sub: string) =>
+      (
+        await two.pool.query(
+          'select email, "emailVerified" from as_user where id = $1',
+          [sub],
+        )
+      ).rows[0];
+
+    it('two people with different emails both sign in and get unique synthetic addresses', async () => {
+      await h.seedPeople(two.pool, [A, B]);
+      for (const person of [A, B]) {
+        expect((await signInAs(person)).res.status, person).toBe(200);
+      }
+      const people = await two.pool.query(
+        'select sub, email from people where sub in ($1, $2)',
+        [A, B],
+      );
+      const realEmail = Object.fromEntries(
+        people.rows.map((r) => [r.sub, r.email]),
+      );
+      const [ua, ub] = [await asUser(A), await asUser(B)];
+      expect(ua.email).not.toBe(ub.email);
+      for (const [sub, u] of [
+        [A, ua],
+        [B, ub],
+      ] as const) {
+        expect(u.email.endsWith('@users.invalid'), sub).toBe(true);
+        expect(u.email).not.toBe(realEmail[sub]);
+        expect(u.emailVerified).toBe(false);
+      }
+    });
+
+    it('a new person can take an address a person had before, and signs in without error', async () => {
+      await two.pool.query('delete from people where sub in ($1, $2)', [A, B]);
+      await h.seedPeople(two.pool, [A]);
+      const old = (
+        await two.pool.query('select email from people where sub = $1', [A])
+      ).rows[0].email as string;
+      expect((await signInAs(A)).res.status).toBe(200);
+      // A changes address; B registers with A's old one (people.email is unique, so this order).
+      await two.pool.query(
+        `update people set email = 'changed-a@example.org' where sub = $1`,
+        [A],
+      );
+      await h.seedPeople(two.pool, [B]);
+      await two.pool.query('update people set email = $2 where sub = $1', [
+        B,
+        old,
+      ]);
+      const login = await signInAs(B);
+      expect(login.res.status).toBe(200);
+      const [ua, ub] = [await asUser(A), await asUser(B)];
+      expect(ub.email).not.toBe(ua.email);
+      expect(ub.email).not.toBe(old);
+      expect(ub.email.endsWith('@users.invalid')).toBe(true);
+      expect(ub.emailVerified).toBe(false);
+    });
   });
 
   it('identity link: Privy is linked on first login; another provider is never linked automatically', async () => {
