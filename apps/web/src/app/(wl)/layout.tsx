@@ -26,6 +26,7 @@ import {
 import { WhiteLabelAuthProvider } from '@web/components/white-label/auth-seam';
 import {
   WL_AUTH_HEADER,
+  WL_CLIENT_HEADER,
   WL_CREATE_ACTIONS_HEADER,
   WL_DETAIL_VIEW_HEADER,
   WL_MODE_HEADER,
@@ -120,6 +121,9 @@ export default async function WhiteLabelRootLayout({
           mode: 'embed',
           spaceSlug,
           lang: locale,
+          ...(requestHeaders.get(WL_CLIENT_HEADER)
+            ? { clientId: requestHeaders.get(WL_CLIENT_HEADER) as string }
+            : {}),
           detailView,
           unsupportedActions,
         };
