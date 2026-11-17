@@ -2,8 +2,10 @@ import {
   API_PREFIX,
   EMBED_PREFIX,
   INTERNAL_PREFIX,
-  LANDING_SECTION,
+  WL_SECTIONS,
+  WL_TABS,
 } from './constants';
+import { isTabVisible, landingTab } from './tabs';
 import {
   apiAllowlistFor,
   isApiReadAllowed,
@@ -12,6 +14,7 @@ import {
 import { isValidSlug, normaliseFramingOrigin, normaliseHost } from './config';
 import type {
   ResolveDecision,
+  Tab,
   ResolveOptions,
   WhiteLabelClientRecord,
   WhiteLabelConfig,
@@ -150,6 +153,22 @@ export function clientFromReferer(
   return matches.length === 1 ? matches[0] ?? null : null;
 }
 
+/**
+ * A path under the Space (segments after the locale) whose first segment is a
+ * section of a tab the client does not show. One check for pages, overlays,
+ * details and create pages: they all live under their tab's URL. Answered with
+ * the same white-label 404 as an unknown path (the response does not say that
+ * the tab exists).
+ */
+function isTabHidden(tabs: readonly Tab[], rest: readonly string[]): boolean {
+  const [first] = rest;
+  return (
+    first !== undefined &&
+    (WL_SECTIONS as readonly string[]).includes(first) &&
+    !isTabVisible(tabs, first)
+  );
+}
+
 /** True when `host` is one of the mapped hosts (host delivery). */
 export function isMappedHost(
   config: WhiteLabelConfig,
@@ -261,7 +280,10 @@ function resolveMappedHost(
     negotiateLocale(options.acceptLanguage, options.locales) ??
     options.defaultLocale;
 
-  const section = rest.length === 0 ? [LANDING_SECTION] : rest;
+  const tabs = client.tabs ?? [...WL_TABS];
+  if (isTabHidden(tabs, rest))
+    return { kind: 'not-found', reason: 'tab-hidden' };
+  const section = rest.length === 0 ? [landingTab(tabs)] : rest;
   return {
     kind: 'rewrite',
     mode: 'host',
@@ -279,6 +301,7 @@ function resolveMappedHost(
     unsupportedActions: client.unsupportedActions ?? 'hide',
     // Only a host with login can write: without it the list is empty.
     createActions: record.authConfig ? [...(client.createActions ?? [])] : [],
+    tabs,
     ...(record.authConfig ? { authConfig: record.authConfig } : {}),
   };
 }
@@ -394,7 +417,10 @@ export function resolve(
     return { kind: 'not-found', reason: 'method-not-allowed' };
   }
 
-  const section = rest.length === 0 ? [LANDING_SECTION] : rest;
+  const tabs = selected?.tabs ?? [...WL_TABS];
+  if (isTabHidden(tabs, rest))
+    return { kind: 'not-found', reason: 'tab-hidden' };
+  const section = rest.length === 0 ? [landingTab(tabs)] : rest;
   return {
     kind: 'rewrite',
     mode: 'embed',
@@ -409,5 +435,6 @@ export function resolve(
     detailView: selected?.detailView ?? 'embedded',
     unsupportedActions: selected?.unsupportedActions ?? 'hide',
     createActions: [...(selected?.createActions ?? [])],
+    tabs,
   };
 }

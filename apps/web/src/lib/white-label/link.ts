@@ -4,7 +4,12 @@ import {
   WL_CLIENT_PARAM,
   WL_SECTIONS,
 } from './constants';
-import type { CreateAction, DetailView, UnsupportedActions } from './types';
+import type {
+  CreateAction,
+  DetailView,
+  Tab,
+  UnsupportedActions,
+} from './types';
 
 /**
  * How a link renders inside a white-label tree. The context is set once by the
@@ -26,6 +31,8 @@ export type WhiteLabelLinkContext =
       unsupportedActions?: UnsupportedActions;
       /** Create flows served here; absent means none. */
       createActions?: readonly CreateAction[];
+      /** Tabs shown, in the bar's order; absent means all (see `isTabVisible`). */
+      tabs?: readonly Tab[];
     }
   | {
       mode: 'host';
@@ -35,6 +42,8 @@ export type WhiteLabelLinkContext =
       detailView?: DetailView;
       unsupportedActions?: UnsupportedActions;
       createActions?: readonly CreateAction[];
+      /** Tabs shown, in the bar's order; absent means all (see `isTabVisible`). */
+      tabs?: readonly Tab[];
     };
 
 export type LinkDecision =
