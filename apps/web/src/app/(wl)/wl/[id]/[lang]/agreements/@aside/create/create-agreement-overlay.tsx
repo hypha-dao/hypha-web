@@ -28,7 +28,11 @@ export function CreateAgreementOverlay({
   const successfulUrl = sectionHref('agreements');
   return (
     <ProposalOverlayShell>
-      <ConnectedSpaceMemberAsideGuard spaceSlug={id} spaceId={web3SpaceId}>
+      <ConnectedSpaceMemberAsideGuard
+        spaceSlug={id}
+        spaceId={web3SpaceId}
+        closeUrl={successfulUrl}
+      >
         <CreateAgreementForm
           successfulUrl={successfulUrl}
           backUrl={sectionHref('agreements/select-create-action')}

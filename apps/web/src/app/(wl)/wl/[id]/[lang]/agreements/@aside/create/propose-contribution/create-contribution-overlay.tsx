@@ -26,7 +26,11 @@ export function CreateContributionOverlay({
   const sectionHref = useWhiteLabelSectionHref();
   return (
     <ProposalOverlayShell>
-      <ConnectedSpaceMemberAsideGuard spaceSlug={id} spaceId={web3SpaceId}>
+      <ConnectedSpaceMemberAsideGuard
+        spaceSlug={id}
+        spaceId={web3SpaceId}
+        closeUrl={sectionHref('agreements')}
+      >
         <CreateProposeAContributionForm
           successfulUrl={sectionHref('agreements')}
           backUrl={sectionHref('agreements/select-create-action')}

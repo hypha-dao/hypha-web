@@ -25,7 +25,11 @@ export function CreateSignalOverlay({
   const back = sectionHref('coherence');
   return (
     <ProposalOverlayShell>
-      <ConnectedSpaceMemberAsideGuard spaceSlug={id} spaceId={web3SpaceId}>
+      <ConnectedSpaceMemberAsideGuard
+        spaceSlug={id}
+        spaceId={web3SpaceId}
+        closeUrl={back}
+      >
         <ConnectedCreateSignalForm
           successfulUrl={back}
           closeUrl={back}
