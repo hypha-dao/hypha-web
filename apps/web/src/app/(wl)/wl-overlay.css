@@ -26,3 +26,15 @@
 .wl-root #proposal-overlay-panel .sticky {
   z-index: 20;
 }
+
+/*
+ * The shared stylesheet sets `overscroll-behavior: none` on `html` and `body`
+ * (the main app's banner must not rubber-band). In the iframe delivery that
+ * stops the wheel from carrying on to the embedding page once the framed page
+ * reaches its top or bottom. Restore the default here (the property is not
+ * inherited, so both elements); the main app is unchanged.
+ */
+.wl-root,
+.wl-root body {
+  overscroll-behavior: auto;
+}
