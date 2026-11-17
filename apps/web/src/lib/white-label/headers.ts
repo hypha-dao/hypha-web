@@ -1,4 +1,9 @@
-import { WL_REQUEST_HEADERS, WL_SPACE_HEADER } from './constants';
+import {
+  CREATE_ACTIONS,
+  WL_REQUEST_HEADERS,
+  WL_SPACE_HEADER,
+} from './constants';
+import type { CreateAction } from './types';
 
 /** Value of CSP `frame-ancestors` for a response. `'none'` unless origins given. */
 export function buildFrameAncestors(origins: readonly string[]): string {
@@ -54,4 +59,30 @@ export function embedFraming(origins: readonly string[]): FramingPolicy {
     xFrameOptions: origins.length > 0 ? null : 'DENY',
     frameAncestors: buildFrameAncestors(origins),
   };
+}
+
+/** Header value for `createActions` (known values only, comma-joined). */
+export function serializeCreateActions(
+  actions: readonly CreateAction[],
+): string {
+  return actions.join(',');
+}
+
+/**
+ * Parses the header the layout receives. Fail closed: only the exact known
+ * values count, anything else (or no header) is "none".
+ */
+export function readCreateActionsHeader(
+  raw: string | null | undefined,
+): CreateAction[] {
+  if (!raw) return [];
+  const known: readonly string[] = CREATE_ACTIONS;
+  return [
+    ...new Set(
+      raw
+        .split(',')
+        .map((part) => part.trim())
+        .filter((part): part is CreateAction => known.includes(part)),
+    ),
+  ];
 }

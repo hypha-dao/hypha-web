@@ -7,6 +7,7 @@ import {
 import { apiAllowlistFor, isApiReadAllowed } from './api-allowlist';
 import { isValidSlug, normaliseHost } from './config';
 import type {
+  CreateAction,
   ResolveDecision,
   ResolveOptions,
   WhiteLabelConfig,
@@ -228,6 +229,8 @@ function resolveMappedHost(
     framingOrigins: [],
     detailView: client.detailView ?? 'embedded',
     unsupportedActions: client.unsupportedActions ?? 'hide',
+    // Only a host with login can write: without it the list is empty.
+    createActions: record.authConfig ? [...(client.createActions ?? [])] : [],
     ...(record.authConfig ? { authConfig: record.authConfig } : {}),
   };
 }
@@ -296,11 +299,18 @@ export function resolve(
   let embeddedDetails = false;
   // `hide` wins: `full-app` only if every approving client says so.
   let allFullApp = true;
+  // Intersection across the approving clients (a client with none empties it).
+  let createActions: CreateAction[] | null = null;
   for (const client of config.clients) {
     const matches = client.spaces.filter((s) => s.slug === slug);
     if (matches.length === 0) continue;
     clientIds.push(client.id);
     if (client.unsupportedActions !== 'full-app') allFullApp = false;
+    const own = client.createActions ?? [];
+    createActions =
+      createActions === null
+        ? [...own]
+        : createActions.filter((action) => own.includes(action));
     if ((client.detailView ?? 'embedded') === 'embedded') {
       embeddedDetails = true;
     }
@@ -343,5 +353,6 @@ export function resolve(
     framingOrigins: [...origins],
     detailView: embeddedDetails ? 'embedded' : 'full-app',
     unsupportedActions: allFullApp ? 'full-app' : 'hide',
+    createActions: createActions ?? [],
   };
 }
