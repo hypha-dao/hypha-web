@@ -1,12 +1,10 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Button } from '@hypha-platform/ui';
-import {
-  APPROVAL_EXPIRED_MESSAGE,
-  AUTH_SERVER_API_BASE_PATH,
-} from '@hypha-platform/auth-server/client';
+import { AUTH_SERVER_API_BASE_PATH } from '@hypha-platform/auth-server/client';
 
 type Phase =
   | 'idle'
@@ -17,6 +15,13 @@ type Phase =
   | 'unavailable'
   | 'failed';
 
+type SignInBody = {
+  url?: string;
+  message?: string;
+  error?: string;
+  code?: string;
+};
+
 /**
  * Login page of the authorization server. The person signs in with Privy on this host (a
  * top-level page or popup, so no third-party cookies are involved). The Privy token is sent
@@ -24,10 +29,13 @@ type Phase =
  * and never given to the app that asked.
  */
 export function LoginClient() {
+  const t = useTranslations('AuthServer');
   const { isAuthenticated, isLoading, openLoginModal, getAccessToken, logout } =
     useAuthentication();
   const [phase, setPhase] = React.useState<Phase>('idle');
-  const [message, setMessage] = React.useState<string>('');
+  const [deniedKey, setDeniedKey] = React.useState<'notEnabled' | 'noProfile'>(
+    'notEnabled',
+  );
   const started = React.useRef(false);
 
   const signIn = React.useCallback(async () => {
@@ -35,24 +43,36 @@ export function LoginClient() {
     try {
       const privyToken = await getAccessToken();
       if (!privyToken) throw new Error('no token');
-      const res = await fetch(`${AUTH_SERVER_API_BASE_PATH}/provider/sign-in`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          accept: 'application/json',
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({
-          provider: 'privy',
-          token: privyToken,
-          oauth_query: window.location.search.replace(/^\?/, ''),
-        }),
-      });
-      const body = (await res.json().catch(() => ({}))) as {
-        url?: string;
-        message?: string;
-        error?: string;
+      const post = async (oauthQuery: string) => {
+        const res = await fetch(
+          `${AUTH_SERVER_API_BASE_PATH}/provider/sign-in`,
+          {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              accept: 'application/json',
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+              provider: 'privy',
+              token: privyToken,
+              oauth_query: oauthQuery,
+            }),
+          },
+        );
+        const body = (await res.json().catch(() => ({}))) as SignInBody;
+        return { res, body };
       };
+      // `?lang=` is a page setting, not part of the signed query: send the query without it. If
+      // that does not verify, the app sent its own `lang` inside the signed query: send it whole.
+      const original = window.location.search.replace(/^\?/, '');
+      const params = new URLSearchParams(original);
+      const hasLang = params.has('lang');
+      params.delete('lang');
+      let { res, body } = await post(params.toString());
+      if (hasLang && body.error === 'invalid_signature') {
+        ({ res, body } = await post(original));
+      }
       if (res.ok && body.url) {
         window.location.assign(body.url);
         return;
@@ -63,9 +83,7 @@ export function LoginClient() {
         return;
       }
       if (res.status === 403) {
-        setMessage(
-          body.message ?? 'This account is not enabled for this service.',
-        );
+        setDeniedKey(body.code === 'no_profile' ? 'noProfile' : 'notEnabled');
         setPhase('denied');
         return;
       }
@@ -92,56 +110,51 @@ export function LoginClient() {
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-4 px-4 py-12">
-      <h1 className="text-4 font-medium">Connect an app to Hypha</h1>
-      <p className="text-2 text-neutral-11">
-        Sign in with your Hypha account to continue. You will see what the app
-        asks for before anything is shared.
-      </p>
+      <h1 className="text-4 font-medium">{t('login.title')}</h1>
+      <p className="text-2 text-neutral-11">{t('login.intro')}</p>
       {phase === 'denied' ? (
         <>
           <p role="alert" className="text-2">
-            {message}
+            {t(`login.denied.${deniedKey}`)}
           </p>
-          <p className="text-2 text-neutral-11">
-            If you think this is a mistake, contact the Hypha team.
-          </p>
+          <p className="text-2 text-neutral-11">{t('login.denied.help')}</p>
           <Button variant="outline" onClick={switchAccount}>
-            Use a different account
+            {t('login.useDifferentAccount')}
           </Button>
         </>
       ) : phase === 'approval-expired' ? (
         <p role="alert" className="text-2">
-          {APPROVAL_EXPIRED_MESSAGE}
+          {t('approval.expired')}
         </p>
       ) : phase === 'expired' ? (
         <>
           <p role="alert" className="text-2">
-            Your sign-in expired. Please sign in again.
+            {t('login.expired')}
           </p>
-          <Button onClick={switchAccount}>Sign in again</Button>
+          <Button onClick={switchAccount}>{t('login.signInAgain')}</Button>
         </>
       ) : phase === 'unavailable' ? (
         <>
           <p role="alert" className="text-2">
-            Connecting apps is not available right now. Please try again later.
+            {t('login.unavailable')}
           </p>
           <Button variant="outline" onClick={() => void signIn()}>
-            Try again
+            {t('login.tryAgain')}
           </Button>
         </>
       ) : phase === 'failed' ? (
         <>
           <p role="alert" className="text-2">
-            Sign-in did not complete. Please try again.
+            {t('login.failed')}
           </p>
-          <Button onClick={() => void signIn()}>Try again</Button>
+          <Button onClick={() => void signIn()}>{t('login.tryAgain')}</Button>
         </>
       ) : (
         <Button
           onClick={() => (isAuthenticated ? void signIn() : openLoginModal())}
           disabled={isLoading || phase === 'signing-in'}
         >
-          {phase === 'signing-in' ? 'Signing in...' : 'Sign in with Hypha'}
+          {phase === 'signing-in' ? t('login.signingIn') : t('login.signIn')}
         </Button>
       )}
     </main>

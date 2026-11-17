@@ -1,20 +1,20 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Button, Checkbox } from '@hypha-platform/ui';
 import {
-  APPROVAL_EXPIRED_MESSAGE,
   AUTH_SERVER_API_BASE_PATH,
   describeClient,
   type ClientKind,
+  type ScopeCopyKey,
 } from '@hypha-platform/auth-server/client';
 
 type Scope = {
   scope: string;
-  title: string;
-  detail: string;
+  copyKey: ScopeCopyKey;
   defaultGranted: boolean;
-  warning?: string;
+  warn: boolean;
 };
 
 export function ConsentForm({
@@ -33,6 +33,7 @@ export function ConsentForm({
   };
   scopes: Scope[];
 }) {
+  const t = useTranslations('AuthServer');
   const [granted, setGranted] = React.useState<Set<string>>(
     () => new Set(scopes.filter((s) => s.defaultGranted).map((s) => s.scope)),
   );
@@ -74,13 +75,13 @@ export function ConsentForm({
       }
       // The signed approval link ran out while the page was open.
       if (body.error === 'invalid_signature') {
-        setError(APPROVAL_EXPIRED_MESSAGE);
+        setError(t('approval.expired'));
         setBusy(false);
         return;
       }
-      setError('Something went wrong. Please start again from the app.');
+      setError(t('consent.failed'));
     } catch {
-      setError('Something went wrong. Please start again from the app.');
+      setError(t('consent.failed'));
     }
     setBusy(false);
   };
@@ -91,20 +92,20 @@ export function ConsentForm({
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-4 px-4 py-12">
-      <h1 className="text-4 font-medium">Approve {client.name}?</h1>
+      <h1 className="text-4 font-medium">
+        {t('consent.title', { name: client.name })}
+      </h1>
       <p role="note" className="border border-warning-8 p-3 text-2">
-        {describeClient({ ...client }).map((seg, i) =>
-          seg.strong ? (
-            <strong key={i} className="break-all">
-              {seg.text}
-            </strong>
-          ) : (
-            <React.Fragment key={i}>{seg.text}</React.Fragment>
-          ),
-        )}
+        {(() => {
+          const copy = describeClient({ ...client });
+          return t.rich(`consent.client.${copy.key}`, {
+            ...copy.values,
+            strong: (chunks) => <strong className="break-all">{chunks}</strong>,
+          });
+        })()}
       </p>
       <p className="text-2 text-neutral-11">
-        Signed in as {personName}. This app is asking to:
+        {t('consent.signedInAs', { name: personName })}
       </p>
       <ul className="flex flex-col gap-3">
         {scopes.map((s) => (
@@ -115,14 +116,20 @@ export function ConsentForm({
               onCheckedChange={(v) => toggle(s.scope, v === true)}
             />
             <label htmlFor={`scope-${s.scope}`} className="flex flex-col">
-              <span className="text-2 font-medium">{s.title}</span>
-              <span className="text-1 text-neutral-11">{s.detail}</span>
-              {s.warning ? (
+              <span className="text-2 font-medium">
+                {s.copyKey === 'unknown'
+                  ? s.scope
+                  : t(`consent.scopes.${s.copyKey}.title`)}
+              </span>
+              <span className="text-1 text-neutral-11">
+                {t(`consent.scopes.${s.copyKey}.detail`)}
+              </span>
+              {s.warn ? (
                 <span
                   role="note"
                   className="text-1 font-medium text-warning-11"
                 >
-                  {s.warning}
+                  {t(`consent.scopes.${s.copyKey}.warning`)}
                 </span>
               ) : null}
             </label>
@@ -136,14 +143,14 @@ export function ConsentForm({
       ) : null}
       <div className="flex gap-2">
         <Button onClick={() => void submit(true)} disabled={busy || !hasRead}>
-          Approve
+          {t('consent.approve')}
         </Button>
         <Button
           variant="outline"
           onClick={() => void submit(false)}
           disabled={busy}
         >
-          Deny
+          {t('consent.deny')}
         </Button>
       </div>
     </main>

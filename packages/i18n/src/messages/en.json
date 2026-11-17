@@ -5938,5 +5938,61 @@
       "load": "Quests could not be loaded.",
       "retry": "Retry"
     }
+  },
+  "AuthServer": {
+    "login": {
+      "title": "Connect an app to Hypha",
+      "intro": "Sign in with your Hypha account to continue. You will see what the app asks for before anything is shared.",
+      "signIn": "Sign in with Hypha",
+      "signingIn": "Signing in...",
+      "denied": {
+        "notEnabled": "This account is not enabled for this service.",
+        "noProfile": "Finish creating your Hypha profile first, then try again.",
+        "help": "If you think this is a mistake, contact the Hypha team."
+      },
+      "useDifferentAccount": "Use a different account",
+      "expired": "Your sign-in expired. Please sign in again.",
+      "signInAgain": "Sign in again",
+      "unavailable": "Connecting apps is not available right now. Please try again later.",
+      "tryAgain": "Try again",
+      "failed": "Sign-in did not complete. Please try again."
+    },
+    "approval": {
+      "expiredTitle": "Approval expired",
+      "expired": "This approval expired. Go back to the app and start again.",
+      "invalidTitle": "Approval not valid",
+      "invalid": "This approval link is not valid. Go back to the app and start again."
+    },
+    "consent": {
+      "title": "Approve {name}?",
+      "signedInAs": "Signed in as {name}. This app is asking to:",
+      "approve": "Approve",
+      "deny": "Deny",
+      "failed": "Something went wrong. Please start again from the app.",
+      "client": {
+        "cimd": "Hypha has not approved this app. It is run from <strong>{host}</strong>: Hypha read its details from that address, so the address is real. Nothing else about the app has been checked. It calls itself <strong>{name}</strong>. After you approve, you are sent back to <strong>{redirectHost}</strong>. Only approve apps you started yourself.",
+        "dcr": "Hypha has not approved this app. It registered itself and chose its own name, <strong>{name}</strong>, which Hypha has not checked: anyone can register any name, and Hypha cannot tell who is behind this app. After you approve, you are sent back to <strong>{redirectHost}</strong>. Only approve apps you started yourself.",
+        "registered": "Hypha has not verified this app. It calls itself <strong>{name}</strong>. After you approve, you are sent back to <strong>{redirectHost}</strong>. Only approve apps you started yourself.",
+        "registeredWithHost": "Hypha has not verified this app. It calls itself <strong>{name}</strong> and identifies itself from <strong>{host}</strong>. After you approve, you are sent back to <strong>{redirectHost}</strong>. Only approve apps you started yourself."
+      },
+      "scopes": {
+        "spacesRead": {
+          "title": "Read Hypha spaces",
+          "detail": "View the spaces you can see on Hypha: their details, members and public activity."
+        },
+        "agreementsVote": {
+          "title": "Prepare votes for you to approve",
+          "detail": "Ask you to vote on proposals in your spaces. Nothing is cast until you approve each vote on Hypha and sign it with your wallet.",
+          "warning": "Hypha has not approved this app. If you allow this, it can ask you to vote in your name. Allow it only if you trust this app and started this yourself."
+        },
+        "offlineAccess": {
+          "title": "Stay connected",
+          "detail": "Keep this app connected without asking you to sign in again, until you disconnect it."
+        },
+        "unknown": {
+          "detail": "An unrecognised permission."
+        }
+      }
+    }
   }
 }

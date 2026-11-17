@@ -4,13 +4,11 @@ import {
   decideConsentEntry,
   inspectConsentQuery,
   loadConsentRequest,
+  separatePageLang,
 } from '@hypha-platform/auth-server/server';
 import { requireAuthServerHost } from '../_lib/host-gate';
 import { getAuthServer } from '../_lib/server';
-import {
-  APPROVAL_EXPIRED_MESSAGE,
-  APPROVAL_INVALID_MESSAGE,
-} from '@hypha-platform/auth-server/client';
+import { AuthIntlProvider, authTranslator, loadAuthIntl } from '../_lib/intl';
 import { ConsentForm } from './consent-form';
 
 export const dynamic = 'force-dynamic';
@@ -37,9 +35,15 @@ export default async function AuthServerConsentPage({
       : [value];
     for (const v of values) query.append(key, v);
   }
+  // `?lang=` is a page setting kept out of the signed authorization query.
+  const separated = await separatePageLang(query.toString(), config.secret);
+  const intl = await loadAuthIntl({ lang: separated.lang });
+  const t = authTranslator(intl);
+  const signedQuery = separated.query;
+
   const server = getAuthServer(config);
   const requestHeaders = new Headers(await headers());
-  const state = await inspectConsentQuery(query.toString(), config.secret);
+  const state = await inspectConsentQuery(signedQuery, config.secret);
   const session =
     state === 'valid'
       ? await server.auth.api.getSession({ headers: requestHeaders })
@@ -47,46 +51,54 @@ export default async function AuthServerConsentPage({
   const entry = decideConsentEntry(state, Boolean(session));
   // A valid link without a session keeps its signed query through sign-in. An expired or
   // invalid link never goes to sign-in: it could not be used afterwards.
-  if (entry === 'sign-in') redirect(`/auth/login?${query.toString()}`);
+  if (entry === 'sign-in') {
+    const login = new URLSearchParams(signedQuery);
+    if (separated.lang) login.set('lang', separated.lang);
+    redirect(`/auth/login?${login.toString()}`);
+  }
   if (entry === 'expired' || entry === 'restart') {
     return (
-      <RestartMessage
-        title={entry === 'expired' ? 'Approval expired' : 'Approval not valid'}
-        message={
-          entry === 'expired'
-            ? APPROVAL_EXPIRED_MESSAGE
-            : APPROVAL_INVALID_MESSAGE
-        }
-      />
+      <AuthIntlProvider intl={intl}>
+        <RestartMessage
+          title={
+            entry === 'expired'
+              ? t('approval.expiredTitle')
+              : t('approval.invalidTitle')
+          }
+          message={
+            entry === 'expired' ? t('approval.expired') : t('approval.invalid')
+          }
+        />
+      </AuthIntlProvider>
     );
   }
-  const request = await loadConsentRequest(
-    server,
-    requestHeaders,
-    query.toString(),
-  );
+  const request = await loadConsentRequest(server, requestHeaders, signedQuery);
   if (!request) {
     // Signed and signed in, but the app is unknown here: nothing to approve.
     return (
-      <RestartMessage
-        title="Approval not valid"
-        message={APPROVAL_INVALID_MESSAGE}
-      />
+      <AuthIntlProvider intl={intl}>
+        <RestartMessage
+          title={t('approval.invalidTitle')}
+          message={t('approval.invalid')}
+        />
+      </AuthIntlProvider>
     );
   }
   return (
-    <ConsentForm
-      oauthQuery={request.oauthQuery}
-      personName={clip(request.person.name, 80)}
-      client={{
-        kind: request.client.kind,
-        name: clip(request.client.name, 80),
-        // Never clipped: a cut-off host would show an address that is not the real one.
-        host: request.client.host,
-        redirectHost: request.client.redirectHost,
-      }}
-      scopes={request.scopes}
-    />
+    <AuthIntlProvider intl={intl}>
+      <ConsentForm
+        oauthQuery={request.oauthQuery}
+        personName={clip(request.person.name, 80)}
+        client={{
+          kind: request.client.kind,
+          name: clip(request.client.name, 80),
+          // Never clipped: a cut-off host would show an address that is not the real one.
+          host: request.client.host,
+          redirectHost: request.client.redirectHost,
+        }}
+        scopes={request.scopes}
+      />
+    </AuthIntlProvider>
   );
 }
 

@@ -52,6 +52,10 @@ Scopes: `spaces:read`, `agreements:vote`, `offline_access`. The write scope (`ag
 starts unticked for clients that are not pre-approved. Access tokens last 10 minutes; refresh tokens
 slide over 90 days. The approval link lasts 10 minutes, the authorization code 60 seconds.
 
+## Language
+
+The login and consent pages are translated (the `AuthServer` namespace in `packages/i18n`, 8 languages) but keep one path for everyone, with no `/<lang>/` prefix. The language comes from `?lang=` on the page, then a cookie (`hypha_as_lang`) that remembers it, then the browser's Accept-Language, then English. `?lang=` is read as a page setting only when the signed authorization query is still valid without it. The plain-text error page served at `/api/auth/error` is English only.
+
 ## Tests
 
 Tests that need a database are skipped unless `AUTH_SERVER_TEST_DATABASE_URL` is set in the

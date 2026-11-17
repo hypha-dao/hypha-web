@@ -5916,5 +5916,61 @@
       "load": "Quests konnten nicht geladen werden.",
       "retry": "Erneut versuchen"
     }
+  },
+  "AuthServer": {
+    "login": {
+      "title": "Eine App mit Hypha verbinden",
+      "intro": "Melde dich mit deinem Hypha-Konto an, um fortzufahren. Du siehst, was die App verlangt, bevor etwas geteilt wird.",
+      "signIn": "Mit Hypha anmelden",
+      "signingIn": "Anmeldung läuft ...",
+      "denied": {
+        "notEnabled": "Dieses Konto ist für diesen Dienst nicht freigeschaltet.",
+        "noProfile": "Erstelle zuerst dein Hypha-Profil und versuche es dann erneut.",
+        "help": "Wenn du glaubst, dass das ein Fehler ist, wende dich an das Hypha-Team."
+      },
+      "useDifferentAccount": "Anderes Konto verwenden",
+      "expired": "Deine Anmeldung ist abgelaufen. Bitte melde dich erneut an.",
+      "signInAgain": "Erneut anmelden",
+      "unavailable": "Das Verbinden von Apps ist gerade nicht verfügbar. Bitte versuche es später erneut.",
+      "tryAgain": "Erneut versuchen",
+      "failed": "Die Anmeldung wurde nicht abgeschlossen. Bitte versuche es erneut."
+    },
+    "approval": {
+      "expiredTitle": "Freigabe abgelaufen",
+      "expired": "Diese Freigabe ist abgelaufen. Gehe zurück zur App und starte neu.",
+      "invalidTitle": "Freigabe ungültig",
+      "invalid": "Dieser Freigabelink ist ungültig. Gehe zurück zur App und starte neu."
+    },
+    "consent": {
+      "title": "{name} freigeben?",
+      "signedInAs": "Angemeldet als {name}. Diese App möchte:",
+      "approve": "Freigeben",
+      "deny": "Ablehnen",
+      "failed": "Etwas ist schiefgelaufen. Bitte starte in der App neu.",
+      "client": {
+        "cimd": "Hypha hat diese App nicht freigegeben. Sie läuft auf <strong>{host}</strong>: Hypha hat ihre Angaben von dieser Adresse gelesen, die Adresse ist also echt. Sonst wurde nichts über die App geprüft. Sie nennt sich <strong>{name}</strong>. Nach deiner Freigabe wirst du zu <strong>{redirectHost}</strong> zurückgeleitet. Gib nur Apps frei, die du selbst gestartet hast.",
+        "dcr": "Hypha hat diese App nicht freigegeben. Sie hat sich selbst registriert und ihren Namen selbst gewählt, <strong>{name}</strong>. Hypha hat ihn nicht geprüft: Jeder kann jeden Namen registrieren, und Hypha kann nicht erkennen, wer hinter dieser App steht. Nach deiner Freigabe wirst du zu <strong>{redirectHost}</strong> zurückgeleitet. Gib nur Apps frei, die du selbst gestartet hast.",
+        "registered": "Hypha hat diese App nicht verifiziert. Sie nennt sich <strong>{name}</strong>. Nach deiner Freigabe wirst du zu <strong>{redirectHost}</strong> zurückgeleitet. Gib nur Apps frei, die du selbst gestartet hast.",
+        "registeredWithHost": "Hypha hat diese App nicht verifiziert. Sie nennt sich <strong>{name}</strong> und weist sich über <strong>{host}</strong> aus. Nach deiner Freigabe wirst du zu <strong>{redirectHost}</strong> zurückgeleitet. Gib nur Apps frei, die du selbst gestartet hast."
+      },
+      "scopes": {
+        "spacesRead": {
+          "title": "Hypha-Spaces lesen",
+          "detail": "Die Spaces ansehen, die du auf Hypha sehen kannst: ihre Details, Mitglieder und öffentliche Aktivität."
+        },
+        "agreementsVote": {
+          "title": "Abstimmungen für deine Freigabe vorbereiten",
+          "detail": "Dich bitten, in deinen Spaces über Vorschläge abzustimmen. Nichts wird abgegeben, bis du jede Stimme auf Hypha freigibst und mit deiner Wallet signierst.",
+          "warning": "Hypha hat diese App nicht freigegeben. Wenn du das erlaubst, kann sie dich in deinem Namen zum Abstimmen auffordern. Erlaube es nur, wenn du dieser App vertraust und das selbst gestartet hast."
+        },
+        "offlineAccess": {
+          "title": "Verbunden bleiben",
+          "detail": "Diese App verbunden halten, ohne dass du dich erneut anmelden musst, bis du sie trennst."
+        },
+        "unknown": {
+          "detail": "Eine unbekannte Berechtigung."
+        }
+      }
+    }
   }
 }

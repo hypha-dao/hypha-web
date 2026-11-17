@@ -5913,5 +5913,61 @@
       "load": "Impossible de charger les quêtes.",
       "retry": "Réessayer"
     }
+  },
+  "AuthServer": {
+    "login": {
+      "title": "Connecter une application à Hypha",
+      "intro": "Connectez-vous avec votre compte Hypha pour continuer. Vous verrez ce que l’application demande avant que quoi que ce soit soit partagé.",
+      "signIn": "Se connecter avec Hypha",
+      "signingIn": "Connexion en cours...",
+      "denied": {
+        "notEnabled": "Ce compte n’est pas activé pour ce service.",
+        "noProfile": "Terminez d’abord la création de votre profil Hypha, puis réessayez.",
+        "help": "Si vous pensez qu’il s’agit d’une erreur, contactez l’équipe Hypha."
+      },
+      "useDifferentAccount": "Utiliser un autre compte",
+      "expired": "Votre connexion a expiré. Veuillez vous reconnecter.",
+      "signInAgain": "Se reconnecter",
+      "unavailable": "La connexion d’applications n’est pas disponible pour le moment. Veuillez réessayer plus tard.",
+      "tryAgain": "Réessayer",
+      "failed": "La connexion n’a pas abouti. Veuillez réessayer."
+    },
+    "approval": {
+      "expiredTitle": "Approbation expirée",
+      "expired": "Cette approbation a expiré. Retournez dans l’application et recommencez.",
+      "invalidTitle": "Approbation non valide",
+      "invalid": "Ce lien d’approbation n’est pas valide. Retournez dans l’application et recommencez."
+    },
+    "consent": {
+      "title": "Approuver {name} ?",
+      "signedInAs": "Connecté en tant que {name}. Cette application demande à :",
+      "approve": "Approuver",
+      "deny": "Refuser",
+      "failed": "Une erreur s’est produite. Veuillez recommencer depuis l’application.",
+      "client": {
+        "cimd": "Hypha n’a pas approuvé cette application. Elle est exécutée depuis <strong>{host}</strong> : Hypha a lu ses informations à cette adresse, donc l’adresse est réelle. Rien d’autre n’a été vérifié. Elle se présente sous le nom <strong>{name}</strong>. Après votre approbation, vous serez renvoyé vers <strong>{redirectHost}</strong>. N’approuvez que les applications que vous avez lancées vous-même.",
+        "dcr": "Hypha n’a pas approuvé cette application. Elle s’est enregistrée elle-même et a choisi son propre nom, <strong>{name}</strong>, que Hypha n’a pas vérifié : n’importe qui peut enregistrer n’importe quel nom, et Hypha ne peut pas savoir qui se trouve derrière cette application. Après votre approbation, vous serez renvoyé vers <strong>{redirectHost}</strong>. N’approuvez que les applications que vous avez lancées vous-même.",
+        "registered": "Hypha n’a pas vérifié cette application. Elle se présente sous le nom <strong>{name}</strong>. Après votre approbation, vous serez renvoyé vers <strong>{redirectHost}</strong>. N’approuvez que les applications que vous avez lancées vous-même.",
+        "registeredWithHost": "Hypha n’a pas vérifié cette application. Elle se présente sous le nom <strong>{name}</strong> et s’identifie depuis <strong>{host}</strong>. Après votre approbation, vous serez renvoyé vers <strong>{redirectHost}</strong>. N’approuvez que les applications que vous avez lancées vous-même."
+      },
+      "scopes": {
+        "spacesRead": {
+          "title": "Lire les spaces Hypha",
+          "detail": "Voir les spaces que vous pouvez voir sur Hypha : leurs détails, leurs membres et leur activité publique."
+        },
+        "agreementsVote": {
+          "title": "Préparer des votes à approuver",
+          "detail": "Vous demander de voter sur des propositions dans vos spaces. Rien n’est émis tant que vous n’avez pas approuvé chaque vote sur Hypha et signé avec votre wallet.",
+          "warning": "Hypha n’a pas approuvé cette application. Si vous l’autorisez, elle pourra vous demander de voter en votre nom. N’autorisez que si vous faites confiance à cette application et l’avez lancée vous-même."
+        },
+        "offlineAccess": {
+          "title": "Rester connecté",
+          "detail": "Garder cette application connectée sans vous redemander de vous connecter, jusqu’à ce que vous la déconnectiez."
+        },
+        "unknown": {
+          "detail": "Une autorisation inconnue."
+        }
+      }
+    }
   }
 }

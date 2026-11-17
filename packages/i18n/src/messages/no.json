@@ -5921,5 +5921,61 @@
       "load": "Kunne ikke laste oppdrag.",
       "retry": "Prøv igjen"
     }
+  },
+  "AuthServer": {
+    "login": {
+      "title": "Koble en app til Hypha",
+      "intro": "Logg inn med Hypha-kontoen din for å fortsette. Du ser hva appen ber om før noe deles.",
+      "signIn": "Logg inn med Hypha",
+      "signingIn": "Logger inn...",
+      "denied": {
+        "notEnabled": "Denne kontoen er ikke aktivert for denne tjenesten.",
+        "noProfile": "Fullfør Hypha-profilen din først, og prøv deretter igjen.",
+        "help": "Tror du dette er en feil, kontakt Hypha-teamet."
+      },
+      "useDifferentAccount": "Bruk en annen konto",
+      "expired": "Innloggingen din har utløpt. Logg inn på nytt.",
+      "signInAgain": "Logg inn på nytt",
+      "unavailable": "Det er ikke mulig å koble til apper akkurat nå. Prøv igjen senere.",
+      "tryAgain": "Prøv igjen",
+      "failed": "Innloggingen ble ikke fullført. Prøv igjen."
+    },
+    "approval": {
+      "expiredTitle": "Godkjenningen er utløpt",
+      "expired": "Denne godkjenningen har utløpt. Gå tilbake til appen og start på nytt.",
+      "invalidTitle": "Ugyldig godkjenning",
+      "invalid": "Denne godkjenningslenken er ikke gyldig. Gå tilbake til appen og start på nytt."
+    },
+    "consent": {
+      "title": "Godkjenn {name}?",
+      "signedInAs": "Innlogget som {name}. Denne appen ber om å:",
+      "approve": "Godkjenn",
+      "deny": "Avslå",
+      "failed": "Noe gikk galt. Start på nytt fra appen.",
+      "client": {
+        "cimd": "Hypha har ikke godkjent denne appen. Den kjøres fra <strong>{host}</strong>: Hypha leste opplysningene fra den adressen, så adressen er ekte. Ingenting annet om appen er kontrollert. Den kaller seg <strong>{name}</strong>. Etter at du har godkjent, sendes du tilbake til <strong>{redirectHost}</strong>. Godkjenn bare apper du har startet selv.",
+        "dcr": "Hypha har ikke godkjent denne appen. Den har registrert seg selv og valgt sitt eget navn, <strong>{name}</strong>, som Hypha ikke har kontrollert: hvem som helst kan registrere et hvilket som helst navn, og Hypha kan ikke se hvem som står bak appen. Etter at du har godkjent, sendes du tilbake til <strong>{redirectHost}</strong>. Godkjenn bare apper du har startet selv.",
+        "registered": "Hypha har ikke verifisert denne appen. Den kaller seg <strong>{name}</strong>. Etter at du har godkjent, sendes du tilbake til <strong>{redirectHost}</strong>. Godkjenn bare apper du har startet selv.",
+        "registeredWithHost": "Hypha har ikke verifisert denne appen. Den kaller seg <strong>{name}</strong> og identifiserer seg fra <strong>{host}</strong>. Etter at du har godkjent, sendes du tilbake til <strong>{redirectHost}</strong>. Godkjenn bare apper du har startet selv."
+      },
+      "scopes": {
+        "spacesRead": {
+          "title": "Lese Hypha-spaces",
+          "detail": "Se spacene du kan se på Hypha: detaljer, medlemmer og offentlig aktivitet."
+        },
+        "agreementsVote": {
+          "title": "Forberede stemmer du kan godkjenne",
+          "detail": "Be deg stemme på forslag i spacene dine. Ingenting avgis før du godkjenner hver stemme på Hypha og signerer den med wallet-en din.",
+          "warning": "Hypha har ikke godkjent denne appen. Hvis du tillater dette, kan den be deg stemme i ditt navn. Tillat det bare hvis du stoler på denne appen og startet dette selv."
+        },
+        "offlineAccess": {
+          "title": "Forbli tilkoblet",
+          "detail": "Holde denne appen tilkoblet uten å be deg logge inn på nytt, til du kobler den fra."
+        },
+        "unknown": {
+          "detail": "En ukjent tillatelse."
+        }
+      }
+    }
   }
 }
