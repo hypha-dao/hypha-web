@@ -27,9 +27,10 @@ run(
       await h.seedPeople(s.pool, [h.PERSON]);
       await s.pool.query(
         `insert into as_oauth_client (id, "clientId", name, "redirectUris", scopes, "tokenEndpointAuthMethod",
-         "grantTypes", "responseTypes", "requirePKCE", "skipConsent", "createdAt", "updatedAt")
+         "grantTypes", "responseTypes", "requirePKCE", "skipConsent", "createdAt", "updatedAt", metadata)
        values ('ta1', $1, 'Tier A App', $2::jsonb, $3::jsonb, 'none',
-         '["authorization_code","refresh_token"]', '["code"]', true, false, now(), now())`,
+         '["authorization_code","refresh_token"]', '["code"]', true, false, now(), now(),
+         '{"registration":"registered"}'::jsonb)`,
         [
           TIER_A,
           JSON.stringify([TIER_A_CB]),
@@ -107,9 +108,9 @@ run(
       });
 
     it('classifies the three ways a client can be identified', () => {
-      expect(classifyClient('abc123', 'dcr')).toBe('dcr');
-      expect(classifyClient('https://claude.ai/x.json', null)).toBe('cimd');
-      expect(classifyClient('tier-a-app', null)).toBe('registered');
+      expect(classifyClient({ registration: 'dcr' })).toBe('dcr');
+      expect(classifyClient({ clientDiscoveryId: 'cimd' })).toBe('cimd');
+      expect(classifyClient({ registration: 'registered' })).toBe('registered');
     });
 
     it('pre-registered: every requested scope starts ticked, no warning', async () => {
@@ -187,6 +188,23 @@ run(
       expect(String(decodeJwt(plain.body.access_token).scope)).not.toContain(
         'agreements:vote',
       );
+    });
+
+    it('declining offline_access sticks: the flow completes and no refresh token is issued', async () => {
+      const id = await register();
+      const f = await toConsent(id, CB);
+      const c = await h.consent(
+        s,
+        f.jar,
+        f.next.search.slice(1),
+        'spaces:read',
+      );
+      const code = new URL(c.body.url).searchParams.get('code');
+      expect(code, 'authorization completes with a code').toBeTruthy();
+      const t = await exchange(f, code!);
+      expect(t.res.status).toBe(200);
+      expect(t.body.scope.split(' ')).toEqual(['spaces:read']);
+      expect(t.body.refresh_token).toBeUndefined();
     });
 
     it('the person can tick it: the grant then includes it, token and refresh', async () => {

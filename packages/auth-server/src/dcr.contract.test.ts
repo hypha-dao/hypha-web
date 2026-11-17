@@ -81,9 +81,19 @@ run('dynamic client registration (experiment): limits and flow', () => {
   });
 
   it('works from another origin and ignores a session cookie (never owned, clientPrivileges not consulted)', async () => {
+    // A real, valid session cookie: the person is signed in, and registration must still not
+    // make them the owner.
+    const jar = new h.CookieJar();
+    const pkce = h.makePkce();
+    const u = h.authorizeUrl(pkce);
+    const a = await s.handler(h.req(u.pathname + u.search, { jar }));
+    const q = new URL(a.headers.get('location')!, h.ISSUER).search.slice(1);
+    const login = await h.signIn(s, jar, q);
+    expect(login.res.status).toBe(200);
+    expect(jar.header()).toContain('hypha_as.session_token');
     const res = await register(ok, {
       origin: 'http://localhost:6274',
-      cookie: 'hypha_as.session_token=whatever',
+      cookie: jar.header(),
     });
     expect(res.status).toBe(201);
     const { rows } = await s.pool.query(

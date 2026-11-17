@@ -185,7 +185,7 @@ run('authorization server: protocol, gate, revocation, storage', () => {
       expect(newest.body.error).toBe('invalid_grant');
     });
 
-    it('inside the window a request with a different resource is refused without a replay', async () => {
+    it('inside the window a request with a narrower scope is refused without a replay', async () => {
       const f = await h.fullFlow(s);
       const rt0 = f.token!.body.refresh_token as string;
       expect((await refresh(rt0)).res.status).toBe(200);
@@ -202,6 +202,34 @@ run('authorization server: protocol, gate, revocation, storage', () => {
         other.body.error,
       );
       expect(other.body.access_token).toBeUndefined();
+    });
+
+    it('inside the window a request for a different resource is refused without a replay', async () => {
+      const OTHER_RESOURCE = 'https://other-resource.example.com/api';
+      // Same secret and database as `s`, but two accepted resources, so the second one is a real
+      // change of resource and not an unknown one.
+      const two = await h.makeServer({
+        AUTH_SERVER_SECRET: s.config.secret,
+        AUTH_SERVER_RESOURCES: `${h.RESOURCE},${OTHER_RESOURCE}`,
+      });
+      try {
+        const f = await h.fullFlow(two);
+        const rt0 = f.token!.body.refresh_token as string;
+        const refreshFor = (resource: string) =>
+          h.tokenRequest(two, {
+            grant_type: 'refresh_token',
+            refresh_token: rt0,
+            client_id: h.CLIENT_ID,
+            resource,
+          });
+        expect((await refreshFor(h.RESOURCE)).res.status).toBe(200);
+        const other = await refreshFor(OTHER_RESOURCE);
+        expect(other.res.status).toBeGreaterThanOrEqual(400);
+        expect(other.body.access_token).toBeUndefined();
+        expect(other.body.refresh_token).toBeUndefined();
+      } finally {
+        await two.pool.end();
+      }
     });
   });
 
@@ -227,6 +255,40 @@ run('authorization server: protocol, gate, revocation, storage', () => {
     expect(f.stage).toBe('done');
     expect(f.token!.body.refresh_token).toBeTruthy();
     expect(String(f.token!.body.scope).split(' ')).toContain('offline_access');
+  });
+
+  it('two people with the same email can both sign in; the real address is not copied', async () => {
+    const A = 'did:privy:sameemail-a';
+    const B = 'did:privy:sameemail-b';
+    const two = await h.makeServer({
+      AUTH_SERVER_SECRET: s.config.secret,
+      AUTH_SERVER_ALLOWED_PERSON_IDS: `${A},${B}`,
+    });
+    await h.seedPeople(two.pool, [A, B]);
+    await two.pool.query(
+      `update people set email = 'shared@example.org' where sub in ($1, $2)`,
+      [A, B],
+    );
+    for (const person of [A, B]) {
+      const jar = new h.CookieJar();
+      const pkce = h.makePkce();
+      const u = h.authorizeUrl(pkce);
+      const a = await two.handler(h.req(u.pathname + u.search, { jar }));
+      const q = new URL(a.headers.get('location')!, h.ISSUER).search.slice(1);
+      const login = await h.signIn(two, jar, q, person);
+      expect(login.res.status, person).toBe(200);
+    }
+    const { rows } = await two.pool.query(
+      `select id, email, "emailVerified" from as_user where id in ($1, $2) order by id`,
+      [A, B],
+    );
+    expect(rows).toHaveLength(2);
+    expect(new Set(rows.map((r) => r.email)).size).toBe(2);
+    for (const r of rows) {
+      expect(r.email).not.toBe('shared@example.org');
+      expect(r.emailVerified).toBe(false);
+    }
+    await two.pool.end();
   });
 
   it('identity link: Privy is linked on first login; another provider is never linked automatically', async () => {
