@@ -49,7 +49,7 @@ run(
     afterAll(async () => {
       await s.pool.end();
     });
-    beforeEach(() => resetRegistrationLimiter());
+    beforeEach(() => resetRegistrationLimiter(s.pool));
 
     const register = async () => {
       const res = await handle(

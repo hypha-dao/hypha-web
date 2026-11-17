@@ -76,3 +76,4 @@ Without the variable, `pnpm test` runs the tests that need no database and skips
 - **After a disconnect** the refresh token stops working at once, but an access token already issued stays valid for up to its 10 minute lifetime. The allowlist (`AUTH_SERVER_ALLOWED_PERSON_IDS`) is checked on every request.
 - **`AUTH_SERVER_SECRET`** also encrypts the stored signing key. Rotating it means clearing the `as_jwks` table, after which everyone signs in again.
 - **Client address:** the per-address registration budget uses only Vercel's `x-vercel-forwarded-for` header, and only when `VERCEL` is set. Anywhere else every request counts as one address.
+- **Registration budgets:** both the per-address and the server-wide hourly budgets are reserved in the database (`as_registration_slot`) under an advisory lock, so they are exact across instances and a concurrent burst cannot exceed them. Addresses are stored only as a hash and slots expire after an hour.

@@ -15,6 +15,7 @@ import {
   REGISTRATION_MAX_BODY_BYTES,
   REGISTRATION_PER_IP_PER_HOUR,
   purgeUnusedRegisteredClients,
+  reserveRegistrationSlot,
   resetRegistrationLimiter,
 } from './registration';
 
@@ -42,7 +43,7 @@ run('dynamic client registration (experiment): limits and flow', () => {
   afterAll(async () => {
     await s.pool.end();
   });
-  beforeEach(() => resetRegistrationLimiter());
+  beforeEach(() => resetRegistrationLimiter(s.pool));
 
   const register = (body: unknown, headers: Record<string, string> = {}) =>
     handle(
@@ -137,7 +138,7 @@ run('dynamic client registration (experiment): limits and flow', () => {
       ['not json', '{nope'],
     ];
     for (const [name, body] of bad) {
-      resetRegistrationLimiter(); // rejected attempts count against the per-address budget
+      await resetRegistrationLimiter(s.pool); // rejected attempts count against the per-address budget
       const res = await register(body);
       expect(res.status, name).toBe(400);
       const json = await res.json();
@@ -220,20 +221,35 @@ run('dynamic client registration (experiment): limits and flow', () => {
     const limited = await register(ok, hdr);
     expect(limited.status).toBe(429);
     expect(limited.headers.get('retry-after')).toBeTruthy();
-    resetRegistrationLimiter();
+    await resetRegistrationLimiter(s.pool);
     await s.pool.query(
-      `insert into as_oauth_client (id, "clientId", "redirectUris", metadata, "createdAt", "updatedAt")
-       select 'g'||n, 'g'||n, '[]'::jsonb, '{"registration":"dcr"}'::jsonb, now(), now()
-         from generate_series(1, $1::int) n on conflict do nothing`,
+      `insert into as_registration_slot (bucket) select 'global' from generate_series(1, $1::int)`,
       [REGISTRATION_GLOBAL_PER_HOUR],
     );
     expect(
       (await register(ok, { 'x-vercel-forwarded-for': '198.51.100.7' })).status,
     ).toBe(429);
     vi.unstubAllEnvs();
-    await s.pool.query(
-      `delete from as_oauth_client where "clientId" like 'g%'`,
+  });
+
+  it('reservations are atomic: a concurrent burst never exceeds the limit', async () => {
+    const results = await Promise.all(
+      Array.from({ length: 25 }, () =>
+        reserveRegistrationSlot(s.pool, 'burst', 5),
+      ),
     );
+    expect(results.filter(Boolean)).toHaveLength(5);
+    const { rows } = await s.pool.query(
+      "select count(*)::int as n from as_registration_slot where bucket = 'burst'",
+    );
+    expect(rows[0].n).toBe(5);
+  });
+
+  it('expired reservations free the budget', async () => {
+    await s.pool.query(
+      "insert into as_registration_slot (bucket, \"createdAt\") select 'old', now() - interval '2 hours' from generate_series(1, 5)",
+    );
+    expect(await reserveRegistrationSlot(s.pool, 'old', 5)).toBe(true);
   });
 
   it('cleanup removes only old, unused registered clients', async () => {
@@ -344,8 +360,6 @@ run('dynamic client registration: the kill switch', () => {
       (await handle(h.req('/.well-known/oauth-authorization-server'))).json();
     return { srv, handle, post, preflight, meta };
   };
-
-  beforeEach(() => resetRegistrationLimiter());
 
   it('is off in code and for anything but the exact string "true"', async () => {
     for (const flag of [undefined, '', 'TRUE', 'True', '1', 'yes', ' true']) {

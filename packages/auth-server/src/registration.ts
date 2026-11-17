@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { AUTH_SERVER_SCOPES } from './config';
 import type { AuthDbPool } from './db';
 import { redactingLog } from './redact';
@@ -19,7 +20,7 @@ export const REGISTRATION_MAX_BODY_BYTES = 8 * 1024;
 export const REGISTRATION_MAX_REDIRECT_URIS = 5;
 export const REGISTRATION_MAX_URL_LENGTH = 2048;
 export const REGISTRATION_MAX_NAME_LENGTH = 100;
-/** Registrations per client address per hour (best effort: memory of one server instance). */
+/** Registrations per client address per hour (counted in the database, all instances). */
 export const REGISTRATION_PER_IP_PER_HOUR = 10;
 /** Registrations per hour over the whole server, counted in the database (all instances). */
 export const REGISTRATION_GLOBAL_PER_HOUR = 100;
@@ -191,8 +192,6 @@ export function cleanRegistrationBody(
   return { ok: true, body, scopes };
 }
 
-const perIpHits = new Map<string, number[]>();
-
 /**
  * The address of the caller, for the per-address budget. Only the platform header is trusted, and
  * only on Vercel, where the platform sets it and overwrites anything the caller sent. Anywhere
@@ -203,24 +202,57 @@ export function clientAddress(request: Request): string {
   return request.headers.get('x-vercel-forwarded-for')?.trim() || 'unknown';
 }
 
-/** Best-effort per-address limiter. Returns true when the address is over its hourly budget. */
-export function overIpBudget(address: string, now = Date.now()): boolean {
-  const since = now - 60 * 60 * 1000;
-  const hits = (perIpHits.get(address) ?? []).filter((t) => t > since);
-  if (hits.length >= REGISTRATION_PER_IP_PER_HOUR) {
-    perIpHits.set(address, hits);
-    return true;
+/** Serialises every reservation across all instances (arbitrary constant, only used here). */
+const REGISTRATION_LOCK_KEY = 2608001;
+
+/**
+ * Takes one slot of an hourly budget, atomically across instances: under a transaction-scoped
+ * advisory lock it drops expired slots, counts the bucket and inserts a slot only while under the
+ * limit. Two concurrent requests can never both take the last slot. A slot stays taken even if
+ * the registration later fails, so failed attempts count too. Returns false when over budget.
+ */
+export async function reserveRegistrationSlot(
+  pool: AuthDbPool,
+  bucket: string,
+  limit: number,
+): Promise<boolean> {
+  const client = await pool.connect();
+  try {
+    await client.query('begin');
+    await client.query('select pg_advisory_xact_lock($1)', [
+      REGISTRATION_LOCK_KEY,
+    ]);
+    await client.query(
+      `delete from as_registration_slot where "createdAt" < now() - interval '1 hour'`,
+    );
+    const { rows } = await client.query(
+      'select count(*)::int as n from as_registration_slot where bucket = $1',
+      [bucket],
+    );
+    const allowed = (rows[0]?.n ?? 0) < limit;
+    if (allowed)
+      await client.query(
+        'insert into as_registration_slot (bucket) values ($1)',
+        [bucket],
+      );
+    await client.query('commit');
+    return allowed;
+  } catch (error) {
+    await client.query('rollback').catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
   }
-  hits.push(now);
-  perIpHits.set(address, hits);
-  if (perIpHits.size > 5000) {
-    for (const [k, v] of perIpHits)
-      if (!v.some((t) => t > since)) perIpHits.delete(k);
-  }
-  return false;
 }
-export function resetRegistrationLimiter() {
-  perIpHits.clear();
+
+/** The address is stored only as a hash, and only for an hour. */
+export const addressBucket = (address: string) =>
+  `ip:${createHash('sha256').update(address).digest('hex')}`;
+export const GLOBAL_BUCKET = 'global';
+
+/** For tests: forget every reservation. */
+export async function resetRegistrationLimiter(pool: AuthDbPool) {
+  await pool.query('delete from as_registration_slot');
 }
 
 async function readCappedBody(request: Request): Promise<string | null> {
@@ -267,7 +299,13 @@ export async function guardRegistration(
       'too many registrations, try again later',
       { 'retry-after': '3600' },
     );
-  if (overIpBudget(clientAddress(request))) {
+  if (
+    !(await reserveRegistrationSlot(
+      pool,
+      addressBucket(clientAddress(request)),
+      REGISTRATION_PER_IP_PER_HOUR,
+    ))
+  ) {
     redactingLog('warn', 'registration refused: per-address limit');
     return tooMany();
   }
@@ -283,11 +321,15 @@ export async function guardRegistration(
   const cleaned = cleanRegistrationBody(parsed);
   if (!cleaned.ok) return cleaned;
 
-  const { rows } = await pool.query(
-    `select count(*)::int as n from as_oauth_client
-      where metadata->>'registration' = 'dcr' and "createdAt" > now() - interval '1 hour'`,
-  );
-  if ((rows[0]?.n ?? 0) >= REGISTRATION_GLOBAL_PER_HOUR) {
+  // Reserved only for a request that passed validation, so malformed calls cannot use up the
+  // server-wide budget for everyone else (they still count against their own address).
+  if (
+    !(await reserveRegistrationSlot(
+      pool,
+      GLOBAL_BUCKET,
+      REGISTRATION_GLOBAL_PER_HOUR,
+    ))
+  ) {
     redactingLog('warn', 'registration refused: global limit');
     return tooMany();
   }

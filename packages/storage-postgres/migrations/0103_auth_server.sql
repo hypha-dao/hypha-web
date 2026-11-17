@@ -97,3 +97,9 @@ ALTER TABLE "as_oauth_consent" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "as_oauth_client_assertion" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
 ALTER TABLE "as_identity" ENABLE ROW LEVEL SECURITY;
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "as_registration_slot" ("id" bigserial primary key, "bucket" text not null, "createdAt" timestamptz default CURRENT_TIMESTAMP not null);
+--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "as_registration_slot_bucket_idx" on "as_registration_slot" ("bucket", "createdAt");
+--> statement-breakpoint
+ALTER TABLE "as_registration_slot" ENABLE ROW LEVEL SECURITY;

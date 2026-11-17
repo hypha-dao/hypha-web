@@ -269,6 +269,6 @@ export async function fullFlow(
 
 export async function resetAsTables(pool: Harness['pool']) {
   await pool.query(
-    'truncate as_identity, as_jwks, as_oauth_consent, as_oauth_access_token, as_oauth_refresh_token, as_oauth_client, as_session, as_account, as_user, as_verification restart identity cascade',
+    'truncate as_registration_slot, as_identity, as_jwks, as_oauth_consent, as_oauth_access_token, as_oauth_refresh_token, as_oauth_client, as_session, as_account, as_user, as_verification restart identity cascade',
   );
 }

@@ -37,7 +37,7 @@ run('CORS: narrow, per endpoint', () => {
   afterAll(async () => {
     await s.pool.end();
   });
-  beforeEach(() => resetRegistrationLimiter());
+  beforeEach(() => resetRegistrationLimiter(s.pool));
 
   const call = (path: string, init: RequestInit = {}) =>
     handle(h.req(path, init));
