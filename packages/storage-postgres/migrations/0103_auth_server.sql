@@ -95,3 +95,5 @@ ALTER TABLE "as_oauth_access_token" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "as_oauth_consent" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
 ALTER TABLE "as_oauth_client_assertion" ENABLE ROW LEVEL SECURITY;
+--> statement-breakpoint
+ALTER TABLE "as_identity" ENABLE ROW LEVEL SECURITY;
