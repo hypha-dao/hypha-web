@@ -84,10 +84,9 @@ describe('detailView on the resolver result', () => {
     expect(embedView(['full-app'])).toBe('full-app');
   });
 
-  it('embed, a Space approved by two clients: embedded wins if any says so', () => {
+  it('embed, a Space approved by two clients: no client named means the default', () => {
     expect(embedView(['full-app', 'embedded'])).toBe('embedded');
-    expect(embedView(['full-app', undefined])).toBe('embedded');
-    expect(embedView(['full-app', 'full-app'])).toBe('full-app');
+    expect(embedView(['full-app', 'full-app'])).toBe('embedded');
   });
 
   it('host: the owning client value, default embedded', () => {

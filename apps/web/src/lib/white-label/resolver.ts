@@ -11,9 +11,9 @@ import {
 } from './api-allowlist';
 import { isValidSlug, normaliseHost } from './config';
 import type {
-  CreateAction,
   ResolveDecision,
   ResolveOptions,
+  WhiteLabelClientRecord,
   WhiteLabelConfig,
   WhiteLabelHostClientRecord,
   WhiteLabelHostRecord,
@@ -313,33 +313,31 @@ export function resolve(
     return { kind: 'not-found', reason: 'unapproved-space' };
   }
 
-  const clientIds: string[] = [];
+  const approving = config.clients.filter((client) =>
+    client.spaces.some((space) => space.slug === slug),
+  );
+  const clientIds = approving.map((client) => client.id);
+  if (approving.length === 0) {
+    return { kind: 'not-found', reason: 'unapproved-space' };
+  }
+  // One client's settings apply, never a mix: the one the URL names (it must
+  // approve this Space), else the only approving client. With several approving
+  // and none named, defaults apply (below) and the origins are their union, so
+  // the page can load.
+  const named = options.clientParam ? options.clientParam : null;
+  let selected: WhiteLabelClientRecord | null = null;
+  if (named !== null) {
+    selected = approving.find((client) => client.id === named) ?? null;
+    if (!selected) return { kind: 'not-found', reason: 'unapproved-space' };
+  } else if (approving.length === 1) {
+    selected = approving[0] ?? null;
+  }
   const origins = new Set<string>();
-  // `embedded` wins when any approving client allows it (unset counts as it).
-  let embeddedDetails = false;
-  // `hide` wins: `full-app` only if every approving client says so.
-  let allFullApp = true;
-  // Intersection across the approving clients (a client with none empties it).
-  let createActions: CreateAction[] | null = null;
-  for (const client of config.clients) {
-    const matches = client.spaces.filter((s) => s.slug === slug);
-    if (matches.length === 0) continue;
-    clientIds.push(client.id);
-    if (client.unsupportedActions !== 'full-app') allFullApp = false;
-    const own = client.createActions ?? [];
-    createActions =
-      createActions === null
-        ? [...own]
-        : createActions.filter((action) => own.includes(action));
-    if ((client.detailView ?? 'embedded') === 'embedded') {
-      embeddedDetails = true;
-    }
-    for (const space of matches) {
+  for (const client of selected ? [selected] : approving) {
+    for (const space of client.spaces) {
+      if (space.slug !== slug) continue;
       for (const origin of space.framingOrigins) origins.add(origin);
     }
-  }
-  if (clientIds.length === 0) {
-    return { kind: 'not-found', reason: 'unapproved-space' };
   }
 
   // Optional locale segment right after the slug. Locale codes and section
@@ -372,11 +370,12 @@ export function resolve(
       .map(encodeURIComponent)
       .join('/')}`,
     clientIds,
+    ...(selected ? { clientId: selected.id } : {}),
     spaceSlug: slug,
     locale,
     framingOrigins: [...origins],
-    detailView: embeddedDetails ? 'embedded' : 'full-app',
-    unsupportedActions: allFullApp ? 'full-app' : 'hide',
-    createActions: createActions ?? [],
+    detailView: selected?.detailView ?? 'embedded',
+    unsupportedActions: selected?.unsupportedActions ?? 'hide',
+    createActions: [...(selected?.createActions ?? [])],
   };
 }

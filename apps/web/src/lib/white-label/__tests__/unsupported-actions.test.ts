@@ -110,21 +110,17 @@ describe('unsupportedActions on the resolver result', () => {
     );
   });
 
-  it('embed: hide wins across approving clients, unset counts as hide', () => {
+  it('embed: the selected client value; a single client is selected without the parameter', () => {
     const path = '/embed/s1';
     expect(result('app.example', path, embedConfig('full-app'))).toBe(
       'full-app',
     );
     expect(result('app.example', path, embedConfig(undefined))).toBe('hide');
-    expect(
-      result('app.example', path, embedConfig('full-app', 'full-app')),
-    ).toBe('full-app');
-    expect(result('app.example', path, embedConfig('full-app', 'hide'))).toBe(
-      'hide',
-    );
-    expect(
-      result('app.example', path, embedConfig('full-app', undefined)),
-    ).toBe('hide');
+  });
+
+  it('embed, two approving clients: no client named means the default, never a mix', () => {
+    const config = embedConfig('full-app', 'full-app');
+    expect(result('app.example', '/embed/s1', config)).toBe('hide');
   });
 
   it('the request header is stripped on the way in', () => {

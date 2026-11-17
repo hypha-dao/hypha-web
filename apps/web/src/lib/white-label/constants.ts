@@ -1,5 +1,10 @@
 /** Public prefix of the iframe delivery. */
 export const EMBED_PREFIX = 'embed';
+/**
+ * Query parameter that names the client in the iframe delivery (`/embed`). It
+ * picks one client's settings when several approve the same Space.
+ */
+export const WL_CLIENT_PARAM = 'client';
 /** Internal prefix of the white-label tree. Never served to outside requests. */
 export const INTERNAL_PREFIX = 'wl';
 /** First path segment of the app's own API. */
