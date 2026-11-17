@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { WL_TABS, showsTabBar, visibleNavKeys, type NavAvailability } from '..';
+import {
+  WL_TABS,
+  landingFallback,
+  sectionSegment,
+  showsTabBar,
+  visibleNavKeys,
+  type NavAvailability,
+} from '..';
 
 const NONE: NavAvailability = {
   energy: false,
@@ -64,5 +71,60 @@ describe('showsTabBar', () => {
     expect(showsTabBar([])).toBe(false);
     expect(showsTabBar(['overview'])).toBe(false);
     expect(showsTabBar(['overview', 'members'])).toBe(true);
+  });
+});
+
+describe('landing fallback', () => {
+  const none = {
+    energy: false,
+    coherence: true,
+    pipeline: false,
+    memory: true,
+  };
+  const all = { energy: true, coherence: true, pipeline: true, memory: true };
+
+  it('the landing is served: nothing to do', () => {
+    expect(landingFallback(['energy', 'members'], all)).toBeNull();
+    expect(landingFallback(['members', 'energy'], none)).toBeNull();
+    expect(landingFallback(undefined, none)).toBeNull();
+  });
+
+  it('the landing is not served: the first listed tab that is', () => {
+    expect(landingFallback(['energy', 'members', 'treasury'], none)).toBe(
+      'members',
+    );
+    expect(landingFallback(['energy', 'pipeline', 'treasury'], none)).toBe(
+      'treasury',
+    );
+  });
+
+  it('no listed tab is served: stay (null)', () => {
+    expect(landingFallback(['energy', 'pipeline'], none)).toBeNull();
+  });
+});
+
+describe('sectionSegment', () => {
+  const frame = { mode: 'embed', spaceSlug: 's1', lang: 'en' } as const;
+  const host = {
+    mode: 'host',
+    spaceSlug: 's1',
+    lang: 'en',
+    fullAppOrigin: 'https://app.example',
+  } as const;
+
+  it('bare paths name no section', () => {
+    for (const p of ['/embed/s1', '/embed/s1/en', '/embed/s1/en/']) {
+      expect(sectionSegment(frame, p), p).toBeUndefined();
+    }
+    for (const p of ['/', '/en']) {
+      expect(sectionSegment(host, p), p).toBeUndefined();
+    }
+  });
+
+  it('a path that names a section returns it', () => {
+    expect(sectionSegment(frame, '/embed/s1/en/members')).toBe('members');
+    expect(sectionSegment(frame, '/embed/s1/members')).toBe('members');
+    expect(sectionSegment(host, '/en/energy')).toBe('energy');
+    expect(sectionSegment(host, '/members')).toBe('members');
   });
 });

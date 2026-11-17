@@ -33,6 +33,7 @@ import {
 } from '@web/lib/white-label';
 import { WhiteLabelAuthControl } from '@web/components/white-label/auth-control';
 import { WhiteLabelSectionNav } from '@web/components/white-label/section-nav';
+import { WhiteLabelTabLandingGuard } from '@web/components/white-label/tab-landing-guard';
 
 import '@web/app/(main)/[lang]/_shared/space-accent.css';
 
@@ -143,6 +144,11 @@ export default async function WhiteLabelSpaceLayout({
                 />
               </div>
             ) : null}
+            <WhiteLabelTabLandingGuard
+              spaceSlug={slug}
+              coherenceEnabled={coherenceEnabled}
+              memoryEnabled={memoryEnabled}
+            />
             {showAuthControl ? <WhiteLabelAuthControl /> : null}
             {children}
           </div>

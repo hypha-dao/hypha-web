@@ -255,10 +255,17 @@ export function sectionFromPathname(
   ctx: WhiteLabelLinkContext,
   pathname: string,
 ): string {
+  return sectionSegment(ctx, pathname) ?? landingTab(ctx.tabs);
+}
+
+/** The section named by a browser pathname, `undefined` on the bare path (the landing). */
+export function sectionSegment(
+  ctx: WhiteLabelLinkContext,
+  pathname: string,
+): string | undefined {
   const all = pathname.split('/').filter(Boolean);
   const parts = ctx.mode === 'host' ? all : all.slice(2);
-  const section = parts[0] === ctx.lang ? parts[1] : parts[0];
-  return section ?? landingTab(ctx.tabs);
+  return parts[0] === ctx.lang ? parts[1] : parts[0];
 }
 
 /** Where a link that leaves the Space goes: the full app, not the page's own origin. */

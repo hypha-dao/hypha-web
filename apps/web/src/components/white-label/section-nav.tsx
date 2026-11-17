@@ -9,16 +9,14 @@ import {
   SPACE_DASHBOARD_BOARD_PARAM,
   SPACE_DASHBOARD_BOARD_VALUE,
   SPACE_SECTION_NAV_ICONS,
-  useActionStatus,
-  useSpaceEnergy,
   type SpaceSectionNavKey,
 } from '@hypha-platform/epics';
-import { useSpaceBySlug } from '@hypha-platform/core/client';
 
 import { sectionFromPathname, sectionHref } from '@web/lib/white-label/link';
 import { showsTabBar, visibleNavKeys } from '@web/lib/white-label/nav';
 import type { Tab } from '@web/lib/white-label/types';
 import { useWhiteLabel } from './white-label-provider';
+import { useTabAvailability } from './use-tab-availability';
 
 /**
  * Section menu of the white-label tree. Same sections as the main app's Space
@@ -40,30 +38,23 @@ export function WhiteLabelSectionNav({
   const tNav = useTranslations('SelectNavigationAction');
   const tTreasury = useTranslations('TreasuryTab');
   const tCoherence = useTranslations('CoherenceTab');
-  const { data: energy } = useSpaceEnergy(spaceSlug);
-  const { space } = useSpaceBySlug(spaceSlug);
-  // The pipeline is members only: on a delivery without login it never has data.
-  const pipelineLive = useActionStatus('pipeline-data') === 'live';
+  const { available } = useTabAvailability(spaceSlug, {
+    coherenceEnabled,
+    memoryEnabled,
+  });
 
   // The client's tabs in its order, minus what this Space cannot serve.
   const clientTabs = ctx?.tabs;
   const tabsKey = clientTabs?.join(',');
   const keys: Tab[] = React.useMemo(
-    () =>
-      visibleNavKeys(clientTabs, {
-        energy: energy?.enabled === true,
-        coherence: coherenceEnabled,
-        pipeline: Boolean(space?.pipelineEnabled) && pipelineLive,
-        memory: memoryEnabled,
-      }),
+    () => visibleNavKeys(clientTabs, available),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       tabsKey,
-      energy?.enabled,
-      coherenceEnabled,
-      space?.pipelineEnabled,
-      pipelineLive,
-      memoryEnabled,
+      available.energy,
+      available.coherence,
+      available.pipeline,
+      available.memory,
     ],
   );
 

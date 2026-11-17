@@ -1,4 +1,5 @@
 import { WL_TABS } from './constants';
+import { landingTab } from './tabs';
 import type { Tab } from './types';
 
 /** What the Space decides about the tabs that exist only for some Spaces. */
@@ -19,25 +20,41 @@ export type NavAvailability = {
  * signals, pipeline, memory). Pure. A listed tab the Space cannot serve is
  * simply not shown; nothing else changes.
  */
+export function isTabAvailable(tab: Tab, available: NavAvailability): boolean {
+  switch (tab) {
+    case 'energy':
+      return available.energy;
+    case 'coherence':
+      return available.coherence;
+    case 'pipeline':
+      return available.pipeline;
+    case 'memory':
+      return available.memory;
+    default:
+      return true;
+  }
+}
+
 export function visibleNavKeys(
   tabs: readonly Tab[] | undefined,
   available: NavAvailability,
 ): Tab[] {
   const offered: readonly Tab[] = tabs ?? WL_TABS;
-  return offered.filter((tab) => {
-    switch (tab) {
-      case 'energy':
-        return available.energy;
-      case 'coherence':
-        return available.coherence;
-      case 'pipeline':
-        return available.pipeline;
-      case 'memory':
-        return available.memory;
-      default:
-        return true;
-    }
-  });
+  return offered.filter((tab) => isTabAvailable(tab, available));
+}
+
+/**
+ * Where a visitor on the bare path should go when the landing tab (the first
+ * the client lists) is one this Space cannot serve: the first listed tab it
+ * can. `null` when the landing is served, or when no listed tab is (nothing
+ * better to show, the page stays as it is).
+ */
+export function landingFallback(
+  tabs: readonly Tab[] | undefined,
+  available: NavAvailability,
+): Tab | null {
+  if (isTabAvailable(landingTab(tabs), available)) return null;
+  return visibleNavKeys(tabs, available)[0] ?? null;
 }
 
 /**
