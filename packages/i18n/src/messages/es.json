@@ -5930,5 +5930,62 @@
       "load": "No se pudieron cargar las misiones.",
       "retry": "Reintentar"
     }
+  },
+  "AuthServer": {
+    "login": {
+      "title": "Conectar una app a Hypha",
+      "intro": "Inicia sesión con tu cuenta de Hypha para continuar. Verás lo que la app pide antes de que se comparta nada.",
+      "signIn": "Iniciar sesión con Hypha",
+      "signingIn": "Iniciando sesión...",
+      "denied": {
+        "notEnabled": "Esta cuenta no está habilitada para este servicio.",
+        "noProfile": "Primero termina de crear tu perfil de Hypha y vuelve a intentarlo.",
+        "help": "Si crees que es un error, contacta con el equipo de Hypha."
+      },
+      "useDifferentAccount": "Usar otra cuenta",
+      "expired": "Tu inicio de sesión ha caducado. Inicia sesión de nuevo.",
+      "signInAgain": "Iniciar sesión de nuevo",
+      "unavailable": "Conectar apps no está disponible ahora. Inténtalo más tarde.",
+      "tryAgain": "Reintentar",
+      "failed": "No se completó el inicio de sesión. Inténtalo de nuevo."
+    },
+    "approval": {
+      "expiredTitle": "Aprobación caducada",
+      "expired": "Esta aprobación ha caducado. Vuelve a la app y empieza de nuevo.",
+      "invalidTitle": "Aprobación no válida",
+      "invalid": "Este enlace de aprobación no es válido. Vuelve a la app y empieza de nuevo.",
+      "accountChanged": "Tu cuenta cambió en otra pestaña, así que esta aprobación no se guardó. Para usar otra cuenta, cierra sesión primero y vuelve a empezar desde la app."
+    },
+    "consent": {
+      "title": "¿Aprobar {name}?",
+      "signedInAs": "Sesión iniciada como {name}. Esta app solicita:",
+      "approve": "Aprobar",
+      "deny": "Rechazar",
+      "failed": "Algo salió mal. Empieza de nuevo desde la app.",
+      "client": {
+        "cimd": "Hypha no ha aprobado esta app. Se ejecuta desde <strong>{host}</strong>: Hypha leyó sus datos en esa dirección, así que la dirección es real. No se ha comprobado nada más de la app. Se hace llamar <strong>{name}</strong>. Tras aprobar, volverás a <strong>{redirectHost}</strong>. Aprueba solo apps que hayas iniciado tú.",
+        "dcr": "Hypha no ha aprobado esta app. Se registró sola y eligió su propio nombre, <strong>{name}</strong>, que Hypha no ha comprobado: cualquiera puede registrar cualquier nombre y Hypha no puede saber quién está detrás de esta app. Tras aprobar, volverás a <strong>{redirectHost}</strong>. Aprueba solo apps que hayas iniciado tú.",
+        "registered": "Hypha no ha verificado esta app. Se hace llamar <strong>{name}</strong>. Tras aprobar, volverás a <strong>{redirectHost}</strong>. Aprueba solo apps que hayas iniciado tú.",
+        "registeredWithHost": "Hypha no ha verificado esta app. Se hace llamar <strong>{name}</strong> y se identifica desde <strong>{host}</strong>. Tras aprobar, volverás a <strong>{redirectHost}</strong>. Aprueba solo apps que hayas iniciado tú."
+      },
+      "scopes": {
+        "spacesRead": {
+          "title": "Leer los spaces de Hypha",
+          "detail": "Ver los spaces que puedes ver en Hypha: sus detalles, miembros y actividad pública."
+        },
+        "agreementsVote": {
+          "title": "Preparar votos para que los apruebes",
+          "detail": "Pedirte que votes en propuestas de tus spaces. No se emite nada hasta que apruebes cada voto en Hypha y lo firmes con tu wallet.",
+          "warning": "Hypha no ha aprobado esta app. Si lo permites, puede pedirte que votes en tu nombre. Permítelo solo si confías en esta app y la iniciaste tú."
+        },
+        "offlineAccess": {
+          "title": "Mantener la conexión",
+          "detail": "Mantener esta app conectada sin pedirte que inicies sesión de nuevo, hasta que la desconectes."
+        },
+        "unknown": {
+          "detail": "Un permiso desconocido."
+        }
+      }
+    }
   }
 }

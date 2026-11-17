@@ -345,6 +345,7 @@ export const config = {
     // lib/white-label); on the main host the middleware returns `next()` for it.
     // `_matrix` — inbound Matrix Application Service transaction pushes (#2483).
     // Rewritten in next.config to /api/matrix/appservice; must skip i18n + CSP here.
-    '/((?!_matrix|placeholder|icon|brand|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
+    // `auth/` — authorization server login and consent pages (#2608): own layout, no locale prefix.
+    '/((?!_matrix|auth/|placeholder|icon|brand|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
   ],
 };

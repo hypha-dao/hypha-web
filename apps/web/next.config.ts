@@ -52,6 +52,7 @@ const NOT_MAPPED_HOST = MAPPED_HOSTNAMES.length
  */
 const MIDDLEWARE_SKIPPED_PREFIXES = [
   '_matrix',
+  'auth/',
   'placeholder',
   'icon',
   'brand',

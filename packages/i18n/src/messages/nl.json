@@ -5922,5 +5922,62 @@
       "load": "Quests konden niet worden geladen.",
       "retry": "Opnieuw proberen"
     }
+  },
+  "AuthServer": {
+    "login": {
+      "title": "Een app met Hypha verbinden",
+      "intro": "Log in met je Hypha-account om verder te gaan. Je ziet wat de app vraagt voordat er iets wordt gedeeld.",
+      "signIn": "Inloggen met Hypha",
+      "signingIn": "Bezig met inloggen...",
+      "denied": {
+        "notEnabled": "Dit account is niet ingeschakeld voor deze dienst.",
+        "noProfile": "Maak eerst je Hypha-profiel af en probeer het daarna opnieuw.",
+        "help": "Denk je dat dit een vergissing is? Neem contact op met het Hypha-team."
+      },
+      "useDifferentAccount": "Ander account gebruiken",
+      "expired": "Je sessie is verlopen. Log opnieuw in.",
+      "signInAgain": "Opnieuw inloggen",
+      "unavailable": "Apps verbinden is nu niet beschikbaar. Probeer het later opnieuw.",
+      "tryAgain": "Opnieuw proberen",
+      "failed": "Inloggen is niet voltooid. Probeer het opnieuw."
+    },
+    "approval": {
+      "expiredTitle": "Goedkeuring verlopen",
+      "expired": "Deze goedkeuring is verlopen. Ga terug naar de app en begin opnieuw.",
+      "invalidTitle": "Goedkeuring ongeldig",
+      "invalid": "Deze goedkeuringslink is niet geldig. Ga terug naar de app en begin opnieuw.",
+      "accountChanged": "Je account is in een ander tabblad gewijzigd, dus deze goedkeuring is niet opgeslagen. Meld je eerst af om een ander account te gebruiken en begin daarna opnieuw vanuit de app."
+    },
+    "consent": {
+      "title": "{name} goedkeuren?",
+      "signedInAs": "Ingelogd als {name}. Deze app vraagt om:",
+      "approve": "Goedkeuren",
+      "deny": "Weigeren",
+      "failed": "Er ging iets mis. Begin opnieuw vanuit de app.",
+      "client": {
+        "cimd": "Hypha heeft deze app niet goedgekeurd. Hij draait vanaf <strong>{host}</strong>: Hypha las zijn gegevens van dat adres, dus het adres is echt. Verder is niets over de app gecontroleerd. Hij noemt zichzelf <strong>{name}</strong>. Na je goedkeuring word je teruggestuurd naar <strong>{redirectHost}</strong>. Keur alleen apps goed die je zelf hebt gestart.",
+        "dcr": "Hypha heeft deze app niet goedgekeurd. Hij heeft zichzelf geregistreerd en zelf zijn naam gekozen, <strong>{name}</strong>, die Hypha niet heeft gecontroleerd: iedereen kan elke naam registreren en Hypha kan niet zien wie achter deze app zit. Na je goedkeuring word je teruggestuurd naar <strong>{redirectHost}</strong>. Keur alleen apps goed die je zelf hebt gestart.",
+        "registered": "Hypha heeft deze app niet geverifieerd. Hij noemt zichzelf <strong>{name}</strong>. Na je goedkeuring word je teruggestuurd naar <strong>{redirectHost}</strong>. Keur alleen apps goed die je zelf hebt gestart.",
+        "registeredWithHost": "Hypha heeft deze app niet geverifieerd. Hij noemt zichzelf <strong>{name}</strong> en identificeert zich via <strong>{host}</strong>. Na je goedkeuring word je teruggestuurd naar <strong>{redirectHost}</strong>. Keur alleen apps goed die je zelf hebt gestart."
+      },
+      "scopes": {
+        "spacesRead": {
+          "title": "Hypha-spaces lezen",
+          "detail": "De spaces bekijken die je op Hypha kunt zien: hun details, leden en openbare activiteit."
+        },
+        "agreementsVote": {
+          "title": "Stemmen voorbereiden die je goedkeurt",
+          "detail": "Je vragen om te stemmen over voorstellen in je spaces. Er wordt niets uitgebracht totdat je elke stem op Hypha goedkeurt en met je wallet ondertekent.",
+          "warning": "Hypha heeft deze app niet goedgekeurd. Als je dit toestaat, kan hij je vragen namens jou te stemmen. Sta het alleen toe als je deze app vertrouwt en dit zelf hebt gestart."
+        },
+        "offlineAccess": {
+          "title": "Verbonden blijven",
+          "detail": "Deze app verbonden houden zonder dat je opnieuw hoeft in te loggen, tot je hem loskoppelt."
+        },
+        "unknown": {
+          "detail": "Een onbekende toestemming."
+        }
+      }
+    }
   }
 }
