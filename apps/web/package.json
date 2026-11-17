@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.107",
+    "@hypha-platform/auth-server": "workspace:*",
     "@hypha-platform/authentication": "workspace:*",
     "@hypha-platform/chat-server": "workspace:*",
     "@hypha-platform/cookie": "workspace:*",
