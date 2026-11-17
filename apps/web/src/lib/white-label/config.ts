@@ -1,4 +1,6 @@
+import { CREATE_ACTIONS } from './constants';
 import type {
+  CreateAction,
   DetailView,
   UnsupportedActions,
   WhiteLabelAuthConfig,
@@ -80,6 +82,29 @@ export function parseUnsupportedActions(value: unknown): {
   return { unsupportedActions: value === 'full-app' ? 'full-app' : 'hide' };
 }
 
+/**
+ * `createActions` of a client record. Absent: not set (none). Anything that is
+ * not an array: none (fail closed). In an array only the exact known values
+ * survive (unknown or non-string entries are dropped, never widened).
+ */
+export function parseCreateActions(value: unknown): {
+  createActions?: CreateAction[];
+} {
+  if (value === undefined) return {};
+  if (!Array.isArray(value)) return { createActions: [] };
+  const known: readonly string[] = CREATE_ACTIONS;
+  return {
+    createActions: [
+      ...new Set(
+        value.filter(
+          (entry): entry is CreateAction =>
+            typeof entry === 'string' && known.includes(entry),
+        ),
+      ),
+    ],
+  };
+}
+
 function parseSpace(input: unknown): WhiteLabelSpaceRecord | null {
   if (typeof input !== 'object' || input === null) return null;
   const { slug, framingOrigins } = input as Record<string, unknown>;
@@ -98,10 +123,8 @@ function parseSpace(input: unknown): WhiteLabelSpaceRecord | null {
 
 function parseClient(input: unknown): WhiteLabelClientRecord | null {
   if (typeof input !== 'object' || input === null) return null;
-  const { id, spaces, detailView, unsupportedActions } = input as Record<
-    string,
-    unknown
-  >;
+  const { id, spaces, detailView, unsupportedActions, createActions } =
+    input as Record<string, unknown>;
   if (typeof id !== 'string' || !CLIENT_ID_PATTERN.test(id)) return null;
   if (!Array.isArray(spaces)) return null;
   const parsed = spaces
@@ -112,6 +135,7 @@ function parseClient(input: unknown): WhiteLabelClientRecord | null {
     id,
     ...parseDetailView(detailView),
     ...parseUnsupportedActions(unsupportedActions),
+    ...parseCreateActions(createActions),
     spaces: parsed,
   };
 }
@@ -248,10 +272,8 @@ function parseHostRecord(input: unknown): WhiteLabelHostRecord | null {
 
 function parseHostClient(input: unknown): WhiteLabelHostClientRecord | null {
   if (typeof input !== 'object' || input === null) return null;
-  const { id, hosts, detailView, unsupportedActions } = input as Record<
-    string,
-    unknown
-  >;
+  const { id, hosts, detailView, unsupportedActions, createActions } =
+    input as Record<string, unknown>;
   if (typeof id !== 'string' || !CLIENT_ID_PATTERN.test(id)) return null;
   if (!Array.isArray(hosts)) return null;
   const parsed = hosts
@@ -262,6 +284,7 @@ function parseHostClient(input: unknown): WhiteLabelHostClientRecord | null {
     id,
     ...parseDetailView(detailView),
     ...parseUnsupportedActions(unsupportedActions),
+    ...parseCreateActions(createActions),
     hosts: parsed,
   };
 }

@@ -115,6 +115,11 @@ export interface CreateSignalFormProps {
   initialValues?: Partial<FormValues>;
   /** Supplies the space roster for the tag-people picker. */
   useMembers: UseMembers;
+  /**
+   * Leaves out the tag-people field (it feeds Matrix mentions). Set where Matrix
+   * is not mounted (a white-label host); the main app never sets it.
+   */
+  hideTagPeople?: boolean;
 }
 
 function SignalFormDirtyResetButton({
@@ -220,6 +225,7 @@ export const CreateSignalForm = ({
   signalRoomId,
   initialValues,
   useMembers,
+  hideTagPeople = false,
 }: CreateSignalFormProps) => {
   const params = useParams<{ id?: string }>();
   const spaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
@@ -1195,7 +1201,7 @@ export const CreateSignalForm = ({
                   );
                 }}
               />
-              {mode === 'create' && spaceSlug ? (
+              {mode === 'create' && spaceSlug && !hideTagPeople ? (
                 <div
                   className="flex flex-col gap-2"
                   data-signal-field="tagPeople"

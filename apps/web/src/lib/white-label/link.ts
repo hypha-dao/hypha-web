@@ -1,5 +1,5 @@
 import { EMBED_PREFIX, LANDING_SECTION, WL_SECTIONS } from './constants';
-import type { DetailView, UnsupportedActions } from './types';
+import type { CreateAction, DetailView, UnsupportedActions } from './types';
 
 /**
  * How a link renders inside a white-label tree. The context is set once by the
@@ -17,6 +17,8 @@ export type WhiteLabelLinkContext =
       detailView?: DetailView;
       /** Absent means `hide`: create-flow links do nothing. */
       unsupportedActions?: UnsupportedActions;
+      /** Create flows served here; absent means none. */
+      createActions?: readonly CreateAction[];
     }
   | {
       mode: 'host';
@@ -25,6 +27,7 @@ export type WhiteLabelLinkContext =
       fullAppOrigin: string;
       detailView?: DetailView;
       unsupportedActions?: UnsupportedActions;
+      createActions?: readonly CreateAction[];
     };
 
 export type LinkDecision =
@@ -104,6 +107,40 @@ const CREATE_FLOW_SEGMENTS: readonly string[] = [
   'new-scheduled-item',
   'edit-scheduled-item',
 ];
+
+/**
+ * The create pages the tree serves when the client enabled them, as segments
+ * after the locale, with the `createActions` values that serve each (any of).
+ * Every other create path stays a blocked (or full-app) create flow.
+ */
+const WL_SERVED_CREATE: readonly {
+  path: readonly string[];
+  needs: readonly CreateAction[];
+}[] = [
+  { path: ['coherence', 'new-signal'], needs: ['signal'] },
+  {
+    path: ['agreements', 'select-create-action'],
+    needs: ['agreement', 'contribution'],
+  },
+  { path: ['agreements', 'create'], needs: ['agreement'] },
+  {
+    path: ['agreements', 'create', 'propose-contribution'],
+    needs: ['contribution'],
+  },
+];
+
+function isServedCreate(
+  ctx: WhiteLabelLinkContext,
+  own: readonly string[],
+): boolean {
+  const enabled = ctx.createActions ?? [];
+  return WL_SERVED_CREATE.some(
+    (page) =>
+      page.path.length === own.length &&
+      page.path.every((part, i) => part === own[i]) &&
+      page.needs.some((need) => enabled.includes(need)),
+  );
+}
 
 /** `own` = the segments after the locale (and the Space, in the main-app shape). */
 export function isCreateFlow(own: readonly string[]): boolean {
@@ -227,6 +264,9 @@ export function classifyLink(
     if (isServedDetail(ctx, own)) {
       return { kind: 'internal', href: detailHref(linkCtx, own, url.search) };
     }
+    if (isServedCreate(ctx, own)) {
+      return { kind: 'internal', href: detailHref(linkCtx, own, url.search) };
+    }
     if (isCreateFlow(own)) {
       return createFlowDecision(ctx, linkCtx.lang, own, url, false);
     }
@@ -252,6 +292,9 @@ export function classifyLink(
         SERVED_SECTIONS.includes(section)) ||
       isServedDetail(ctx, own)
     ) {
+      return { kind: 'internal', href: url.pathname + url.search };
+    }
+    if (isServedCreate(ctx, own)) {
       return { kind: 'internal', href: url.pathname + url.search };
     }
     if (isCreateFlow(own)) {
@@ -283,6 +326,18 @@ export function classifyLink(
       return {
         kind: 'internal',
         // Keep the locale the link names (as the host-shaped branch does).
+        href: detailHref(
+          parts[0] !== undefined && locales.includes(parts[0])
+            ? { ...ctx, lang: parts[0] }
+            : ctx,
+          parts.slice(3),
+          url.search,
+        ),
+      };
+    }
+    if (isServedCreate(ctx, parts.slice(3))) {
+      return {
+        kind: 'internal',
         href: detailHref(
           parts[0] !== undefined && locales.includes(parts[0])
             ? { ...ctx, lang: parts[0] }

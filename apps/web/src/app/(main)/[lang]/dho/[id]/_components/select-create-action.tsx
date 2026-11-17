@@ -23,12 +23,19 @@ type SelectCreateActionProps = {
   daoSlug: string;
   lang: Locale;
   children?: React.ReactNode;
+  /**
+   * Keeps only the actions whose `href` is listed (a white-label host offers a
+   * subset; actions without an `href`, like Deposit funds, are dropped). The
+   * main app never sets it.
+   */
+  allowedHrefs?: readonly string[];
 };
 
 export const SelectCreateAction = ({
   daoSlug,
   lang,
   children,
+  allowedHrefs,
 }: SelectCreateActionProps) => {
   const { isPaymentExpired, fundWallet, space } = useActionGating(daoSlug);
   const { canMutate, isLoading: isMutateLoading } = useCanMutateInSpace({
@@ -119,7 +126,10 @@ export const SelectCreateAction = ({
       title={t('title')}
       content={t('content')}
       showTitle={false}
-      actions={CREATE_ACTIONS.map((action) => ({
+      actions={CREATE_ACTIONS.filter(
+        (action) =>
+          !allowedHrefs || (action.href && allowedHrefs.includes(action.href)),
+      ).map((action) => ({
         ...action,
         ...(action.href && {
           href: `/${lang}/dho/${daoSlug}/${action.href}`,

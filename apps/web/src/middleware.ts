@@ -15,6 +15,7 @@ import {
   WL_CLIENT_HEADER,
   WL_DETAIL_VIEW_HEADER,
   WL_UNSUPPORTED_ACTIONS_HEADER,
+  WL_CREATE_ACTIONS_HEADER,
   WL_LOCALE_COOKIE,
   WL_MODE_HEADER,
   WL_NOT_FOUND_HEADER,
@@ -27,6 +28,7 @@ import {
   resolve,
   privyHostOrigins,
   serializeAuthConfig,
+  serializeCreateActions,
   stripWhiteLabelHeaders,
   withPrivyHostOrigins,
   type FramingPolicy,
@@ -228,6 +230,10 @@ export function middleware(request: NextRequest) {
     headers.set(INTL_LOCALE_HEADER, decision.locale);
     headers.set(WL_DETAIL_VIEW_HEADER, decision.detailView);
     headers.set(WL_UNSUPPORTED_ACTIONS_HEADER, decision.unsupportedActions);
+    headers.set(
+      WL_CREATE_ACTIONS_HEADER,
+      serializeCreateActions(decision.createActions),
+    );
     if (decision.mode === 'host') {
       headers.set(WL_CLIENT_HEADER, decision.clientId);
       if (decision.authConfig) {
@@ -272,6 +278,14 @@ export function middleware(request: NextRequest) {
   }
 
   if (decision.kind === 'not-found') {
+    // A write to a page of a read-only delivery (a Server Action POST):
+    // refused, no page, no body.
+    if (decision.reason === 'method-not-allowed') {
+      return new NextResponse(null, {
+        status: 405,
+        headers: { Allow: 'GET, HEAD', 'Cache-Control': 'no-store' },
+      });
+    }
     // An API path is answered here: no page, no body.
     if (isApi) {
       return new NextResponse(null, {

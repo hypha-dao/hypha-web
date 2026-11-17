@@ -34,6 +34,14 @@ export type ActionKind =
   | 'upvote'
   /** Vote on a proposal, expire it and withdraw it (smart-wallet transactions). */
   | 'vote'
+  /** New signal (a host with login that lists `signal`). */
+  | 'create-signal'
+  /** Create a Collective agreement (a host with login that lists `agreement`). */
+  | 'create-agreement'
+  /** Propose a contribution (a host with login that lists `contribution`). */
+  | 'create-contribution'
+  /** New proposal entry and its menu: live when any proposal type is. */
+  | 'create-proposal'
   /** Opening a pipeline deal (a link to the deal page of the full app). */
   | 'deal-link'
   /** The pipeline (members only; needs a signed-in visitor). */
@@ -57,6 +65,20 @@ export type ActionCapabilitiesValue = {
   pipelineData: boolean;
   /** True where a signed-in member can vote (a host with login). */
   voteLive: boolean;
+  /**
+   * Create flows on offer (`signal`, `agreement`, `contribution`); set only on a
+   * host with login. Absent or empty: none are live, they stay hidden (or a
+   * full-app link) as before.
+   */
+  createActions?: readonly string[];
+};
+
+/** Create kinds and the `createActions` values that make each live. */
+const CREATE_KIND_VALUES: Partial<Record<ActionKind, readonly string[]>> = {
+  'create-signal': ['signal'],
+  'create-agreement': ['agreement'],
+  'create-contribution': ['contribution'],
+  'create-proposal': ['agreement', 'contribution'],
 };
 
 /** Kinds that never become a link to the full app: they are hidden. */
@@ -72,6 +94,10 @@ export function resolveActionStatus(
   // Voting is live or hidden; never a link (there is no deep URL for it).
   if (kind === 'vote' || kind === 'upvote') {
     return value.voteLive ? 'live' : 'hidden';
+  }
+  const createValues = CREATE_KIND_VALUES[kind];
+  if (createValues?.some((v) => value.createActions?.includes(v))) {
+    return 'live';
   }
   if (ALWAYS_HIDDEN.includes(kind)) return 'hidden';
   return value.unsupportedActions === 'full-app' ? 'full-app' : 'hidden';
@@ -89,9 +115,16 @@ export function ActionCapabilitiesProvider({
   children: React.ReactNode;
 }) {
   const { unsupportedActions, fullAppOrigin, pipelineData, voteLive } = value;
+  const createKey = (value.createActions ?? []).join(',');
   const memo = React.useMemo(
-    () => ({ unsupportedActions, fullAppOrigin, pipelineData, voteLive }),
-    [unsupportedActions, fullAppOrigin, pipelineData, voteLive],
+    () => ({
+      unsupportedActions,
+      fullAppOrigin,
+      pipelineData,
+      voteLive,
+      createActions: createKey ? createKey.split(',') : [],
+    }),
+    [unsupportedActions, fullAppOrigin, pipelineData, voteLive, createKey],
   );
   return (
     <ActionCapabilitiesContext.Provider value={memo}>

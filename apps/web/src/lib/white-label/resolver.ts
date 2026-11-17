@@ -4,9 +4,14 @@ import {
   INTERNAL_PREFIX,
   LANDING_SECTION,
 } from './constants';
-import { apiAllowlistFor, isApiReadAllowed } from './api-allowlist';
+import {
+  apiAllowlistFor,
+  isApiReadAllowed,
+  isApiUploadAllowed,
+} from './api-allowlist';
 import { isValidSlug, normaliseHost } from './config';
 import type {
+  CreateAction,
   ResolveDecision,
   ResolveOptions,
   WhiteLabelConfig,
@@ -106,6 +111,17 @@ export function localeForPath(
   );
 }
 
+/**
+ * A read-only delivery (a host without login, the frame) serves pages for GET
+ * and HEAD only. Any other method on a page path is refused: Server Actions
+ * are POSTs to a page URL (with a `Next-Action` header, or, from a form
+ * without JavaScript, only a body field), and a page accepts no other POST.
+ */
+function isReadMethod(method: string | undefined): boolean {
+  const upper = (method ?? 'GET').toUpperCase();
+  return upper === 'GET' || upper === 'HEAD';
+}
+
 /** True when `host` is one of the mapped hosts (host delivery). */
 export function isMappedHost(
   config: WhiteLabelConfig,
@@ -182,7 +198,8 @@ function resolveMappedHost(
       segments,
       record.spaceSlug,
       allowlist,
-    )
+    ) ||
+      isApiUploadAllowed(options.method, segments, Boolean(record.authConfig))
       ? { kind: 'api-allow', spaceSlug: record.spaceSlug }
       : { kind: 'not-found', reason: 'api-not-allowed' };
   }
@@ -191,6 +208,10 @@ function resolveMappedHost(
     return { kind: 'not-found', reason: 'embed-not-served' };
   }
   if (!segments) return { kind: 'not-found', reason: 'malformed-path' };
+  // No login on this host: no write, so nothing but a read reaches a page.
+  if (!record.authConfig && !isReadMethod(options.method)) {
+    return { kind: 'not-found', reason: 'method-not-allowed' };
+  }
 
   const rest = [...segments];
   let locale: string | null = null;
@@ -228,6 +249,8 @@ function resolveMappedHost(
     framingOrigins: [],
     detailView: client.detailView ?? 'embedded',
     unsupportedActions: client.unsupportedActions ?? 'hide',
+    // Only a host with login can write: without it the list is empty.
+    createActions: record.authConfig ? [...(client.createActions ?? [])] : [],
     ...(record.authConfig ? { authConfig: record.authConfig } : {}),
   };
 }
@@ -296,11 +319,18 @@ export function resolve(
   let embeddedDetails = false;
   // `hide` wins: `full-app` only if every approving client says so.
   let allFullApp = true;
+  // Intersection across the approving clients (a client with none empties it).
+  let createActions: CreateAction[] | null = null;
   for (const client of config.clients) {
     const matches = client.spaces.filter((s) => s.slug === slug);
     if (matches.length === 0) continue;
     clientIds.push(client.id);
     if (client.unsupportedActions !== 'full-app') allFullApp = false;
+    const own = client.createActions ?? [];
+    createActions =
+      createActions === null
+        ? [...own]
+        : createActions.filter((action) => own.includes(action));
     if ((client.detailView ?? 'embedded') === 'embedded') {
       embeddedDetails = true;
     }
@@ -329,6 +359,10 @@ export function resolve(
   if (rest[0] === API_PREFIX) {
     return { kind: 'not-found', reason: 'api-not-served' };
   }
+  // The frame never has login: reads only (see `isReadMethod`).
+  if (!isReadMethod(options.method)) {
+    return { kind: 'not-found', reason: 'method-not-allowed' };
+  }
 
   const section = rest.length === 0 ? [LANDING_SECTION] : rest;
   return {
@@ -343,5 +377,6 @@ export function resolve(
     framingOrigins: [...origins],
     detailView: embeddedDetails ? 'embedded' : 'full-app',
     unsupportedActions: allFullApp ? 'full-app' : 'hide',
+    createActions: createActions ?? [],
   };
 }

@@ -210,7 +210,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
           canMutate ? (
             <div className="shrink-0">
               <ActionGate
-                kind="create-flow"
+                kind="create-signal"
                 fullAppPath={`/${lang}/dho/${spaceSlug}/coherence/new-signal`}
                 label={t('newSignal')}
               >

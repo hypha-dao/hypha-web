@@ -2,6 +2,7 @@
  * White-label types. Pure: no Next or React imports, so the resolver can be
  * unit-tested and reused by middleware, layouts and (later) a registry loader.
  */
+import type { CREATE_ACTIONS } from './constants';
 
 /**
  * Where a card for a detail page (proposal, person) opens: `embedded` serves
@@ -16,6 +17,9 @@ export type DetailView = 'embedded' | 'full-app';
  * control as a link to the same Space in the full app (new tab).
  */
 export type UnsupportedActions = 'hide' | 'full-app';
+
+/** A create flow a host with login may offer (see `CREATE_ACTIONS`). */
+export type CreateAction = (typeof CREATE_ACTIONS)[number];
 
 /** One Space a client may show in an iframe, with the origins allowed to frame it. */
 export type WhiteLabelSpaceRecord = {
@@ -32,6 +36,8 @@ export type WhiteLabelClientRecord = {
   detailView?: DetailView;
   /** Absent means `hide`; an invalid value was parsed to `hide`. */
   unsupportedActions?: UnsupportedActions;
+  /** Absent means none; unknown values were dropped by the parser. */
+  createActions?: CreateAction[];
   spaces: WhiteLabelSpaceRecord[];
 };
 
@@ -61,6 +67,8 @@ export type WhiteLabelHostClientRecord = {
   detailView?: DetailView;
   /** Absent means `hide`; an invalid value was parsed to `hide`. */
   unsupportedActions?: UnsupportedActions;
+  /** Absent means none; unknown values were dropped by the parser. */
+  createActions?: CreateAction[];
   hosts: WhiteLabelHostRecord[];
 };
 
@@ -111,6 +119,12 @@ export type ResolvedSpace = {
    * Host: the owning client's value, `hide` when unset.
    */
   unsupportedActions: UnsupportedActions;
+  /**
+   * Create flows on offer. Embed: the intersection of the approving clients'
+   * lists (the safe side); the iframe has no login, so nothing uses it yet.
+   * Host: the owning client's list, and only when the host has login settings.
+   */
+  createActions: CreateAction[];
 };
 
 /** Host delivery: the one client that owns the host, and its Space. */
@@ -130,7 +144,8 @@ export type NotFoundReason =
   | 'api-not-served'
   | 'unknown-host'
   | 'api-not-allowed'
-  | 'embed-not-served';
+  | 'embed-not-served'
+  | 'method-not-allowed';
 
 export type ResolveDecision =
   /** Not white label: handled by the existing middleware chain. */

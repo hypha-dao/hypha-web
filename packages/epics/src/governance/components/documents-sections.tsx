@@ -67,7 +67,7 @@ export function DocumentsSections({
     !isUserStateLoading && userState === UserSpaceState.LOGGED_IN_SPACE;
   const renderCreateProposalButton = () => (
     <ActionGate
-      kind="create-flow"
+      kind="create-proposal"
       fullAppPath={createProposalPath}
       label={t('newProposal')}
     >
