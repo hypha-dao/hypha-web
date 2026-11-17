@@ -191,14 +191,14 @@ export function cleanRegistrationBody(
 
 const perIpHits = new Map<string, number[]>();
 
-function clientAddress(request: Request): string {
-  const h = request.headers;
-  return (
-    h.get('x-vercel-forwarded-for') ??
-    h.get('x-real-ip') ??
-    h.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    'unknown'
-  );
+/**
+ * The address of the caller, for the per-address budget. Only the platform header is trusted, and
+ * only on Vercel, where the platform sets it and overwrites anything the caller sent. Anywhere
+ * else the caller controls every forwarding header, so all requests count as one address.
+ */
+export function clientAddress(request: Request): string {
+  if (!process.env.VERCEL) return 'unknown';
+  return request.headers.get('x-vercel-forwarded-for')?.trim() || 'unknown';
 }
 
 /** Best-effort per-address limiter. Returns true when the address is over its hourly budget. */

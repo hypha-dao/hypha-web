@@ -1,4 +1,12 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from 'vitest';
 import { decodeJwt } from 'jose';
 import * as h from './testing/harness';
 import { createAuthServerHandler } from './handler';
@@ -194,7 +202,8 @@ run('dynamic client registration (experiment): limits and flow', () => {
   });
 
   it('rate limits per address, and over the whole server per hour', async () => {
-    const hdr = { 'x-real-ip': '203.0.113.9' };
+    vi.stubEnv('VERCEL', '1');
+    const hdr = { 'x-vercel-forwarded-for': '203.0.113.9' };
     for (let i = 0; i < REGISTRATION_PER_IP_PER_HOUR; i++) {
       expect((await register(ok, hdr)).status).toBe(201);
     }
@@ -208,9 +217,10 @@ run('dynamic client registration (experiment): limits and flow', () => {
          from generate_series(1, $1::int) n on conflict do nothing`,
       [REGISTRATION_GLOBAL_PER_HOUR],
     );
-    expect((await register(ok, { 'x-real-ip': '198.51.100.7' })).status).toBe(
-      429,
-    );
+    expect(
+      (await register(ok, { 'x-vercel-forwarded-for': '198.51.100.7' })).status,
+    ).toBe(429);
+    vi.unstubAllEnvs();
     await s.pool.query(
       `delete from as_oauth_client where "clientId" like 'g%'`,
     );
