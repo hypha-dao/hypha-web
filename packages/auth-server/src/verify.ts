@@ -83,6 +83,9 @@ export async function verifyAccessToken(
         requiredClaims: ['sub', 'exp', 'iat'],
       },
     );
+    // Sender-constrained (DPoP or mTLS-bound) tokens: this guard cannot check the proof, so it
+    // must not accept the token as a plain bearer token.
+    if (payload.cnf !== undefined) throw new Error('sender-constrained token');
     const clientId = (payload.client_id ?? payload.azp) as unknown;
     if (typeof payload.sub !== 'string' || typeof clientId !== 'string') {
       throw new Error('missing claims');

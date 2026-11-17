@@ -92,13 +92,18 @@ export function createAuthServerHandler(
     } catch (error) {
       // Never echo the error: it can carry request data.
       redactingLog('error', 'request failed', error);
-      return new Response(JSON.stringify({ error: 'server_error' }), {
-        status: 500,
-        headers: {
-          'content-type': 'application/json',
-          'cache-control': 'no-store',
-        },
-      });
+      // Through withCors like every other answer, so a browser client can read the error.
+      return withCors(
+        request,
+        new Response(JSON.stringify({ error: 'server_error' }), {
+          status: 500,
+          headers: {
+            'content-type': 'application/json',
+            'cache-control': 'no-store',
+          },
+        }),
+        config,
+      );
     }
   };
 }
