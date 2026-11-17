@@ -5,10 +5,7 @@ export {
   AUTH_SERVER_SCOPES,
 } from './config';
 export { describeScope } from './scope-copy';
-export {
-  APPROVAL_EXPIRED_MESSAGE,
-  APPROVAL_INVALID_MESSAGE,
-  describeClient,
-  type CopySegment,
-} from './client-copy';
+export { describeClient, type ClientCopyKey } from './client-copy';
+export { AUTH_SERVER_LANG_COOKIE, resolveAuthLocale } from './locale';
+export type { ScopeCopyKey } from './scope-copy';
 export type { ClientKind } from './consent';

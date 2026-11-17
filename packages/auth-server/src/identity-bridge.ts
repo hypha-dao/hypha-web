@@ -55,6 +55,8 @@ export function createIdentityBridge({ providers, gate, resolvePerson }: Deps) {
           if (!person) {
             throw new APIError('FORBIDDEN', {
               error: 'access_denied',
+              // Machine-readable, so the page can word it in the person's language.
+              code: 'no_profile',
               message:
                 'Finish creating your Hypha profile first, then try again.',
             });
@@ -64,6 +66,7 @@ export function createIdentityBridge({ providers, gate, resolvePerson }: Deps) {
           if (!gate(sub)) {
             throw new APIError('FORBIDDEN', {
               error: 'access_denied',
+              code: 'not_enabled',
               message: 'This account is not enabled for this service.',
             });
           }

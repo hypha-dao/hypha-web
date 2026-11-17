@@ -1,31 +1,27 @@
-/** Human-readable consent copy per scope (product default, reported for confirmation). */
-const COPY: Record<
-  string,
-  { title: string; detail: string; unverifiedWarning?: string }
-> = {
-  'spaces:read': {
-    title: 'Read Hypha spaces',
-    detail:
-      'View the spaces you can see on Hypha: their details, members and public activity.',
-  },
-  'agreements:vote': {
-    title: 'Prepare votes for you to approve',
-    detail:
-      'Ask you to vote on proposals in your spaces. Nothing is cast until you approve each vote on Hypha and sign it with your wallet.',
-    unverifiedWarning:
-      'Hypha has not approved this app. If you allow this, it can ask you to vote in your name. Allow it only if you trust this app and started this yourself.',
-  },
-  offline_access: {
-    title: 'Stay connected',
-    detail:
-      'Keep this app connected without asking you to sign in again, until you disconnect it.',
-  },
+/**
+ * Which message the consent page shows for a scope. The words live in the app's message files
+ * (namespace AuthServer, scopes.<key>); this file only says which entry a scope uses and whether
+ * it carries the stronger warning for clients that are not pre-approved.
+ */
+export type ScopeCopyKey =
+  | 'spacesRead'
+  | 'agreementsVote'
+  | 'offlineAccess'
+  | 'unknown';
+
+const KEYS: Record<string, ScopeCopyKey> = {
+  'spaces:read': 'spacesRead',
+  'agreements:vote': 'agreementsVote',
+  offline_access: 'offlineAccess',
 };
 
+/** Scopes whose message has a `warning` entry (shown for write scopes of unapproved clients). */
+const HAS_WARNING = new Set<ScopeCopyKey>(['agreementsVote']);
+
 export function describeScope(scope: string): {
-  title: string;
-  detail: string;
-  unverifiedWarning?: string;
+  key: ScopeCopyKey;
+  hasWarning: boolean;
 } {
-  return COPY[scope] ?? { title: scope, detail: 'An unrecognised permission.' };
+  const key = Object.hasOwn(KEYS, scope) ? KEYS[scope]! : 'unknown';
+  return { key, hasWarning: HAS_WARNING.has(key) };
 }

@@ -1,7 +1,7 @@
 import { verifyOAuthQueryParams } from '@better-auth/oauth-provider';
 import type { AuthServer } from './auth';
 import { AUTH_SERVER_WRITE_SCOPES } from './config';
-import { describeScope } from './scope-copy';
+import { describeScope, type ScopeCopyKey } from './scope-copy';
 
 /**
  * How the app was identified, which decides the defaults on the consent page. The kind comes
@@ -31,12 +31,12 @@ export type ConsentRequest = {
   };
   scopes: {
     scope: string;
-    title: string;
-    detail: string;
+    /** Entry of the page's messages (AuthServer.scopes.<copyKey>) that words this scope. */
+    copyKey: ScopeCopyKey;
     /** Ticked when the page opens. Write scopes start unticked for clients that are not pre-approved. */
     defaultGranted: boolean;
-    /** Stronger warning shown with the scope, for write scopes of clients that are not pre-approved. */
-    warning?: string;
+    /** Show the stronger warning of that entry: a write scope of a client that is not pre-approved. */
+    warn: boolean;
   }[];
 };
 
@@ -59,6 +59,30 @@ export async function inspectConsentQuery(
 
 /** Marker stored on rows Hypha pre-registered by hand. Without it a row is never `registered`. */
 export const REGISTERED_CLIENT_MARKER = 'registered';
+
+/**
+ * The page may carry `?lang=` next to the signed authorization query. The signature covers every
+ * other parameter, so `lang` is a page setting only when taking it out leaves a valid signed
+ * query. If the signed query itself contains a `lang` (the app sent one), it is left alone and
+ * is not a page setting. With no valid query either way, the stripped one is returned (it is
+ * the more likely to be what the app sent) and `lang` is still reported, for the cosmetic choice.
+ */
+export async function separatePageLang(
+  rawQuery: string,
+  secret: string,
+): Promise<{ query: string; lang: string | null }> {
+  const query = rawQuery.startsWith('?') ? rawQuery.slice(1) : rawQuery;
+  const params = new URLSearchParams(query);
+  if (!params.has('lang')) return { query, lang: null };
+  const lang = params.get('lang');
+  const stripped = new URLSearchParams(query);
+  stripped.delete('lang');
+  const strippedQuery = stripped.toString();
+  if (await verifyOAuthQueryParams(strippedQuery, secret))
+    return { query: strippedQuery, lang };
+  if (await verifyOAuthQueryParams(query, secret)) return { query, lang: null };
+  return { query: strippedQuery, lang };
+}
 
 export function classifyClient(stored: {
   clientDiscoveryId?: unknown;
@@ -153,10 +177,9 @@ export async function loadConsentRequest(
       const copy = describeScope(scope);
       return {
         scope,
-        ...copy,
+        copyKey: copy.key,
         defaultGranted: !(write && kind !== 'registered'),
-        warning:
-          write && kind !== 'registered' ? copy.unverifiedWarning : undefined,
+        warn: write && kind !== 'registered' && copy.hasWarning,
       };
     }),
   };

@@ -2,7 +2,11 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { decodeJwt } from 'jose';
 import * as h from './testing/harness';
 import { createAuthServerHandler } from './handler';
-import { classifyClient, loadConsentRequest } from './consent';
+import {
+  classifyClient,
+  loadConsentRequest,
+  separatePageLang,
+} from './consent';
 import { resetRegistrationLimiter } from './registration';
 
 const run = h.TEST_DB_URL ? describe : describe.skip;
@@ -113,6 +117,26 @@ run(
       expect(classifyClient({ registration: 'registered' })).toBe('registered');
     });
 
+    it('?lang is a page setting only when the signed query is valid without it', async () => {
+      const id = await register();
+      const f = await toConsent(id, CB);
+      const signed = f.next.search.slice(1);
+      const withLang = await separatePageLang(
+        `${signed}&lang=de`,
+        s.config.secret,
+      );
+      expect(withLang.lang).toBe('de');
+      expect(new URLSearchParams(withLang.query).has('lang')).toBe(false);
+      // the signed query still loads the consent view with the page setting taken out
+      const request = await loadConsentRequest(
+        s,
+        new Headers({ cookie: f.jar.header() }),
+        withLang.query,
+      );
+      expect(request).not.toBeNull();
+      expect((await separatePageLang(signed, s.config.secret)).lang).toBeNull();
+    });
+
     it('pre-registered: every requested scope starts ticked, no warning', async () => {
       const f = await toConsent(TIER_A, TIER_A_CB);
       const v = await view(f);
@@ -122,7 +146,7 @@ run(
         ['agreements:vote', true],
         ['offline_access', true],
       ]);
-      expect(v.scopes.every((x) => x.warning === undefined)).toBe(true);
+      expect(v.scopes.every((x) => x.warn === false)).toBe(true);
     });
 
     it('dynamically registered: write scope unticked with a warning; read and offline_access ticked', async () => {
@@ -133,8 +157,9 @@ run(
       expect(by['spaces:read']!.defaultGranted).toBe(true);
       expect(by['offline_access']!.defaultGranted).toBe(true);
       expect(by['agreements:vote']!.defaultGranted).toBe(false);
-      expect(by['agreements:vote']!.warning).toMatch(/not approved/);
-      expect(by['spaces:read']!.warning).toBeUndefined();
+      expect(by['agreements:vote']!.warn).toBe(true);
+      expect(by['agreements:vote']!.copyKey).toBe('agreementsVote');
+      expect(by['spaces:read']!.warn).toBe(false);
     });
 
     it('CIMD client: same defaults as DCR', async () => {

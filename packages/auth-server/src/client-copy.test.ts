@@ -1,59 +1,38 @@
 import { describe, it, expect } from 'vitest';
 import { describeClient } from './client-copy';
+import { describeScope } from './scope-copy';
 
-const text = (segments: { text: string }[]) =>
-  segments.map((s) => s.text).join('');
-const strong = (segments: { text: string; strong?: boolean }[]) =>
-  segments.filter((s) => s.strong).map((s) => s.text);
-
-describe('consent copy tells a proven domain from a claimed name', () => {
+describe('consent copy keys tell a proven domain from a claimed name', () => {
   const base = {
     name: 'Some App',
     host: 'claude.ai',
     redirectHost: 'localhost',
   };
 
-  it('CIMD: shows the proven host and says the rest is unchecked', () => {
+  it('CIMD: the proven-host message with the host', () => {
     const c = describeClient({ ...base, kind: 'cimd' });
-    expect(strong(c)).toEqual(['claude.ai', 'Some App', 'localhost']);
-    expect(text(c)).toMatch(/not approved/);
-    expect(text(c)).toMatch(/address is real/);
-    expect(text(c)).toMatch(/Nothing else about the app has been checked/);
+    expect(c.key).toBe('cimd');
+    expect(c.values).toEqual(base);
   });
 
-  it('DCR: the name is a claim, no host is presented as identity', () => {
-    const c = describeClient({ ...base, kind: 'dcr', host: '' });
-    expect(strong(c)).toEqual(['Some App', 'localhost']);
-    expect(text(c)).toMatch(/registered itself and chose its own name/);
-    expect(text(c)).toMatch(/not checked/);
-    expect(text(c)).not.toMatch(/address is real/);
-  });
-
-  it('a DCR client that supplies a host still gets none shown', () => {
+  it('DCR: the claimed-name message, never a host (even if one is passed)', () => {
     const c = describeClient({ ...base, kind: 'dcr' });
-    expect(text(c)).not.toContain('claude.ai');
+    expect(c.key).toBe('dcr');
+    expect(c.values.host).toBe('');
+    expect(c.values.name).toBe('Some App');
+    expect(describeClient({ ...base, kind: 'dcr', host: '' }).key).toBe('dcr');
   });
 
-  it('registered keeps the existing wording', () => {
-    const c = describeClient({ ...base, kind: 'registered' });
-    expect(text(c)).toMatch(
-      /^Hypha has not verified this app\. It calls itself/,
+  it('registered: with the app host when it has one, without otherwise', () => {
+    expect(describeClient({ ...base, kind: 'registered' }).key).toBe(
+      'registeredWithHost',
+    );
+    expect(describeClient({ ...base, kind: 'registered', host: '' }).key).toBe(
+      'registered',
     );
   });
 
-  it('the name is plain text: markup stays as characters, never as structure', () => {
-    const c = describeClient({
-      ...base,
-      kind: 'dcr',
-      name: '<img src=x onerror=alert(1)>',
-    });
-    expect(c.every((s) => typeof s.text === 'string')).toBe(true);
-    expect(strong(c)).toContain('<img src=x onerror=alert(1)>');
-  });
-});
-
-describe('hosts are shown whole', () => {
-  it('a 150-character host is never cut', () => {
+  it('a 150-character host is passed on whole', () => {
     const host = `${'a'.repeat(63)}.${'b'.repeat(63)}.${'c'.repeat(
       20,
     )}.example.com`;
@@ -64,9 +43,28 @@ describe('hosts are shown whole', () => {
       host,
       redirectHost: host,
     });
-    expect(c.filter((s) => s.strong).map((s) => s.text)).toEqual(
-      expect.arrayContaining([host]),
-    );
-    expect(c.map((s) => s.text).join('')).not.toContain('...');
+    expect(c.values.host).toBe(host);
+    expect(c.values.redirectHost).toBe(host);
+  });
+});
+
+describe('scope copy keys', () => {
+  it('maps the known scopes; only the write scope has a warning entry', () => {
+    expect(describeScope('spaces:read')).toEqual({
+      key: 'spacesRead',
+      hasWarning: false,
+    });
+    expect(describeScope('agreements:vote')).toEqual({
+      key: 'agreementsVote',
+      hasWarning: true,
+    });
+    expect(describeScope('offline_access').key).toBe('offlineAccess');
+  });
+
+  it('an unknown scope is flagged, not given someone else words', () => {
+    expect(describeScope('constructor')).toEqual({
+      key: 'unknown',
+      hasWarning: false,
+    });
   });
 });
