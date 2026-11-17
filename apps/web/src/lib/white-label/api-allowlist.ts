@@ -84,6 +84,18 @@ export const WL_API_SIGNED_IN_READ_ALLOWLIST: readonly string[] = [
 ];
 
 /**
+ * The upload route of the create forms (UploadThing): GET for the route config,
+ * POST for the presigned URLs. The only non-`/api/v1` path and the only write
+ * a host with login may call under `/api`; everything else a form writes is a
+ * Server Action (a page POST). The route verifies the bearer itself: it
+ * authenticates the person (a signed-in user of the app, as on the main app),
+ * not Space membership.
+ */
+export const WL_API_SIGNED_IN_UPLOAD_ALLOWLIST: readonly string[] = [
+  '/api/uploadthing',
+];
+
+/**
  * The allowlist for one host: the base list, plus the signed-in list when the
  * host has login. `loginEnabled` comes from the host's own registration
  * (resolved server side from config), never from the request.
@@ -92,6 +104,23 @@ export function apiAllowlistFor(loginEnabled: boolean): readonly string[] {
   return loginEnabled
     ? [...WL_API_READ_ALLOWLIST, ...WL_API_SIGNED_IN_READ_ALLOWLIST]
     : WL_API_READ_ALLOWLIST;
+}
+
+/**
+ * Whether a host WITH login may call this upload path (`loginEnabled` from the
+ * host's own registration, as for `apiAllowlistFor`).
+ */
+export function isApiUploadAllowed(
+  method: string | undefined,
+  segments: readonly string[],
+  loginEnabled: boolean,
+): boolean {
+  if (!loginEnabled) return false;
+  const upper = (method ?? 'GET').toUpperCase();
+  if (upper !== 'GET' && upper !== 'HEAD' && upper !== 'POST') return false;
+  return WL_API_SIGNED_IN_UPLOAD_ALLOWLIST.some((pattern) =>
+    matches(pattern, segments, undefined),
+  );
 }
 
 const PARAM_SEGMENT = /^[A-Za-z0-9_.-]{1,200}$/;

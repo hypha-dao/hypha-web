@@ -4,7 +4,11 @@ import {
   INTERNAL_PREFIX,
   LANDING_SECTION,
 } from './constants';
-import { apiAllowlistFor, isApiReadAllowed } from './api-allowlist';
+import {
+  apiAllowlistFor,
+  isApiReadAllowed,
+  isApiUploadAllowed,
+} from './api-allowlist';
 import { isValidSlug, normaliseHost } from './config';
 import type {
   CreateAction,
@@ -194,7 +198,8 @@ function resolveMappedHost(
       segments,
       record.spaceSlug,
       allowlist,
-    )
+    ) ||
+      isApiUploadAllowed(options.method, segments, Boolean(record.authConfig))
       ? { kind: 'api-allow', spaceSlug: record.spaceSlug }
       : { kind: 'not-found', reason: 'api-not-allowed' };
   }
