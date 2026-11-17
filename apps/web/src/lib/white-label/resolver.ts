@@ -324,7 +324,8 @@ export function resolve(
   // approve this Space), else the only approving client. With several approving
   // and none named, defaults apply (below) and the origins are their union, so
   // the page can load.
-  const named = options.clientParam ? options.clientParam : null;
+  // A supplied value, even an empty one, must match an approving client.
+  const named = options.clientParam ?? null;
   let selected: WhiteLabelClientRecord | null = null;
   if (named !== null) {
     selected = approving.find((client) => client.id === named) ?? null;

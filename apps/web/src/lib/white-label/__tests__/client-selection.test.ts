@@ -81,9 +81,13 @@ describe('client selection in the frame', () => {
       createActions: ['signal'],
       framingOrigins: ['https://a.example'],
     });
-    // An empty parameter counts as none named.
-    expect(run('/embed/only-a/en/agreements', '')).toMatchObject({
+    // Absent is none named; a supplied but empty value is a name that matches nothing.
+    expect(run('/embed/only-a/en/agreements', null)).toMatchObject({
       clientId: 'client-a',
+    });
+    expect(run('/embed/only-a/en/agreements', '')).toEqual({
+      kind: 'not-found',
+      reason: 'unapproved-space',
     });
   });
 

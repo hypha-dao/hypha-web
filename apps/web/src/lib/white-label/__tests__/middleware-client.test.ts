@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
-import { WHITE_LABEL_CONFIG_ENV } from '..';
+import { WHITE_LABEL_CONFIG_ENV, WL_SPACE_HEADER } from '..';
 import { middleware } from '../../../middleware';
 
 // next-intl cannot load under vitest; the white-label paths never call it.
@@ -77,6 +77,8 @@ describe('middleware: client selection in the frame', () => {
     const response = get('/embed/only-a/en/agreements?client=client-b');
     expect(frameAncestors(response)).not.toContain('b.example');
     expect(forwarded(response, 'x-hypha-wl-client')).toBeNull();
+    // Not a rewrite at all (a rewrite without a client header would pass the above).
+    expect(forwarded(response, WL_SPACE_HEADER)).toBeNull();
   });
 
   it('a visitor-sent client header is dropped', () => {
