@@ -26,6 +26,8 @@ export const WL_DETAIL_VIEW_HEADER = 'x-hypha-wl-detail-view';
 export const WL_UNSUPPORTED_ACTIONS_HEADER = 'x-hypha-wl-unsupported-actions';
 /** Create flows the host may offer (comma-joined known values), host with login only. */
 export const WL_CREATE_ACTIONS_HEADER = 'x-hypha-wl-create-actions';
+/** Tabs the client shows, in its order (comma-joined known ids). Presentation only. */
+export const WL_TABS_HEADER = 'x-hypha-wl-tabs';
 /** Set on requests middleware sends to the white-label 404 (see global-not-found). */
 export const WL_NOT_FOUND_HEADER = 'x-hypha-wl-not-found';
 export const WL_REQUEST_HEADERS = [
@@ -36,6 +38,7 @@ export const WL_REQUEST_HEADERS = [
   WL_DETAIL_VIEW_HEADER,
   WL_UNSUPPORTED_ACTIONS_HEADER,
   WL_CREATE_ACTIONS_HEADER,
+  WL_TABS_HEADER,
   WL_NOT_FOUND_HEADER,
 ] as const;
 
@@ -67,6 +70,26 @@ export const WL_SECTIONS = [
   'pipeline',
   'rewards',
   'treasury',
+] as const;
+
+/**
+ * The tabs (sections with an item in the Space menu), in the product order:
+ * the order of the bar when a client lists none. A client's `tabs` is a list
+ * of these, in the client's own order. `banking` is a section but not a tab:
+ * it is reached from Treasury and follows it (see `isTabVisible`).
+ */
+export const WL_TABS = [
+  'overview',
+  'energy',
+  'agreements',
+  'members',
+  'treasury',
+  'coherence',
+  'pipeline',
+  'memory',
+  'calendar',
+  'rewards',
+  'ecosystem-navigation',
 ] as const;
 
 /** Cookie next-intl uses for the chosen locale (read in host mode only). */

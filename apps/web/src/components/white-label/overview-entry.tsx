@@ -3,7 +3,11 @@
 import { useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSpaceEnergy } from '@hypha-platform/epics';
-import { useWhiteLabelSectionHref } from './white-label-provider';
+import { isTabVisible } from '@web/lib/white-label/tabs';
+import {
+  useWhiteLabel,
+  useWhiteLabelSectionHref,
+} from './white-label-provider';
 
 /**
  * White-label counterpart of the main app's overview entry: an energy
@@ -22,13 +26,17 @@ export function WhiteLabelOverviewEntry({
   const { data, isLoading, error } = useSpaceEnergy(spaceSlug);
   const router = useRouter();
   const sectionHref = useWhiteLabelSectionHref();
-  const energyHome = !stay && data?.enabled === true;
+  const ctx = useWhiteLabel();
+  // A client that hides the energy tab is not sent to it (that would be a 404).
+  const energyVisible = isTabVisible(ctx?.tabs, 'energy');
+  const energyHome = energyVisible && !stay && data?.enabled === true;
 
   useEffect(() => {
     if (energyHome) router.replace(sectionHref('energy'));
   }, [energyHome, router, sectionHref]);
 
-  const waiting = !stay && !error && (isLoading || data == null);
+  const waiting =
+    energyVisible && !stay && !error && (isLoading || data == null);
   if (energyHome || waiting) return null;
   return children;
 }

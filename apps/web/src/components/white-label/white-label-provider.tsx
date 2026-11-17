@@ -24,6 +24,7 @@ export function WhiteLabelProvider({
 }) {
   const fullAppOrigin = value.mode === 'host' ? value.fullAppOrigin : '';
   const createKey = (value.createActions ?? []).join(',');
+  const tabsKey = value.tabs?.join(',');
   const clientId = value.mode === 'embed' ? value.clientId : undefined;
   const memo = React.useMemo(
     () => value,
@@ -35,6 +36,7 @@ export function WhiteLabelProvider({
       value.detailView,
       value.unsupportedActions,
       createKey,
+      tabsKey,
       clientId,
       fullAppOrigin,
     ],

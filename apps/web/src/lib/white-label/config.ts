@@ -1,7 +1,9 @@
 import { CREATE_ACTIONS } from './constants';
+import { knownTabs } from './tabs';
 import type {
   CreateAction,
   DetailView,
+  Tab,
   UnsupportedActions,
   WhiteLabelAuthConfig,
   WhiteLabelClientRecord,
@@ -105,6 +107,18 @@ export function parseCreateActions(value: unknown): {
   };
 }
 
+/**
+ * `tabs` of a client record: the tabs to show, in the client's order. Absent,
+ * not an array, empty, or with no known id: not set, which means all tabs in
+ * product order (fail open: hiding a tab is presentation, not access control).
+ * Unknown ids and duplicates are dropped; the first occurrence keeps its place.
+ */
+export function parseTabs(value: unknown): { tabs?: Tab[] } {
+  if (!Array.isArray(value)) return {};
+  const tabs = knownTabs(value);
+  return tabs.length > 0 ? { tabs } : {};
+}
+
 function parseSpace(input: unknown): WhiteLabelSpaceRecord | null {
   if (typeof input !== 'object' || input === null) return null;
   const { slug, framingOrigins } = input as Record<string, unknown>;
@@ -123,7 +137,7 @@ function parseSpace(input: unknown): WhiteLabelSpaceRecord | null {
 
 function parseClient(input: unknown): WhiteLabelClientRecord | null {
   if (typeof input !== 'object' || input === null) return null;
-  const { id, spaces, detailView, unsupportedActions, createActions } =
+  const { id, spaces, detailView, unsupportedActions, createActions, tabs } =
     input as Record<string, unknown>;
   if (typeof id !== 'string' || !CLIENT_ID_PATTERN.test(id)) return null;
   if (!Array.isArray(spaces)) return null;
@@ -136,6 +150,7 @@ function parseClient(input: unknown): WhiteLabelClientRecord | null {
     ...parseDetailView(detailView),
     ...parseUnsupportedActions(unsupportedActions),
     ...parseCreateActions(createActions),
+    ...parseTabs(tabs),
     spaces: parsed,
   };
 }
@@ -272,7 +287,7 @@ function parseHostRecord(input: unknown): WhiteLabelHostRecord | null {
 
 function parseHostClient(input: unknown): WhiteLabelHostClientRecord | null {
   if (typeof input !== 'object' || input === null) return null;
-  const { id, hosts, detailView, unsupportedActions, createActions } =
+  const { id, hosts, detailView, unsupportedActions, createActions, tabs } =
     input as Record<string, unknown>;
   if (typeof id !== 'string' || !CLIENT_ID_PATTERN.test(id)) return null;
   if (!Array.isArray(hosts)) return null;
@@ -285,6 +300,7 @@ function parseHostClient(input: unknown): WhiteLabelHostClientRecord | null {
     ...parseDetailView(detailView),
     ...parseUnsupportedActions(unsupportedActions),
     ...parseCreateActions(createActions),
+    ...parseTabs(tabs),
     hosts: parsed,
   };
 }

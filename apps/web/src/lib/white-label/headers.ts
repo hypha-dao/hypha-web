@@ -2,8 +2,10 @@ import {
   CREATE_ACTIONS,
   WL_REQUEST_HEADERS,
   WL_SPACE_HEADER,
+  WL_TABS,
 } from './constants';
-import type { CreateAction } from './types';
+import { knownTabs } from './tabs';
+import type { CreateAction, Tab } from './types';
 
 /** Value of CSP `frame-ancestors` for a response. `'none'` unless origins given. */
 export function buildFrameAncestors(origins: readonly string[]): string {
@@ -85,4 +87,19 @@ export function readCreateActionsHeader(
         .filter((part): part is CreateAction => known.includes(part)),
     ),
   ];
+}
+
+/** Header value for `tabs` (known ids, comma-joined, in the bar's order). */
+export function serializeTabs(tabs: readonly Tab[]): string {
+  return tabs.join(',');
+}
+
+/**
+ * Parses the header the layout receives. Fail open, like the config: no
+ * header, or one with no known id, is all tabs in product order. The header
+ * only drives presentation; the resolver already refused hidden tabs.
+ */
+export function readTabsHeader(raw: string | null | undefined): Tab[] {
+  const tabs = raw ? knownTabs(raw.split(',').map((part) => part.trim())) : [];
+  return tabs.length > 0 ? tabs : [...WL_TABS];
 }

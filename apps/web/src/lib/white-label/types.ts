@@ -2,7 +2,7 @@
  * White-label types. Pure: no Next or React imports, so the resolver can be
  * unit-tested and reused by middleware, layouts and (later) a registry loader.
  */
-import type { CREATE_ACTIONS } from './constants';
+import type { CREATE_ACTIONS, WL_TABS } from './constants';
 
 /**
  * Where a card for a detail page (proposal, person) opens: `embedded` serves
@@ -21,6 +21,9 @@ export type UnsupportedActions = 'hide' | 'full-app';
 /** A create flow a host with login may offer (see `CREATE_ACTIONS`). */
 export type CreateAction = (typeof CREATE_ACTIONS)[number];
 
+/** A tab of the Space menu a client may show (see `WL_TABS`). */
+export type Tab = (typeof WL_TABS)[number];
+
 /** One Space a client may show in an iframe, with the origins allowed to frame it. */
 export type WhiteLabelSpaceRecord = {
   /** Space slug as in the main app. */
@@ -38,6 +41,12 @@ export type WhiteLabelClientRecord = {
   unsupportedActions?: UnsupportedActions;
   /** Absent means none; unknown values were dropped by the parser. */
   createActions?: CreateAction[];
+  /**
+   * Tabs to show, in this order (the first is the landing). Absent means all
+   * tabs in product order; an invalid, empty or all-unknown value was parsed to
+   * absent (fail open: hiding is presentation, not access control).
+   */
+  tabs?: Tab[];
   spaces: WhiteLabelSpaceRecord[];
 };
 
@@ -69,6 +78,12 @@ export type WhiteLabelHostClientRecord = {
   unsupportedActions?: UnsupportedActions;
   /** Absent means none; unknown values were dropped by the parser. */
   createActions?: CreateAction[];
+  /**
+   * Tabs to show, in this order (the first is the landing). Absent means all
+   * tabs in product order; an invalid, empty or all-unknown value was parsed to
+   * absent (fail open: hiding is presentation, not access control).
+   */
+  tabs?: Tab[];
   hosts: WhiteLabelHostRecord[];
 };
 
@@ -145,6 +160,11 @@ export type ResolvedSpace = {
    * Host: the owning client's list, and only when the host has login settings.
    */
   createActions: CreateAction[];
+  /**
+   * Tabs shown, in the bar's order; the first is the landing. All tabs in
+   * product order when the selected client lists none (or none is selected).
+   */
+  tabs: Tab[];
 };
 
 /** Host delivery: the one client that owns the host, and its Space. */
@@ -165,7 +185,8 @@ export type NotFoundReason =
   | 'unknown-host'
   | 'api-not-allowed'
   | 'embed-not-served'
-  | 'method-not-allowed';
+  | 'method-not-allowed'
+  | 'tab-hidden';
 
 export type ResolveDecision =
   /** Not white label: handled by the existing middleware chain. */
