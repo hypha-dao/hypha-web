@@ -16,14 +16,9 @@ import {
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 
 import { sectionFromPathname, sectionHref } from '@web/lib/white-label/link';
+import { showsTabBar, visibleNavKeys } from '@web/lib/white-label/nav';
+import type { Tab } from '@web/lib/white-label/types';
 import { useWhiteLabel } from './white-label-provider';
-
-const ALWAYS: SpaceSectionNavKey[] = [
-  'overview',
-  'agreements',
-  'members',
-  'treasury',
-];
 
 /**
  * Section menu of the white-label tree. Same sections as the main app's Space
@@ -50,25 +45,31 @@ export function WhiteLabelSectionNav({
   // The pipeline is members only: on a delivery without login it never has data.
   const pipelineLive = useActionStatus('pipeline-data') === 'live';
 
-  const keys = React.useMemo(() => {
-    const list: SpaceSectionNavKey[] = [...ALWAYS];
-    if (energy?.enabled) list.splice(1, 0, 'energy');
-    if (coherenceEnabled) list.push('coherence');
-    if (space?.pipelineEnabled && pipelineLive) list.push('pipeline');
-    if (memoryEnabled) list.push('memory');
-    list.push('calendar', 'rewards', 'ecosystem-navigation');
-    return list;
-  }, [
-    energy?.enabled,
-    coherenceEnabled,
-    space?.pipelineEnabled,
-    pipelineLive,
-    memoryEnabled,
-  ]);
+  // The client's tabs in its order, minus what this Space cannot serve.
+  const clientTabs = ctx?.tabs;
+  const tabsKey = clientTabs?.join(',');
+  const keys: Tab[] = React.useMemo(
+    () =>
+      visibleNavKeys(clientTabs, {
+        energy: energy?.enabled === true,
+        coherence: coherenceEnabled,
+        pipeline: Boolean(space?.pipelineEnabled) && pipelineLive,
+        memory: memoryEnabled,
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      tabsKey,
+      energy?.enabled,
+      coherenceEnabled,
+      space?.pipelineEnabled,
+      pipelineLive,
+      memoryEnabled,
+    ],
+  );
 
   // Energy communities open Overview on the energy dashboard; this flag keeps
   // the Space dashboard reachable, as in the main app's menu.
-  const overviewSearch = energy?.enabled
+  const overviewSearch = keys.includes('energy')
     ? `?${SPACE_DASHBOARD_BOARD_PARAM}=${SPACE_DASHBOARD_BOARD_VALUE}`
     : '';
 
@@ -103,7 +104,8 @@ export function WhiteLabelSectionNav({
     }
   };
 
-  if (!ctx) return null;
+  // One visible tab (or none): nothing to choose between, no bar.
+  if (!ctx || !showsTabBar(keys)) return null;
 
   // /embed/<slug>[/<lang>][/<section>] or, on a mapped host, [/<lang>]/<section>.
   const active = sectionFromPathname(ctx, pathname);

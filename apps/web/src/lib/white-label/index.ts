@@ -4,6 +4,7 @@ export * from './config';
 export * from './resolver';
 export * from './headers';
 export * from './tabs';
+export * from './nav';
 export * from './link';
 export * from './api-allowlist';
 export * from './auth';

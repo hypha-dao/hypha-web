@@ -26,8 +26,10 @@ import {
   WL_AUTH_HEADER,
   WL_MODE_HEADER,
   WL_SPACE_HEADER,
+  WL_TABS_HEADER,
   authKindFor,
   readAuthConfigHeader,
+  readTabsHeader,
 } from '@web/lib/white-label';
 import { WhiteLabelAuthControl } from '@web/components/white-label/auth-control';
 import { WhiteLabelSectionNav } from '@web/components/white-label/section-nav';
@@ -82,6 +84,12 @@ export default async function WhiteLabelSpaceLayout({
       readAuthConfigHeader(requestHeaders.get(WL_AUTH_HEADER)),
     ) === 'privy';
 
+  // A client that shows one tab shows no bar (decided here for a one-item
+  // list, so there is no flash; the bar also hides itself when only one tab
+  // is left after what the Space can serve).
+  const showTabBar =
+    readTabsHeader(requestHeaders.get(WL_TABS_HEADER)).length > 1;
+
   const space = await findSpaceBySlug({ slug }, { db });
   if (!space) notFound();
 
@@ -126,13 +134,15 @@ export default async function WhiteLabelSpaceLayout({
               })}
               revealMetaLabel={tCommon('spaceBannerRevealMeta')}
             />
-            <div className="w-full min-w-0">
-              <WhiteLabelSectionNav
-                spaceSlug={slug}
-                coherenceEnabled={coherenceEnabled}
-                memoryEnabled={memoryEnabled}
-              />
-            </div>
+            {showTabBar ? (
+              <div className="w-full min-w-0">
+                <WhiteLabelSectionNav
+                  spaceSlug={slug}
+                  coherenceEnabled={coherenceEnabled}
+                  memoryEnabled={memoryEnabled}
+                />
+              </div>
+            ) : null}
             {showAuthControl ? <WhiteLabelAuthControl /> : null}
             {children}
           </div>
