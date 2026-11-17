@@ -10,7 +10,9 @@ import { redactingLog } from './redact';
  * Profile: anonymous, public clients only (no secret is ever issued), grants authorization_code
  * and refresh_token, response type code, https or loopback-http redirect URIs, scopes inside the
  * server vocabulary (default spaces:read). Registered clients are always unverified and consent
- * is always shown (the schema refuses skip_consent; the consent page hardcodes verified=false).
+ * is remembered per client and scope like for any client (skip_consent cannot be set: it is dropped
+ * from the request and the stored row is written with skipConsent = false; the consent page
+ * hardcodes verified=false).
  */
 
 export const REGISTRATION_MAX_BODY_BYTES = 8 * 1024;

@@ -13,6 +13,11 @@ type Deps = {
   ) => Promise<PersonRecord | null>;
 };
 
+/** Unique per person, never deliverable (the .invalid TLD is reserved). */
+export function syntheticEmail(sub: string): string {
+  return `${encodeURIComponent(sub).toLowerCase()}@users.invalid`;
+}
+
 /**
  * Sign-in bridge: the login page sends the provider's access token once; the server verifies
  * it with that provider, maps the provider account to the Hypha person (sub = people.sub) and
@@ -72,8 +77,11 @@ export function createIdentityBridge({ providers, gate, resolvePerson }: Deps) {
                 name:
                   [person.name, person.surname].filter(Boolean).join(' ') ||
                   sub,
-                email: person.email ?? `${sub}@users.invalid`,
-                emailVerified: !!person.email,
+                // as_user.email is unique and nothing here reads it. The person's real address is
+                // not copied: two people sharing one address would make the second first sign-in
+                // fail, and the address would only be one more copy of personal data.
+                email: syntheticEmail(sub),
+                emailVerified: false,
               },
               // forceAllowId inside the adapter keeps the supplied id (the person's sub).
               undefined as never,

@@ -95,7 +95,9 @@ export function ConsentForm({
       <p role="note" className="border border-warning-8 p-3 text-2">
         {describeClient({ ...client }).map((seg, i) =>
           seg.strong ? (
-            <strong key={i}>{seg.text}</strong>
+            <strong key={i} className="break-all">
+              {seg.text}
+            </strong>
           ) : (
             <React.Fragment key={i}>{seg.text}</React.Fragment>
           ),

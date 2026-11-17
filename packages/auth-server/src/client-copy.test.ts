@@ -51,3 +51,22 @@ describe('consent copy tells a proven domain from a claimed name', () => {
     expect(strong(c)).toContain('<img src=x onerror=alert(1)>');
   });
 });
+
+describe('hosts are shown whole', () => {
+  it('a 150-character host is never cut', () => {
+    const host = `${'a'.repeat(63)}.${'b'.repeat(63)}.${'c'.repeat(
+      20,
+    )}.example.com`;
+    expect(host.length).toBeGreaterThan(150);
+    const c = describeClient({
+      kind: 'cimd',
+      name: 'Some App',
+      host,
+      redirectHost: host,
+    });
+    expect(c.filter((s) => s.strong).map((s) => s.text)).toEqual(
+      expect.arrayContaining([host]),
+    );
+    expect(c.map((s) => s.text).join('')).not.toContain('...');
+  });
+});

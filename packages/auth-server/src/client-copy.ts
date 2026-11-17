@@ -1,5 +1,9 @@
 import type { ClientKind } from './consent';
 
+/** Shown when the signed approval link is not valid at all (altered or not from this server). */
+export const APPROVAL_INVALID_MESSAGE =
+  'This approval link is not valid. Go back to the app and start again.';
+
 /** Shown when the signed login/consent query has run out (see AUTH_QUERY_TTL_SECONDS). */
 export const APPROVAL_EXPIRED_MESSAGE =
   'This approval expired. Go back to the app and start again.';

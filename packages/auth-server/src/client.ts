@@ -7,6 +7,7 @@ export {
 export { describeScope } from './scope-copy';
 export {
   APPROVAL_EXPIRED_MESSAGE,
+  APPROVAL_INVALID_MESSAGE,
   describeClient,
   type CopySegment,
 } from './client-copy';

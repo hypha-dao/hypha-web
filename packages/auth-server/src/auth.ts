@@ -47,6 +47,27 @@ const FORBIDDEN = {
   error_description: 'This account is not enabled for this service.',
 } as const;
 
+/**
+ * True only for the app's own first request to the authorize endpoint: the incoming HTTP request
+ * is for that path and carries no library signature. Anything else is a resume (after sign-in
+ * the query is signed; after consent the library dispatches the endpoint from the consent request).
+ */
+export function isInitialAuthorizeRequest(
+  request: Request | undefined,
+  params: unknown,
+): boolean {
+  if (!request) return false;
+  let path: string;
+  try {
+    path = new URL(request.url).pathname;
+  } catch {
+    return false;
+  }
+  if (!path.endsWith('/oauth2/authorize')) return false;
+  const sig = (params as Record<string, unknown> | undefined)?.sig;
+  return sig === undefined || sig === null || sig === '';
+}
+
 export function createAuthServer(
   config: AuthServerConfig,
   deps: AuthServerDeps = {},
@@ -92,8 +113,13 @@ export function createAuthServer(
     advanced: {
       useSecureCookies: config.issuer.startsWith('https://'),
       cookiePrefix: 'hypha_as',
-      // Do not trust client-supplied forwarding headers for the client address.
-      ipAddress: { disableIpTracking: false },
+      // Address tracking stays on (the library's own rate limits use it), but the client address is
+      // read only from the platform header on Vercel, which the caller cannot set. Everywhere else
+      // no header is trusted (the library falls back to localhost in development only).
+      ipAddress: {
+        disableIpTracking: false,
+        ipAddressHeaders: process.env.VERCEL ? ['x-vercel-forwarded-for'] : [],
+      },
     },
     trustedOrigins: [config.issuer],
     plugins: [
@@ -142,7 +168,10 @@ export function createAuthServer(
         resources: [...config.resources],
         // CIMD clients are unregistered, so they cannot be linked to resources one by one.
         enforcePerClientResources: false,
-        // Authorization-code consent is shown by our page; the server never skips it.
+        // Consent is shown by our page and remembered per client and scope (the library's standard
+        // behaviour): it is asked again only when a request needs a scope that was not approved yet,
+        // or after the person disconnects the app. `skip_consent` cannot be set: registration drops
+        // it and stored rows are written with skipConsent = false.
         customAccessTokenClaims: async ({ user }) => {
           // Runs for the code exchange and for every refresh: the whitelist re-check at refresh.
           if (!user || !gate(user.id)) {
@@ -173,15 +202,21 @@ export function createAuthServer(
       }),
       {
         // Every client is an AI host that should stay connected, so a refresh token is always
-        // offered: `offline_access` is added to the requested scopes (the person can still
-        // untick it on the consent page). The library only issues a refresh token when it is
-        // part of the granted scope.
+        // offered: `offline_access` is added to the scopes of the app's first, unsigned authorize
+        // request (the person can still untick it on the consent page). The library re-dispatches
+        // the authorize endpoint after consent with the scope the person ticked, and resumes with
+        // a signed query; neither may get the default back, or a declined `offline_access` would
+        // reappear. The library only issues a refresh token when it is part of the granted scope.
         id: 'hypha-offline-access',
         hooks: {
           before: [
             {
               matcher: (ctx) => ctx.path === '/oauth2/authorize',
               handler: createAuthMiddleware(async (ctx) => {
+                if (
+                  !isInitialAuthorizeRequest(ctx.request, ctx.query ?? ctx.body)
+                )
+                  return;
                 const target = (ctx.query ?? ctx.body) as
                   | Record<string, unknown>
                   | undefined;

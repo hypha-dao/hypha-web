@@ -4,10 +4,13 @@ import { AUTH_SERVER_WRITE_SCOPES } from './config';
 import { describeScope } from './scope-copy';
 
 /**
- * How the app was identified, which decides the defaults on the consent page:
- * - `registered`: pre-registered with Hypha (tier A); keeps the product defaults;
- * - `cimd`: no registration, identified by an https `client_id` that serves its own metadata;
- * - `dcr`: registered itself through dynamic registration; its name is a claim, not checked.
+ * How the app was identified, which decides the defaults on the consent page. The kind comes
+ * from how the stored row was created, never from the shape of the client id:
+ * - `registered`: pre-registered with Hypha (tier A), marked `metadata.registration = 'registered'`
+ *   when the row is created; keeps the product defaults;
+ * - `cimd`: the library created the row from the app's own metadata document (discovery id set);
+ * - `dcr`: registered itself through dynamic registration, or a row that cannot be told apart
+ *   (no marker, no discovery id): the least trusted kind. Its name is a claim, not checked.
  * Only `registered` is pre-approved.
  */
 export type ClientKind = 'registered' | 'cimd' | 'dcr';
@@ -54,13 +57,34 @@ export async function inspectConsentQuery(
     : 'invalid';
 }
 
-export function classifyClient(
-  clientId: string,
-  registration: unknown,
-): ClientKind {
-  if (registration === 'dcr') return 'dcr';
-  if (/^https:\/\//i.test(clientId)) return 'cimd';
-  return 'registered';
+/** Marker stored on rows Hypha pre-registered by hand. Without it a row is never `registered`. */
+export const REGISTERED_CLIENT_MARKER = 'registered';
+
+export function classifyClient(stored: {
+  clientDiscoveryId?: unknown;
+  registration?: unknown;
+}): ClientKind {
+  if (stored.registration === 'dcr') return 'dcr';
+  if (typeof stored.clientDiscoveryId === 'string' && stored.clientDiscoveryId)
+    return 'cimd';
+  if (stored.registration === REGISTERED_CLIENT_MARKER) return 'registered';
+  // Fail closed: unknown provenance gets the least trusted treatment.
+  return 'dcr';
+}
+
+export type ConsentEntry = 'show' | 'sign-in' | 'expired' | 'restart';
+
+/**
+ * What the consent page does first. A valid signed query without a session goes to sign-in and
+ * keeps the query; an expired or invalid one never goes to sign-in (it could not be used).
+ */
+export function decideConsentEntry(
+  query: 'valid' | 'expired' | 'invalid',
+  hasSession: boolean,
+): ConsentEntry {
+  if (query === 'expired') return 'expired';
+  if (query === 'invalid') return 'restart';
+  return hasSession ? 'show' : 'sign-in';
 }
 
 /**
@@ -85,7 +109,7 @@ export async function loadConsentRequest(
   if (!clientId || !redirectUri) return null;
 
   const { rows } = await pool.query(
-    `select name, uri, metadata->>'registration' as registration
+    `select name, uri, "clientDiscoveryId", metadata->>'registration' as registration
        from as_oauth_client where "clientId" = $1 limit 1`,
     [clientId],
   );
@@ -99,7 +123,10 @@ export async function loadConsentRequest(
       return '';
     }
   };
-  const kind = classifyClient(clientId, row.registration);
+  const kind = classifyClient({
+    clientDiscoveryId: row.clientDiscoveryId,
+    registration: row.registration,
+  });
   const requested = (params.get('scope') ?? '').split(/\s+/).filter(Boolean);
   return {
     oauthQuery,
