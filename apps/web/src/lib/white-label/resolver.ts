@@ -9,7 +9,7 @@ import {
   isApiReadAllowed,
   isApiUploadAllowed,
 } from './api-allowlist';
-import { isValidSlug, normaliseHost } from './config';
+import { isValidSlug, normaliseFramingOrigin, normaliseHost } from './config';
 import type {
   ResolveDecision,
   ResolveOptions,
@@ -120,6 +120,34 @@ export function localeForPath(
 function isReadMethod(method: string | undefined): boolean {
   const upper = (method ?? 'GET').toUpperCase();
   return upper === 'GET' || upper === 'HEAD';
+}
+
+/**
+ * Best guess of the client from the `Referer` of a frame's first load: the
+ * embedding page's origin. Only a single client listing that origin for this
+ * Space counts (two listing it is ambiguous). Nothing here is trusted: a
+ * forged value can only pick a client that approves this Space, which changes
+ * presentation settings, and the browser still enforces `frame-ancestors`.
+ */
+export function clientFromReferer(
+  approving: readonly WhiteLabelClientRecord[],
+  slug: string,
+  referer: string | null | undefined,
+): WhiteLabelClientRecord | null {
+  if (!referer) return null;
+  let origin: string | null;
+  try {
+    origin = normaliseFramingOrigin(new URL(referer).origin);
+  } catch {
+    return null;
+  }
+  if (origin === null) return null;
+  const matches = approving.filter((client) =>
+    client.spaces.some(
+      (space) => space.slug === slug && space.framingOrigins.includes(origin),
+    ),
+  );
+  return matches.length === 1 ? matches[0] ?? null : null;
 }
 
 /** True when `host` is one of the mapped hosts (host delivery). */
@@ -321,9 +349,10 @@ export function resolve(
     return { kind: 'not-found', reason: 'unapproved-space' };
   }
   // One client's settings apply, never a mix: the one the URL names (it must
-  // approve this Space), else the only approving client. With several approving
-  // and none named, defaults apply (below) and the origins are their union, so
-  // the page can load.
+  // approve this Space), else the only approving client, else the one whose
+  // framing origins include the page that embeds this one (best guess from the
+  // `Referer` of the first load). With several approving and no match,
+  // defaults apply (below) and the origins are their union, so the page can load.
   // A supplied value, even an empty one, must match an approving client.
   const named = options.clientParam ?? null;
   let selected: WhiteLabelClientRecord | null = null;
@@ -332,6 +361,8 @@ export function resolve(
     if (!selected) return { kind: 'not-found', reason: 'unapproved-space' };
   } else if (approving.length === 1) {
     selected = approving[0] ?? null;
+  } else {
+    selected = clientFromReferer(approving, slug, options.referer);
   }
   const origins = new Set<string>();
   for (const client of selected ? [selected] : approving) {

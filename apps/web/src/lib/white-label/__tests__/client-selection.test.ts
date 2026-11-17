@@ -210,3 +210,81 @@ describe('the client rides along in the frame links', () => {
     ).toEqual({ kind: 'internal', href: '/embed/shared/en/members' });
   });
 });
+
+describe('client from the Referer of the first load (best guess)', () => {
+  const withReferer = (path: string, referer: string | null, name?: string) =>
+    resolve('app.example', path, config(), {
+      ...OPTIONS,
+      referer,
+      clientParam: name,
+    });
+
+  it('several approving, one lists the embedding origin: that client', () => {
+    expect(
+      withReferer('/embed/shared/en/agreements', 'https://b.example/some/page'),
+    ).toMatchObject({
+      clientId: 'client-b',
+      framingOrigins: ['https://b.example'],
+      detailView: 'embedded',
+    });
+    expect(
+      withReferer('/embed/shared/en/agreements', 'https://a.example/'),
+    ).toMatchObject({ clientId: 'client-a', detailView: 'full-app' });
+  });
+
+  it('the parameter wins over the Referer', () => {
+    expect(
+      withReferer(
+        '/embed/shared/en/agreements',
+        'https://a.example/',
+        'client-b',
+      ),
+    ).toMatchObject({ clientId: 'client-b' });
+  });
+
+  it('no usable Referer: defaults and the union, as without it', () => {
+    for (const referer of [
+      null,
+      '',
+      'not a url',
+      'https://other.example/',
+      // Same host, other port or scheme, is another origin.
+      'https://a.example:8443/',
+      'http://a.example/',
+      // An origin of a client that does not approve this Space is not a match.
+      'https://c.example/',
+    ]) {
+      const decision = withReferer('/embed/shared/en/agreements', referer);
+      expect(decision, String(referer)).toMatchObject({
+        kind: 'rewrite',
+        detailView: 'embedded',
+        framingOrigins: ['https://a.example', 'https://b.example'],
+      });
+      expect(decision).not.toHaveProperty('clientId');
+    }
+  });
+
+  it('two clients listing the same origin: ambiguous, defaults', () => {
+    const both: WhiteLabelConfig = {
+      hostClients: [],
+      mainHosts: [],
+      clients: ['x', 'y'].map((id) => ({
+        id,
+        detailView: 'full-app' as const,
+        spaces: [{ slug: 'shared', framingOrigins: ['https://same.example'] }],
+      })),
+    };
+    const decision = resolve('h', '/embed/shared/en', both, {
+      ...OPTIONS,
+      referer: 'https://same.example/p',
+    });
+    expect(decision).toMatchObject({ kind: 'rewrite', detailView: 'embedded' });
+    expect(decision).not.toHaveProperty('clientId');
+  });
+
+  it('a single approving client does not need it, and a wrong Referer does not change it', () => {
+    expect(
+      withReferer('/embed/only-a/en/agreements', 'https://b.example/'),
+    ).toMatchObject({ clientId: 'client-a' });
+  });
+});
