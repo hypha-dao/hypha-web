@@ -137,6 +137,32 @@ describe('link guard: a hidden tab is inert', () => {
   });
 });
 
+describe('link guard: encoded section names', () => {
+  it('an encoded hidden section is inert in every link shape', () => {
+    expect(link('/en/%61greements', host(SHOWN))).toEqual({ kind: 'blocked' });
+    expect(link('/embed/s1/en/%61greements', frame(SHOWN))).toEqual({
+      kind: 'blocked',
+    });
+    expect(link('/en/dho/s1/%61greements', frame(SHOWN))).toEqual({
+      kind: 'blocked',
+    });
+    expect(link('/en/dho/s1/%61greements', host(SHOWN))).toEqual({
+      kind: 'blocked',
+    });
+  });
+
+  it('an encoded overview goes to the landing, like the plain one', () => {
+    expect(link('/en/%6Fverview', host(SHOWN))).toEqual(
+      link('/en/overview', host(SHOWN)),
+    );
+  });
+
+  it('a malformed escape does not throw and is not a section', () => {
+    expect(() => link('/en/%E0%A4%A', host(SHOWN))).not.toThrow();
+    expect(() => link('/embed/s1/en/%zz', frame(SHOWN))).not.toThrow();
+  });
+});
+
 describe('link guard: overview and landing links', () => {
   it('host: the root, and overview links, go to the first listed tab', () => {
     const ctx = host(SHOWN);

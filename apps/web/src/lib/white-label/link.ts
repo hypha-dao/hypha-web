@@ -79,11 +79,20 @@ function overviewTarget(ctx: WhiteLabelLinkContext): string {
  * client's choice for its pages, and an exit to the full app would show what
  * it hid. `null` when the link is not under a hidden tab.
  */
+function decodeSegment(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
 function hiddenTabLink(
   ctx: WhiteLabelLinkContext,
   own: readonly string[],
 ): 'landing' | 'blocked' | null {
-  const [first] = own;
+  // The path is raw here; the resolver compares decoded segments, so do the same.
+  const first = own[0] === undefined ? undefined : decodeSegment(own[0]);
   if (
     first === undefined ||
     !SERVED_SECTIONS.includes(first) ||
