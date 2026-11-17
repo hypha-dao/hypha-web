@@ -222,19 +222,15 @@ export async function reserveRegistrationSlot(
     await client.query('select pg_advisory_xact_lock($1)', [
       REGISTRATION_LOCK_KEY,
     ]);
-    await client.query(
-      `delete from as_registration_slot where "createdAt" < now() - interval '1 hour'`,
+    // A new statement sees everything committed while it waited for the lock. Expired slots
+    // do not count (they are deleted in purgeUnusedRegisteredClients).
+    const { rowCount } = await client.query(
+      `insert into as_registration_slot (bucket)
+       select $1::text where (select count(*) from as_registration_slot
+                         where bucket = $1::text and "createdAt" > now() - interval '1 hour') < $2::int`,
+      [bucket, limit],
     );
-    const { rows } = await client.query(
-      'select count(*)::int as n from as_registration_slot where bucket = $1',
-      [bucket],
-    );
-    const allowed = (rows[0]?.n ?? 0) < limit;
-    if (allowed)
-      await client.query(
-        'insert into as_registration_slot (bucket) values ($1)',
-        [bucket],
-      );
+    const allowed = (rowCount ?? 0) > 0;
     await client.query('commit');
     return allowed;
   } catch (error) {
@@ -368,6 +364,9 @@ export async function narrowRegisteredClient(
 
 /** Deletes registered clients nobody consented to within the TTL. Tokens cascade; there are none. */
 export async function purgeUnusedRegisteredClients(pool: AuthDbPool) {
+  await pool.query(
+    `delete from as_registration_slot where "createdAt" < now() - interval '1 hour'`,
+  );
   await pool.query(
     `delete from as_oauth_client c
       where c.metadata->>'registration' = 'dcr'

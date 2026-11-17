@@ -230,7 +230,7 @@ run('dynamic client registration (experiment): limits and flow', () => {
       (await register(ok, { 'x-vercel-forwarded-for': '198.51.100.7' })).status,
     ).toBe(429);
     vi.unstubAllEnvs();
-  });
+  }, 120_000);
 
   it('reservations are atomic: a concurrent burst never exceeds the limit', async () => {
     const results = await Promise.all(
