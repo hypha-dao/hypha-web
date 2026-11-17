@@ -127,3 +127,62 @@ describe('action capabilities', () => {
     expect(html).toContain('href="/en/dho/s1/treasury"');
   });
 });
+
+describe('create capabilities', () => {
+  const CREATE_KINDS: ActionKind[] = [
+    'create-signal',
+    'create-agreement',
+    'create-contribution',
+    'create-proposal',
+  ];
+
+  it('main app: live; no createActions: hidden, or a full-app link, as before', () => {
+    for (const kind of CREATE_KINDS) {
+      expect(resolveActionStatus(null, kind), kind).toBe('live');
+      expect(resolveActionStatus(value(), kind), kind).toBe('hidden');
+      expect(resolveActionStatus(value({ createActions: [] }), kind)).toBe(
+        'hidden',
+      );
+      expect(
+        resolveActionStatus(value({ unsupportedActions: 'full-app' }), kind),
+        kind,
+      ).toBe('full-app');
+    }
+  });
+
+  it('each kind is live for its own value only', () => {
+    const only = (createActions: string[]) =>
+      CREATE_KINDS.filter(
+        (kind) =>
+          resolveActionStatus(value({ createActions }), kind) === 'live',
+      );
+    expect(only(['signal'])).toEqual(['create-signal']);
+    expect(only(['agreement'])).toEqual([
+      'create-agreement',
+      'create-proposal',
+    ]);
+    expect(only(['contribution'])).toEqual([
+      'create-contribution',
+      'create-proposal',
+    ]);
+    expect(only(['proposal', 'Signal', ''])).toEqual([]);
+  });
+
+  it('does not make the other create flows live (memory, tokens, calendar)', () => {
+    const all = value({
+      createActions: ['signal', 'agreement', 'contribution'],
+    });
+    for (const kind of ['create-flow', 'calendar-write', 'claim'] as const) {
+      expect(resolveActionStatus(all, kind), kind).toBe('hidden');
+    }
+  });
+
+  it('the gate renders the live control only where the value lists it', () => {
+    expect(
+      gate('create-signal', value({ createActions: ['signal'] })),
+    ).toContain('live control');
+    expect(
+      gate('create-signal', value({ createActions: ['agreement'] })),
+    ).not.toContain('live control');
+  });
+});

@@ -26,12 +26,14 @@ import {
 import { WhiteLabelAuthProvider } from '@web/components/white-label/auth-seam';
 import {
   WL_AUTH_HEADER,
+  WL_CREATE_ACTIONS_HEADER,
   WL_DETAIL_VIEW_HEADER,
   WL_MODE_HEADER,
   WL_SPACE_HEADER,
   WL_UNSUPPORTED_ACTIONS_HEADER,
   authKindFor,
   readAuthConfigHeader,
+  readCreateActionsHeader,
   type WhiteLabelLinkContext,
   type WhiteLabelMode,
 } from '@web/lib/white-label';
@@ -88,6 +90,12 @@ export default async function WhiteLabelRootLayout({
       ? readAuthConfigHeader(requestHeaders.get(WL_AUTH_HEADER))
       : null;
 
+  // Create flows need a host with login (fail closed: known values only).
+  const createActions =
+    authKindFor(whiteLabelMode, authConfig) === 'privy'
+      ? readCreateActionsHeader(requestHeaders.get(WL_CREATE_ACTIONS_HEADER))
+      : [];
+
   let locale = 'en';
   let messages: Record<string, unknown> = defaultMessages;
   try {
@@ -106,6 +114,7 @@ export default async function WhiteLabelRootLayout({
           fullAppOrigin: getAppBaseUrl(),
           detailView,
           unsupportedActions,
+          createActions,
         }
       : {
           mode: 'embed',
@@ -144,6 +153,7 @@ export default async function WhiteLabelRootLayout({
                       // Only a host with login can vote (a signed-in member).
                       voteLive:
                         authKindFor(whiteLabelMode, authConfig) === 'privy',
+                      createActions,
                     }}
                   >
                     {/* Context providers the shared sections read. Matrix, chat
