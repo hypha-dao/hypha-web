@@ -24,6 +24,7 @@ export function WhiteLabelProvider({
 }) {
   const fullAppOrigin = value.mode === 'host' ? value.fullAppOrigin : '';
   const createKey = (value.createActions ?? []).join(',');
+  const clientId = value.mode === 'embed' ? value.clientId : undefined;
   const memo = React.useMemo(
     () => value,
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -34,6 +35,7 @@ export function WhiteLabelProvider({
       value.detailView,
       value.unsupportedActions,
       createKey,
+      clientId,
       fullAppOrigin,
     ],
   );

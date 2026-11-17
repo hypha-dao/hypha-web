@@ -1,4 +1,9 @@
-import { EMBED_PREFIX, LANDING_SECTION, WL_SECTIONS } from './constants';
+import {
+  EMBED_PREFIX,
+  LANDING_SECTION,
+  WL_CLIENT_PARAM,
+  WL_SECTIONS,
+} from './constants';
 import type { CreateAction, DetailView, UnsupportedActions } from './types';
 
 /**
@@ -14,6 +19,8 @@ export type WhiteLabelLinkContext =
       mode: 'embed';
       spaceSlug: string;
       lang: string;
+      /** The client selected for this frame; carried on every link that stays in it. */
+      clientId?: string;
       detailView?: DetailView;
       /** Absent means `hide`: create-flow links do nothing. */
       unsupportedActions?: UnsupportedActions;
@@ -37,6 +44,18 @@ export type LinkDecision =
   | { kind: 'external'; href: string }
   /** A create flow the delivery cannot perform, with `unsupportedActions: 'hide'`: the click does nothing. */
   | { kind: 'blocked' };
+
+/**
+ * Query string of a link that stays in the frame: the selected client rides
+ * along (replacing any `client` the link had), so a later page load keeps the
+ * same client's settings. Unchanged on a host and when no client is selected.
+ */
+export function withClient(ctx: WhiteLabelLinkContext, search: string): string {
+  if (ctx.mode !== 'embed' || !ctx.clientId) return search;
+  const params = new URLSearchParams(search);
+  params.set(WL_CLIENT_PARAM, ctx.clientId);
+  return `?${params.toString()}`;
+}
 
 const SERVED_SECTIONS: readonly string[] = WL_SECTIONS;
 
@@ -74,7 +93,10 @@ function detailHref(
   const path = own.join('/');
   return ctx.mode === 'host'
     ? `/${ctx.lang}/${path}${search}`
-    : `/${EMBED_PREFIX}/${ctx.spaceSlug}/${ctx.lang}/${path}${search}`;
+    : `/${EMBED_PREFIX}/${ctx.spaceSlug}/${ctx.lang}/${path}${withClient(
+        ctx,
+        search,
+      )}`;
 }
 
 /**
@@ -174,7 +196,10 @@ export function sectionHref(
   search = '',
 ): string {
   if (ctx.mode === 'host') return `/${ctx.lang}/${section}${search}`;
-  return `/${EMBED_PREFIX}/${ctx.spaceSlug}/${ctx.lang}/${section}${search}`;
+  return `/${EMBED_PREFIX}/${ctx.spaceSlug}/${ctx.lang}/${section}${withClient(
+    ctx,
+    search,
+  )}`;
 }
 
 /**
@@ -292,10 +317,16 @@ export function classifyLink(
         SERVED_SECTIONS.includes(section)) ||
       isServedDetail(ctx, own)
     ) {
-      return { kind: 'internal', href: url.pathname + url.search };
+      return {
+        kind: 'internal',
+        href: url.pathname + withClient(ctx, url.search),
+      };
     }
     if (isServedCreate(ctx, own)) {
-      return { kind: 'internal', href: url.pathname + url.search };
+      return {
+        kind: 'internal',
+        href: url.pathname + withClient(ctx, url.search),
+      };
     }
     if (isCreateFlow(own)) {
       return createFlowDecision(ctx, lang, own, url, false);

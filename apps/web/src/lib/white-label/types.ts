@@ -94,6 +94,11 @@ export type ResolveOptions = {
    * `SameSite=Lax`).
    */
   acceptLanguage?: string | null;
+  /**
+   * Value of the `client` query parameter (embed only). Names the client when
+   * several approve the same Space; ignored on a mapped host.
+   */
+  clientParam?: string | null;
   /** Value of the locale cookie. Read in host mode only (first party there). */
   localeCookie?: string | null;
   /** HTTP method; the `/api` allowlist of a mapped host is GET and HEAD only. */
@@ -105,23 +110,32 @@ export type ResolvedSpace = {
   mode: 'embed';
   /** Client ids that approved this Space (config order). */
   clientIds: string[];
+  /**
+   * Embed: the client whose settings apply (named by the `client` parameter,
+   * or the only approving client). Absent when several approve the Space and
+   * none was named: defaults apply. Host: see `ResolvedHost.clientId`.
+   */
+  clientId?: string;
   spaceSlug: string;
   locale: string;
-  /** Union of the approving clients' framing origins for this Space (embed only). */
+  /**
+   * Embed: the selected client's framing origins for this Space; with several
+   * approving clients and none selected, their union (so the page can load).
+   */
   framingOrigins: string[];
   /**
-   * Embed: `embedded` if any approving client says so (or leaves it unset),
-   * else `full-app`. Host: the owning client's value.
+   * Embed: the selected client's value (`embedded` when none is selected).
+   * Host: the owning client's value.
    */
   detailView: DetailView;
   /**
-   * Embed: `full-app` only if every approving client says so (`hide` wins).
+   * Embed: the selected client's value (`hide` when none is selected).
    * Host: the owning client's value, `hide` when unset.
    */
   unsupportedActions: UnsupportedActions;
   /**
-   * Create flows on offer. Embed: the intersection of the approving clients'
-   * lists (the safe side); the iframe has no login, so nothing uses it yet.
+   * Create flows on offer. Embed: the selected client's list (none when no
+   * client is selected); the iframe has no login, so nothing uses it yet.
    * Host: the owning client's list, and only when the host has login settings.
    */
   createActions: CreateAction[];

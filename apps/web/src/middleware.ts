@@ -15,6 +15,7 @@ import {
   WL_CLIENT_HEADER,
   WL_DETAIL_VIEW_HEADER,
   WL_UNSUPPORTED_ACTIONS_HEADER,
+  WL_CLIENT_PARAM,
   WL_CREATE_ACTIONS_HEADER,
   WL_LOCALE_COOKIE,
   WL_MODE_HEADER,
@@ -210,6 +211,7 @@ export function middleware(request: NextRequest) {
     acceptLanguage: request.headers.get('accept-language'),
     localeCookie: request.cookies.get(WL_LOCALE_COOKIE)?.value ?? null,
     method: request.method,
+    clientParam: request.nextUrl.searchParams.get(WL_CLIENT_PARAM),
   };
   const decision = resolve(host, pathname, config, whiteLabelOptions);
 
@@ -234,6 +236,9 @@ export function middleware(request: NextRequest) {
       WL_CREATE_ACTIONS_HEADER,
       serializeCreateActions(decision.createActions),
     );
+    if (decision.mode === 'embed' && decision.clientId) {
+      headers.set(WL_CLIENT_HEADER, decision.clientId);
+    }
     if (decision.mode === 'host') {
       headers.set(WL_CLIENT_HEADER, decision.clientId);
       if (decision.authConfig) {

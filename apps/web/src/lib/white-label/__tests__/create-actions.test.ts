@@ -109,24 +109,15 @@ describe('createActions on the resolver result', () => {
     mainHosts: [],
   });
 
-  it('embed: the intersection of the approving clients wins', () => {
+  it('embed, two approving clients and none named: none, never a mix', () => {
     const config = embedConfig(
       ['signal', 'agreement'],
       ['agreement', 'contribution'],
     );
-    expect(pick(config, 'app.example', '/embed/s1/en/agreements')).toEqual([
-      'agreement',
-    ]);
+    expect(pick(config, 'app.example', '/embed/s1/en/agreements')).toEqual([]);
   });
 
-  it('embed: one client with none empties it; a single client keeps its list', () => {
-    expect(
-      pick(
-        embedConfig(['signal'], undefined),
-        'app.example',
-        '/embed/s1/en/agreements',
-      ),
-    ).toEqual([]);
+  it('embed: a single client keeps its list', () => {
     expect(
       pick(embedConfig(['signal']), 'app.example', '/embed/s1/en/agreements'),
     ).toEqual(['signal']);
