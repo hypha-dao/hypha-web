@@ -52,10 +52,10 @@ run('CORS: narrow, per endpoint', () => {
     });
 
   it('metadata and JWKS answer any origin with *, no credentials', async () => {
-    for (const path of [
-      '/.well-known/oauth-authorization-server',
-      '/api/auth/jwks.json',
-    ]) {
+    for (const [path, methods] of [
+      ['/.well-known/oauth-authorization-server', 'GET, HEAD'],
+      ['/api/auth/jwks.json', 'GET'],
+    ] as const) {
       const res = await call(path, { headers: { origin: OTHER } });
       expect(res.status, path).toBe(200);
       expect(res.headers.get('access-control-allow-origin')).toBe('*');
@@ -63,7 +63,7 @@ run('CORS: narrow, per endpoint', () => {
       const pre = await preflight(path, OTHER, 'GET');
       expect(pre.status, path).toBe(204);
       expect(pre.headers.get('access-control-allow-origin')).toBe('*');
-      expect(pre.headers.get('access-control-allow-methods')).toBe('GET, HEAD');
+      expect(pre.headers.get('access-control-allow-methods')).toBe(methods);
     }
   });
 

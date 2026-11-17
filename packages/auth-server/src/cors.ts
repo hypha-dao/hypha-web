@@ -3,7 +3,7 @@ import type { AuthServerConfig } from './config';
 
 /**
  * Cross-origin access for browser-based MCP clients, as narrow as the flow allows:
- * - metadata and JWKS (public documents, GET/HEAD): any origin (`*`), no credentials;
+ * - metadata (GET/HEAD) and JWKS (GET), both public documents: any origin (`*`), no credentials;
  * - token and registration (POST): only origins listed in AUTH_SERVER_CORS_ORIGINS (default
  *   empty), echoed back with `Vary: Origin`, no credentials, only Content-Type as request header;
  * - everything else (authorize, consent, sign-in, revoke, ...): no CORS headers at all.
@@ -17,7 +17,7 @@ type CorsConfig = Pick<AuthServerConfig, 'corsAllowedOrigins' | 'dcrEnabled'>;
 
 const POLICIES: Record<string, Policy> = {
   [WELL_KNOWN]: { methods: ['GET', 'HEAD'], any: true },
-  [`${API}${AUTH_SERVER_JWKS_PATH}`]: { methods: ['GET', 'HEAD'], any: true },
+  [`${API}${AUTH_SERVER_JWKS_PATH}`]: { methods: ['GET'], any: true },
   [`${API}/oauth2/token`]: { methods: ['POST'], any: false },
   [`${API}/oauth2/register`]: { methods: ['POST'], any: false },
 };

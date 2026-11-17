@@ -281,6 +281,7 @@ run(
           body: JSON.stringify({
             accept: true,
             oauth_query: f.next.search.slice(1),
+            expected_person: h.PERSON,
           }),
         }),
       );

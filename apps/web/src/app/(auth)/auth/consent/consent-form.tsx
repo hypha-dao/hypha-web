@@ -19,11 +19,13 @@ type Scope = {
 
 export function ConsentForm({
   oauthQuery,
+  personId,
   personName,
   client,
   scopes,
 }: {
   oauthQuery: string;
+  personId: string;
   personName: string;
   client: {
     kind: ClientKind;
@@ -63,6 +65,8 @@ export function ConsentForm({
           accept,
           scope: accept ? [...granted].join(' ') : undefined,
           oauth_query: oauthQuery,
+          // The account this page showed: an approval from another session is refused.
+          expected_person: personId,
         }),
       });
       const body = (await res.json().catch(() => ({}))) as {
@@ -71,6 +75,12 @@ export function ConsentForm({
       };
       if (body.url) {
         window.location.assign(body.url);
+        return;
+      }
+      // Another account signed in (another tab) after this page was shown: nothing was saved.
+      if (body.error === 'account_changed') {
+        setError(t('approval.accountChanged'));
+        setBusy(false);
         return;
       }
       // The signed approval link ran out while the page was open.

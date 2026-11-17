@@ -5944,7 +5944,8 @@
       "expiredTitle": "Godkjenningen er utløpt",
       "expired": "Denne godkjenningen har utløpt. Gå tilbake til appen og start på nytt.",
       "invalidTitle": "Ugyldig godkjenning",
-      "invalid": "Denne godkjenningslenken er ikke gyldig. Gå tilbake til appen og start på nytt."
+      "invalid": "Denne godkjenningslenken er ikke gyldig. Gå tilbake til appen og start på nytt.",
+      "accountChanged": "Kontoen din ble endret i en annen fane, så denne godkjenningen ble ikke lagret. Logg ut først for å bruke en annen konto, og start deretter på nytt fra appen."
     },
     "consent": {
       "title": "Godkjenn {name}?",

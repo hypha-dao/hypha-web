@@ -5961,7 +5961,8 @@
       "expiredTitle": "Approval expired",
       "expired": "This approval expired. Go back to the app and start again.",
       "invalidTitle": "Approval not valid",
-      "invalid": "This approval link is not valid. Go back to the app and start again."
+      "invalid": "This approval link is not valid. Go back to the app and start again.",
+      "accountChanged": "Your account changed in another tab, so this approval was not saved. To use a different account, sign out first, then start again from the app."
     },
     "consent": {
       "title": "Approve {name}?",

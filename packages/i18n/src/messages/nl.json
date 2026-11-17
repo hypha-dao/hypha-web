@@ -5945,7 +5945,8 @@
       "expiredTitle": "Goedkeuring verlopen",
       "expired": "Deze goedkeuring is verlopen. Ga terug naar de app en begin opnieuw.",
       "invalidTitle": "Goedkeuring ongeldig",
-      "invalid": "Deze goedkeuringslink is niet geldig. Ga terug naar de app en begin opnieuw."
+      "invalid": "Deze goedkeuringslink is niet geldig. Ga terug naar de app en begin opnieuw.",
+      "accountChanged": "Je account is in een ander tabblad gewijzigd, dus deze goedkeuring is niet opgeslagen. Meld je eerst af om een ander account te gebruiken en begin daarna opnieuw vanuit de app."
     },
     "consent": {
       "title": "{name} goedkeuren?",

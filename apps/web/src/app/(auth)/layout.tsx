@@ -56,7 +56,7 @@ export default async function AuthServerLayout({
             <header className="flex h-14 shrink-0 items-center justify-center border-b border-border bg-page-background px-4">
               <Logo width={96} />
             </header>
-            <main className="flex-1 overflow-y-auto">{children}</main>
+            <div className="flex-1 overflow-y-auto">{children}</div>
           </TooltipProvider>
         </ThemeProvider>
       </AuthProvider>

@@ -9,4 +9,9 @@ describe('syntheticEmail', () => {
     expect(a.endsWith('@users.invalid')).toBe(true);
     expect(a).not.toContain(' ');
   });
+  it('ids that differ only in letter case stay distinct', () => {
+    expect(syntheticEmail('did:privy:AbC')).not.toBe(
+      syntheticEmail('did:privy:abc'),
+    );
+  });
 });

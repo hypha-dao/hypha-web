@@ -5953,7 +5953,8 @@
       "expiredTitle": "Aprobación caducada",
       "expired": "Esta aprobación ha caducado. Vuelve a la app y empieza de nuevo.",
       "invalidTitle": "Aprobación no válida",
-      "invalid": "Este enlace de aprobación no es válido. Vuelve a la app y empieza de nuevo."
+      "invalid": "Este enlace de aprobación no es válido. Vuelve a la app y empieza de nuevo.",
+      "accountChanged": "Tu cuenta cambió en otra pestaña, así que esta aprobación no se guardó. Para usar otra cuenta, cierra sesión primero y vuelve a empezar desde la app."
     },
     "consent": {
       "title": "¿Aprobar {name}?",

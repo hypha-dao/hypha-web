@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { APIError, createAuthEndpoint } from 'better-auth/api';
 import { setSessionCookie } from 'better-auth/cookies';
 import { z } from 'zod';
@@ -15,7 +16,8 @@ type Deps = {
 
 /** Unique per person, never deliverable (the .invalid TLD is reserved). */
 export function syntheticEmail(sub: string): string {
-  return `${encodeURIComponent(sub).toLowerCase()}@users.invalid`;
+  // A hash, not the id: the column is unique, and the library may fold the case of an address.
+  return `${createHash('sha256').update(sub).digest('hex')}@users.invalid`;
 }
 
 /**

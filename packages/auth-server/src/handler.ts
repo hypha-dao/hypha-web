@@ -87,6 +87,8 @@ export function createAuthServerHandler(
             )
           : url.pathname === `${AUTH_SERVER_API_BASE_PATH}/oauth2/register`
           ? await handleRegistration(server, request)
+          : url.pathname === `${AUTH_SERVER_API_BASE_PATH}/oauth2/consent`
+          ? await handleConsent(server, request)
           : await server.auth.handler(request);
       return withCors(request, response, config);
     } catch (error) {
@@ -118,7 +120,8 @@ async function metadataWithoutDisabledEndpoints(
   dcrEnabled: boolean,
 ): Promise<Response> {
   const res = await server.auth.handler(request);
-  if (res.status !== 200) return res;
+  // HEAD answers 200 with an empty body: nothing to filter, and parsing it would fail.
+  if (res.status !== 200 || request.method.toUpperCase() === 'HEAD') return res;
   const meta = (await res.json()) as Record<string, unknown>;
   for (const key of Object.keys(meta))
     if (key.startsWith('introspection_endpoint')) delete meta[key];
@@ -146,4 +149,51 @@ async function handleRegistration(
   const headers = new Headers(res.headers);
   headers.delete('content-length');
   return new Response(JSON.stringify(body), { status: 201, headers });
+}
+
+/**
+ * An approval grants access to the account that submits it. The page shows one account; a sign-in
+ * in another tab can swap the session cookie before the person clicks. The page therefore sends
+ * the id of the account it showed, and an approval from any other session is refused before
+ * anything is stored. The field is required and never reaches the library.
+ */
+async function handleConsent(
+  server: AuthServer,
+  request: Request,
+): Promise<Response> {
+  const refuse = (status: number, error: string) =>
+    new Response(JSON.stringify({ error }), {
+      status,
+      headers: {
+        'content-type': 'application/json',
+        'cache-control': 'no-store',
+      },
+    });
+  let body: Record<string, unknown>;
+  try {
+    const parsed: unknown = JSON.parse(await request.text());
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))
+      return refuse(400, 'invalid_request');
+    body = parsed as Record<string, unknown>;
+  } catch {
+    return refuse(400, 'invalid_request');
+  }
+  const expected = body.expected_person;
+  if (typeof expected !== 'string' || !expected)
+    return refuse(400, 'invalid_request');
+  const session = await server.auth.api.getSession({
+    headers: request.headers,
+  });
+  if (!session || session.user.id !== expected)
+    return refuse(409, 'account_changed');
+  delete body.expected_person;
+  const headers = new Headers(request.headers);
+  headers.delete('content-length');
+  return server.auth.handler(
+    new Request(request.url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    }),
+  );
 }

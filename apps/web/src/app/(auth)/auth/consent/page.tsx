@@ -88,6 +88,7 @@ export default async function AuthServerConsentPage({
     <AuthIntlProvider intl={intl}>
       <ConsentForm
         oauthQuery={request.oauthQuery}
+        personId={request.person.id}
         personName={clip(request.person.name, 80)}
         client={{
           kind: request.client.kind,

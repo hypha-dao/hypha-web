@@ -5938,7 +5938,8 @@
       "expiredTitle": "Aprovação expirada",
       "expired": "Esta aprovação expirou. Volte à app e comece de novo.",
       "invalidTitle": "Aprovação inválida",
-      "invalid": "Este link de aprovação não é válido. Volte à app e comece de novo."
+      "invalid": "Este link de aprovação não é válido. Volte à app e comece de novo.",
+      "accountChanged": "A sua conta mudou noutro separador, por isso esta aprovação não foi guardada. Para usar outra conta, termine a sessão primeiro e volte a começar na app."
     },
     "consent": {
       "title": "Aprovar {name}?",

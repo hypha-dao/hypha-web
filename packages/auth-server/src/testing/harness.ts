@@ -194,6 +194,7 @@ export async function consent(
   jar: CookieJar,
   oauthQuery: string,
   scope: string,
+  expectedPerson: string = PERSON,
 ) {
   const res = await s.handler(
     req('/api/auth/oauth2/consent', {
@@ -204,7 +205,12 @@ export async function consent(
         accept: 'application/json',
         origin: ISSUER,
       },
-      body: JSON.stringify({ accept: true, scope, oauth_query: oauthQuery }),
+      body: JSON.stringify({
+        accept: true,
+        scope,
+        oauth_query: oauthQuery,
+        expected_person: expectedPerson,
+      }),
     }),
   );
   return { res, body: await json(res) };

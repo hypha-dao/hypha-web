@@ -5939,7 +5939,8 @@
       "expiredTitle": "Freigabe abgelaufen",
       "expired": "Diese Freigabe ist abgelaufen. Gehe zurück zur App und starte neu.",
       "invalidTitle": "Freigabe ungültig",
-      "invalid": "Dieser Freigabelink ist ungültig. Gehe zurück zur App und starte neu."
+      "invalid": "Dieser Freigabelink ist ungültig. Gehe zurück zur App und starte neu.",
+      "accountChanged": "Ihr Konto hat sich in einem anderen Tab geändert, daher wurde diese Genehmigung nicht gespeichert. Um ein anderes Konto zu verwenden, melden Sie sich zuerst ab und beginnen Sie dann erneut in der App."
     },
     "consent": {
       "title": "{name} freigeben?",
