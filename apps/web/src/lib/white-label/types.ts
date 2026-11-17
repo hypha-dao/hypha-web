@@ -144,7 +144,8 @@ export type NotFoundReason =
   | 'api-not-served'
   | 'unknown-host'
   | 'api-not-allowed'
-  | 'embed-not-served';
+  | 'embed-not-served'
+  | 'method-not-allowed';
 
 export type ResolveDecision =
   /** Not white label: handled by the existing middleware chain. */

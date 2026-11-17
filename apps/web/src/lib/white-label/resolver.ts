@@ -107,6 +107,17 @@ export function localeForPath(
   );
 }
 
+/**
+ * A read-only delivery (a host without login, the frame) serves pages for GET
+ * and HEAD only. Any other method on a page path is refused: Server Actions
+ * are POSTs to a page URL (with a `Next-Action` header, or, from a form
+ * without JavaScript, only a body field), and a page accepts no other POST.
+ */
+function isReadMethod(method: string | undefined): boolean {
+  const upper = (method ?? 'GET').toUpperCase();
+  return upper === 'GET' || upper === 'HEAD';
+}
+
 /** True when `host` is one of the mapped hosts (host delivery). */
 export function isMappedHost(
   config: WhiteLabelConfig,
@@ -192,6 +203,10 @@ function resolveMappedHost(
     return { kind: 'not-found', reason: 'embed-not-served' };
   }
   if (!segments) return { kind: 'not-found', reason: 'malformed-path' };
+  // No login on this host: no write, so nothing but a read reaches a page.
+  if (!record.authConfig && !isReadMethod(options.method)) {
+    return { kind: 'not-found', reason: 'method-not-allowed' };
+  }
 
   const rest = [...segments];
   let locale: string | null = null;
@@ -338,6 +353,10 @@ export function resolve(
   // `/embed/<slug>/api/...` is never served: the app's own `/api` is same-origin.
   if (rest[0] === API_PREFIX) {
     return { kind: 'not-found', reason: 'api-not-served' };
+  }
+  // The frame never has login: reads only (see `isReadMethod`).
+  if (!isReadMethod(options.method)) {
+    return { kind: 'not-found', reason: 'method-not-allowed' };
   }
 
   const section = rest.length === 0 ? [LANDING_SECTION] : rest;

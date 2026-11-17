@@ -278,6 +278,14 @@ export function middleware(request: NextRequest) {
   }
 
   if (decision.kind === 'not-found') {
+    // A write to a page of a read-only delivery (a Server Action POST):
+    // refused, no page, no body.
+    if (decision.reason === 'method-not-allowed') {
+      return new NextResponse(null, {
+        status: 405,
+        headers: { Allow: 'GET, HEAD', 'Cache-Control': 'no-store' },
+      });
+    }
     // An API path is answered here: no page, no body.
     if (isApi) {
       return new NextResponse(null, {
