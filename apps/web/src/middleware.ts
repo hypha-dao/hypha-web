@@ -346,6 +346,8 @@ export const config = {
     // `_matrix` — inbound Matrix Application Service transaction pushes (#2483).
     // Rewritten in next.config to /api/matrix/appservice; must skip i18n + CSP here.
     // `auth/` — authorization server login and consent pages (#2608): own layout, no locale prefix.
-    '/((?!_matrix|auth/|placeholder|icon|brand|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
+    // `api/auth/` — authorization server protocol endpoints (#2608): the handler answers 404 on any host
+    // but its own, and the white-label host check must not 404 them on the AS host.
+    '/((?!_matrix|auth/|api/auth/|placeholder|icon|brand|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
   ],
 };
