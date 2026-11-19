@@ -4,7 +4,7 @@ import {
   SPACE_INCLUDE_BLOCKS,
   SPACES_LIST_INCLUDE_BLOCKS,
   parseInclude,
-} from '../include';
+} from '../../api-v2/include';
 import {
   buildProposalTally,
   decideCanVote,

@@ -1,13 +1,13 @@
 import 'server-only';
 
 import { spaces as spacesTable } from '@hypha-platform/storage-postgres';
-import type { DbConfig } from '../../server';
-import { ChainFactsCache } from '../chain-cache';
+import type { DbConfig } from '../server';
+import { ChainFactsCache } from './chain-cache';
 import {
   NO_RELATION,
   isLevelSatisfied,
   type SpaceRelation,
-} from '../visibility-rule';
+} from './visibility-rule';
 import {
   readDelegateSpaceIds,
   readDelegatorsBatch,
@@ -17,7 +17,7 @@ import {
   type SpaceMembersAndExecutor,
   type SpaceVisibility,
 } from './chain-reads';
-import type { V2Caller } from './access';
+import type { Caller } from './caller';
 
 /**
  * Bulk, cached resolution of "how is this viewer related to these spaces".
@@ -154,7 +154,7 @@ async function loadOrganisationRoots(
  * targets the viewer is not already directly in.
  */
 export async function relationsForSpaces(
-  caller: V2Caller,
+  caller: Caller,
   targets: number[],
   levelOf: (web3SpaceId: number) => number | undefined,
   { db }: DbConfig,
@@ -224,7 +224,7 @@ export async function filterSpacesForViewer<
   T extends { web3SpaceId?: number | null },
 >(
   spaces: T[],
-  caller: V2Caller,
+  caller: Caller,
   config: DbConfig,
 ): Promise<{ visible: T[]; levels: Map<number, SpaceVisibility> }> {
   const ids = spaces

@@ -21,7 +21,7 @@ import {
   filterSpacesForViewer,
   relationsForSpaces,
 } from '../viewer-access';
-import { isLevelSatisfied } from '../../visibility-rule';
+import { isLevelSatisfied } from '../visibility-rule';
 
 const ADDR = '0xabc0000000000000000000000000000000000001' as const;
 const db = {

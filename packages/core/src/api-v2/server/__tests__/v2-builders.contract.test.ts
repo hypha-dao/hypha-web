@@ -44,7 +44,7 @@ vi.mock('../../../coherence/server/web3/get-member-voting-power', () => ({
 }));
 
 const authorizeSpaceRead = vi.fn();
-vi.mock('../access', () => ({
+vi.mock('../../../access/space-read-gate', () => ({
   authorizeSpaceRead: (...a: unknown[]) => authorizeSpaceRead(...a),
 }));
 
@@ -53,7 +53,7 @@ const viewer = vi.hoisted(() => ({
   getSpaceLevels: vi.fn(),
   relationsForSpaces: vi.fn(),
 }));
-vi.mock('../viewer-access', () => viewer);
+vi.mock('../../../access/viewer-access', () => viewer);
 
 const chain = vi.hoisted(() => ({
   readChainClock: vi.fn(),
@@ -65,7 +65,7 @@ const chain = vi.hoisted(() => ({
   readMemberAndDelegate: vi.fn(),
   readIsProposalWithdrawn: vi.fn(),
 }));
-vi.mock('../chain-reads', () => chain);
+vi.mock('../../../access/chain-reads', () => chain);
 
 import { buildSpacesListV2, buildSpaceV2 } from '../spaces';
 const list = (q: Parameters<typeof buildSpacesListV2>[0]) =>
@@ -290,8 +290,7 @@ describe('GET /api/v2/spaces/{slug} (twin: GET /api/v1/spaces/[spaceSlug])', () 
   it('runs the access gate before the heavy v1 load', async () => {
     authorizeSpaceRead.mockResolvedValue({
       ok: false,
-      status: 401,
-      error: 'Authentication required',
+      code: 'unauthenticated',
     });
     const r = await buildSpaceV2({ slug: 'alpha', caller: GUEST }, { db });
     expect(r).toMatchObject({ ok: false, status: 401 });

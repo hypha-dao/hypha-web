@@ -1,31 +1,27 @@
 import 'server-only';
 
 import type { DbConfig } from '../../server';
-import { buildPaginatedResponse } from '../../common/pagination';
-import type { PaginationMetadata } from '../../common/types';
-import {
-  findSpaceBySlug,
-  findSpaceHostFieldsBySlug,
-} from '../../space/server/queries';
-import { getAllSpaces } from '../../space/server/web3/get-all-spaces';
-import { getSpacesBySlugs } from '../../space/server/web3/get-spaces-by-slugs';
-import { getSpacesByWeb3Ids } from '../../space/server/web3/get-spaces-by-web3-ids';
-import { isSpaceArchived } from '../../space/utils';
-import type { Space } from '../../space/types';
-import {
-  SPACE_INCLUDE_BLOCKS,
-  SPACES_LIST_INCLUDE_BLOCKS,
-  parseInclude,
-} from '../include';
-import { authorizeSpaceRead, type V2Caller, type V2Failure } from './access';
-import { filterSpacesForViewer } from './viewer-access';
+import { authorizeSpaceRead } from '../../access/space-read-gate';
 import {
   readChainClock,
   readSpaceGovernanceBatch,
   readSpaceVisibilityBatch,
   type SpaceGovernance,
   type SpaceVisibility,
-} from './chain-reads';
+} from '../../access/chain-reads';
+import { buildPaginatedResponse } from '../../common/pagination';
+import type { PaginationMetadata } from '../../common/types';
+import { listSpaces, type ListedSpace } from '../../features/list-spaces';
+import {
+  findSpaceBySlug,
+  findSpaceHostFieldsBySlug,
+} from '../../space/server/queries';
+import {
+  SPACE_INCLUDE_BLOCKS,
+  SPACES_LIST_INCLUDE_BLOCKS,
+  parseInclude,
+} from '../include';
+import { toV2Failure, type V2Caller, type V2Failure } from '../failure';
 
 export type V2BadRequest = {
   ok: false;
@@ -77,12 +73,7 @@ export type SpacesListV2 = {
    * `memberAddresses` (no wallet-address arrays in v2; use `memberCount` and
    * `memberships/me`).
    */
-  data: Array<
-    Omit<Space, 'memberAddresses'> & {
-      visibility?: ReturnType<typeof toVisibilityBlock> | null;
-      governance?: GovernanceBlock | null;
-    }
-  >;
+  data: ListedSpace[];
   /** `null` when neither `page` nor `pageSize` was sent (full list). */
   pagination: PaginationMetadata | null;
   asOf: string;
@@ -90,110 +81,52 @@ export type SpacesListV2 = {
 };
 
 /**
- * Same three-way source selection as the v1 route (`web3SpaceIds`, `slugs`,
- * else all), through the same core functions, so v1 items are unchanged.
- */
-async function listV1Spaces(query: SpacesListQuery): Promise<Space[]> {
-  const options =
-    query.parentOnly !== undefined
-      ? { parentOnly: query.parentOnly }
-      : undefined;
-  if (query.web3SpaceIds) {
-    return getSpacesByWeb3Ids(query.web3SpaceIds, options);
-  }
-  if (query.slugs) {
-    return getSpacesBySlugs(query.slugs, options);
-  }
-  return getAllSpaces({
-    parentOnly: query.parentOnly,
-    omitArchived: query.omitArchived,
-    omitSandbox: query.omitSandbox,
-  });
-}
-
-/**
- * Viewer-aware list: the server applies the four-level discoverability rule
- * for the token holder and returns ONLY the spaces the viewer may see (guests:
- * level 0). There is no unfiltered mode. The items depend on the viewer; the
- * `include=` blocks on each item do not.
+ * API presentation of the "list spaces" feature function: the viewer-aware list. The
+ * feature applies the four-level discoverability rule for the token holder before paging
+ * and returns ONLY the spaces the viewer may see (guests: level 0). The items depend on
+ * the viewer; the  blocks on each item do not.
  */
 export async function buildSpacesListV2(
   query: SpacesListQuery,
   caller: V2Caller,
-  { db }: DbConfig,
-): Promise<{ ok: true; body: SpacesListV2 } | V2BadRequest> {
+  config: DbConfig,
+): Promise<{ ok: true; body: SpacesListV2 } | V2BadRequest | V2Failure> {
   const include = parseInclude(query.include, SPACES_LIST_INCLUDE_BLOCKS);
   if (!include.ok) return badInclude(include.unknown, include.allowed);
 
-  let spaces = await listV1Spaces(query);
-
-  // The omit filters are applied on every source (v1 only honours them for the
-  // default one); they are idempotent where the source already applied them.
-  if (query.omitArchived) {
-    spaces = spaces.filter((space) => !isSpaceArchived(space));
-  }
-  if (query.omitSandbox) {
-    spaces = spaces.filter(
-      (space) => !space.flags?.includes('sandbox' as never),
-    );
-  }
-
-  // Filter BEFORE paginating so totals and pages describe what the viewer may see.
-  const { visible, levels: visibility } = await filterSpacesForViewer(
-    spaces,
-    caller,
-    { db },
-  );
-  spaces = visible;
-
   const paginated = query.page !== undefined || query.pageSize !== undefined;
-  let pagination: PaginationMetadata | null = null;
-  if (paginated) {
-    const pageSize = Math.min(100, Math.max(1, query.pageSize ?? 20));
-    const page = Math.max(1, query.page ?? 1);
-    const slice = spaces.slice((page - 1) * pageSize, page * pageSize);
-    pagination = buildPaginatedResponse(
-      slice,
-      spaces.length,
-      page,
-      pageSize,
-    ).pagination;
-    spaces = slice;
-  }
+  const pageSize = Math.min(100, Math.max(1, query.pageSize ?? 20));
+  const page = Math.max(1, query.page ?? 1);
 
-  const web3Ids = [
-    ...new Set(
-      spaces
-        .map((s) => s.web3SpaceId)
-        .filter((id): id is number => typeof id === 'number'),
-    ),
-  ];
-  const [governance, clock] = await Promise.all([
-    include.blocks.has('governance')
-      ? readSpaceGovernanceBatch(web3Ids)
-      : Promise.resolve(null),
-    readChainClock(),
-  ]);
+  const r = await listSpaces(
+    {
+      web3SpaceIds: query.web3SpaceIds,
+      slugs: query.slugs,
+      parentOnly: query.parentOnly,
+      omitArchived: query.omitArchived,
+      omitSandbox: query.omitSandbox,
+      paging: paginated ? { page, pageSize } : undefined,
+      with: {
+        governance: include.blocks.has('governance'),
+        visibility: include.blocks.has('visibility'),
+      },
+    },
+    caller,
+    config,
+  );
+  if (!r.ok) return toV2Failure(r);
 
-  const data = spaces.map((space) => {
-    const { memberAddresses: _omitted, ...v1Item } = space;
-    void _omitted;
-    const out: SpacesListV2['data'][number] = { ...v1Item };
-    const id = space.web3SpaceId;
-    if (include.blocks.has('visibility')) {
-      const v = typeof id === 'number' ? visibility.get(id) : undefined;
-      out.visibility = v ? toVisibilityBlock(v) : null;
-    }
-    if (governance) {
-      const g = typeof id === 'number' ? governance.get(id) : undefined;
-      out.governance = g ? toGovernanceBlock(g) : null;
-    }
-    return out;
-  });
-
+  const { items, total, asOf, asOfBlock } = r.data;
   return {
     ok: true,
-    body: { data, pagination, asOf: clock.asOf, asOfBlock: clock.asOfBlock },
+    body: {
+      data: items,
+      pagination: paginated
+        ? buildPaginatedResponse(items, total, page, pageSize).pagination
+        : null,
+      asOf,
+      asOfBlock,
+    },
   };
 }
 
@@ -228,7 +161,7 @@ export async function buildSpaceV2(
   if (!host) return { ok: false, status: 404, error: 'Space not found' };
 
   const gate = await authorizeSpaceRead(host, caller, { db });
-  if (!gate.ok) return gate;
+  if (!gate.ok) return toV2Failure(gate);
 
   const space = await findSpaceBySlug({ slug }, { db });
   if (!space) return { ok: false, status: 404, error: 'Space not found' };

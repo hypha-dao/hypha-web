@@ -1,23 +1,20 @@
 import 'server-only';
 
-import { daoProposalsImplementationAbi } from '../../generated';
-import { daoProposalsImplementationAddress } from '../../generated';
-import { web3Client } from '../../common/server/web3-rpc/client';
-import { getProposalDetails } from '../../governance/client/web3/get-proposal-details';
-import { getProposalVoters } from '../../governance/client/web3/get-proposal-voters';
-import { getSpaceProposals } from '../../space/client/web3/dao-space-factory/get-space-proposals';
-import { getWithdrawnProposalsBySpace } from '../../space/client/web3/dao-space-factory/get-withdrawn-proposals-by-space';
-import { getSpaceVisibility } from '../../space/client/web3/dao-space-factory/get-space-visibility';
-import { getDelegatesForSpace } from '../../space/client/web3/dao-space-factory/get-delegates-for-space';
-import { getDelegators } from '../../space/client/web3/dao-space-factory/get-delegators';
-import { isMember as isMemberConfig } from '../../space/client/web3/dao-space-factory/is-member';
-import { getSpaceDetails } from '../../space/shared/web3/get-space-details';
-import { getMemberSpaces } from '../../space/client/web3/dao-space-factory/get-member-spaces';
-import { getSpacesForDelegate } from '../../space/client/web3/dao-space-factory/get-spaces-for-delegate';
-import type {
-  ProposalCoreValues,
-  ProposalOutcomeIds,
-} from '../proposal-status';
+import { daoProposalsImplementationAbi } from '../generated';
+import { daoProposalsImplementationAddress } from '../generated';
+import { web3Client } from '../common/server/web3-rpc/client';
+import { getProposalDetails } from '../governance/client/web3/get-proposal-details';
+import { getProposalVoters } from '../governance/client/web3/get-proposal-voters';
+import { getSpaceProposals } from '../space/client/web3/dao-space-factory/get-space-proposals';
+import { getWithdrawnProposalsBySpace } from '../space/client/web3/dao-space-factory/get-withdrawn-proposals-by-space';
+import { getSpaceVisibility } from '../space/client/web3/dao-space-factory/get-space-visibility';
+import { getDelegatesForSpace } from '../space/client/web3/dao-space-factory/get-delegates-for-space';
+import { getDelegators } from '../space/client/web3/dao-space-factory/get-delegators';
+import { isMember as isMemberConfig } from '../space/client/web3/dao-space-factory/is-member';
+import { getSpaceDetails } from '../space/shared/web3/get-space-details';
+import { getMemberSpaces } from '../space/client/web3/dao-space-factory/get-member-spaces';
+import { getSpacesForDelegate } from '../space/client/web3/dao-space-factory/get-spaces-for-delegate';
+import type { ProposalCoreValues, ProposalOutcomeIds } from './proposal-status';
 
 /**
  * All `/api/v2` chain reads use block tag `latest` (K14), like the Hypha UI list

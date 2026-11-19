@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ChainFactsCache } from '../chain-cache';
+import { ChainFactsCache } from '../../access/chain-cache';
 import { V2_RESPONSE_HEADERS } from '../response-headers';
 
 describe('ChainFactsCache (stale-if-error)', () => {

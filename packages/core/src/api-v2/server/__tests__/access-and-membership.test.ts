@@ -46,16 +46,16 @@ const chain = vi.hoisted(() => ({
   readMemberAndDelegate: vi.fn(),
   readIsProposalWithdrawn: vi.fn(),
 }));
-vi.mock('../chain-reads', () => chain);
+vi.mock('../../../access/chain-reads', () => chain);
 
 const viewer = vi.hoisted(() => ({
   getSpaceLevels: vi.fn(),
   relationsForSpaces: vi.fn(),
   filterSpacesForViewer: vi.fn(),
 }));
-vi.mock('../viewer-access', () => viewer);
+vi.mock('../../../access/viewer-access', () => viewer);
 
-import { authorizeSpaceRead } from '../access';
+import { authorizeSpaceRead } from '../../../access/space-read-gate';
 import { buildMyMembershipV2 } from '../membership';
 
 const ADDRESS = '0xAbC0000000000000000000000000000000000001' as const;
@@ -109,7 +109,7 @@ describe('authorizeSpaceRead (the single v2 gate)', () => {
     level(1);
     expect(await authorizeSpaceRead(space, guest, { db })).toMatchObject({
       ok: false,
-      status: 401,
+      code: 'unauthenticated',
     });
   });
 
@@ -123,7 +123,7 @@ describe('authorizeSpaceRead (the single v2 gate)', () => {
     level(3);
     expect(await authorizeSpaceRead(space, user, { db })).toMatchObject({
       ok: false,
-      status: 403,
+      code: 'forbidden',
     });
     isOnChainMemberOrDelegate.mockResolvedValue(true);
     expect(await authorizeSpaceRead(space, user, { db })).toEqual({ ok: true });
@@ -134,7 +134,7 @@ describe('authorizeSpaceRead (the single v2 gate)', () => {
     relation({ orgSibling: true, memberSpaceParticipant: true });
     expect(await authorizeSpaceRead(space, user, { db })).toMatchObject({
       ok: false,
-      status: 403,
+      code: 'forbidden',
     });
   });
 
@@ -154,7 +154,7 @@ describe('authorizeSpaceRead (the single v2 gate)', () => {
     level(2);
     expect(await authorizeSpaceRead(space, user, { db })).toMatchObject({
       ok: false,
-      status: 403,
+      code: 'forbidden',
     });
   });
 
@@ -162,12 +162,12 @@ describe('authorizeSpaceRead (the single v2 gate)', () => {
     level(undefined);
     expect(await authorizeSpaceRead(space, user, { db })).toMatchObject({
       ok: false,
-      status: 500,
+      code: 'access_check_failed',
     });
     viewer.getSpaceLevels.mockRejectedValue(new Error('rpc'));
     expect(await authorizeSpaceRead(space, user, { db })).toMatchObject({
       ok: false,
-      status: 500,
+      code: 'access_check_failed',
     });
   });
 
@@ -176,7 +176,7 @@ describe('authorizeSpaceRead (the single v2 gate)', () => {
     isOnChainMemberOrDelegate.mockRejectedValue(new Error('rpc'));
     expect(await authorizeSpaceRead(space, user, { db })).toMatchObject({
       ok: false,
-      status: 500,
+      code: 'access_check_failed',
     });
   });
 
