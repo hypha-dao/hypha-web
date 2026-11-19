@@ -8,6 +8,7 @@ export {
   parseHttpPaginationParams,
 } from './common/pagination';
 export * from './governance/server';
+export * from './api-v2/server';
 export * from './people/server';
 export * from './network/exchange-capitals';
 export * from './people/types';
