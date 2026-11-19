@@ -7,6 +7,7 @@ import {
 } from '../../access/chain-reads';
 import type { Caller } from '../../access/caller';
 import { failure, type Failure } from '../../access/failure';
+import { decideSpaceAccess } from '../../access/policy';
 import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
 
 export type MyMembership = {
@@ -36,6 +37,22 @@ export async function getMyMembership(
 
   const host = await findSpaceHostFieldsBySlug({ slug: spaceSlug }, { db });
   if (!host) return failure('not_found', 'Space not found');
+
+  // Grants and the on-chain id rule always apply to a grant-aware caller; the transparency
+  // matrix applies to it too (the API keeps its no-gate answer about the caller).
+  const decision = await decideSpaceAccess(
+    host,
+    caller,
+    { db },
+    {
+      matrix: caller.via !== undefined,
+    },
+  );
+  if (decision.outcome === 'none') {
+    return decision.failure.code === 'access_check_failed'
+      ? decision.failure
+      : failure('not_found', 'Space not found');
+  }
 
   if (typeof host.web3SpaceId !== 'number') {
     const clock = await readChainClock();

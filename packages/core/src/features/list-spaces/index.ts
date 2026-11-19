@@ -9,7 +9,7 @@ import {
 } from '../../access/chain-reads';
 import type { Caller } from '../../access/caller';
 import { failure, type Failure } from '../../access/failure';
-import { filterSpacesForViewer } from '../../access/viewer-access';
+import { filterSpacesForCaller } from '../../access/policy';
 import { getAllSpaces } from '../../space/server/web3/get-all-spaces';
 import { getSpacesBySlugs } from '../../space/server/web3/get-spaces-by-slugs';
 import { getSpacesByWeb3Ids } from '../../space/server/web3/get-spaces-by-web3-ids';
@@ -96,9 +96,17 @@ export async function listSpaces(
       spaces = spaces.filter((space) => space.memberCount !== 0);
     }
 
-    const { visible, levels } = await filterSpacesForViewer(spaces, caller, {
-      db,
-    });
+    const { visible, levels, levelsUnreadable } = await filterSpacesForCaller(
+      spaces,
+      caller,
+      { db },
+    );
+    if (levelsUnreadable) {
+      return failure(
+        'access_check_failed',
+        'Spaces could not be listed right now.',
+      );
+    }
     spaces = visible;
     if (input.titleOrder) {
       const sign = input.titleOrder === 'desc' ? -1 : 1;

@@ -1,7 +1,7 @@
 import 'server-only';
 
 import type { DbConfig } from '../../server';
-import { authorizeSpaceRead } from '../../access/space-read-gate';
+import { decideSpaceAccess } from '../../access/policy';
 import {
   readChainClock,
   readSpaceGovernanceBatch,
@@ -160,8 +160,8 @@ export async function buildSpaceV2(
   const host = await findSpaceHostFieldsBySlug({ slug }, { db });
   if (!host) return { ok: false, status: 404, error: 'Space not found' };
 
-  const gate = await authorizeSpaceRead(host, caller, { db });
-  if (!gate.ok) return toV2Failure(gate);
+  const decision = await decideSpaceAccess(host, caller, { db });
+  if (decision.outcome === 'none') return toV2Failure(decision.failure);
 
   const space = await findSpaceBySlug({ slug }, { db });
   if (!space) return { ok: false, status: 404, error: 'Space not found' };
