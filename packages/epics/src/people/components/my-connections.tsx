@@ -162,6 +162,7 @@ import {
 import { GroupFaces } from './group-faces';
 import { MemberHomeMark } from './member-home-mark';
 import { PersonAvatar } from './person-avatar';
+import { createBoundRoomLookup } from './bound-room-lookup';
 
 /** Matches the first page returned for the home. Each click asks for one more. */
 const CONNECTIONS_PAGE = 12;
@@ -1150,10 +1151,28 @@ function refreshConversationRoom(room: Room | undefined) {
   notifyConversationListeners();
 }
 
-const MAX_BOUND_LOOKUP_IDS = 100;
-const checkedBoundRoomIds = new Set<string>();
 let conversationBoundLookupToken: string | null = null;
-let boundLookupInFlight = false;
+
+// Module-level on purpose: every attachConversationList caller and the single
+// Sync listener share one in-flight guard and one failure memory.
+const boundRoomLookup = createBoundRoomLookup({
+  lookup: (roomIds, authToken) =>
+    listBoundChatRoomIdsAmongAction(roomIds, { authToken }),
+  onBound: (ids) => {
+    rememberBoundChatRooms(ids);
+    const client = conversationClient;
+    let changed = false;
+    for (const id of ids) {
+      if (!conversationCache.has(id)) continue;
+      conversationCache.delete(id);
+      const room = client?.getRoom(id);
+      if (client && room) cachedConversation(client, room);
+      changed = true;
+    }
+    if (changed) notifyConversationListeners();
+  },
+  onError: (error) => console.warn('Failed to check bound chat rooms', error),
+});
 
 function setConversationBoundLookupToken(token: string | null | undefined) {
   conversationBoundLookupToken = token?.trim() || null;
@@ -1162,38 +1181,10 @@ function setConversationBoundLookupToken(token: string | null | undefined) {
 function refreshBoundChatRooms(client: MatrixClient) {
   const authToken = conversationBoundLookupToken;
   if (!authToken) return;
-  if (boundLookupInFlight) return;
-  const roomIds = client
-    .getRooms()
-    .map((room) => room.roomId)
-    .filter((id) => !checkedBoundRoomIds.has(id));
-  if (roomIds.length === 0) return;
-  boundLookupInFlight = true;
-  void (async () => {
-    try {
-      for (let i = 0; i < roomIds.length; i += MAX_BOUND_LOOKUP_IDS) {
-        const chunk = roomIds.slice(i, i + MAX_BOUND_LOOKUP_IDS);
-        const ids = await listBoundChatRoomIdsAmongAction(chunk, {
-          authToken,
-        });
-        for (const id of chunk) checkedBoundRoomIds.add(id);
-        rememberBoundChatRooms(ids);
-        let changed = false;
-        for (const id of ids) {
-          if (!conversationCache.has(id)) continue;
-          conversationCache.delete(id);
-          const room = client.getRoom(id);
-          if (room) cachedConversation(client, room);
-          changed = true;
-        }
-        if (changed) notifyConversationListeners();
-      }
-    } catch (error) {
-      console.warn('Failed to check bound chat rooms', error);
-    } finally {
-      boundLookupInFlight = false;
-    }
-  })();
+  void boundRoomLookup.refresh(
+    client.getRooms().map((room) => room.roomId),
+    authToken,
+  );
 }
 
 function onConversationSync() {
@@ -1315,7 +1306,7 @@ function useConversationClient(client: MatrixClient) {
   if (conversationClient === client) return;
   if (listeningClient) stopListeningForConversationRows(listeningClient);
   conversationClient = client;
-  checkedBoundRoomIds.clear();
+  boundRoomLookup.reset();
   conversationCache.clear();
   conversationTitleOverrides.clear();
   supersededReadEventIds.clear();
