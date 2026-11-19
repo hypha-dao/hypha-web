@@ -51,6 +51,13 @@ export type ListSpacesData = {
   total: number;
   asOf: string;
   asOfBlock: number | null;
+  /**
+   * Slugs of the VISIBLE spaces by database id, for resolving a parent without revealing a
+   * space the caller cannot see (a parent outside this set is reported as no parent).
+   */
+  slugById: Map<number, string>;
+  /** Chain-derived member counts by on-chain id; present only when governance was read. */
+  memberCountByWeb3Id: Map<number, number>;
 };
 
 async function listSources(input: ListSpacesInput): Promise<Space[]> {
@@ -114,6 +121,7 @@ export async function listSpaces(
         (a, b) => sign * (a.title ?? '').localeCompare(b.title ?? ''),
       );
     }
+    const slugById = new Map(spaces.map((s) => [s.id, s.slug] as const));
     const total = spaces.length;
     if (input.paging) {
       const { page, pageSize } = input.paging;
@@ -160,7 +168,18 @@ export async function listSpaces(
 
     return {
       ok: true,
-      data: { items, total, asOf: clock.asOf, asOfBlock: clock.asOfBlock },
+      data: {
+        items,
+        total,
+        asOf: clock.asOf,
+        asOfBlock: clock.asOfBlock,
+        slugById,
+        memberCountByWeb3Id: new Map(
+          [...(governance ?? [])].map(
+            ([id, g]) => [id, g.memberCount] as const,
+          ),
+        ),
+      },
     };
   } catch (error) {
     // Includes an access fact that could not be read: the list fails closed.
