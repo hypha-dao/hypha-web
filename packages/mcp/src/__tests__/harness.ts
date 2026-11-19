@@ -28,7 +28,6 @@ export const rawSpace = (over: Record<string, unknown> = {}) => ({
     unity: 60,
     votingPowerSource: 2,
     joinMethod: 0,
-    exitMethod: 1,
   },
   ...over,
 });

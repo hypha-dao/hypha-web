@@ -8,13 +8,14 @@ const JOIN_METHOD = { 0: 'open', 1: 'token_based', 2: 'invite_only' } as const;
 const word = <T extends Record<number, string>>(map: T, code: number) =>
   (map as Record<number, string>)[code] ?? null;
 
+// exitMethod is deliberately not exposed: the product hardcodes one value (1, executor-only
+// removal) and nothing reads it, so it would only be an opaque number for the model.
 const governanceSchema = z
   .object({
     quorum: z.number(),
     unity: z.number(),
     votingPowerSource: z.enum(['token', 'member', 'voice']).nullable(),
     joinMethod: z.enum(['open', 'token_based', 'invite_only']).nullable(),
-    exitMethod: z.number(),
   })
   .nullable();
 
@@ -92,7 +93,6 @@ export function presentSpace(
             | 'token_based'
             | 'invite_only'
             | null,
-          exitMethod: g.exitMethod,
         }
       : null,
   };

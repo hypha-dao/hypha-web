@@ -113,9 +113,6 @@ exports[`tools/list is the reviewed text, in the fixed order > matches the snaps
                     {
                       "additionalProperties": false,
                       "properties": {
-                        "exitMethod": {
-                          "type": "number",
-                        },
                         "joinMethod": {
                           "anyOf": [
                             {
@@ -158,7 +155,6 @@ exports[`tools/list is the reviewed text, in the fixed order > matches the snaps
                         "unity",
                         "votingPowerSource",
                         "joinMethod",
-                        "exitMethod",
                       ],
                       "type": "object",
                     },
