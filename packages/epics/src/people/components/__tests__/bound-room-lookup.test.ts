@@ -146,4 +146,50 @@ describe('createBoundRoomLookup', () => {
     await t.refresh(many, 'tok');
     expect(t.fn).toHaveBeenCalledTimes(2);
   });
+
+  it('does not use up the tries of chunks that were never sent', async () => {
+    const many = Array.from(
+      { length: MAX_BOUND_LOOKUP_IDS + 1 },
+      (_, i) => `!r${i}:hs`,
+    );
+    const unsent = many[MAX_BOUND_LOOKUP_IDS];
+    const t = setup(async () => {
+      throw new Error('boom');
+    });
+    for (let i = 0; i < BOUND_LOOKUP_MAX_ATTEMPTS; i++) {
+      await t.refresh(many, 'tok');
+      t.advance(24 * 60 * 60_000);
+    }
+    // The first chunk is exhausted, the unsent room still gets its first try.
+    expect(t.fn).toHaveBeenCalledTimes(BOUND_LOOKUP_MAX_ATTEMPTS);
+    t.fn.mockImplementationOnce(async () => []);
+    await t.refresh(many, 'tok');
+    expect(t.fn).toHaveBeenLastCalledWith([unsent], 'tok');
+  });
+
+  it('ignores a lookup that fails after a reset', async () => {
+    let reject: (error: Error) => void = () => undefined;
+    const t = setup(() => new Promise<string[]>((_, r) => (reject = r)));
+    const stale = t.refresh(rooms, 'tok');
+    t.reset();
+    reject(new Error('boom'));
+    await stale;
+    t.fn.mockImplementationOnce(async () => []);
+    await t.refresh(rooms, 'tok');
+    expect(t.fn).toHaveBeenCalledTimes(2);
+    expect(t.onBound).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a lookup that succeeds after a reset', async () => {
+    let release: (ids: string[]) => void = () => undefined;
+    const t = setup(() => new Promise<string[]>((r) => (release = r)));
+    const stale = t.refresh(rooms, 'tok');
+    t.reset();
+    release(['!a:hs']);
+    await stale;
+    expect(t.onBound).not.toHaveBeenCalled();
+    t.fn.mockImplementationOnce(async () => []);
+    await t.refresh(rooms, 'tok');
+    expect(t.fn).toHaveBeenCalledTimes(2);
+  });
 });

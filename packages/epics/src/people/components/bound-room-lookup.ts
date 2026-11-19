@@ -30,6 +30,8 @@ export function createBoundRoomLookup({
   const checked = new Set<string>();
   const failures = new Map<string, Failure>();
   let inFlight = false;
+  // Bumped by reset(): results of a lookup started before it are discarded.
+  let generation = 0;
 
   const isPending = (id: string, at: number) => {
     if (checked.has(id)) return false;
@@ -40,6 +42,7 @@ export function createBoundRoomLookup({
     );
   };
 
+  /** Counts a failed try for rooms that were sent to the lookup. */
   const markFailed = (ids: string[]) => {
     const at = now();
     for (const id of ids) {
@@ -52,6 +55,14 @@ export function createBoundRoomLookup({
     }
   };
 
+  /** Backs off rooms that were never sent, without using up their tries. */
+  const markDeferred = (ids: string[]) => {
+    const retryAt = now() + BOUND_LOOKUP_RETRY_BASE_MS;
+    for (const id of ids) {
+      failures.set(id, { attempts: failures.get(id)?.attempts ?? 0, retryAt });
+    }
+  };
+
   /** Resolves when the lookup finishes; no-op without work to do. */
   async function refresh(roomIds: readonly string[], authToken: string) {
     if (inFlight) return;
@@ -59,6 +70,7 @@ export function createBoundRoomLookup({
     const pending = roomIds.filter((id) => isPending(id, at));
     if (pending.length === 0) return;
     inFlight = true;
+    const startedIn = generation;
     try {
       for (let i = 0; i < pending.length; i += MAX_BOUND_LOOKUP_IDS) {
         const chunk = pending.slice(i, i + MAX_BOUND_LOOKUP_IDS);
@@ -66,11 +78,15 @@ export function createBoundRoomLookup({
         try {
           bound = await lookup(chunk, authToken);
         } catch (error) {
-          // The rest of this batch would hit the same failure: back it off too.
-          markFailed(pending.slice(i));
+          if (generation === startedIn) {
+            markFailed(chunk);
+            // The rest of this batch would hit the same failure: back it off.
+            markDeferred(pending.slice(i + chunk.length));
+          }
           onError?.(error);
           return;
         }
+        if (generation !== startedIn) return;
         for (const id of chunk) {
           checked.add(id);
           failures.delete(id);
@@ -82,11 +98,14 @@ export function createBoundRoomLookup({
         }
       }
     } finally {
-      inFlight = false;
+      // A reset already released the guard; a newer lookup may own it now.
+      if (generation === startedIn) inFlight = false;
     }
   }
 
   function reset() {
+    generation++;
+    inFlight = false;
     checked.clear();
     failures.clear();
   }
