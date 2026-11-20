@@ -80,6 +80,35 @@ describe('sanitiseUserText', () => {
     }
   });
 
+  it('removes the destination and keeps the label, also with balanced brackets and parentheses', () => {
+    const cases: [string, string, string][] = [
+      [
+        '[open [details] here](/private/path)',
+        'open (details) here (link removed)',
+        '/private/path',
+      ],
+      ['[a](https://evil.example/x_(y))', 'a (link removed)', 'evil.example'],
+      ['![alt [x]](//evil.example/p.png)', '(image: alt (x))', 'evil.example'],
+      [
+        '[outer [inner](/one)](/two)',
+        'outer inner (link removed) (link removed)',
+        '/two',
+      ],
+    ];
+    for (const [input, expected, gone] of cases) {
+      const { text } = sanitiseUserText(input, 300);
+      expect(text, input).toContain(expected);
+      expect(text, input).not.toContain(gone);
+    }
+  });
+
+  it('bounds the work on very long input and still reports the truncation', () => {
+    const long = '['.repeat(50_000) + 'x';
+    const r = sanitiseUserText(long, 100);
+    expect(r.truncated).toBe(true);
+    expect(r.text.length).toBeLessThanOrEqual(100);
+  });
+
   it('neutralises links and raw urls', () => {
     const r = sanitiseUserText(
       'see [docs](https://evil.example/a) and https://evil.example/b or www.evil.example/c',
