@@ -45,7 +45,16 @@ describe('registered clients', () => {
     const uri = 'cursor://anysphere.cursor-mcp/oauth/callback';
     expect(isAcceptableRegisteredRedirect(uri)).toBe(true);
     expect(isAcceptableRedirectUri(uri)).toBe(false);
-    expect(isAcceptableRegisteredRedirect('javascript:alert(1)')).toBe(false);
+    for (const bad of [
+      'javascript:alert(1)',
+      'vbscript:msgbox(1)',
+      'data:text/html,x',
+      'blob:https://a.example/x',
+      'file:///etc/passwd',
+      'about:blank',
+      'JavaScript:alert(1)',
+    ])
+      expect(isAcceptableRegisteredRedirect(bad)).toBe(false);
     expect(isAcceptableRegisteredRedirect('http://evil.example/cb')).toBe(
       false,
     );

@@ -37,6 +37,16 @@ export const REGISTERED_CLIENTS: readonly RegisteredClient[] = [
   },
 ];
 
+/** Schemes that run code or open local data when navigated to; never a valid app redirect. */
+const SCRIPTABLE_SCHEMES = new Set([
+  'javascript:',
+  'vbscript:',
+  'data:',
+  'blob:',
+  'file:',
+  'about:',
+]);
+
 /** Redirects a registered client may carry: https, loopback http, or a custom app scheme. */
 export function isAcceptableRegisteredRedirect(value: string): boolean {
   let url: URL;
@@ -46,7 +56,7 @@ export function isAcceptableRegisteredRedirect(value: string): boolean {
     return false;
   }
   if (url.hash || url.username || url.password) return false;
-  if (url.protocol === 'javascript:' || url.protocol === 'data:') return false;
+  if (SCRIPTABLE_SCHEMES.has(url.protocol)) return false;
   if (url.protocol === 'http:')
     return ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
   return true;
