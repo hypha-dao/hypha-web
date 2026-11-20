@@ -5977,7 +5977,7 @@
       "scopes": {
         "spacesRead": {
           "title": "Leer los spaces de Hypha",
-          "detail": "Ver los spaces que puedes ver en Hypha: sus detalles, miembros y actividad pública."
+          "detail": "Solo lectura: esta app puede leer todo lo que puedes ver en tus spaces de Hypha: los spaces, quiénes son miembros, propuestas y votos (las señales y las quests llegarán). No puede cambiar nada. Lo que lee se envía al proveedor de la app de IA, que lo recibirá."
         },
         "agreementsVote": {
           "title": "Preparar votos para que los apruebes",
