@@ -5963,7 +5963,7 @@
       "scopes": {
         "spacesRead": {
           "title": "Hypha-spaces lezen",
-          "detail": "De spaces bekijken die je op Hypha kunt zien: hun details, leden en openbare activiteit."
+          "detail": "Alleen lezen: deze app kan alles lezen wat je in je spaces op Hypha kunt zien: de spaces, wie lid is, voorstellen en stemmen (signalen en quests komen eraan). Ze kan niets wijzigen. Wat ze leest, wordt verstuurd naar de aanbieder van de AI-app, die het ontvangt."
         },
         "agreementsVote": {
           "title": "Stemmen voorbereiden die je goedkeurt",
