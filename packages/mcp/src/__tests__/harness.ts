@@ -51,6 +51,24 @@ export function makeDeps(
           memberCountByWeb3Id: new Map([[11, 3]]),
         },
       }),
+      getSpace: async () => ({
+        ok: true,
+        data: {
+          ...rawSpace(),
+          subspaces: [],
+          parentSlug: null,
+          visibility: { discoverability: 0, access: 0 },
+          governance: {
+            quorum: 50,
+            unity: 60,
+            votingPowerSource: 2,
+            joinMethod: 0,
+          },
+          counts: { memberCount: 3 },
+          asOf: '2026-11-19T00:00:00.000Z',
+          asOfBlock: 1,
+        },
+      }),
       getMyMembership: async () => ({
         ok: true,
         data: {

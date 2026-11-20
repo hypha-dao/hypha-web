@@ -4,6 +4,8 @@ import type {
   ListSpacesData,
   ListSpacesInput,
   MyMembership,
+  SpaceDetail,
+  GetSpaceInput,
 } from '@hypha-platform/core/server';
 
 /**
@@ -28,6 +30,10 @@ export type McpFeatures = {
     input: ListSpacesInput,
     caller: UserCaller,
   ): Promise<{ ok: true; data: ListSpacesData } | Failure>;
+  getSpace(
+    input: GetSpaceInput,
+    caller: UserCaller,
+  ): Promise<{ ok: true; data: SpaceDetail } | Failure>;
   getMyMembership(
     input: { spaceSlug: string },
     caller: UserCaller,

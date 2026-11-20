@@ -23,7 +23,11 @@ describe('tools/list is the reviewed text, in the fixed order', () => {
     const { client, close } = await connect(deps);
     const names = (await client.listTools()).tools.map((t) => t.name);
     await close();
-    expect(names).toEqual(['hypha_list_spaces', 'hypha_get_my_membership']);
+    expect(names).toEqual([
+      'hypha_list_spaces',
+      'hypha_get_space',
+      'hypha_get_my_membership',
+    ]);
   });
 
   it('every tool is read-only and closed-world', async () => {

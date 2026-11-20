@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { ListSpacesData } from '@hypha-platform/core/server';
+import type { ListSpacesData, SpaceDetail } from '@hypha-platform/core/server';
 import { USER_TEXT_CAPS, userText } from './user-text';
 
 const VOTING_POWER_SOURCE = { 1: 'token', 2: 'member', 3: 'voice' } as const;
@@ -41,6 +41,33 @@ export type SpaceItem = z.infer<typeof spaceItemSchema>;
 
 type ListedSpace = ListSpacesData['items'][number];
 
+type GovernanceFacts = {
+  quorum: number;
+  unity: number;
+  votingPowerSource: number;
+  joinMethod: number;
+};
+
+function presentGovernance(
+  g: GovernanceFacts | null | undefined,
+): z.infer<typeof governanceSchema> {
+  if (!g) return null;
+  return {
+    quorum: g.quorum,
+    unity: g.unity,
+    votingPowerSource: word(VOTING_POWER_SOURCE, g.votingPowerSource) as
+      | 'token'
+      | 'member'
+      | 'voice'
+      | null,
+    joinMethod: word(JOIN_METHOD, g.joinMethod) as
+      | 'open'
+      | 'token_based'
+      | 'invite_only'
+      | null,
+  };
+}
+
 /** MCP's own presentation model over a feature function's space. No wallet addresses, ever. */
 export function presentSpace(
   space: ListedSpace,
@@ -51,7 +78,6 @@ export function presentSpace(
   },
 ): SpaceItem {
   const flags = (space.flags ?? []) as string[];
-  const g = space.governance;
   const web3Id = space.web3SpaceId;
   const item: SpaceItem = {
     slug: space.slug,
@@ -79,23 +105,61 @@ export function presentSpace(
       ? 'demo'
       : 'live',
     archived: flags.includes('archived'),
-    governance: g
-      ? {
-          quorum: g.quorum,
-          unity: g.unity,
-          votingPowerSource: word(VOTING_POWER_SOURCE, g.votingPowerSource) as
-            | 'token'
-            | 'member'
-            | 'voice'
-            | null,
-          joinMethod: word(JOIN_METHOD, g.joinMethod) as
-            | 'open'
-            | 'token_based'
-            | 'invite_only'
-            | null,
-        }
-      : null,
+    governance: presentGovernance(space.governance),
   };
   if (ctx.withVisibility) item.visibility = space.visibility ?? null;
+  return item;
+}
+
+const {
+  memberCount: _listMemberCount,
+  governance: _g,
+  ...detailBase
+} = spaceItemSchema.shape;
+void [_listMemberCount, _g];
+
+/**
+ * One space: the list item's fields, plus `counts` and `governance` (each is left out when the
+ * caller asked to omit it). No `subspaces` and no `childSlugs`: the ecosystem tree is later.
+ */
+export const spaceDetailSchema = z.object({
+  ...detailBase,
+  governance: governanceSchema.optional(),
+  counts: z.object({ memberCount: z.number().nullable() }).optional(),
+  asOf: z.string(),
+});
+export type SpaceDetailItem = z.infer<typeof spaceDetailSchema>;
+
+export function presentSpaceDetail(
+  space: SpaceDetail,
+  ctx: { spaceUrl(slug: string): string },
+): SpaceDetailItem {
+  const flags = (space.flags ?? []) as string[];
+  const item: SpaceDetailItem = {
+    slug: space.slug,
+    url: ctx.spaceUrl(space.slug),
+    userText: userText({
+      title: { value: space.title, max: USER_TEXT_CAPS.title },
+      description: {
+        value: space.description,
+        max: USER_TEXT_CAPS.description,
+      },
+    }),
+    parentSlug: space.parentSlug,
+    lifecycle: flags.includes('sandbox')
+      ? 'sandbox'
+      : flags.includes('demo')
+      ? 'demo'
+      : 'live',
+    archived: flags.includes('archived'),
+    asOf: space.asOf,
+  };
+  if (space.visibility !== undefined) item.visibility = space.visibility;
+  if (space.governance !== undefined) {
+    item.governance = presentGovernance(
+      space.governance as GovernanceFacts | null,
+    );
+  }
+  if (space.counts !== undefined) item.counts = space.counts;
   return item;
 }

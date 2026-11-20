@@ -239,12 +239,13 @@ async function connectClient(
 }
 
 describe('the real SDK client against the handler', () => {
-  it('lists the two tools and calls them for the resolved caller', async () => {
+  it('lists the tools and calls them for the resolved caller', async () => {
     const { handlers, features, logs } = setup();
     const client = await connectClient(handlers, await issuer.sign(AUDIENCE));
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name)).toEqual([
       'hypha_list_spaces',
+      'hypha_get_space',
       'hypha_get_my_membership',
     ]);
 

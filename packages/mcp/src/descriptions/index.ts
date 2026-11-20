@@ -24,6 +24,7 @@ export const SERVER_INSTRUCTIONS = [
 /** `tools/list` order is part of the contract and fixed here (K34). */
 export const TOOL_ORDER = [
   'hypha_list_spaces',
+  'hypha_get_space',
   'hypha_get_my_membership',
 ] as const;
 export type ToolName = (typeof TOOL_ORDER)[number];
@@ -52,6 +53,23 @@ export const TOOLS = {
       order: 'Sort order. Only `title` is supported. Default title ascending.',
       cursor: 'Paging cursor: the `nextCursor` of the previous result.',
       pageSize: 'Spaces per page, 1 to 50. Default 20.',
+    },
+  },
+  hypha_get_space: {
+    title: 'Get one space',
+    description: [
+      'Get one Hypha space by slug: what it is, how it is governed, how many members it has.',
+      'Results depend on the user’s permissions; a space the user may not see is reported as not found.',
+      'Governance, visibility and counts are included unless omitted. The member count is `null` when it cannot be read.',
+      UNTRUSTED_LINE,
+    ].join(' '),
+    params: {
+      slug: 'The space slug, as returned by `hypha_list_spaces`.',
+      omitVisibility:
+        'Leave out the visibility block (discoverability and access levels). Default false.',
+      omitGovernance:
+        'Leave out the governance block (quorum, unity, voting power source, join method). Default false.',
+      omitCounts: 'Leave out the member count. Default false.',
     },
   },
   hypha_get_my_membership: {
