@@ -125,20 +125,20 @@ function resolveNavItemIcon(href?: string) {
 }
 
 /**
- * Home / Messages / Wallet / Spaces / Network already sit in the mobile tab
- * bar. Keep them out of the profile sheet so the menu is not a second nav.
+ * Destinations that already sit in the mobile tab bar. Keep them out of the
+ * profile sheet so the menu is not a second nav. Members swap Spaces and
+ * Network for Energy and Community, so Network stays in their sheet.
  */
-function isMobileTabBarNavHref(href?: string) {
+function isMobileTabBarNavHref(href?: string, orientation?: string | null) {
   if (!href) return false;
-  return (
+  const shared =
     href.includes('/my-dashboard') ||
     href.includes('/home') ||
     href.includes('/messages') ||
     href.includes('/connections') ||
-    href.includes('/my-spaces') ||
-    href.includes('/my-wallet') ||
-    href.includes('/network')
-  );
+    href.includes('/my-wallet');
+  if (orientation === 'member') return shared;
+  return shared || href.includes('/my-spaces') || href.includes('/network');
 }
 
 export const ButtonProfile = ({
@@ -220,7 +220,9 @@ export const ButtonProfile = ({
   const useSheetProfileMenu = compact && (isCompactPanels || isMobile === true);
   /** Sheet sits above the tab bar — drop destinations that bar already covers. */
   const sheetNavItems = useSheetProfileMenu
-    ? navItems.filter((item) => !isMobileTabBarNavHref(item.href))
+    ? navItems.filter(
+        (item) => !isMobileTabBarNavHref(item.href, person?.primaryOrientation),
+      )
     : navItems;
 
   useEffect(() => {
