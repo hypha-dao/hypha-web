@@ -67,10 +67,12 @@ import {
   isMemberCommunityPath,
   isMemberEnergyPath,
   isMemberMobilePersona,
+  isMemberSpaceHomePath,
   MEMBER_COMMUNITY_SECTIONS,
   memberCommunityHref,
   memberCommunitySectionKey,
   memberEnergyHref,
+  memberSpaceHomeHref,
   memberSpaceSectionHref,
   pickMemberFocusSpaceSlug,
 } from './member-mobile-nav';
@@ -452,7 +454,6 @@ export function MobileTabBar({
     };
   }, [showAppMenu, showSectionStrip]);
 
-  const dashboardHref = `/${lang}/home`;
   const connectionsHref = `/${lang}/messages`;
   const spacesHref = `/${lang}/my-spaces`;
   const walletHref = `/${lang}/my-wallet`;
@@ -461,10 +462,6 @@ export function MobileTabBar({
     ? `/${lang}/profile/${person.slug}`
     : `/${lang}/profile/signup`;
 
-  const dashboardActive =
-    !createOpen &&
-    (segmentActive(pathname, 'my-dashboard') ||
-      segmentActive(pathname, 'home'));
   const connectionsActive =
     !createOpen &&
     (segmentActive(pathname, 'messages') ||
@@ -493,6 +490,15 @@ export function MobileTabBar({
     ? 4 + Number(showMemberEnergy)
     : 3 + Number(showMessages) + Number(showSpaces);
   const communityHref = memberCommunityHref(lang, focusSpaceSlug);
+  const dashboardHref = memberMobile
+    ? memberSpaceHomeHref(lang, focusSpaceSlug)
+    : `/${lang}/home`;
+  const dashboardActive =
+    !createOpen &&
+    (memberMobile
+      ? isMemberSpaceHomePath(pathname, focusSpaceSlug)
+      : segmentActive(pathname, 'my-dashboard') ||
+        segmentActive(pathname, 'home'));
   const energyActive = !createOpen && isMemberEnergyPath(pathname);
   const communityActive = !createOpen && isMemberCommunityPath(pathname);
   const textStrip = secondLevel.every((item) => item.textOnly);

@@ -62,13 +62,27 @@ export function memberCommunityHref(lang: string, slug: string | null): string {
     : `/${lang}/home`;
 }
 
+/** Home for a member is the focused space, not the network home. */
+export function memberSpaceHomeHref(lang: string, slug: string | null): string {
+  return slug ? `/${lang}/dho/${slug}/overview` : `/${lang}/home`;
+}
+
+export function isMemberSpaceHomePath(
+  pathname: string,
+  slug: string | null,
+): boolean {
+  if (!slug) return false;
+  const escaped = slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^/[^/]+/dho/${escaped}(?:/overview)?/?$`).test(pathname);
+}
+
 export function isMemberEnergyPath(pathname: string): boolean {
   return /\/dho\/[^/]+\/energy(?:\/|$)/.test(pathname);
 }
 
-/** A space screen other than Energy, which has its own bottom tab. */
+/** Signals, Decisions, Treasury, and Members. The space overview is Home. */
 export function isMemberCommunityPath(pathname: string): boolean {
-  return /\/dho\/[^/]+(?:\/|$)/.test(pathname) && !isMemberEnergyPath(pathname);
+  return memberCommunitySectionKey(pathname) != null;
 }
 
 export function memberCommunitySectionKey(

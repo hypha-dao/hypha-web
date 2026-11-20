@@ -3,9 +3,11 @@ import { describe, expect, it } from 'vitest';
 import {
   isMemberCommunityPath,
   isMemberEnergyPath,
+  isMemberSpaceHomePath,
   memberCommunityHref,
   memberCommunitySectionKey,
   memberEnergyHref,
+  memberSpaceHomeHref,
   pickMemberFocusSpaceSlug,
 } from '../member-mobile-nav';
 
@@ -65,7 +67,14 @@ describe('member mobile nav', () => {
     expect(isMemberEnergyPath('/en/dho/rue-verte/energy')).toBe(true);
     expect(isMemberCommunityPath('/en/dho/rue-verte/energy')).toBe(false);
     expect(isMemberCommunityPath('/en/dho/rue-verte/coherence')).toBe(true);
-    expect(isMemberCommunityPath('/en/dho/rue-verte')).toBe(true);
+    expect(isMemberCommunityPath('/en/dho/rue-verte')).toBe(false);
+    expect(isMemberCommunityPath('/en/dho/rue-verte/overview')).toBe(false);
+    expect(
+      isMemberSpaceHomePath('/en/dho/rue-verte/overview', 'rue-verte'),
+    ).toBe(true);
+    expect(memberSpaceHomeHref('en', 'rue-verte')).toBe(
+      '/en/dho/rue-verte/overview',
+    );
     expect(isMemberCommunityPath('/en/home')).toBe(false);
     expect(memberCommunitySectionKey('/en/dho/rue-verte/agreements')).toBe(
       'agreements',

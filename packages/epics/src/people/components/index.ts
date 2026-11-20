@@ -28,6 +28,7 @@ export * from './person-label';
 export * from './signup-panel';
 export * from './signup-flow';
 export * from './member-home';
+export * from './member-home-entry';
 export * from './member-space-home';
 export { isMemberMobilePersona } from './member-mobile-nav';
 export { writeHomeView } from './member-home-view';

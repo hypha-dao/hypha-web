@@ -99,9 +99,11 @@ import { useMessagesScreenCount } from '../people/components/my-connections';
 import {
   isMemberEnergyPath,
   isMemberMobilePersona,
+  isMemberSpaceHomePath,
   MEMBER_COMMUNITY_SECTIONS,
   memberCommunitySectionKey,
   memberEnergyHref,
+  memberSpaceHomeHref,
   memberSpaceSectionHref,
   pickMemberFocusSpaceSlug,
 } from '../people/components/member-mobile-nav';
@@ -886,7 +888,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const showMemberEnergy = memberFocusEnergy?.enabled === true;
   const memberYouItems = useMemo<NavItem[]>(() => {
     if (!memberPersona || !lang) return [];
-    const homeHref = `/${lang}/home`;
+    const homeHref = memberSpaceHomeHref(lang, memberFocusSlug);
     const walletHref = `/${lang}/my-wallet`;
     const messagesHref = `/${lang}/messages`;
     const items: NavItem[] = [
@@ -895,7 +897,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         label: tNav('myDashboard'),
         icon: House,
         href: homeHref,
-        active: isMemberHomePath(pathname),
+        active: isMemberSpaceHomePath(pathname, memberFocusSlug),
       },
     ];
     if (showMemberEnergy) {
