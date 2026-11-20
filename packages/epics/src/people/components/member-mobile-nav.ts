@@ -25,7 +25,7 @@ export function pickMemberFocusSpaceSlug({
   recentSlugs,
   membershipSlugs,
 }: {
-  pathSlug: string | null;
+  pathSlug: string | null | undefined;
   recentSlugs: readonly string[];
   membershipSlugs: readonly string[];
 }): string | null {
