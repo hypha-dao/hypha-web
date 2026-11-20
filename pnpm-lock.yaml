@@ -793,6 +793,9 @@ importers:
       '@hypha-platform/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@hypha-platform/mcp':
+        specifier: workspace:*
+        version: link:../../packages/mcp
       '@hypha-platform/notifications':
         specifier: workspace:*
         version: link:../../packages/notifications
@@ -805,6 +808,9 @@ importers:
       '@hypha-platform/ui-utils':
         specifier: workspace:*
         version: link:../../packages/ui-utils
+      '@modelcontextprotocol/server':
+        specifier: 2.4.0
+        version: 2.4.0
       '@openrouter/ai-sdk-provider':
         specifier: ^2.3.3
         version: 2.3.3(ai@6.0.138(zod@4.6.7))(zod@4.6.7)
@@ -857,6 +863,9 @@ importers:
       '@hypha-platform/config-typescript':
         specifier: workspace:*
         version: link:../../config/typescript
+      '@modelcontextprotocol/client':
+        specifier: 2.4.0
+        version: 2.4.0
       '@tailwindcss/postcss':
         specifier: ^4.1.11
         version: 4.1.11
@@ -1268,6 +1277,37 @@ importers:
       globals:
         specifier: ^15.15.0
         version: 15.15.0
+
+  packages/mcp:
+    dependencies:
+      '@hypha-platform/core':
+        specifier: workspace:*
+        version: link:../core
+      '@modelcontextprotocol/server':
+        specifier: 2.4.0
+        version: 2.4.0
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@hypha-platform/config-eslint':
+        specifier: workspace:*
+        version: link:../../config/eslint
+      '@hypha-platform/config-typescript':
+        specifier: workspace:*
+        version: link:../../config/typescript
+      '@modelcontextprotocol/client':
+        specifier: 2.4.0
+        version: 2.4.0
+      '@types/node':
+        specifier: ^22.16.5
+        version: 22.16.5
+      typescript:
+        specifier: ^5.7.3
+        version: 5.8.3
+      vitest:
+        specifier: ^1.3.1
+        version: 1.6.1(@types/node@22.16.5)(@vitest/ui@1.6.1)(jsdom@26.0.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(less@4.1.3)(lightningcss@1.30.1)(sass@1.86.3)(stylus@0.64.0)(terser@5.39.0)
 
   packages/mcp-server:
     dependencies:
@@ -4425,6 +4465,14 @@ packages:
     resolution: {integrity: sha512-T1WebTmwyLaK+daZ0JBT6K9TS9v2w6roAVzZDgsafXSb1vztrkLOiKPcYos+f5c5IraYMP2QK8EH5baFozMisQ==}
     engines: {node: '>=20'}
 
+  '@modelcontextprotocol/client@2.4.0':
+    resolution: {integrity: sha512-LgrD2OphHuG12vfKFKz6SOnq7bKHQmhGJIAYdD+MZBn2npHEyry6uD8zvktodtl5CQM85MO0anUyD9JwmUmxww==}
+    engines: {node: '>=20'}
+
+  '@modelcontextprotocol/core@2.4.0':
+    resolution: {integrity: sha512-z8QBKqdfXLPzkLQuG4xp8hrVEMm1PZ1IgxMN2sMbJiFiAKOWXnAzogXn2W4aqIBlP1ea6U5yiqVquvUNM1Cj6Q==}
+    engines: {node: '>=20'}
+
   '@modelcontextprotocol/sdk@1.29.0':
     resolution: {integrity: sha512-zo37mZA9hJWpULgkRpowewez1y6ML5GsXJPY8FI0tBBCd77HEvza4jDqRKOXgHNn867PVGCyTdzqpz0izu5ZjQ==}
     engines: {node: '>=18'}
@@ -4434,6 +4482,10 @@ packages:
     peerDependenciesMeta:
       '@cfworker/json-schema':
         optional: true
+
+  '@modelcontextprotocol/server@2.4.0':
+    resolution: {integrity: sha512-rgR9yxSaAJ+bcsi/XroT/S2AfPiIWloXAnrdfYSCms9ivVju0ishu/wW0J21Ho6+ZOR1r7RyeRbjiRuF87ix5Q==}
+    engines: {node: '>=20'}
 
   '@modern-js/node-bundle-require@2.65.1':
     resolution: {integrity: sha512-XpEkciVEfDbkkLUI662ZFlI9tXsUQtLXk4NRJDBGosNnk9uL2XszmC8sKsdCSLK8AYuPW2w6MTVWuJsOR0EU8A==}
@@ -12641,6 +12693,10 @@ packages:
 
   eventsource-parser@3.0.6:
     resolution: {integrity: sha512-Vo1ab+QXPzZ4tCa8SwIHJFaSzy4R6SHf7BY79rFBDf0idraZWAkYrDjDj8uWaSm3S2TK+hJ7/t1CEmZ7jXw+pg==}
+    engines: {node: '>=18.0.0'}
+
+  eventsource-parser@3.1.1:
+    resolution: {integrity: sha512-EKN1vKAMcZ8MlYMpaNuxN6R9yakzH6uajHcHVTqWJzvu5pWw9DyhbP35HH8MVBQ+dZjAfDxk+A8NiR9KWaXiyQ==}
     engines: {node: '>=18.0.0'}
 
   eventsource@3.0.7:
@@ -24177,6 +24233,20 @@ snapshots:
 
   '@middy/core@6.4.4': {}
 
+  '@modelcontextprotocol/client@2.4.0':
+    dependencies:
+      '@modelcontextprotocol/core': 2.4.0
+      cross-spawn: 7.0.6
+      eventsource: 3.0.7
+      eventsource-parser: 3.1.1
+      jose: 6.2.17
+      pkce-challenge: 5.0.1
+      zod: 4.6.7
+
+  '@modelcontextprotocol/core@2.4.0':
+    dependencies:
+      zod: 4.6.7
+
   '@modelcontextprotocol/sdk@1.29.0(zod@3.25.76)':
     dependencies:
       '@hono/node-server': 1.19.14(hono@4.12.15)
@@ -24198,6 +24268,11 @@ snapshots:
       zod-to-json-schema: 3.25.2(zod@3.25.76)
     transitivePeerDependencies:
       - supports-color
+
+  '@modelcontextprotocol/server@2.4.0':
+    dependencies:
+      '@modelcontextprotocol/core': 2.4.0
+      zod: 4.6.7
 
   '@modern-js/node-bundle-require@2.65.1':
     dependencies:
@@ -35802,9 +35877,11 @@ snapshots:
 
   eventsource-parser@3.0.6: {}
 
+  eventsource-parser@3.1.1: {}
+
   eventsource@3.0.7:
     dependencies:
-      eventsource-parser: 3.0.6
+      eventsource-parser: 3.1.1
 
   evp_bytestokey@1.0.3:
     dependencies:
