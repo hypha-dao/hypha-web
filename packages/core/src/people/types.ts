@@ -36,13 +36,3 @@ export interface GetPersonBySubInput {
 export interface GetPeopleBySubsInput {
   subs?: string[];
 }
-
-export interface EditPersonInput {
-  avatarUrl?: string;
-  name?: string;
-  surname?: string;
-  id: number;
-  nickname?: string;
-  description?: string;
-  leadImageUrl?: string;
-}
