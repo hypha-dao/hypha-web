@@ -23,6 +23,7 @@ describe('member mobile nav', () => {
         pathSlug: null,
         recentSlugs: ['old', 'recent'],
         membershipSlugs: ['recent', 'other'],
+        membershipsLoaded: true,
       }),
     ).toBe('recent');
     expect(
@@ -30,6 +31,7 @@ describe('member mobile nav', () => {
         pathSlug: null,
         recentSlugs: ['left'],
         membershipSlugs: ['first', 'second'],
+        membershipsLoaded: true,
       }),
     ).toBe('first');
     expect(
@@ -39,6 +41,14 @@ describe('member mobile nav', () => {
         membershipSlugs: [],
       }),
     ).toBe('recent');
+    expect(
+      pickMemberFocusSpaceSlug({
+        pathSlug: null,
+        recentSlugs: ['left'],
+        membershipSlugs: [],
+        membershipsLoaded: true,
+      }),
+    ).toBe(null);
   });
 
   it('points Energy and Community at the focused space', () => {

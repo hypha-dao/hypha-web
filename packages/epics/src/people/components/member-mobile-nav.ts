@@ -24,13 +24,17 @@ export function pickMemberFocusSpaceSlug({
   pathSlug,
   recentSlugs,
   membershipSlugs,
+  membershipsLoaded = false,
 }: {
   pathSlug: string | null | undefined;
   recentSlugs: readonly string[];
   membershipSlugs: readonly string[];
+  /** False while the membership query is still loading. An empty loaded list is not a membership. */
+  membershipsLoaded?: boolean;
 }): string | null {
   if (pathSlug) return pathSlug;
-  if (membershipSlugs.length === 0) return recentSlugs[0] ?? null;
+  if (!membershipsLoaded) return recentSlugs[0] ?? null;
+  if (membershipSlugs.length === 0) return null;
   const membership = new Set(membershipSlugs);
   for (const slug of recentSlugs) {
     if (membership.has(slug)) return slug;

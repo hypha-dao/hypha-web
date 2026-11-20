@@ -6,7 +6,11 @@ import { DefaultChatTransport, type UIMessage } from 'ai';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useFindCoherences, useSpaceBySlug } from '@hypha-platform/core/client';
+import {
+  useFindCoherences,
+  useMe,
+  useSpaceBySlug,
+} from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
 import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -27,16 +31,19 @@ const SIGNALS_SHOWN = 4;
 
 const HOME_STORAGE_PREFIX = 'hypha:space-home-chat:';
 
-function storageKey(spaceSlug: string) {
-  return `${HOME_STORAGE_PREFIX}${spaceSlug.trim()}`;
+function storageKey(accountKey: string, spaceSlug: string) {
+  return `${HOME_STORAGE_PREFIX}${accountKey}:${spaceSlug.trim()}`;
 }
 
 function readSpaceHomeMessages(
+  accountKey: string,
   spaceSlug: string,
 ): StoredOnboardingChatMessage[] | undefined {
   if (typeof window === 'undefined') return undefined;
   try {
-    const raw = window.sessionStorage.getItem(storageKey(spaceSlug));
+    const raw = window.sessionStorage.getItem(
+      storageKey(accountKey, spaceSlug),
+    );
     if (!raw) return undefined;
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return undefined;
@@ -52,7 +59,11 @@ function readSpaceHomeMessages(
   }
 }
 
-function saveSpaceHomeMessages(spaceSlug: string, messages: UIMessage[]) {
+function saveSpaceHomeMessages(
+  accountKey: string,
+  spaceSlug: string,
+  messages: UIMessage[],
+) {
   if (typeof window === 'undefined') return;
   const stored: StoredOnboardingChatMessage[] = messages.map((message) => ({
     id: message.id,
@@ -61,7 +72,7 @@ function saveSpaceHomeMessages(spaceSlug: string, messages: UIMessage[]) {
   }));
   try {
     window.sessionStorage.setItem(
-      storageKey(spaceSlug),
+      storageKey(accountKey, spaceSlug),
       JSON.stringify(stored),
     );
   } catch {
@@ -107,8 +118,15 @@ function MemberSpaceHomeChat({
   const tAi = useTranslations('AiPanel');
   const tHome = useTranslations('MemberHome');
   const { getAccessToken } = useAuthentication();
+  const { person } = useMe();
+  const accountKey = person?.slug?.trim() || null;
   const { space } = useSpaceBySlug(spaceSlug);
-  const { coherences } = useFindCoherences({
+  const {
+    coherences,
+    isLoading: signalsLoading,
+    error: signalsError,
+    refresh: refreshSignals,
+  } = useFindCoherences({
     spaceSlug,
     includeArchived: false,
     orderBy: 'mostrecent',
@@ -139,6 +157,7 @@ function MemberSpaceHomeChat({
   const {
     messages,
     sendMessage,
+    regenerate,
     stop,
     status,
     error,
@@ -151,32 +170,40 @@ function MemberSpaceHomeChat({
 
   const [input, setInput] = useState('');
   const scroller = useRef<HTMLDivElement>(null);
-  const hydrated = useRef(false);
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+  const skipSave = useRef(true);
+  const sendingRef = useRef(false);
   const isStreaming = status === 'streaming' || status === 'submitted';
 
   useEffect(() => {
-    hydrated.current = false;
-    const stored = readSpaceHomeMessages(spaceSlug);
-    if (stored?.length) {
-      setMessages(
-        stored.map((message) => ({
-          id: message.id,
-          role: message.role,
-          parts: message.parts ?? [],
-        })) as UIMessage[],
-      );
-    }
-    hydrated.current = true;
-  }, [setMessages, spaceSlug]);
+    skipSave.current = true;
+    if (!accountKey) return;
+    const stored = readSpaceHomeMessages(accountKey, spaceSlug);
+    setMessages(
+      (stored ?? []).map((message) => ({
+        id: message.id,
+        role: message.role,
+        parts: message.parts ?? [],
+      })) as UIMessage[],
+    );
+  }, [accountKey, setMessages, spaceSlug]);
 
   useEffect(() => {
-    if (!hydrated.current || isStreaming) return;
-    if (messages.length === 0) {
-      const stored = readSpaceHomeMessages(spaceSlug);
-      if (stored && stored.length > 0) return;
+    if (!accountKey) return;
+    if (skipSave.current) {
+      skipSave.current = false;
+      return;
     }
-    saveSpaceHomeMessages(spaceSlug, messages);
-  }, [isStreaming, messages, spaceSlug]);
+    saveSpaceHomeMessages(accountKey, spaceSlug, messages);
+  }, [accountKey, messages, spaceSlug]);
+
+  useEffect(() => {
+    return () => {
+      if (!accountKey || skipSave.current) return;
+      saveSpaceHomeMessages(accountKey, spaceSlug, messagesRef.current);
+    };
+  }, [accountKey, spaceSlug]);
 
   const messageCount = messages.length;
   useEffect(() => {
@@ -186,30 +213,37 @@ function MemberSpaceHomeChat({
     last.scrollIntoView({ block: 'nearest' });
   }, [messageCount]);
 
-  const send = async () => {
-    const text = input.trim();
-    if (!text || isStreaming) return;
-    setInput('');
-    clearError();
-    let token: string | undefined;
-    try {
-      token = (await getAccessToken?.()) ?? undefined;
-    } catch {
-      token = undefined;
-    }
-    const { body } = resolveChatTransportBody({
+  const chatBody = () =>
+    resolveChatTransportBody({
       spaceSlug,
       activeSpaceTitle: spaceTitle,
       isOnboardingPath: false,
       locale: lang,
+    }).body;
+
+  const send = async () => {
+    const text = input.trim();
+    if (!text || isStreaming || sendingRef.current) return;
+    sendingRef.current = true;
+    setInput('');
+    clearError();
+    try {
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        { body: chatBody() },
+      );
+    } finally {
+      sendingRef.current = false;
+    }
+  };
+
+  const retry = () => {
+    if (sendingRef.current) return;
+    sendingRef.current = true;
+    clearError();
+    void regenerate({ body: chatBody() }).finally(() => {
+      sendingRef.current = false;
     });
-    await sendMessage(
-      { role: 'user', parts: [{ type: 'text', text }] },
-      {
-        body,
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      },
-    );
   };
 
   return (
@@ -238,7 +272,21 @@ function MemberSpaceHomeChat({
               {tCommon('Signals')}
             </Link>
           </h2>
-          {signals.length > 0 ? (
+          {signalsLoading && signals.length === 0 ? (
+            <p className="mt-3 text-1 text-neutral-11">{tAi('loading')}</p>
+          ) : signalsError && signals.length === 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              className="mt-3"
+              onClick={() => {
+                void refreshSignals();
+              }}
+            >
+              {tCommon('errorTryAgain')}
+            </Button>
+          ) : signals.length > 0 ? (
             <ul className="mt-3 grid gap-2">
               {signals.map((signal) => (
                 <li key={signal.slug}>
@@ -321,7 +369,7 @@ function MemberSpaceHomeChat({
                   type="button"
                   variant="outline"
                   colorVariant="neutral"
-                  onClick={() => clearError()}
+                  onClick={retry}
                 >
                   {tCommon('errorTryAgain')}
                 </Button>

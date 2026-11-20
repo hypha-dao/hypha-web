@@ -877,6 +877,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         recentSlugs: recentSpaceSlugs,
         membershipSlugs:
           memberIntelligence?.spaces.map((space) => space.slug) ?? [],
+        membershipsLoaded: memberIntelligence != null,
       })
     : null;
   const { data: memberFocusEnergy } = useSpaceEnergy(

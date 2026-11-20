@@ -480,6 +480,7 @@ export function MobileTabBar({
         recentSlugs: recentSpaceSlugs,
         membershipSlugs:
           memberIntelligence?.spaces.map((space) => space.slug) ?? [],
+        membershipsLoaded: memberIntelligence != null,
       })
     : null;
   const energyHref = memberEnergyHref(lang, focusSpaceSlug);
