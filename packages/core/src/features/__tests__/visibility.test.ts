@@ -211,6 +211,22 @@ describe('visibility: list spaces', () => {
     expect(r).toMatchObject({ ok: false, code: 'access_check_failed' });
   });
 
+  it('archived is the flag only: an empty space is not archived, and includeEmpty is its own switch', async () => {
+    all.spaces = [
+      { ...spaceRow(1, 1), memberCount: 0 }, // empty, not flagged
+      { ...spaceRow(2, 2), flags: ['archived'] }, // flagged
+      spaceRow(3, 3),
+    ];
+    const shown = async (input: object) =>
+      (await slugsOf(mcpUser([1, 2, 3]), input)).sort();
+    // the flag alone hides s2; the empty s1 stays (omitEmpty is a different switch)
+    expect(await shown({ omitFlagArchived: true })).toEqual(['s1']);
+    expect(await shown({ omitFlagArchived: true, omitEmpty: true })).toEqual(
+      [],
+    );
+    expect(await shown({ omitEmpty: true })).toEqual(['s2']);
+  });
+
   it('never returns wallet-address arrays', async () => {
     all.spaces = [{ ...spaceRow(1, 1), memberAddresses: [ADDR] }];
     const data = await listed(mcpUser());

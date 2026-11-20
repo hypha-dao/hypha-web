@@ -319,6 +319,21 @@ describe('GET /api/v2/spaces/{slug} (twin: GET /api/v1/spaces/[spaceSlug])', () 
     if (!r.ok) throw new Error('unexpected');
     expect(r.body.counts).toEqual({ memberCount: null });
   });
+
+  it('keeps the access-checked body with null blocks when an optional chain read is rejected', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    chain.readSpaceGovernanceBatch.mockRejectedValue(new Error('rpc'));
+    chain.readSpaceVisibilityBatch.mockRejectedValue(new Error('rpc'));
+    const r = await buildSpaceV2(
+      { slug: 'alpha', caller: GUEST, include: 'visibility,governance,counts' },
+      { db },
+    );
+    if (!r.ok) throw new Error('unexpected');
+    expect(r.body.slug).toBe(v1Body.slug);
+    expect(r.body.visibility).toBeNull();
+    expect(r.body.governance).toBeNull();
+    expect(r.body.counts).toEqual({ memberCount: null });
+  });
 });
 
 describe('privacy denylist walker', () => {

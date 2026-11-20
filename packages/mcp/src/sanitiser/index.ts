@@ -45,6 +45,12 @@ const LINE_SEPARATORS = new RegExp('[' + range(0x2028, 0x2029) + ']', 'gu');
 
 const IMAGE_MD = /!\[([^\]]*)\]\([^)]*\)/g;
 const IMAGE_REF = /!\[([^\]]*)\]\[[^\]]*\]/g;
+// Shortcut reference image `![alt]` (its target lives in a definition line elsewhere).
+const IMAGE_SHORTCUT = /!\[([^\]\n]*)\](?!\s*[[(])/g;
+// Reference definitions `[label]: target "title"`, which carry the target of a reference.
+const REFERENCE_DEFINITION = /^[ \t]{0,3}\[[^\]\n]+\]:[^\n]*$/gm;
+// Protocol-relative URL (`//host/path`) at a word start.
+const PROTOCOL_RELATIVE = /(^|[\s(<])\/\/[^\s<>"')\]]+/g;
 const IMAGE_HTML = /<img\b[^>]*>/gi;
 const LINK_MD = /\[([^\]]*)\]\(\s*(?:https?:|\/\/|data:|javascript:)[^)]*\)/gi;
 const RAW_URL =
@@ -68,9 +74,14 @@ export function sanitiseUserText(
     .replace(IMAGE_REF, (_m, alt: string) =>
       alt ? `[image: ${alt}]` : '[image]',
     )
+    .replace(REFERENCE_DEFINITION, '')
+    .replace(IMAGE_SHORTCUT, (_m, alt: string) =>
+      alt ? `[image: ${alt}]` : '[image]',
+    )
     .replace(IMAGE_HTML, '[image]')
     .replace(LINK_MD, (_m, label: string) => `${label} [link removed]`)
     .replace(RAW_URL, '[link removed]')
+    .replace(PROTOCOL_RELATIVE, '$1[link removed]')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 

@@ -29,6 +29,11 @@ export type ListSpacesInput = {
   search?: string;
   parentOnly?: boolean;
   omitArchived?: boolean;
+  /**
+   * Hide spaces that carry the `archived` flag, and nothing else. Unlike `omitArchived`
+   * (the product rule: the flag OR a member count of 0) it leaves empty spaces to `omitEmpty`.
+   */
+  omitFlagArchived?: boolean;
   omitSandbox?: boolean;
   /** Hide spaces with a zero member count. */
   omitEmpty?: boolean;
@@ -91,6 +96,9 @@ export async function listSpaces(
     let spaces = await listSources(input);
 
     // The omit filters apply on every source (v1 only honours them for the default one).
+    if (input.omitFlagArchived) {
+      spaces = spaces.filter((space) => !space.flags?.includes('archived'));
+    }
     if (input.omitArchived) {
       spaces = spaces.filter((space) => !isSpaceArchived(space));
     }

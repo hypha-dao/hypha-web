@@ -5,10 +5,39 @@ import { decodeCursor, encodeCursor } from '../tools/list-spaces';
 const ADDR = '0xabc0000000000000000000000000000000000001';
 const ZERO_WIDTH = String.fromCodePoint(0x200b);
 
+type ListedItem = {
+  slug: string;
+  url: string;
+  parentSlug: string | null;
+  memberCount: number | null;
+  lifecycle: string;
+  archived: boolean;
+  userText: {
+    title: string | null;
+    description: string | null;
+    truncated: string[];
+  };
+  governance: {
+    votingPowerSource: string | null;
+    joinMethod: string | null;
+  } | null;
+};
+
+type ToolStructured = {
+  items: ListedItem[];
+  hasMore: boolean;
+  nextCursor: string | null;
+  showing: number;
+  total: number;
+  isMember: boolean | null;
+  isDelegate: boolean | null;
+  asOf: string;
+};
+
 type ToolResponse = {
   isError?: boolean;
   content: { type: string; text: string }[];
-  structuredContent?: Record<string, any>;
+  structuredContent?: Partial<ToolStructured>;
 };
 
 const call = async (
@@ -22,6 +51,12 @@ const call = async (
   } finally {
     await close();
   }
+};
+
+const firstItem = (r: ToolResponse): ListedItem => {
+  const item = r.structuredContent?.items?.[0];
+  if (!item) throw new Error('no item in the result');
+  return item;
 };
 
 const emptyData = {
@@ -58,7 +93,7 @@ describe('hypha_list_spaces', () => {
     );
     const r = await call(deps, 'hypha_list_spaces');
     expect(r.isError).toBeUndefined();
-    expect(r.structuredContent?.items[0]).toMatchObject({
+    expect(firstItem(r)).toMatchObject({
       slug: 'child',
       url: 'https://app.example/en/dho/child/overview',
       parentSlug: 'alpha',
@@ -80,8 +115,8 @@ describe('hypha_list_spaces', () => {
       }),
     );
     const r = await call(deps, 'hypha_list_spaces');
-    expect(r.structuredContent?.items[0].parentSlug).toBeNull();
-    expect(r.structuredContent?.items[0].memberCount).toBeNull();
+    expect(firstItem(r).parentSlug).toBeNull();
+    expect(firstItem(r).memberCount).toBeNull();
   });
 
   it('never returns a wallet address, even if the feature data carried one', async () => {
@@ -112,7 +147,7 @@ describe('hypha_list_spaces', () => {
       ]),
     );
     const r = await call(deps, 'hypha_list_spaces');
-    const t = r.structuredContent?.items[0].userText;
+    const t = firstItem(r).userText;
     expect(t.title).toBe('Hi there');
     expect(t.description).not.toMatch(/evil\.example/);
     expect(t.truncated).toEqual(['description']);
@@ -130,7 +165,7 @@ describe('hypha_list_spaces', () => {
         search: undefined,
         parentOnly: false,
         omitSandbox: false,
-        omitArchived: true,
+        omitFlagArchived: true,
         omitEmpty: true,
         titleOrder: 'asc',
         paging: { page: 1, pageSize: 20 },
@@ -151,7 +186,7 @@ describe('hypha_list_spaces', () => {
       expect.objectContaining({
         search: 'solar',
         parentOnly: true,
-        omitArchived: false,
+        omitFlagArchived: false,
         omitEmpty: false,
         titleOrder: 'desc',
         paging: { page: 1, pageSize: 5 },

@@ -26,6 +26,31 @@ describe('sanitiseUserText', () => {
     expect(r.text).toContain('[image]');
   });
 
+  it('neutralises shortcut reference images and their definitions', () => {
+    const r = sanitiseUserText('![p]\n\n[p]: //evil.example/pixel', 200);
+    expect(r.text).not.toMatch(/evil[.]example/);
+    expect(r.text).toContain('[image: p]');
+    const r2 = sanitiseUserText(
+      '![logo][1] and ![x][]\n[1]: https://evil.example/a ' +
+        String.fromCharCode(34) +
+        't' +
+        String.fromCharCode(34) +
+        '\n[x]: <//evil.example/b>',
+      300,
+    );
+    expect(r2.text).not.toMatch(/evil[.]example/);
+    expect(r2.text).toContain('[image: logo]');
+  });
+
+  it('neutralises protocol-relative urls but keeps ordinary slashes', () => {
+    const r = sanitiseUserText(
+      'open //evil.example/x now, and/or a//b is fine',
+      200,
+    );
+    expect(r.text).not.toMatch(/evil[.]example/);
+    expect(r.text).toContain('and/or a//b is fine');
+  });
+
   it('neutralises links and raw urls', () => {
     const r = sanitiseUserText(
       'see [docs](https://evil.example/a) and https://evil.example/b or www.evil.example/c',

@@ -16,10 +16,15 @@
 export const CHAIN_FACTS_TTL_MS = 30_000;
 export const CHAIN_FACTS_MAX_STALE_MS = 120_000;
 
-type Entry<V> = { value: V; at: number };
+/** `gen` orders loads per key: a load that STARTED later wins, whatever finishes last. */
+type Entry<V> = { value: V; at: number; gen: number };
+
+/** Upper bound of retained keys (a cold instance starts empty; one entry per wallet or space). */
+export const CHAIN_FACTS_MAX_ENTRIES = 5_000;
 
 export class ChainFactsCache<V> {
   private entries = new Map<string, Entry<V>>();
+  private generation = 0;
 
   constructor(
     private readonly opts: {
@@ -60,6 +65,8 @@ export class ChainFactsCache<V> {
     }
     if (stale.length === 0) return result;
 
+    // Order loads by when they started, per key (see `Entry.gen`).
+    const gen = ++this.generation;
     let loaded: Map<string, V> | null = null;
     try {
       loaded = await loadMissing(stale);
@@ -70,7 +77,13 @@ export class ChainFactsCache<V> {
     for (const key of stale) {
       const fresh = loaded?.get(key);
       if (fresh !== undefined) {
-        this.entries.set(key, { value: fresh, at: this.now() });
+        const current = this.entries.get(key);
+        if (current && current.gen > gen) {
+          // A load that started after this one already stored its result: keep the newer one.
+          result.set(key, current.value);
+          continue;
+        }
+        this.entries.set(key, { value: fresh, at: this.now(), gen });
         result.set(key, fresh);
         continue;
       }
@@ -79,6 +92,20 @@ export class ChainFactsCache<V> {
         result.set(key, old.value);
       }
     }
+    this.evict();
     return result;
+  }
+
+  /** Drops entries too old to serve even as stale, then the oldest ones past the cap. */
+  private evict() {
+    if (this.entries.size <= CHAIN_FACTS_MAX_ENTRIES) return;
+    const now = this.now();
+    for (const [key, entry] of this.entries) {
+      if (now - entry.at >= this.opts.maxStaleMs) this.entries.delete(key);
+    }
+    for (const key of this.entries.keys()) {
+      if (this.entries.size <= CHAIN_FACTS_MAX_ENTRIES) break;
+      this.entries.delete(key); // Map keeps insertion order: the oldest written first
+    }
   }
 }

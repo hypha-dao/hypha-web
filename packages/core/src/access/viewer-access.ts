@@ -116,9 +116,9 @@ async function getViewerFacts(
  * the node (same definition as `findAllOrganizationSpacesForNodeById`: climb to
  * the root, take every descendant). Returns web3 space id -> organisation root.
  */
-async function loadOrganisationRoots(
-  db: DbConfig['db'],
-): Promise<Map<number, number>> {
+async function loadOrganisationRoots({
+  db,
+}: DbConfig): Promise<Map<number, number>> {
   const rows = await db
     .select({
       id: spacesTable.id,
@@ -182,7 +182,7 @@ export async function relationsForSpaces(
   if (level2NotDirect.length === 0) return out;
 
   // Organisation siblings (DB grouping, one read).
-  const roots = await loadOrganisationRoots(db);
+  const roots = await loadOrganisationRoots({ db });
   const directRoots = new Set<number>();
   for (const id of facts.directSpaceIds) {
     const root = roots.get(id);

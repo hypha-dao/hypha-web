@@ -170,12 +170,19 @@ export async function buildSpaceV2(
   const wantsGovernance =
     include.blocks.has('governance') || include.blocks.has('counts');
 
+  // The access check passed: an optional block whose chain read is rejected is `null`
+  // (unknown), never a failed request and never a silent 0.
+  const optional = <T>(read: Promise<T>): Promise<T | null> =>
+    read.catch((error) => {
+      console.error('[api-v2] optional chain read failed', error);
+      return null;
+    });
   const [visibility, governance, clock] = await Promise.all([
     include.blocks.has('visibility') && id !== null
-      ? readSpaceVisibilityBatch([id])
+      ? optional(readSpaceVisibilityBatch([id]))
       : Promise.resolve(null),
     wantsGovernance && id !== null
-      ? readSpaceGovernanceBatch([id])
+      ? optional(readSpaceGovernanceBatch([id]))
       : Promise.resolve(null),
     readChainClock(),
   ]);

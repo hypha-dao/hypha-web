@@ -95,7 +95,8 @@ export function registerListSpaces(server: McpServer, deps: McpDeps): void {
             search: args.query,
             parentOnly: args.parentOnly ?? false,
             omitSandbox: args.omitSandbox ?? false,
-            omitArchived: !(args.includeArchived ?? false),
+            // Archived is the flag only; empty spaces have their own switch (includeEmpty).
+            omitFlagArchived: !(args.includeArchived ?? false),
             omitEmpty: !(args.includeEmpty ?? false),
             titleOrder: args.order?.[0]?.direction ?? 'asc',
             paging: { page, pageSize },

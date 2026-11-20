@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ChainFactsCache } from '../../access/chain-cache';
+import {
+  CHAIN_FACTS_MAX_ENTRIES,
+  ChainFactsCache,
+} from '../../access/chain-cache';
 import { V2_RESPONSE_HEADERS } from '../response-headers';
 
 describe('ChainFactsCache (stale-if-error)', () => {
@@ -44,6 +47,40 @@ describe('ChainFactsCache (stale-if-error)', () => {
     expect((await cache.getMany(['a'], failing)).get('a')).toBe(1);
     advance(61); // 121ms old: beyond maxStale
     expect((await cache.getMany(['a'], failing)).has('a')).toBe(false);
+  });
+
+  it('an older read that finishes last does not overwrite a newer result', async () => {
+    const { cache, advance } = make();
+    let releaseOld!: () => void;
+    const oldLoad = () =>
+      new Promise<Map<string, number>>((resolve) => {
+        releaseOld = () => resolve(new Map([['a', 1]]));
+      });
+    const first = cache.getMany(['a'], oldLoad); // starts first, finishes last
+    advance(1);
+    await cache.getMany(['a'], async () => new Map([['a', 2]])); // starts later, finishes first
+    releaseOld();
+    await first;
+    advance(1);
+    const load = vi.fn(async () => new Map<string, number>());
+    expect((await cache.getMany(['a'], load)).get('a')).toBe(2);
+    expect(load).not.toHaveBeenCalled(); // the newer entry is still fresh
+  });
+
+  it('bounds the retained entries: expired ones go first, then the oldest', async () => {
+    const { cache, advance } = make();
+    const load = async (keys: string[]) => new Map(keys.map((k) => [k, 1]));
+    const keys = Array.from(
+      { length: CHAIN_FACTS_MAX_ENTRIES + 10 },
+      (_, i) => 'k' + i,
+    );
+    await cache.getMany(keys, load);
+    const size = () =>
+      (cache as unknown as { entries: Map<string, unknown> }).entries.size;
+    expect(size()).toBeLessThanOrEqual(CHAIN_FACTS_MAX_ENTRIES);
+    advance(500); // everything is now beyond maxStale
+    await cache.getMany(['fresh'], load);
+    expect(size()).toBeLessThanOrEqual(CHAIN_FACTS_MAX_ENTRIES);
   });
 
   it('omits a key the loader could not read (callers fail closed)', async () => {
