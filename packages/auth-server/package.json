@@ -13,10 +13,10 @@
     "./client": "./src/client.ts"
   },
   "dependencies": {
-    "@better-auth/cimd": "^1.7.16",
-    "@better-auth/oauth-provider": "^1.7.16",
+    "@better-auth/cimd": "1.7.25",
+    "@better-auth/oauth-provider": "1.7.25",
     "@neondatabase/serverless": "^0.10.4",
-    "better-auth": "^1.7.16",
+    "better-auth": "1.7.25",
     "jose": "^6.2.15",
     "pg": "^8.13.1",
     "ws": "^8.18.1",
