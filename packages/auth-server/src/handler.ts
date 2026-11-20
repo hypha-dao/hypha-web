@@ -10,6 +10,7 @@ import { redactingLog } from './redact';
 import { corsPreflight, withCors } from './cors';
 import { authServerErrorPage } from './error-page';
 import { guardRegistration, narrowRegisteredClient } from './registration';
+import { logOnboardingStep, onboardingStepOf } from './onboarding-log';
 
 /**
  * The only HTTP surface the server exposes. Everything else Better Auth ships (client
@@ -78,6 +79,9 @@ export function createAuthServerHandler(
       return notFound();
     try {
       const server = getServer(config);
+      // One allow-listed log line per authorize / consent / token step (see onboarding-log.ts).
+      const step = onboardingStepOf(url.pathname, method);
+      const requestCopy = step ? request.clone() : null;
       const response =
         url.pathname === WELL_KNOWN
           ? await metadataWithoutDisabledEndpoints(
@@ -90,6 +94,13 @@ export function createAuthServerHandler(
           : url.pathname === `${AUTH_SERVER_API_BASE_PATH}/oauth2/consent`
           ? await handleConsent(server, request)
           : await server.auth.handler(request);
+      if (step && requestCopy)
+        await logOnboardingStep({
+          step,
+          requestCopy,
+          response,
+          pool: server.pool,
+        });
       return withCors(request, response, config);
     } catch (error) {
       // Never echo the error: it can carry request data.
