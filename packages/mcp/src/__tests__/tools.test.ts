@@ -168,7 +168,7 @@ describe('hypha_list_spaces', () => {
         omitFlagArchived: true,
         omitEmpty: true,
         titleOrder: 'asc',
-        paging: { page: 1, pageSize: 20 },
+        paging: { offset: 0, limit: 20 },
         with: { governance: true, visibility: false },
       },
       expect.anything(),
@@ -189,7 +189,7 @@ describe('hypha_list_spaces', () => {
         omitFlagArchived: false,
         omitEmpty: false,
         titleOrder: 'desc',
-        paging: { page: 1, pageSize: 5 },
+        paging: { offset: 0, limit: 5 },
         with: { governance: true, visibility: true },
       }),
       expect.anything(),
@@ -209,18 +209,40 @@ describe('hypha_list_spaces', () => {
       showing: 1,
     });
     const cursor = first.structuredContent?.nextCursor as string;
-    expect(decodeCursor(cursor)).toBe(2);
+    expect(decodeCursor(cursor)).toBe(20);
     await call(deps, 'hypha_list_spaces', { pageSize: 20, cursor });
     const calls = listSpaces.mock.calls as unknown as [
-      { paging: { page: number; pageSize: number } },
+      { paging: { offset: number; limit: number } },
     ][];
-    expect(calls.at(-1)![0].paging).toEqual({ page: 2, pageSize: 20 });
+    expect(calls.at(-1)![0].paging).toEqual({ offset: 20, limit: 20 });
     const last = await call(deps, 'hypha_list_spaces', {
       pageSize: 20,
-      cursor: encodeCursor(3),
+      cursor: encodeCursor(40),
     });
     expect(last.structuredContent?.hasMore).toBe(false);
     expect(last.structuredContent?.nextCursor).toBeNull();
+  });
+
+  it('a cursor keeps its meaning when pageSize changes between pages (no repeat, no skip)', async () => {
+    const listSpaces = vi.fn(async () => ({
+      ok: true as const,
+      data: { ...emptyData, items: [rawSpace()], total: 45 },
+    }));
+    const { deps } = makeDeps({}, { listSpaces } as never);
+    const first = await call(deps, 'hypha_list_spaces', { pageSize: 20 });
+    const cursor = first.structuredContent?.nextCursor as string; // next unseen item: 20
+    await call(deps, 'hypha_list_spaces', { pageSize: 10, cursor });
+    const calls = listSpaces.mock.calls as unknown as [
+      { paging: { offset: number; limit: number } },
+    ][];
+    expect(calls.at(-1)![0].paging).toEqual({ offset: 20, limit: 10 });
+    const second = await call(deps, 'hypha_list_spaces', {
+      pageSize: 10,
+      cursor,
+    });
+    expect(decodeCursor(second.structuredContent?.nextCursor as string)).toBe(
+      30,
+    );
   });
 
   it('rejects a garbage cursor with a tool error', async () => {

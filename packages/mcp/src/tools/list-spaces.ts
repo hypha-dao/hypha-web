@@ -49,18 +49,22 @@ export const listSpacesOutput = z.object({
   asOf: z.string(),
 });
 
-export function encodeCursor(page: number): string {
-  return Buffer.from(JSON.stringify({ p: page })).toString('base64url');
+/**
+ * The cursor is the offset of the next unseen item, so it keeps its meaning when `pageSize`
+ * changes between calls (a page number would repeat or skip items).
+ */
+export function encodeCursor(offset: number): string {
+  return Buffer.from(JSON.stringify({ o: offset })).toString('base64url');
 }
 
 export function decodeCursor(cursor: string | undefined): number | null {
-  if (cursor === undefined) return 1;
+  if (cursor === undefined) return 0;
   try {
     const parsed = JSON.parse(
       Buffer.from(cursor, 'base64url').toString('utf8'),
     );
-    return Number.isInteger(parsed?.p) && parsed.p >= 1 && parsed.p <= 10_000
-      ? parsed.p
+    return Number.isInteger(parsed?.o) && parsed.o >= 0 && parsed.o <= 1_000_000
+      ? parsed.o
       : null;
   } catch {
     return null;
@@ -79,8 +83,8 @@ export function registerListSpaces(server: McpServer, deps: McpDeps): void {
     },
     (args) =>
       runTool(deps, 'hypha_list_spaces', async (caller) => {
-        const page = decodeCursor(args.cursor);
-        if (page === null) {
+        const offset = decodeCursor(args.cursor);
+        if (offset === null) {
           return {
             ok: false,
             text: ERRORS.invalidCursor,
@@ -99,7 +103,7 @@ export function registerListSpaces(server: McpServer, deps: McpDeps): void {
             omitFlagArchived: !(args.includeArchived ?? false),
             omitEmpty: !(args.includeEmpty ?? false),
             titleOrder: args.order?.[0]?.direction ?? 'asc',
-            paging: { page, pageSize },
+            paging: { offset, limit: pageSize },
             with: { governance: true, visibility: withVisibility },
           },
           caller,
@@ -115,14 +119,14 @@ export function registerListSpaces(server: McpServer, deps: McpDeps): void {
             withVisibility,
           }),
         );
-        const hasMore = page * pageSize < data.total;
+        const hasMore = offset + pageSize < data.total;
         return {
           ok: true,
           itemCount: items.length,
           result: {
             items,
             hasMore,
-            nextCursor: hasMore ? encodeCursor(page + 1) : null,
+            nextCursor: hasMore ? encodeCursor(offset + pageSize) : null,
             showing: items.length,
             total: data.total,
             asOf: data.asOf,

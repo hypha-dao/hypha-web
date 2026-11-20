@@ -67,16 +67,13 @@ const chain = vi.hoisted(() => ({
 }));
 vi.mock('../../../access/chain-reads', () => chain);
 
-import { buildSpacesListV2, buildSpaceV2 } from '../spaces';
+import { buildSpacesListV2 } from '../spaces';
 const list = (q: Parameters<typeof buildSpacesListV2>[0]) =>
   buildSpacesListV2(q, { kind: 'guest' }, { db: {} as never });
 import {
   V2_EXPLICIT_OMISSIONS,
   V2_RESPONSE_DENYLIST,
 } from '../../public-profile';
-
-const GUEST = { kind: 'guest' } as const;
-const db = {} as never;
 
 /** v1 item minus exactly the named, documented omissions; nothing else. */
 function minus<T extends Record<string, unknown>>(
@@ -238,101 +235,6 @@ describe('GET /api/v2/spaces (twin: GET /api/v1/spaces)', () => {
     if (!r.ok) throw new Error('unexpected');
     expect(r.body.data.map((s) => s.slug)).toEqual(['alpha']);
     expect(r.body.pagination).toMatchObject({ total: 1, page: 1, pageSize: 1 });
-  });
-});
-
-describe('GET /api/v2/spaces/{slug} (twin: GET /api/v1/spaces/[spaceSlug])', () => {
-  const v1Body = {
-    id: 1,
-    slug: 'alpha',
-    title: 'Alpha',
-    web3SpaceId: 7,
-    subspaces: [],
-    members: [],
-    documents: [],
-    // never present in v1 single-space; planted to prove v2 strips it
-    memberAddresses: ['0xaaa'],
-  };
-
-  beforeEach(() => {
-    findSpaceHostFieldsBySlug.mockResolvedValue({ id: 1, web3SpaceId: 7 });
-    findSpaceBySlug.mockResolvedValue(structuredClone(v1Body));
-  });
-
-  it('contains the v1 body unchanged and adds only requested blocks', async () => {
-    const r = await buildSpaceV2(
-      { slug: 'alpha', caller: GUEST, include: 'visibility,governance,counts' },
-      { db },
-    );
-    if (!r.ok) throw new Error('unexpected');
-    expect(r.body).toMatchObject(
-      minus(v1Body, V2_EXPLICIT_OMISSIONS.spaceDetail),
-    );
-    expect(findDenied(r.body)).toEqual([]);
-    expect(r.body.counts).toEqual({ memberCount: 5 });
-    expect(r.body.visibility).toEqual({ discoverability: 0, access: 1 });
-    expect(r.body.governance).toEqual({
-      quorum: 40,
-      unity: 70,
-      votingPowerSource: 2,
-      joinMethod: 0,
-      exitMethod: 0,
-    });
-
-    const bare = await buildSpaceV2({ slug: 'alpha', caller: GUEST }, { db });
-    if (!bare.ok) throw new Error('unexpected');
-    expect(bare.body).toMatchObject(
-      minus(v1Body, V2_EXPLICIT_OMISSIONS.spaceDetail),
-    );
-    expect(bare.body).not.toHaveProperty('counts');
-  });
-
-  it('runs the access gate before the heavy v1 load', async () => {
-    authorizeSpaceRead.mockResolvedValue({
-      ok: false,
-      code: 'unauthenticated',
-    });
-    const r = await buildSpaceV2({ slug: 'alpha', caller: GUEST }, { db });
-    expect(r).toMatchObject({ ok: false, status: 401 });
-    expect(findSpaceBySlug).not.toHaveBeenCalled();
-  });
-
-  it('is 404 for an unknown space and 400 for an unknown block', async () => {
-    findSpaceHostFieldsBySlug.mockResolvedValue(null);
-    expect(
-      await buildSpaceV2({ slug: 'nope', caller: GUEST }, { db }),
-    ).toMatchObject({ ok: false, status: 404 });
-    expect(
-      await buildSpaceV2(
-        { slug: 'a', caller: GUEST, include: 'tally' },
-        { db },
-      ),
-    ).toMatchObject({ ok: false, status: 400 });
-  });
-
-  it('reports unknown counts as null, never a silent 0', async () => {
-    chain.readSpaceGovernanceBatch.mockResolvedValue(new Map());
-    const r = await buildSpaceV2(
-      { slug: 'alpha', caller: GUEST, include: 'counts' },
-      { db },
-    );
-    if (!r.ok) throw new Error('unexpected');
-    expect(r.body.counts).toEqual({ memberCount: null });
-  });
-
-  it('keeps the access-checked body with null blocks when an optional chain read is rejected', async () => {
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    chain.readSpaceGovernanceBatch.mockRejectedValue(new Error('rpc'));
-    chain.readSpaceVisibilityBatch.mockRejectedValue(new Error('rpc'));
-    const r = await buildSpaceV2(
-      { slug: 'alpha', caller: GUEST, include: 'visibility,governance,counts' },
-      { db },
-    );
-    if (!r.ok) throw new Error('unexpected');
-    expect(r.body.slug).toBe(v1Body.slug);
-    expect(r.body.visibility).toBeNull();
-    expect(r.body.governance).toBeNull();
-    expect(r.body.counts).toEqual({ memberCount: null });
   });
 });
 

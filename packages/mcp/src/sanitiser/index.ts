@@ -52,7 +52,9 @@ const REFERENCE_DEFINITION = /^[ \t]{0,3}\[[^\]\n]+\]:[^\n]*$/gm;
 // Protocol-relative URL (`//host/path`) at a word start.
 const PROTOCOL_RELATIVE = /(^|[\s(<])\/\/[^\s<>"')\]]+/g;
 const IMAGE_HTML = /<img\b[^>]*>/gi;
-const LINK_MD = /\[([^\]]*)\]\(\s*(?:https?:|\/\/|data:|javascript:)[^)]*\)/gi;
+// Every inline link destination goes, whatever its scheme: a destination can hide its scheme
+// behind a character reference (`&#104;ttps://`), which Markdown decodes. The label stays.
+const LINK_MD = /\[([^\]]*)\]\([^)]*\)/g;
 const RAW_URL =
   /\b(?:https?:\/\/|ftp:\/\/|data:)[^\s<>"')\]]+|\bwww\.[^\s<>"')\]]+/gi;
 

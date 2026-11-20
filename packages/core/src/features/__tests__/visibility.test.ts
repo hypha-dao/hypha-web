@@ -195,7 +195,7 @@ describe('visibility: list spaces', () => {
   });
 
   it('total and pages describe only what the caller may see (aggregates after the gate)', async () => {
-    const data = await listed(mcpUser(), { paging: { page: 1, pageSize: 1 } });
+    const data = await listed(mcpUser(), { paging: { offset: 0, limit: 1 } });
     expect(data.total).toBe(2);
     expect(data.items).toHaveLength(1);
   });
@@ -203,6 +203,15 @@ describe('visibility: list spaces', () => {
   it('governance is read only for the visible page', async () => {
     await listed(mcpUser(), { with: { governance: true } });
     expect(chain.readSpaceGovernanceBatch).toHaveBeenCalledWith([1, 2]);
+  });
+
+  it('keeps the list when the optional governance read is rejected (null per space)', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    chain.readSpaceGovernanceBatch.mockRejectedValue(new Error('rpc'));
+    const data = await listed(mcpUser(), { with: { governance: true } });
+    expect(data.items.map((s) => s.slug)).toEqual(['s1', 's2']);
+    expect(data.items.every((s) => s.governance === null)).toBe(true);
+    expect(data.memberCountByWeb3Id.size).toBe(0);
   });
 
   it('fails closed when the access levels cannot be read', async () => {

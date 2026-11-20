@@ -78,8 +78,13 @@ export class ChainFactsCache<V> {
       const fresh = loaded?.get(key);
       if (fresh !== undefined) {
         const current = this.entries.get(key);
-        if (current && current.gen > gen) {
-          // A load that started after this one already stored its result: keep the newer one.
+        if (
+          current &&
+          current.gen > gen &&
+          this.now() - current.at < this.opts.maxStaleMs
+        ) {
+          // A load that started after this one already stored its result: keep the newer one
+          // (while it is within the stale limit; otherwise the value just read is stored).
           result.set(key, current.value);
           continue;
         }

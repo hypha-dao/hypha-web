@@ -67,6 +67,23 @@ describe('ChainFactsCache (stale-if-error)', () => {
     expect(load).not.toHaveBeenCalled(); // the newer entry is still fresh
   });
 
+  it('a newer entry older than maxStale no longer beats a value just read', async () => {
+    const { cache, advance } = make();
+    let releaseOld!: () => void;
+    const first = cache.getMany(
+      ['a'],
+      () =>
+        new Promise<Map<string, number>>((resolve) => {
+          releaseOld = () => resolve(new Map([['a', 1]]));
+        }),
+    );
+    await cache.getMany(['a'], async () => new Map([['a', 2]])); // newer, stored at t=0
+    advance(200); // beyond maxStale (120)
+    releaseOld();
+    const result = await first;
+    expect(result.get('a')).toBe(1); // the value just read, not the over-age newer one
+  });
+
   it('bounds the retained entries: expired ones go first, then the oldest', async () => {
     const { cache, advance } = make();
     const load = async (keys: string[]) => new Map(keys.map((k) => [k, 1]));

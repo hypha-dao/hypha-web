@@ -51,6 +51,16 @@ describe('sanitiseUserText', () => {
     expect(r.text).toContain('and/or a//b is fine');
   });
 
+  it('removes link destinations whatever their scheme, including encoded ones', () => {
+    const r = sanitiseUserText(
+      '[open](&#104;ttps://evil.example/leak) and [x](/relative) and [y](javascript:alert(1))',
+      300,
+    );
+    expect(r.text).not.toMatch(/evil[.]example|javascript/);
+    expect(r.text).toContain('open [link removed]');
+    expect(r.text).toContain('x [link removed]');
+  });
+
   it('neutralises links and raw urls', () => {
     const r = sanitiseUserText(
       'see [docs](https://evil.example/a) and https://evil.example/b or www.evil.example/c',

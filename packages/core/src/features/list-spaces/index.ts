@@ -40,7 +40,7 @@ export type ListSpacesInput = {
   /** Sort by title after the filters; unset keeps the source order. */
   titleOrder?: 'asc' | 'desc';
   /** Both absent = the full list. The channel normalises and caps these. */
-  paging?: { page: number; pageSize: number };
+  paging?: { offset: number; limit: number };
   with?: { governance?: boolean; visibility?: boolean };
 };
 
@@ -132,8 +132,8 @@ export async function listSpaces(
     const slugById = new Map(spaces.map((s) => [s.id, s.slug] as const));
     const total = spaces.length;
     if (input.paging) {
-      const { page, pageSize } = input.paging;
-      spaces = spaces.slice((page - 1) * pageSize, page * pageSize);
+      const { offset, limit } = input.paging;
+      spaces = spaces.slice(offset, offset + limit);
     }
 
     const web3Ids = [
@@ -143,9 +143,14 @@ export async function listSpaces(
           .filter((id): id is number => typeof id === 'number'),
       ),
     ];
+    // An optional block: a rejected read gives `null` for each space, never a failed list.
+    const wantsGovernance = input.with?.governance === true;
     const [governance, clock] = await Promise.all([
-      input.with?.governance
-        ? readSpaceGovernanceBatch(web3Ids)
+      wantsGovernance
+        ? readSpaceGovernanceBatch(web3Ids).catch((error) => {
+            console.error('[features] governance read failed', error);
+            return null;
+          })
         : Promise.resolve(null),
       readChainClock(),
     ]);
@@ -161,8 +166,8 @@ export async function listSpaces(
           ? { discoverability: v.discoverability, access: v.access }
           : null;
       }
-      if (governance) {
-        const g = typeof id === 'number' ? governance.get(id) : undefined;
+      if (wantsGovernance) {
+        const g = typeof id === 'number' ? governance?.get(id) : undefined;
         if (g) {
           const { memberCount: _memberCount, ...rest } = g;
           void _memberCount;
