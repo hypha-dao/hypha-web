@@ -10,7 +10,7 @@ const missingAction = () =>
   new Error('Server Action "40abc" was not found on the server. \nRead more');
 
 /** Same SWR options the app's SwrProvider sets, on a local instance. */
-function setup() {
+function setup(onErrorRetry?: () => void) {
   const reload = vi.fn();
   const stale = createStaleDeployment({
     getStorage: () => ({ getItem: () => null, setItem: () => undefined }),
@@ -27,6 +27,8 @@ function setup() {
         onError: (error) => void stale.handleError(error),
         shouldRetryOnError: stale.shouldRetryOnError,
         use: [createStaleDeploymentSWRMiddleware(stale)],
+        // Only when given: replaces SWR's default retry scheduling.
+        ...(onErrorRetry ? { onErrorRetry } : {}),
       }}
     >
       {children}
@@ -40,12 +42,15 @@ describe('stale deployment with SWR', () => {
   afterEach(() => void vi.useRealTimers());
 
   it('does not retry a missing-action error and marks the tab stale', async () => {
-    const { stale, wrapper } = setup();
+    const onErrorRetry = vi.fn();
+    const { stale, wrapper } = setup(onErrorRetry);
     const fetcher = vi.fn().mockRejectedValue(missingAction());
     renderHook(() => useSWR('missing', fetcher), { wrapper });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(5_000);
     });
+    // SWR itself decided not to retry (not just the middleware blocking it).
+    expect(onErrorRetry).not.toHaveBeenCalled();
     expect(fetcher).toHaveBeenCalledTimes(1);
     expect(stale.isStale()).toBe(true);
     expect(stale.getStatus()).toBe('banner');

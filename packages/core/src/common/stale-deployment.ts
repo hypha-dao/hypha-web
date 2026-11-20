@@ -76,15 +76,26 @@ export function createStaleDeployment({
     listeners.forEach((listener) => listener());
   };
 
-  /** Claims the single reload for this window. Any storage trouble: no. */
+  /** Read-only: is an automatic reload allowed in this window? Trouble: no. */
+  const canReload = (): boolean => {
+    try {
+      const raw = getStorage().getItem(STALE_RELOAD_STORAGE_KEY);
+      if (raw === null) return true;
+      const last = Number(raw);
+      return Number.isFinite(last) && now() - last >= windowMs;
+    } catch {
+      return false;
+    }
+  };
+
+  /**
+   * Records the reload, right before it happens, and checks it stuck so a
+   * failed write cannot turn into a reload loop. Any storage trouble: no.
+   */
   const claimReload = (): boolean => {
+    if (!canReload()) return false;
     try {
       const storage = getStorage();
-      const raw = storage.getItem(STALE_RELOAD_STORAGE_KEY);
-      if (raw !== null) {
-        const last = Number(raw);
-        if (!Number.isFinite(last) || now() - last < windowMs) return false;
-      }
       const stamp = String(now());
       storage.setItem(STALE_RELOAD_STORAGE_KEY, stamp);
       return storage.getItem(STALE_RELOAD_STORAGE_KEY) === stamp;
@@ -94,13 +105,13 @@ export function createStaleDeployment({
   };
 
   const decide = () => {
-    if (isWorkInProgress() || !claimReload()) {
+    if (isWorkInProgress() || !canReload()) {
       setStatus('banner');
       return;
     }
     setStatus('reloading');
     schedule(() => {
-      if (isWorkInProgress()) {
+      if (isWorkInProgress() || !claimReload()) {
         setStatus('banner');
         return;
       }

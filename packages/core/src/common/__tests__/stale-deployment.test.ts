@@ -100,6 +100,36 @@ describe('createStaleDeployment', () => {
     expect(storage.data.has(STALE_RELOAD_STORAGE_KEY)).toBe(true);
   });
 
+  it('records the reload time when it runs, not when it is scheduled', () => {
+    const { stale, storage, reload, runTimers, advance } = setup();
+    stale.handleError(missingAction());
+    expect(storage.data.has(STALE_RELOAD_STORAGE_KEY)).toBe(false);
+    advance(STALE_RELOAD_DELAY_MS + 60_000); // e.g. the tab was suspended
+    runTimers();
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(storage.data.get(STALE_RELOAD_STORAGE_KEY)).toBe(
+      String(1_000_000 + STALE_RELOAD_DELAY_MS + 60_000),
+    );
+  });
+
+  it('falls back to the banner if the write fails when the timer fires', () => {
+    let failWrites = false;
+    const { stale, reload, runTimers } = setup({
+      getStorage: () => ({
+        getItem: () => null,
+        setItem: () => {
+          if (failWrites) throw new Error('quota');
+        },
+      }),
+    });
+    stale.handleError(missingAction());
+    expect(stale.getStatus()).toBe('reloading');
+    failWrites = true;
+    runTimers();
+    expect(reload).not.toHaveBeenCalled();
+    expect(stale.getStatus()).toBe('banner');
+  });
+
   it('a burst of errors schedules a single reload', () => {
     const { stale, reload, runTimers } = setup();
     for (let i = 0; i < 12; i++) stale.handleError(missingAction());

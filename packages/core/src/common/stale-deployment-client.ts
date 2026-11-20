@@ -52,7 +52,12 @@ export function useStaleDeploymentStatus(): StaleDeploymentStatus {
 export function useBlockAutoReload(active: boolean): void {
   useEffect(() => {
     if (!active) return;
-    return workInProgress.addProbe(() => true);
+    const remove = workInProgress.addProbe(() => true);
+    syncUnloadGuard();
+    return () => {
+      remove();
+      syncUnloadGuard();
+    };
   }, [active]);
 }
 
@@ -69,6 +74,13 @@ function setUnloadGuard(enabled: boolean) {
     window.removeEventListener('beforeunload', unloadGuard);
     unloadGuard = null;
   }
+}
+
+/** The leave prompt is on only while the banner shows and work is in progress. */
+function syncUnloadGuard() {
+  setUnloadGuard(
+    staleDeployment.getStatus() === 'banner' && workInProgress.isActive(),
+  );
 }
 
 /** Reload from the banner's button: the user already chose, do not ask again. */
@@ -89,12 +101,11 @@ export function installStaleDeploymentListeners(): () => void {
     staleDeployment.handleError(event.reason);
   };
   const onUserInput = (event: Event) => {
-    if (event.isTrusted) workInProgress.markUserInput();
+    if (!event.isTrusted) return;
+    workInProgress.markUserInput();
+    // Typing after the banner is already up must switch the leave prompt on.
+    syncUnloadGuard();
   };
-  const syncUnloadGuard = () =>
-    setUnloadGuard(
-      staleDeployment.getStatus() === 'banner' && workInProgress.isActive(),
-    );
 
   window.addEventListener('unhandledrejection', onRejection);
   const inputOptions = { capture: true, passive: true } as const;
