@@ -77,11 +77,13 @@ export function createAuthServerHandler(
       )
     )
       return notFound();
+    // One allow-listed log line per authorize / consent / token step (see onboarding-log.ts),
+    // also when the step fails with a server error.
+    const step = onboardingStepOf(url.pathname, method);
+    const requestCopy = step ? request.clone() : null;
+    let server: AuthServer | undefined;
     try {
-      const server = getServer(config);
-      // One allow-listed log line per authorize / consent / token step (see onboarding-log.ts).
-      const step = onboardingStepOf(url.pathname, method);
-      const requestCopy = step ? request.clone() : null;
+      server = getServer(config);
       const response =
         url.pathname === WELL_KNOWN
           ? await metadataWithoutDisabledEndpoints(
@@ -105,18 +107,23 @@ export function createAuthServerHandler(
     } catch (error) {
       // Never echo the error: it can carry request data.
       redactingLog('error', 'request failed', error);
+      const failure = new Response(JSON.stringify({ error: 'server_error' }), {
+        status: 500,
+        headers: {
+          'content-type': 'application/json',
+          'cache-control': 'no-store',
+        },
+      });
+      // Only the step and the error code are logged, never the exception or the request.
+      if (step && requestCopy)
+        await logOnboardingStep({
+          step,
+          requestCopy,
+          response: failure.clone(),
+          pool: server?.pool,
+        });
       // Through withCors like every other answer, so a browser client can read the error.
-      return withCors(
-        request,
-        new Response(JSON.stringify({ error: 'server_error' }), {
-          status: 500,
-          headers: {
-            'content-type': 'application/json',
-            'cache-control': 'no-store',
-          },
-        }),
-        config,
-      );
+      return withCors(request, failure, config);
     }
   };
 }

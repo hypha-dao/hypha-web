@@ -94,12 +94,15 @@ export function registeredClientUpsert(client: RegisteredClient): {
 }
 
 /** Writes every listed client. Run by a person against a database they chose; never at startup. */
-export async function seedRegisteredClients(
-  pool: Pick<AuthDbPool, 'query'>,
-  clients: readonly RegisteredClient[] = REGISTERED_CLIENTS,
-): Promise<void> {
+export async function seedRegisteredClients({
+  db,
+  clients = REGISTERED_CLIENTS,
+}: {
+  db: Pick<AuthDbPool, 'query'>;
+  clients?: readonly RegisteredClient[];
+}): Promise<void> {
   for (const client of clients) {
     const { text, values } = registeredClientUpsert(client);
-    await pool.query(text, values);
+    await db.query(text, values);
   }
 }

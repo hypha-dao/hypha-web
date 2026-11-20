@@ -173,6 +173,51 @@ describe('step and parameter reading', () => {
 });
 
 describe('what reaches the console', () => {
+  it('a lookup that never answers does not hold the response back', async () => {
+    const pool = { query: () => new Promise(() => undefined) } as never;
+    const started = Date.now();
+    expect(await clientKindOf(pool, 'c', 30)).toBe('unknown');
+    expect(Date.now() - started).toBeLessThan(1000);
+  });
+
+  it('a failed dispatch is logged as a server_error step, without the exception', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const config = {
+      enabled: true,
+      host: 'auth.localhost:3000',
+      corsAllowedOrigins: [],
+      dcrEnabled: false,
+    } as unknown as AuthServerConfig;
+    const handle = createAuthServerHandler(
+      () => config,
+      () =>
+        ({
+          auth: {
+            handler: async () => {
+              throw new Error('boom SECRETTEXT');
+            },
+          },
+        } as never),
+    );
+    const res = await handle(
+      new Request('http://auth.localhost:3000/api/auth/oauth2/token', {
+        method: 'POST',
+        headers: {
+          host: 'auth.localhost:3000',
+          'content-type': 'application/x-www-form-urlencoded',
+        },
+        body: 'client_id=x&redirect_uri=https%3A%2F%2Fa.example%2Fcb&code=SECRETCODE',
+      }),
+    );
+    expect(res.status).toBe(500);
+    const lines = log.mock.calls.map((c) => String(c[0]));
+    expect(lines).toEqual([
+      '[auth-server:onboarding] client_kind=unknown step=token error=server_error redirect_host=a.example',
+    ]);
+    expect(lines.join()).not.toMatch(/SECRET|boom/);
+  });
+
   it('one line per step with none of the secret material', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     await logOnboardingStep({

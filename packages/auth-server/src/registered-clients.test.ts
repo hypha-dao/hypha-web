@@ -80,10 +80,12 @@ describe('registered clients', () => {
   it('seeding runs one statement per client and nothing else', async () => {
     const seen: string[] = [];
     await seedRegisteredClients({
-      query: (async (text: string) => {
-        seen.push(text);
-        return { rows: [] };
-      }) as never,
+      db: {
+        query: (async (text: string) => {
+          seen.push(text);
+          return { rows: [] };
+        }) as never,
+      },
     });
     expect(seen).toHaveLength(REGISTERED_CLIENTS.length);
   });

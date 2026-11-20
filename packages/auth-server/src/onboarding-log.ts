@@ -1,3 +1,4 @@
+import type { QueryResult } from 'pg';
 import type { AuthDbPool } from './db';
 import { classifyClient } from './consent';
 import { logOnboarding, redactingLog } from './redact';
@@ -67,24 +68,38 @@ export async function readErrorCode(response: Response): Promise<string> {
   }
 }
 
+/** The log lookup never holds a response back longer than this. */
+export const ONBOARDING_LOOKUP_TIMEOUT_MS = 1500;
+
 export async function clientKindOf(
   pool: Pick<AuthDbPool, 'query'> | undefined,
   clientId: string,
+  timeoutMs = ONBOARDING_LOOKUP_TIMEOUT_MS,
 ): Promise<string> {
   if (!pool || !clientId) return 'unknown';
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    const { rows } = await pool.query(
+    // A race, not a driver timeout: in the hosted pool mode queries go over HTTP and hold no pooled
+    // connection while pending, so abandoning one costs nothing (the local `pg` pool is dev only).
+    const lookup = pool.query(
       `select "clientDiscoveryId", metadata->>'registration' as registration
          from as_oauth_client where "clientId" = $1 limit 1`,
       [clientId],
-    );
-    if (!rows[0]) return 'unknown';
+    ) as Promise<QueryResult>;
+    lookup.catch(() => undefined);
+    const timeout = new Promise<null>((resolve) => {
+      timer = setTimeout(() => resolve(null), timeoutMs);
+    });
+    const result = await Promise.race([lookup, timeout]);
+    if (!result || !result.rows[0]) return 'unknown';
     return classifyClient({
-      clientDiscoveryId: rows[0].clientDiscoveryId,
-      registration: rows[0].registration,
+      clientDiscoveryId: result.rows[0].clientDiscoveryId,
+      registration: result.rows[0].registration,
     });
   } catch {
     return 'unknown';
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
