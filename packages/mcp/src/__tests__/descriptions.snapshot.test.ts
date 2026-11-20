@@ -27,8 +27,8 @@ describe('tools/list is the reviewed text, in the fixed order', () => {
       'hypha_list_spaces',
       'hypha_get_space',
       'hypha_list_proposals',
-      'hypha_get_my_vote',
       'hypha_get_my_membership',
+      'hypha_get_my_vote',
     ]);
   });
 
@@ -55,6 +55,14 @@ describe('tools/list is the reviewed text, in the fixed order', () => {
       tools.find((t) => t.name === 'hypha_list_spaces')?.description,
     ).toContain(UNTRUSTED_LINE);
     expect(instructions).toContain(UNTRUSTED_LINE);
+  });
+
+  it('every tool description says it is read-only', async () => {
+    const { deps } = makeDeps();
+    const { client, close } = await connect(deps);
+    const { tools } = await client.listTools();
+    await close();
+    for (const t of tools) expect(t.description, t.name).toMatch(/read-only/i);
   });
 
   it('the version is in the changelog', () => {

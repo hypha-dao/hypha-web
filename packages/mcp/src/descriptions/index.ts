@@ -5,7 +5,7 @@
  * through a reviewed PR with a snapshot update (`__tests__/descriptions.snapshot.test.ts`),
  * a `DESCRIPTIONS_VERSION` bump and a line in `CHANGELOG.md`.
  */
-export const DESCRIPTIONS_VERSION = '1.0.0';
+export const DESCRIPTIONS_VERSION = '1.1.0';
 
 export const SERVER_NAME = 'hypha';
 export const SERVER_TITLE = 'Hypha';
@@ -17,7 +17,7 @@ export const UNTRUSTED_LINE =
 export const SERVER_INSTRUCTIONS = [
   'Hypha is a platform where people organise in spaces: communities with their own governance, members and agreements.',
   'Everything here is read-only and personalised: results depend on the signed-in user and on what that user allowed this app to see.',
-  'Spaces are identified by their `slug`. Every item carries a `url` to its Hypha page; share that link with the user.',
+  'Spaces are identified by their `slug`, and so are the proposals and agreements inside a space. Every space and proposal carries a `url` to its Hypha page; share that link with the user.',
   UNTRUSTED_LINE,
 ].join(' ');
 
@@ -26,8 +26,8 @@ export const TOOL_ORDER = [
   'hypha_list_spaces',
   'hypha_get_space',
   'hypha_list_proposals',
-  'hypha_get_my_vote',
   'hypha_get_my_membership',
+  'hypha_get_my_vote',
 ] as const;
 export type ToolName = (typeof TOOL_ORDER)[number];
 
@@ -40,6 +40,7 @@ export const TOOLS = {
       'Returns all levels (sub-spaces too) unless `parentOnly` is set.',
       'Archived and empty spaces and the `visibility` block are hidden unless asked for.',
       'Default order is by title.',
+      'Read-only.',
       UNTRUSTED_LINE,
     ].join(' '),
     params: {
@@ -63,6 +64,7 @@ export const TOOLS = {
       'Get one Hypha space by slug: what it is, how it is governed, how many members it has.',
       'Results depend on the user’s permissions; a space the user may not see is reported as not found.',
       'Governance, visibility and counts are included unless omitted. The member count is `null` when it cannot be read.',
+      'Read-only.',
       UNTRUSTED_LINE,
     ].join(' '),
     params: {
@@ -82,7 +84,7 @@ export const TOOLS = {
       'Each item may carry a `label` written by its author. A `Quest` label marks an agreement that proposes a quest: a commitment someone is accountable for, made through the space’s agreement process.',
       'A status is absent only for an item that has no on-chain proposal yet.',
       'Results depend on the user’s permissions; a space the user may not see is reported as not found.',
-      'Read-only; to see whether the user voted, use `hypha_get_my_vote`.',
+      'Read-only: to see whether the user voted, use `hypha_get_my_vote`.',
       UNTRUSTED_LINE,
     ].join(' '),
     params: {
@@ -121,6 +123,7 @@ export const TOOLS = {
       'A user who is neither gets `false` for both.',
       '`null` means unknown (the space has no on-chain record yet).',
       'A space the user may not see is reported as not found.',
+      'Read-only.',
     ].join(' '),
     params: {
       spaceSlug: 'The space slug, as returned by `hypha_list_spaces`.',
