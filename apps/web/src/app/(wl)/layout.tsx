@@ -18,6 +18,7 @@ import { hyphaFontVariables } from '@web/lib/hypha-fonts';
 import { LocalizedIntlProvider } from '@web/components/localized-intl-provider';
 import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
 import { SwrProvider } from '@web/components/swr-provider';
+import { StaleDeploymentNotice } from '@web/components/stale-deployment-notice';
 import { ThemeStorageNormalize } from '@web/components/theme-storage-normalize';
 import {
   WhiteLabelLinkGuard,
@@ -148,6 +149,7 @@ export default async function WhiteLabelRootLayout({
           >
             <ThemeStorageNormalize />
             <LocalizedIntlProvider locale={locale} messages={messages}>
+              <StaleDeploymentNotice />
               <TooltipProvider>
                 <WhiteLabelProvider value={linkContext}>
                   <ActionCapabilitiesProvider

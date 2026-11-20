@@ -1,4 +1,10 @@
 {
+  "StaleDeployment": {
+    "reloading": "En ny versjon er tilgjengelig. Laster inn på nytt…",
+    "title": "Ny versjon tilgjengelig",
+    "description": "Denne siden fungerer kanskje ikke riktig før du oppdaterer. Hvis du har ulagret arbeid, fullfør det eller kopier det først.",
+    "refresh": "Oppdater"
+  },
   "MemberHome": {
     "panelSpaces": "Rom og mennesker",
     "spacesRail": "Dine rom",

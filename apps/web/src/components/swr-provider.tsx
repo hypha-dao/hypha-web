@@ -3,6 +3,10 @@
 import { SWRConfig } from 'swr';
 import type { ReactNode } from 'react';
 import { energyIntelligenceSWRMiddleware } from '@hypha-platform/epics';
+import {
+  staleDeployment,
+  staleDeploymentSWRMiddleware,
+} from '@hypha-platform/core/client';
 
 /** Statuses a retry cannot fix (refused or missing): do not retry them. */
 const NO_RETRY_STATUSES = new Set([401, 403, 404]);
@@ -41,7 +45,11 @@ export function SwrProvider({
         revalidateOnFocus: true,
         revalidateOnReconnect: true,
         errorRetryCount: 3,
-        use: [energyIntelligenceSWRMiddleware],
+        // A missing Server Action (tab older than the deploy) is never retried,
+        // reloads the tab once, and stops further requests from this tab.
+        onError: (error) => void staleDeployment.handleError(error),
+        shouldRetryOnError: staleDeployment.shouldRetryOnError,
+        use: [staleDeploymentSWRMiddleware, energyIntelligenceSWRMiddleware],
         ...(skipClientErrorRetry
           ? {
               onErrorRetry: (error, _key, config, revalidate, opts) => {

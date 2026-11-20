@@ -1,4 +1,10 @@
 {
+  "StaleDeployment": {
+    "reloading": "Hay una nueva versión disponible. Recargando…",
+    "title": "Nueva versión disponible",
+    "description": "Es posible que esta página no funcione correctamente hasta que la actualices. Si tienes trabajo sin guardar, termínalo o cópialo primero.",
+    "refresh": "Actualizar"
+  },
   "MemberHome": {
     "panelSpaces": "Espacios y personas",
     "spacesRail": "Tus espacios",

@@ -1,4 +1,10 @@
 {
+  "StaleDeployment": {
+    "reloading": "Eine neue Version ist verfügbar. Seite wird neu geladen…",
+    "title": "Neue Version verfügbar",
+    "description": "Diese Seite funktioniert möglicherweise erst nach dem Aktualisieren wieder richtig. Wenn du ungespeicherte Arbeit hast, schließe sie ab oder kopiere sie zuerst.",
+    "refresh": "Aktualisieren"
+  },
   "MemberHome": {
     "panelSpaces": "Spaces und Menschen",
     "spacesRail": "Deine Spaces",
