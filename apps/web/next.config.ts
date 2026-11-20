@@ -54,6 +54,8 @@ const MIDDLEWARE_SKIPPED_PREFIXES = [
   '_matrix',
   'auth/',
   'api/auth/',
+  // Hosted MCP server (#2610): answers on its own host, no locale, no CSP, no white-label rules.
+  'mcp',
   'placeholder',
   'icon',
   'brand',
@@ -64,6 +66,11 @@ const MIDDLEWARE_SKIPPED_PREFIXES = [
   '_next/image',
   'favicon.ico',
 ].join('|');
+
+// Keep in step with MCP_RESPONSE_HEADERS in src/lib/mcp/headers.ts
+// (a contract test fails if they drift).
+const MCP_CACHE_CONTROL = 'private, no-store';
+const MCP_VARY = 'Authorization';
 
 const withNextIntl = createNextIntlPlugin('../../packages/i18n/src/request.ts');
 
@@ -124,6 +131,22 @@ const nextConfig: NextConfig = {
       {
         source: `/:path((?:${MIDDLEWARE_SKIPPED_PREFIXES}).*)`,
         headers: [{ key: 'X-Frame-Options', value: 'DENY' }],
+      },
+      // Safety net for framework-built responses of the hosted MCP server (a 404 or a 405 the
+      // framework answers itself); the route wrapper sets the same values on its own responses.
+      {
+        source: '/mcp',
+        headers: [
+          { key: 'Cache-Control', value: MCP_CACHE_CONTROL },
+          { key: 'Vary', value: MCP_VARY },
+        ],
+      },
+      {
+        source: '/.well-known/oauth-protected-resource/mcp',
+        headers: [
+          { key: 'Cache-Control', value: MCP_CACHE_CONTROL },
+          { key: 'Vary', value: MCP_VARY },
+        ],
       },
       {
         source: '/onesignal/:path*',

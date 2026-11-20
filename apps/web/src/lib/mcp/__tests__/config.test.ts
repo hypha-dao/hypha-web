@@ -1,0 +1,73 @@
+import { describe, expect, it } from 'vitest';
+import { loadMcpConfig, type AuthServerView } from '../config';
+
+const AS: AuthServerView = {
+  enabled: true,
+  issuer: 'https://auth.example.com',
+  resources: ['https://mcp.example.com/mcp'],
+  allowedPersonIds: new Set(['p1']),
+};
+
+describe('loadMcpConfig', () => {
+  it('is off by default and only the exact string "true" turns it on', () => {
+    for (const value of [undefined, '', '1', 'TRUE', 'yes']) {
+      expect(
+        loadMcpConfig({ MCP_SERVER_ENABLED: value }, AS).active,
+      ).toBeNull();
+    }
+    expect(
+      loadMcpConfig({ MCP_SERVER_ENABLED: 'true' }, AS).active,
+    ).not.toBeNull();
+  });
+
+  it('the kill switch wins', () => {
+    const c = loadMcpConfig(
+      { MCP_SERVER_ENABLED: 'true', MCP_SERVER_KILL_SWITCH: 'true' },
+      AS,
+    );
+    expect(c.active).toBeNull();
+    expect(c.reason).toContain('kill switch');
+  });
+
+  it('is off outside production (Preview shares production data)', () => {
+    for (const env of ['preview', 'development']) {
+      expect(
+        loadMcpConfig({ MCP_SERVER_ENABLED: 'true', VERCEL_ENV: env }, AS)
+          .active,
+      ).toBeNull();
+    }
+    expect(
+      loadMcpConfig(
+        { MCP_SERVER_ENABLED: 'true', VERCEL_ENV: 'production' },
+        AS,
+      ).active,
+    ).not.toBeNull();
+  });
+
+  it('needs the authorization server and a /mcp resource', () => {
+    expect(
+      loadMcpConfig({ MCP_SERVER_ENABLED: 'true' }, { enabled: false }).active,
+    ).toBeNull();
+    expect(
+      loadMcpConfig(
+        { MCP_SERVER_ENABLED: 'true' },
+        { ...AS, resources: ['https://x.example.com/api/v2'] },
+      ).active,
+    ).toBeNull();
+  });
+
+  it('takes host, audience and metadata URL from the resource string, exactly', () => {
+    const c = loadMcpConfig({ MCP_SERVER_ENABLED: 'true' }, AS);
+    expect(c.host).toBe('mcp.example.com');
+    expect(c.active).toMatchObject({
+      audience: 'https://mcp.example.com/mcp',
+      issuer: 'https://auth.example.com',
+      resourceMetadataUrl:
+        'https://mcp.example.com/.well-known/oauth-protected-resource/mcp',
+    });
+  });
+
+  it('while off with no resource configured, it still knows its own host (so the unavailable answer works)', () => {
+    expect(loadMcpConfig({}, { enabled: false }).host).toBe('mcp.hypha.earth');
+  });
+});

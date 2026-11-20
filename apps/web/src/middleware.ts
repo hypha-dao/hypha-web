@@ -348,6 +348,8 @@ export const config = {
     // `auth/` — authorization server login and consent pages (#2608): own layout, no locale prefix.
     // `api/auth/` — authorization server protocol endpoints (#2608): the handler answers 404 on any host
     // but its own, and the white-label host check must not 404 them on the AS host.
-    '/((?!_matrix|auth/|api/auth/|placeholder|icon|brand|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
+    // `mcp` — hosted MCP server (#2610): own host, no locale prefix, no CSP; the route answers 404
+    // on any other host. Keep in step with MIDDLEWARE_SKIPPED_PREFIXES in next.config.ts.
+    '/((?!_matrix|auth/|api/auth/|mcp|placeholder|icon|brand|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico).*)',
   ],
 };
