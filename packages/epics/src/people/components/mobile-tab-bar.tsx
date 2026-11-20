@@ -186,9 +186,6 @@ export function MobileTabBar({
   const memberMobile = isMemberMobilePersona(person?.primaryOrientation);
   const showMessages = shouldShowMessagesNav(person?.primaryOrientation);
   const showSpaces = shouldShowSpacesScreen(person?.primaryOrientation);
-  const appTabCount = memberMobile
-    ? 5
-    : 3 + Number(showMessages) + Number(showSpaces);
   const { data: memberIntelligence } = useMemberIntelligence(undefined, {
     enabled: memberMobile,
   });
@@ -486,6 +483,14 @@ export function MobileTabBar({
       })
     : null;
   const energyHref = memberEnergyHref(lang, focusSpaceSlug);
+  const { data: focusSpaceEnergy } = useSpaceEnergy(
+    memberMobile ? focusSpaceSlug ?? undefined : undefined,
+  );
+  // Same gate as the space menu: Energy only when this space is an energy community.
+  const showMemberEnergy = memberMobile && focusSpaceEnergy?.enabled === true;
+  const appTabCount = memberMobile
+    ? 4 + Number(showMemberEnergy)
+    : 3 + Number(showMessages) + Number(showSpaces);
   const communityHref = memberCommunityHref(lang, focusSpaceSlug);
   const energyActive = !createOpen && isMemberEnergyPath(pathname);
   const communityActive = !createOpen && isMemberCommunityPath(pathname);
@@ -668,7 +673,7 @@ export function MobileTabBar({
               onClick={() => setCreateOpen(false)}
               icon={<House className={iconClass} strokeWidth={1.25} />}
             />
-            {memberMobile ? (
+            {showMemberEnergy ? (
               <TabLink
                 href={energyHref}
                 label={t('energy')}

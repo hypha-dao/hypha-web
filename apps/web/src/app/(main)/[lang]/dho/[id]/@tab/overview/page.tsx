@@ -6,7 +6,7 @@ import {
 } from '@hypha-platform/epics';
 
 import { SpaceOpsHome } from './_components/space-ops-home';
-import { SpaceOverviewEntry } from './_components/space-overview-entry';
+import { SpaceOverviewForViewer } from './_components/space-overview-for-viewer';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -24,7 +24,12 @@ export default async function OrganisationPage(props: PageProps) {
 
   return (
     <SpaceTabAccessWrapper spaceSlug={id}>
-      <SpaceOverviewEntry spaceSlug={id} stay={stay}>
+      <SpaceOverviewForViewer
+        lang={params.lang}
+        spaceSlug={id}
+        stay={stay}
+        inviteToken={searchParams.invite}
+      >
         {searchParams.invite ? (
           <div className="px-4 pt-4 sm:px-5">
             <SpaceInviteArrival
@@ -34,7 +39,7 @@ export default async function OrganisationPage(props: PageProps) {
           </div>
         ) : null}
         <SpaceOpsHome spaceSlug={id} />
-      </SpaceOverviewEntry>
+      </SpaceOverviewForViewer>
     </SpaceTabAccessWrapper>
   );
 }

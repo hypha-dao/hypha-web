@@ -879,12 +879,16 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           memberIntelligence?.spaces.map((space) => space.slug) ?? [],
       })
     : null;
+  const { data: memberFocusEnergy } = useSpaceEnergy(
+    memberPersona ? memberFocusSlug ?? undefined : undefined,
+  );
+  const showMemberEnergy = memberFocusEnergy?.enabled === true;
   const memberYouItems = useMemo<NavItem[]>(() => {
     if (!memberPersona || !lang) return [];
     const homeHref = `/${lang}/home`;
     const walletHref = `/${lang}/my-wallet`;
     const messagesHref = `/${lang}/messages`;
-    return [
+    const items: NavItem[] = [
       {
         key: 'home',
         label: tNav('myDashboard'),
@@ -892,13 +896,17 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         href: homeHref,
         active: isMemberHomePath(pathname),
       },
-      {
+    ];
+    if (showMemberEnergy) {
+      items.push({
         key: 'energy',
         label: tNav('energy'),
         icon: Zap,
         href: memberEnergyHref(lang, memberFocusSlug),
         active: Boolean(memberFocusSlug) && isMemberEnergyPath(pathname),
-      },
+      });
+    }
+    items.push(
       {
         key: 'wallet',
         label: tNav('myWallet'),
@@ -914,8 +922,17 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         active: isMessagesSectionPath(pathname),
         badge: unreadCount,
       },
-    ];
-  }, [lang, memberFocusSlug, memberPersona, pathname, tNav, unreadCount]);
+    );
+    return items;
+  }, [
+    lang,
+    memberFocusSlug,
+    memberPersona,
+    pathname,
+    showMemberEnergy,
+    tNav,
+    unreadCount,
+  ]);
   const memberCommunityItems = useMemo<NavItem[]>(() => {
     if (!memberPersona || !lang || !memberFocusSlug) return [];
     const activeKey =
@@ -3554,7 +3571,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     );
   };
 
-  if (!isAiOpen) {
+  // Members keep the menu rail. The AI conversation stays in the page.
+  if (!isAiOpen || memberPersona) {
     if (overlayVisible) {
       return (
         <>
