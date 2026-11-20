@@ -26,6 +26,8 @@ const chain = vi.hoisted(() => ({
   readMemberAndDelegate: vi.fn(),
   readProposalOutcomeIds: vi.fn(),
   readProposalCoreBatch: vi.fn(),
+  readIsProposalWithdrawn: vi.fn(),
+  readProposalVoters: vi.fn(),
 }));
 vi.mock('../../access/chain-reads', () => chain);
 
@@ -33,8 +35,17 @@ const proposalRows = vi.hoisted(() => ({
   bySpaceId: new Map<number, unknown[]>(),
 }));
 const findProposalDocumentsPage = vi.hoisted(() => vi.fn());
+const findProposalVoteRefBySlug = vi.hoisted(() => vi.fn());
+const voteRefs = vi.hoisted(() => ({
+  bySpaceAndSlug: new Map<string, unknown>(),
+}));
 vi.mock('../../governance/server/queries', () => ({
   findProposalDocumentsPage,
+  findProposalVoteRefBySlug,
+}));
+const memberPower = vi.hoisted(() => vi.fn());
+vi.mock('../../coherence/server/web3/get-member-voting-power', () => ({
+  getMemberVotingPower: memberPower,
 }));
 
 const isOnChainMemberOrDelegate = vi.fn();
@@ -80,6 +91,7 @@ import { listSpaces } from '../list-spaces';
 import { getMyMembership } from '../get-my-membership';
 import { getSpace } from '../get-space';
 import { listProposals } from '../list-proposals';
+import { getMyVote } from '../get-my-vote';
 
 const ADDR = '0xabc0000000000000000000000000000000000001' as const;
 const db = {
@@ -730,5 +742,216 @@ describe('visibility: list proposals', () => {
     if (!r.ok) throw new Error('unexpected');
     expect(r.data.items).toHaveLength(1);
     expect(r.data.items[0]!.tally).toBeNull();
+  });
+});
+
+describe('visibility: get my vote', () => {
+  const OTHER_VOTER = '0xdddd000000000000000000000000000000000009';
+  const ask = (slug: string, caller: unknown, documentSlug = 'prop') =>
+    getMyVote(
+      { spaceSlug: slug, documentSlug, caller: caller as never },
+      { db },
+    );
+
+  beforeEach(() => {
+    voteRefs.bySpaceAndSlug = new Map([
+      ['1/prop', { web3ProposalId: 10, state: 'proposal' }],
+      ['1/quest', { web3ProposalId: 12, state: 'proposal' }],
+      ['4/prop', { web3ProposalId: 11, state: 'proposal' }],
+      ['5/prop', { web3ProposalId: 14, state: 'proposal' }],
+      ['2/draft', { web3ProposalId: null, state: 'proposal' }],
+    ]);
+    findProposalVoteRefBySlug.mockImplementation(
+      async ({ spaceId, slug }: { spaceId: number; slug: string }) =>
+        voteRefs.bySpaceAndSlug.get(`${spaceId}/${slug}`) ?? null,
+    );
+    chain.readProposalCoreBatch.mockImplementation(
+      async (ids: number[]) =>
+        new Map(
+          ids.map((id) => [
+            id,
+            {
+              startTime: 0n,
+              endTime: 100n,
+              executed: false,
+              expired: false,
+              yesVotes: 1n,
+              noVotes: 0n,
+              totalVotingPowerAtSnapshot: 3n,
+            },
+          ]),
+        ),
+    );
+    chain.readIsProposalWithdrawn.mockResolvedValue(false);
+    chain.readProposalVoters.mockResolvedValue({
+      yesVoters: [ADDR, OTHER_VOTER],
+      noVoters: [],
+    });
+    chain.readMemberAndDelegate.mockResolvedValue({
+      isMember: true,
+      isDelegate: false,
+    });
+    memberPower.mockResolvedValue({
+      votingPower: 5n,
+      votingPowerSource: 2,
+      tokenDecimals: 18,
+    });
+  });
+
+  it('non-member of a space they cannot see: not found, and no vote is read', async () => {
+    expect(await ask('s4', mcpUser())).toMatchObject({
+      ok: false,
+      code: 'not_found',
+    });
+    expect(findProposalVoteRefBySlug).not.toHaveBeenCalled();
+    expect(chain.readProposalVoters).not.toHaveBeenCalled();
+    expect(memberPower).not.toHaveBeenCalled();
+  });
+
+  it('member: the vote, the right to vote and the voting power', async () => {
+    expect(await ask('s1', mcpUser())).toMatchObject({
+      ok: true,
+      data: {
+        hasVoted: true,
+        vote: 'yes',
+        canVote: true,
+        reason: 'eligible',
+        isMember: true,
+        votingPower: '5',
+        votingPowerSource: 2,
+      },
+    });
+  });
+
+  it('a non-member of a public space can see it: no vote, cannot vote, not a refusal', async () => {
+    chain.readProposalVoters.mockResolvedValue({ yesVoters: [], noVoters: [] });
+    chain.readMemberAndDelegate.mockResolvedValue({
+      isMember: false,
+      isDelegate: false,
+    });
+    memberPower.mockResolvedValue({
+      votingPower: 0n,
+      votingPowerSource: 2,
+      tokenDecimals: 18,
+    });
+    expect(await ask('s1', mcpUser())).toMatchObject({
+      ok: true,
+      data: {
+        hasVoted: false,
+        vote: null,
+        canVote: false,
+        reason: 'not_member_or_delegate',
+      },
+    });
+  });
+
+  it('delegate and organisation sibling reach the space-level space the same way members do', async () => {
+    chain.readMemberSpaceIds.mockResolvedValue([]);
+    chain.readDelegateSpaceIds.mockResolvedValue([4]);
+    chain.readSpaceMembersBatch.mockResolvedValue(
+      new Map([[4, { members: ['0xdelegator'], executor: '0xe' }]]),
+    );
+    chain.readDelegatorsBatch.mockResolvedValue(
+      new Map([[4, ['0xdelegator']]]),
+    );
+    expect(await ask('s4', mcpUser())).toMatchObject({ ok: true });
+    clearChainFactsCaches();
+    chain.readDelegateSpaceIds.mockResolvedValue([]);
+    chain.readMemberSpaceIds.mockResolvedValue([6]);
+    chain.readSpaceMembersBatch.mockResolvedValue(
+      new Map([[6, { members: [ADDR], executor: '0xe6' }]]),
+    );
+    // the organisation-level space of the tree is open to the sibling; the space-level one is not
+    voteRefs.bySpaceAndSlug.set('3/prop', {
+      web3ProposalId: 13,
+      state: 'proposal',
+    });
+    expect(await ask('s3', mcpUser())).toMatchObject({ ok: true });
+    expect(await ask('s5', mcpUser())).toMatchObject({ ok: false });
+  });
+
+  it('a space without an on-chain id is closed', async () => {
+    expect(await ask('s6', mcpUser())).toMatchObject({
+      ok: false,
+      code: 'not_found',
+    });
+    expect(findProposalVoteRefBySlug).not.toHaveBeenCalled();
+  });
+
+  it('grants: a space outside them is not found, and nothing is read', async () => {
+    expect(await ask('s1', mcpUser([2]))).toMatchObject({
+      ok: false,
+      code: 'not_found',
+    });
+    expect(chain.readProposalVoters).not.toHaveBeenCalled();
+  });
+
+  it('a proposal of another space is not found (the slug is looked up inside the asked space)', async () => {
+    // "prop" of space 4 exists, but the caller asks space 1 for a slug only space 4 has
+    voteRefs.bySpaceAndSlug.delete('1/prop');
+    expect(await ask('s1', mcpUser())).toMatchObject({
+      ok: false,
+      code: 'not_found',
+    });
+    expect(findProposalVoteRefBySlug).toHaveBeenCalledWith(
+      { spaceId: 1, slug: 'prop' },
+      expect.anything(),
+    );
+  });
+
+  it('a document without an on-chain proposal is not found', async () => {
+    expect(await ask('s2', mcpUser(), 'draft')).toMatchObject({
+      ok: false,
+      code: 'not_found',
+    });
+  });
+
+  it('works for a Quest agreement like any other proposal', async () => {
+    expect(await ask('s1', mcpUser(), 'quest')).toMatchObject({
+      ok: true,
+      data: { canVote: true },
+    });
+  });
+
+  it('fails closed when the access level cannot be read', async () => {
+    chain.readSpaceVisibilityBatch.mockRejectedValue(new Error('rpc'));
+    expect(await ask('s4', mcpUser())).toMatchObject({
+      ok: false,
+      code: 'access_check_failed',
+    });
+  });
+
+  it('a chain read that fails is a typed failure, never a guess', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    chain.readProposalVoters.mockRejectedValue(new Error('rpc'));
+    expect(await ask('s1', mcpUser())).toMatchObject({
+      ok: false,
+      code: 'chain_read_failed',
+    });
+  });
+
+  it('no voter list and no address is ever returned', async () => {
+    const r = await ask('s1', mcpUser());
+    if (!r.ok) throw new Error('unexpected');
+    const text = JSON.stringify(r.data);
+    expect(text).not.toContain('0x');
+    expect(text).not.toContain(OTHER_VOTER);
+    expect(r.data).not.toHaveProperty('yesVoters');
+    expect(r.data).not.toHaveProperty('voters');
+  });
+
+  it('a guest is refused, and a user without a verified address too', async () => {
+    expect(await ask('s1', { kind: 'guest' })).toMatchObject({
+      ok: false,
+      code: 'unauthenticated',
+    });
+    expect(
+      await ask('s1', {
+        kind: 'user',
+        person: { id: 1 },
+        address: null,
+        via: via(),
+      }),
+    ).toMatchObject({ ok: false, code: 'invalid_identity' });
   });
 });

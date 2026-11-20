@@ -27,6 +27,7 @@ describe('tools/list is the reviewed text, in the fixed order', () => {
       'hypha_list_spaces',
       'hypha_get_space',
       'hypha_list_proposals',
+      'hypha_get_my_vote',
       'hypha_get_my_membership',
     ]);
   });

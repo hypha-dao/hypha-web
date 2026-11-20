@@ -253,6 +253,7 @@ describe('the real SDK client against the handler', () => {
       'hypha_list_spaces',
       'hypha_get_space',
       'hypha_list_proposals',
+      'hypha_get_my_vote',
       'hypha_get_my_membership',
     ]);
 

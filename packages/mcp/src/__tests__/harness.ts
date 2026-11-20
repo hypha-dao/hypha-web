@@ -78,6 +78,22 @@ export function makeDeps(
           asOfBlock: 1,
         },
       }),
+      getMyVote: async () => ({
+        ok: true,
+        data: {
+          hasVoted: false,
+          vote: null,
+          isMember: true,
+          isDelegate: false,
+          votingPower: '1',
+          votingPowerDecimals: 0,
+          votingPowerSource: 2,
+          canVote: true,
+          reason: 'eligible',
+          asOf: '2026-11-19T00:00:00.000Z',
+          asOfBlock: 1,
+        },
+      }),
       getMyMembership: async () => ({
         ok: true,
         data: {

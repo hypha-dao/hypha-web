@@ -7,6 +7,7 @@ import {
 import {
   getAbsoluteAppUrl,
   getMyMembership,
+  getMyVote,
   getSpace,
   getSpaceDhoPath,
   listProposals,
@@ -48,6 +49,8 @@ export const mcpHandlers = createMcpRequestHandlers({
     listSpaces: (input, caller) => listSpaces(input, caller, { db }),
     getSpace: (input, caller) => getSpace(input, caller, { db }),
     listProposals: (input, caller) => listProposals(input, caller, { db }),
+    getMyVote: ({ spaceSlug, documentSlug }, caller) =>
+      getMyVote({ spaceSlug, documentSlug, caller }, { db }),
     getMyMembership: ({ spaceSlug }, caller) =>
       getMyMembership({ spaceSlug, caller }, { db }),
   },

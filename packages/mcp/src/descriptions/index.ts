@@ -26,6 +26,7 @@ export const TOOL_ORDER = [
   'hypha_list_spaces',
   'hypha_get_space',
   'hypha_list_proposals',
+  'hypha_get_my_vote',
   'hypha_get_my_membership',
 ] as const;
 export type ToolName = (typeof TOOL_ORDER)[number];
@@ -98,6 +99,21 @@ export const TOOLS = {
       pageSize: 'Items per page, 1 to 50. Default 20.',
     },
   },
+  hypha_get_my_vote: {
+    title: 'Did I vote on this, and can I still vote',
+    description: [
+      'For one proposal or agreement of a Hypha space, tell whether the signed-in user has voted, how, and whether they can still vote (with the reason if not).',
+      'It works for any proposal or agreement slug the user may see, quest agreements included. It reports only the user’s own vote, never anyone else’s.',
+      '`canVote: true` means the open window, membership and voting power allow it; it is not a guarantee that a vote would succeed.',
+      'Use `hypha_list_proposals` to find the slug. A space or proposal the user may not see is reported as not found.',
+      'Read-only: this tool never casts a vote.',
+    ].join(' '),
+    params: {
+      spaceSlug: 'The space slug, as returned by `hypha_list_spaces`.',
+      documentSlug:
+        'The slug of the proposal or agreement, as returned by `hypha_list_proposals`.',
+    },
+  },
   hypha_get_my_membership: {
     title: 'Am I a member of this space',
     description: [
@@ -114,7 +130,7 @@ export const TOOLS = {
 
 /** Text of the tool errors the server returns (isError results). Static on purpose. */
 export const ERRORS = {
-  notFound: 'Space not found, or you do not have access to it.',
+  notFound: 'Space or proposal not found, or you do not have access to it.',
   unavailable: 'Hypha could not check access right now. Try again later.',
   timeout: 'The request took too long. Try again, with a narrower search.',
   internal: 'Something went wrong on the Hypha side. Try again later.',

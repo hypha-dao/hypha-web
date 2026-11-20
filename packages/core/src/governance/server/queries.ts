@@ -618,3 +618,28 @@ export const findProposalDocumentsPage = async (
     total,
   };
 };
+
+/**
+ * The few fields a vote read needs about one proposal or agreement of ONE space. Scoping by
+ * space in the query means a slug of another space is simply not found.
+ */
+export const findProposalVoteRefBySlug = async (
+  { spaceId, slug }: { spaceId: number; slug: string },
+  { db }: DbConfig,
+) => {
+  const [row] = await db
+    .select({
+      web3ProposalId: documents.web3ProposalId,
+      state: documents.state,
+    })
+    .from(documents)
+    .where(
+      and(
+        eq(documents.spaceId, spaceId),
+        eq(documents.slug, slug),
+        inArray(documents.state, ['proposal', 'agreement']),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+};

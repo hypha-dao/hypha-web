@@ -815,6 +815,123 @@ exports[`tools/list is the reviewed text, in the fixed order > matches the snaps
         "openWorldHint": false,
         "readOnlyHint": true,
       },
+      "description": "For one proposal or agreement of a Hypha space, tell whether the signed-in user has voted, how, and whether they can still vote (with the reason if not). It works for any proposal or agreement slug the user may see, quest agreements included. It reports only the user’s own vote, never anyone else’s. \`canVote: true\` means the open window, membership and voting power allow it; it is not a guarantee that a vote would succeed. Use \`hypha_list_proposals\` to find the slug. A space or proposal the user may not see is reported as not found. Read-only: this tool never casts a vote.",
+      "execution": undefined,
+      "icons": undefined,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "documentSlug": {
+            "description": "The slug of the proposal or agreement, as returned by \`hypha_list_proposals\`.",
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$",
+            "type": "string",
+          },
+          "spaceSlug": {
+            "description": "The space slug, as returned by \`hypha_list_spaces\`.",
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$",
+            "type": "string",
+          },
+        },
+        "required": [
+          "spaceSlug",
+          "documentSlug",
+        ],
+        "type": "object",
+      },
+      "name": "hypha_get_my_vote",
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "properties": {
+          "asOf": {
+            "type": "string",
+          },
+          "canVote": {
+            "type": "boolean",
+          },
+          "hasVoted": {
+            "type": "boolean",
+          },
+          "isDelegate": {
+            "type": "boolean",
+          },
+          "isMember": {
+            "type": "boolean",
+          },
+          "reason": {
+            "enum": [
+              "eligible",
+              "proposal_withdrawn",
+              "proposal_closed",
+              "voting_not_started",
+              "voting_ended",
+              "not_member_or_delegate",
+              "no_voting_power",
+            ],
+            "type": "string",
+          },
+          "vote": {
+            "anyOf": [
+              {
+                "enum": [
+                  "yes",
+                  "no",
+                ],
+                "type": "string",
+              },
+              {
+                "type": "null",
+              },
+            ],
+          },
+          "votingPower": {
+            "type": "string",
+          },
+          "votingPowerDecimals": {
+            "type": "number",
+          },
+          "votingPowerSource": {
+            "anyOf": [
+              {
+                "enum": [
+                  "token",
+                  "member",
+                  "voice",
+                ],
+                "type": "string",
+              },
+              {
+                "type": "null",
+              },
+            ],
+          },
+        },
+        "required": [
+          "hasVoted",
+          "vote",
+          "canVote",
+          "reason",
+          "isMember",
+          "isDelegate",
+          "votingPower",
+          "votingPowerDecimals",
+          "votingPowerSource",
+          "asOf",
+        ],
+        "type": "object",
+      },
+      "title": "Did I vote on this, and can I still vote",
+    },
+    {
+      "_meta": undefined,
+      "annotations": {
+        "openWorldHint": false,
+        "readOnlyHint": true,
+      },
       "description": "Tell whether the signed-in user is a member or a delegate of a Hypha space. A user who is neither gets \`false\` for both. \`null\` means unknown (the space has no on-chain record yet). A space the user may not see is reported as not found.",
       "execution": undefined,
       "icons": undefined,
