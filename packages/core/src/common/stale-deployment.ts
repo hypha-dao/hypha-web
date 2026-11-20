@@ -17,7 +17,10 @@ export const STALE_RELOAD_WINDOW_MS = 5 * 60_000;
 export const STALE_RELOAD_DELAY_MS = 3_000;
 
 const MISSING_ACTION_ERROR_CODE = 'E715';
-const MISSING_ACTION_MESSAGE = /Server Action ".*" was not found on the server/;
+// Plain string checks, not a regex: the message is not under our control and a
+// backtracking pattern on it can run in quadratic time.
+const MISSING_ACTION_PREFIX = 'Server Action "';
+const MISSING_ACTION_SUFFIX = '" was not found on the server';
 
 /**
  * True only for Next.js's "Server Action not found" error. Never matches a
@@ -31,7 +34,11 @@ export function isActionNotFoundError(error: unknown): boolean {
     message?: unknown;
   };
   if (code === MISSING_ACTION_ERROR_CODE) return true;
-  return typeof message === 'string' && MISSING_ACTION_MESSAGE.test(message);
+  return (
+    typeof message === 'string' &&
+    message.startsWith(MISSING_ACTION_PREFIX) &&
+    message.includes(MISSING_ACTION_SUFFIX)
+  );
 }
 
 /** idle: nothing to show. reloading: short notice. banner: user must refresh. */

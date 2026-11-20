@@ -58,6 +58,13 @@ describe('isActionNotFoundError', () => {
     expect(isActionNotFoundError(error)).toBe(true);
   });
 
+  it('stays fast on a long near-match message', () => {
+    const hostile = new Error('Server Action "'.repeat(100_000));
+    const start = Date.now();
+    expect(isActionNotFoundError(hostile)).toBe(false);
+    expect(Date.now() - start).toBeLessThan(500);
+  });
+
   it('does not match other errors', () => {
     expect(isActionNotFoundError(new Error('Not Found'))).toBe(false);
     expect(
