@@ -84,6 +84,32 @@ describe('ChainFactsCache (stale-if-error)', () => {
     expect(result.get('a')).toBe(1); // the value just read, not the over-age newer one
   });
 
+  it('load ordering survives eviction: an older load does not store after the newer entry was evicted', async () => {
+    const { cache } = make();
+    let releaseOld!: () => void;
+    const first = cache.getMany(
+      ['a'],
+      () =>
+        new Promise<Map<string, number>>((resolve) => {
+          releaseOld = () => resolve(new Map([['a', 1]]));
+        }),
+    ); // older load, still pending
+    await cache.getMany(['a'], async () => new Map([['a', 2]])); // newer entry stored
+    const filler = Array.from(
+      { length: CHAIN_FACTS_MAX_ENTRIES },
+      (_, i) => 'k' + i,
+    );
+    await cache.getMany(
+      filler,
+      async (keys) => new Map(keys.map((k) => [k, 9])),
+    ); // evicts 'a'
+    releaseOld();
+    expect((await first).get('a')).toBe(1); // used for that call
+    const entries = (cache as unknown as { entries: Map<string, unknown> })
+      .entries;
+    expect(entries.has('a')).toBe(false); // but not stored: no outdated fact comes back
+  });
+
   it('bounds the retained entries: expired ones go first, then the oldest', async () => {
     const { cache, advance } = make();
     const load = async (keys: string[]) => new Map(keys.map((k) => [k, 1]));

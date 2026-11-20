@@ -22,14 +22,14 @@ describe('sanitiseUserText', () => {
       200,
     );
     expect(r.text).not.toMatch(/evil\.example/);
-    expect(r.text).toContain('[image: logo]');
-    expect(r.text).toContain('[image]');
+    expect(r.text).toContain('(image: logo)');
+    expect(r.text).toContain('(image)');
   });
 
   it('neutralises shortcut reference images and their definitions', () => {
     const r = sanitiseUserText('![p]\n\n[p]: //evil.example/pixel', 200);
     expect(r.text).not.toMatch(/evil[.]example/);
-    expect(r.text).toContain('[image: p]');
+    expect(r.text).toContain('(image: p)');
     const r2 = sanitiseUserText(
       '![logo][1] and ![x][]\n[1]: https://evil.example/a ' +
         String.fromCharCode(34) +
@@ -39,7 +39,7 @@ describe('sanitiseUserText', () => {
       300,
     );
     expect(r2.text).not.toMatch(/evil[.]example/);
-    expect(r2.text).toContain('[image: logo]');
+    expect(r2.text).toContain('(image: logo)');
   });
 
   it('neutralises protocol-relative urls but keeps ordinary slashes', () => {
@@ -57,8 +57,27 @@ describe('sanitiseUserText', () => {
       300,
     );
     expect(r.text).not.toMatch(/evil[.]example|javascript/);
-    expect(r.text).toContain('open [link removed]');
-    expect(r.text).toContain('x [link removed]');
+    expect(r.text).toContain('open (link removed)');
+    expect(r.text).toContain('x (link removed)');
+  });
+
+  it('no link, image or reference can be rebuilt: no square or angle brackets survive', () => {
+    const nasty = [
+      ['> ![p] (', '>', '> [p]: &#47;&#47;evil.example/pixel'].join('\n'),
+      '[open [details] here](/private/path)',
+      ['![p]', '', '[p]: //evil.example/pixel'].join('\n'),
+      ['[a][b]', '', '[b]: https://evil.example'].join('\n'),
+      '<https://evil.example/x> and <img src=x> and <a href=x>y</a>',
+      '[open](&#104;ttps://evil.example/leak)',
+      '![x](javascript:alert(1)) [y](data:text/html,aaa)',
+    ];
+    const forbidden = new RegExp(
+      '[' + String.fromCharCode(92) + '[' + String.fromCharCode(92) + ']<>]',
+    );
+    for (const input of nasty) {
+      const { text } = sanitiseUserText(input, 500);
+      expect(forbidden.test(text), input).toBe(false);
+    }
   });
 
   it('neutralises links and raw urls', () => {
@@ -67,7 +86,7 @@ describe('sanitiseUserText', () => {
       300,
     );
     expect(r.text).not.toMatch(/evil\.example/);
-    expect(r.text).toContain('docs [link removed]');
+    expect(r.text).toContain('docs (link removed)');
   });
 
   it('caps length by code points and flags truncation', () => {

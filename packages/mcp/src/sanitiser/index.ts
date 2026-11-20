@@ -60,30 +60,50 @@ const RAW_URL =
 
 export type Sanitised = { text: string; truncated: boolean };
 
+const LEFT_ANGLE = String.fromCodePoint(0x2039); // single left-pointing angle quotation mark
+const RIGHT_ANGLE = String.fromCodePoint(0x203a);
+
+/**
+ * The hard guarantee. Every Markdown link, image and reference form needs square brackets, and
+ * autolinks and raw HTML need angle brackets. After the readable replacements below, none of
+ * these characters survives, so no link, image or reference can be rebuilt from what is left
+ * (encoded destinations, block quotes, balanced brackets, definitions elsewhere in the text).
+ */
+function neutraliseMarkup(text: string): string {
+  return text
+    .replace(/\[/g, '(')
+    .replace(/\]/g, ')')
+    .replace(/</g, LEFT_ANGLE)
+    .replace(/>/g, RIGHT_ANGLE);
+}
+
 export function sanitiseUserText(
   input: string | null | undefined,
   maxLength: number,
 ): Sanitised {
   if (!input) return { text: '', truncated: false };
+  // Readable replacements first (they keep alt texts and labels); markers use parentheses
+  // only, never brackets.
   let text = input
     .replace(/\r\n?/g, '\n')
     .replace(LINE_SEPARATORS, '\n')
     .replace(INVISIBLE, '')
     .replace(CONTROL, '')
     .replace(IMAGE_MD, (_m, alt: string) =>
-      alt ? `[image: ${alt}]` : '[image]',
+      alt ? `(image: ${alt})` : '(image)',
     )
     .replace(IMAGE_REF, (_m, alt: string) =>
-      alt ? `[image: ${alt}]` : '[image]',
+      alt ? `(image: ${alt})` : '(image)',
     )
     .replace(REFERENCE_DEFINITION, '')
     .replace(IMAGE_SHORTCUT, (_m, alt: string) =>
-      alt ? `[image: ${alt}]` : '[image]',
+      alt ? `(image: ${alt})` : '(image)',
     )
-    .replace(IMAGE_HTML, '[image]')
-    .replace(LINK_MD, (_m, label: string) => `${label} [link removed]`)
-    .replace(RAW_URL, '[link removed]')
-    .replace(PROTOCOL_RELATIVE, '$1[link removed]')
+    .replace(IMAGE_HTML, '(image)')
+    .replace(LINK_MD, (_m, label: string) => `${label} (link removed)`)
+    .replace(RAW_URL, '(link removed)')
+    .replace(PROTOCOL_RELATIVE, '$1(link removed)');
+  text = neutraliseMarkup(text)
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
