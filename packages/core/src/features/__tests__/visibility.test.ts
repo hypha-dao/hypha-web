@@ -24,8 +24,18 @@ const chain = vi.hoisted(() => ({
   readSpaceMembersBatch: vi.fn(),
   readDelegatorsBatch: vi.fn(),
   readMemberAndDelegate: vi.fn(),
+  readProposalOutcomeIds: vi.fn(),
+  readProposalCoreBatch: vi.fn(),
 }));
 vi.mock('../../access/chain-reads', () => chain);
+
+const proposalRows = vi.hoisted(() => ({
+  bySpaceId: new Map<number, unknown[]>(),
+}));
+const findProposalDocumentsPage = vi.hoisted(() => vi.fn());
+vi.mock('../../governance/server/queries', () => ({
+  findProposalDocumentsPage,
+}));
 
 const isOnChainMemberOrDelegate = vi.fn();
 vi.mock('../../space/server/is-on-chain-member-or-delegate', () => ({
@@ -69,6 +79,7 @@ import { clearChainFactsCaches } from '../../access/viewer-access';
 import { listSpaces } from '../list-spaces';
 import { getMyMembership } from '../get-my-membership';
 import { getSpace } from '../get-space';
+import { listProposals } from '../list-proposals';
 
 const ADDR = '0xabc0000000000000000000000000000000000001' as const;
 const db = {
@@ -511,5 +522,213 @@ describe('visibility: get space', () => {
     expect(r.data.slug).toBe('s1');
     expect(r.data.governance).toBeNull();
     expect(r.data.counts).toEqual({ memberCount: null });
+  });
+});
+
+describe('visibility: list proposals', () => {
+  const doc = (over: Record<string, unknown> = {}) => ({
+    id: 1,
+    slug: 'p1',
+    title: 'A proposal',
+    state: 'proposal',
+    label: '',
+    web3ProposalId: 10,
+    createdAt: new Date(1000),
+    creator: {
+      name: 'Ada',
+      surname: 'L',
+      type: 'person',
+      avatarUrl: 'https://x/a.png',
+      address: ADDR,
+    },
+    ...over,
+  });
+  const ask = (
+    slug: string,
+    caller: unknown,
+    extra: Record<string, unknown> = {},
+  ) =>
+    listProposals(
+      { spaceSlug: slug, paging: { offset: 0, limit: 20 }, ...extra },
+      caller as never,
+      { db },
+    );
+
+  beforeEach(() => {
+    proposalRows.bySpaceId = new Map([
+      [1, [doc()]],
+      [4, [doc({ slug: 'secret', title: 'secret' })]],
+      [6, [doc({ slug: 'orphan', web3ProposalId: null })]],
+    ]);
+    findProposalDocumentsPage.mockImplementation(
+      async ({ spaceId }: { spaceId: number }) => {
+        const data = proposalRows.bySpaceId.get(spaceId) ?? [];
+        return { data, total: data.length };
+      },
+    );
+    chain.readProposalOutcomeIds.mockResolvedValue({
+      accepted: new Set([10]),
+      rejected: new Set(),
+      withdrawn: new Set(),
+    });
+    chain.readProposalCoreBatch.mockResolvedValue(new Map());
+  });
+
+  it('non-member: a public space is listed, a space-level space is not found and nothing is read', async () => {
+    expect(await ask('s1', mcpUser())).toMatchObject({ ok: true });
+    findProposalDocumentsPage.mockClear();
+    chain.readProposalOutcomeIds.mockClear();
+    expect(await ask('s4', mcpUser())).toMatchObject({
+      ok: false,
+      code: 'not_found',
+    });
+    // the policy answers before any content is fetched
+    expect(findProposalDocumentsPage).not.toHaveBeenCalled();
+    expect(chain.readProposalOutcomeIds).not.toHaveBeenCalled();
+  });
+
+  it('member and delegate: also the space they belong to', async () => {
+    chain.readMemberSpaceIds.mockResolvedValue([4]);
+    chain.readSpaceMembersBatch.mockResolvedValue(
+      new Map([[4, { members: [ADDR], executor: '0xe4' }]]),
+    );
+    expect(await ask('s4', mcpUser())).toMatchObject({ ok: true });
+    clearChainFactsCaches();
+    chain.readMemberSpaceIds.mockResolvedValue([]);
+    chain.readDelegateSpaceIds.mockResolvedValue([4]);
+    chain.readSpaceMembersBatch.mockResolvedValue(
+      new Map([[4, { members: ['0xdelegator'], executor: '0xe' }]]),
+    );
+    chain.readDelegatorsBatch.mockResolvedValue(
+      new Map([[4, ['0xdelegator']]]),
+    );
+    expect(await ask('s4', mcpUser())).toMatchObject({ ok: true });
+  });
+
+  it('organisation sibling: the organisation-level space, never the space-level one', async () => {
+    chain.readMemberSpaceIds.mockResolvedValue([6]);
+    chain.readSpaceMembersBatch.mockResolvedValue(
+      new Map([[6, { members: [ADDR], executor: '0xe6' }]]),
+    );
+    expect(await ask('s3', mcpUser())).toMatchObject({ ok: true });
+    expect(await ask('s4', mcpUser())).toMatchObject({ ok: false });
+  });
+
+  it('a space without an on-chain id is closed (and its rows are never read)', async () => {
+    expect(await ask('s6', mcpUser())).toMatchObject({
+      ok: false,
+      code: 'not_found',
+    });
+    expect(findProposalDocumentsPage).not.toHaveBeenCalled();
+  });
+
+  it('grants: a space outside them is not found', async () => {
+    expect(await ask('s1', mcpUser([2]))).toMatchObject({
+      ok: false,
+      code: 'not_found',
+    });
+    expect(findProposalDocumentsPage).not.toHaveBeenCalled();
+  });
+
+  it('only the rows of the asked space are queried (an item of another space never appears)', async () => {
+    const r = await ask('s1', mcpUser());
+    if (!r.ok) throw new Error('unexpected');
+    expect(findProposalDocumentsPage).toHaveBeenCalledWith(
+      expect.objectContaining({ spaceId: 1 }),
+      expect.anything(),
+    );
+    expect(r.data.items.map((i) => i.slug)).toEqual(['p1']);
+    expect(JSON.stringify(r.data)).not.toContain('secret');
+  });
+
+  it('fails closed when the access level cannot be read', async () => {
+    chain.readSpaceVisibilityBatch.mockRejectedValue(new Error('rpc'));
+    expect(await ask('s4', mcpUser())).toMatchObject({
+      ok: false,
+      code: 'access_check_failed',
+    });
+  });
+
+  it('a status that cannot be read fails the call, never a list without status', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    chain.readProposalOutcomeIds.mockRejectedValue(new Error('rpc'));
+    expect(await ask('s1', mcpUser())).toMatchObject({
+      ok: false,
+      code: 'chain_read_failed',
+    });
+  });
+
+  it('asks for proposals and agreements only, never discussions or memory entries', async () => {
+    await ask('s1', mcpUser());
+    await ask('s1', mcpUser(), { state: 'agreement' });
+    const states = findProposalDocumentsPage.mock.calls.map(
+      (c) => (c[0] as { states: string[] }).states,
+    );
+    expect(states).toEqual([['proposal', 'agreement'], ['agreement']]);
+  });
+
+  it('a Quest-labelled document comes back with its label (V15)', async () => {
+    proposalRows.bySpaceId.set(1, [
+      doc({ slug: 'q1', label: 'Quest', state: 'proposal' }),
+      doc({ id: 2, slug: 'p2', label: '' }),
+    ]);
+    const r = await ask('s1', mcpUser());
+    if (!r.ok) throw new Error('unexpected');
+    expect(r.data.items.map((i) => [i.slug, i.label])).toEqual([
+      ['q1', 'Quest'],
+      ['p2', null],
+    ]);
+  });
+
+  it('status: from the chain outcomes; absent (null) only without an on-chain proposal id', async () => {
+    proposalRows.bySpaceId.set(1, [
+      doc({ slug: 'a', web3ProposalId: 10 }),
+      doc({ id: 2, slug: 'b', web3ProposalId: 11 }),
+      doc({ id: 3, slug: 'c', web3ProposalId: null }),
+    ]);
+    const r = await ask('s1', mcpUser());
+    if (!r.ok) throw new Error('unexpected');
+    expect(r.data.items.map((i) => [i.slug, i.status])).toEqual([
+      ['a', 'accepted'],
+      ['b', 'onVoting'],
+      ['c', null],
+    ]);
+  });
+
+  it('the offset and the order are passed on; the default order is newest first', async () => {
+    await ask('s1', mcpUser(), {
+      paging: { offset: 40, limit: 20 },
+      direction: 'asc',
+    });
+    expect(findProposalDocumentsPage).toHaveBeenLastCalledWith(
+      expect.objectContaining({ offset: 40, limit: 20, direction: 'asc' }),
+      expect.anything(),
+    );
+    await ask('s1', mcpUser());
+    expect(findProposalDocumentsPage).toHaveBeenLastCalledWith(
+      expect.objectContaining({ direction: 'desc' }),
+      expect.anything(),
+    );
+  });
+
+  it('never returns a wallet address; the creator is display fields only', async () => {
+    const r = await ask('s1', mcpUser());
+    if (!r.ok) throw new Error('unexpected');
+    expect(JSON.stringify(r.data)).not.toContain('0x');
+    expect(r.data.items[0]!.creator).toEqual({
+      name: 'Ada',
+      surname: 'L',
+      type: 'person',
+    });
+  });
+
+  it('keeps the list when the optional tally reads are rejected (tally null per proposal)', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    chain.readProposalCoreBatch.mockRejectedValue(new Error('rpc'));
+    chain.readSpaceGovernanceBatch.mockRejectedValue(new Error('rpc'));
+    const r = await ask('s1', mcpUser(), { with: { tally: true } });
+    if (!r.ok) throw new Error('unexpected');
+    expect(r.data.items).toHaveLength(1);
+    expect(r.data.items[0]!.tally).toBeNull();
   });
 });

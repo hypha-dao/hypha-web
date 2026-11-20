@@ -25,6 +25,7 @@ export const SERVER_INSTRUCTIONS = [
 export const TOOL_ORDER = [
   'hypha_list_spaces',
   'hypha_get_space',
+  'hypha_list_proposals',
   'hypha_get_my_membership',
 ] as const;
 export type ToolName = (typeof TOOL_ORDER)[number];
@@ -70,6 +71,31 @@ export const TOOLS = {
       omitGovernance:
         'Leave out the governance block (quorum, unity, voting power source, join method). Default false.',
       omitCounts: 'Leave out the member count. Default false.',
+    },
+  },
+  hypha_list_proposals: {
+    title: 'List proposals and agreements of a space',
+    description: [
+      'List the proposals and agreements of a Hypha space, newest first, with their status (on voting, accepted, rejected, withdrawn).',
+      'Discussions and memory entries are not included.',
+      'Each item may carry a `label` written by its author. A `Quest` label marks an agreement that proposes a quest: a commitment someone is accountable for, made through the space’s agreement process.',
+      'A status is absent only for an item that has no on-chain proposal yet.',
+      'Results depend on the user’s permissions; a space the user may not see is reported as not found.',
+      'Read-only; to see whether the user voted, use `hypha_get_my_vote`.',
+      UNTRUSTED_LINE,
+    ].join(' '),
+    params: {
+      spaceSlug: 'The space slug, as returned by `hypha_list_spaces`.',
+      state:
+        'Which kind to return: `proposal`, `agreement` or `both`. Default `both`.',
+      query:
+        'Keyword to search in titles and descriptions. Omit to list everything.',
+      includeTally:
+        'Add the vote tally per item: votes, quorum and unity progress, the voting window. Costs one extra chain read per page. Quorum `reached` is false when no voting power was counted at the snapshot. Default false.',
+      order:
+        'Sort order. Only `createdAt` is supported. Default newest first (descending).',
+      cursor: 'Paging cursor: the `nextCursor` of the previous result.',
+      pageSize: 'Items per page, 1 to 50. Default 20.',
     },
   },
   hypha_get_my_membership: {

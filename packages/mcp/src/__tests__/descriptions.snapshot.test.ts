@@ -26,6 +26,7 @@ describe('tools/list is the reviewed text, in the fixed order', () => {
     expect(names).toEqual([
       'hypha_list_spaces',
       'hypha_get_space',
+      'hypha_list_proposals',
       'hypha_get_my_membership',
     ]);
   });

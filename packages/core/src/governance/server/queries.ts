@@ -1,5 +1,5 @@
 import type { DbConfig } from '../../common/server/types';
-import { eq, sql, and, asc, desc, SQL } from 'drizzle-orm';
+import { eq, sql, and, asc, desc, inArray, SQL } from 'drizzle-orm';
 
 import {
   documents,
@@ -538,4 +538,83 @@ export const findTokenUpdateForSpaceTokenAddress = async (
     .where(sql`lower(${tokenUpdates.tokenAddress}) = ${normalized}`)
     .limit(1);
   return row?.tokenUpdate ?? null;
+};
+
+export type FindProposalDocumentsPageInput = {
+  spaceId: number;
+  /** `discussion` and `memory` rows are not proposals; callers pass proposal and/or agreement. */
+  states: ('proposal' | 'agreement')[];
+  searchTerm?: string;
+  /** Direction of `createdAt`; ties are broken by id in the same direction. */
+  direction: 'asc' | 'desc';
+  offset: number;
+  limit: number;
+};
+
+/**
+ * One page of the proposals and agreements of a space, with a total over the same filter.
+ * Unlike `findAllDocumentsBySpaceSlug` it takes an offset (a cursor keeps its meaning when the
+ * page size changes), more than one state, and always has a total order, which offset paging needs.
+ */
+export const findProposalDocumentsPage = async (
+  {
+    spaceId,
+    states,
+    searchTerm,
+    direction,
+    offset,
+    limit,
+  }: FindProposalDocumentsPageInput,
+  { db }: DbConfig,
+) => {
+  const spaceCreator = alias(spaces, 'space_creator');
+  const conditions = [
+    eq(documents.spaceId, spaceId),
+    inArray(documents.state, states),
+  ];
+  if (searchTerm) {
+    conditions.push(
+      sql`(
+        setweight(to_tsvector('english', ${documents.title}), 'A') ||
+        setweight(to_tsvector('english', ${documents.description}), 'B')
+      ) @@ plainto_tsquery('english', ${searchTerm})`,
+    );
+  }
+  const dir = direction === 'asc' ? asc : desc;
+
+  const results = await db
+    .select({
+      document: documents,
+      personCreator: personColumns(),
+      spaceCreator: spaceCreator,
+      total: sql<number>`cast(count(*) over() as integer)`,
+    })
+    .from(documents)
+    .leftJoin(people, eq(documents.creatorId, people.id))
+    .leftJoin(spaceCreator, eq(documents.creatorId, spaceCreator.id))
+    .where(and(...conditions))
+    .orderBy(dir(documents.createdAt), dir(documents.id))
+    .limit(limit)
+    .offset(offset);
+
+  let total = results[0]?.total ?? 0;
+  if (results.length === 0 && offset > 0) {
+    // A page past the end has no rows to carry the window count; ask for it.
+    const [counted] = await db
+      .select({ total: sql<number>`cast(count(*) as integer)` })
+      .from(documents)
+      .where(and(...conditions));
+    total = counted?.total ?? 0;
+  }
+
+  return {
+    data: results.map((row) =>
+      mapToDocument(
+        row.document,
+        row.personCreator ?? undefined,
+        row.spaceCreator ?? undefined,
+      ),
+    ),
+    total,
+  };
 };

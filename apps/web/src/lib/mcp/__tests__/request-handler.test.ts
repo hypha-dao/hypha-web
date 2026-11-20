@@ -53,6 +53,10 @@ function setup(
   );
   const features = {
     listSpaces: vi.fn(async () => emptyList),
+    listProposals: vi.fn(async () => ({
+      ok: true as const,
+      data: { items: [], total: 0, asOf: 'x', asOfBlock: null },
+    })),
     getMyMembership: vi.fn(async () => ({
       ok: true as const,
       data: { isMember: false, isDelegate: false, asOf: 'x', asOfBlock: null },
@@ -72,6 +76,8 @@ function setup(
       } as never),
     features: features as never,
     spaceUrl: (slug) => `https://app.example/en/dho/${slug}/overview`,
+    proposalUrl: (space, slug) =>
+      `https://app.example/en/dho/${space}/agreements/proposal/${slug}`,
     keys: issuer.keys as never,
     log: (e) => logs.push(e),
     ...over,
@@ -246,6 +252,7 @@ describe('the real SDK client against the handler', () => {
     expect(tools.map((t) => t.name)).toEqual([
       'hypha_list_spaces',
       'hypha_get_space',
+      'hypha_list_proposals',
       'hypha_get_my_membership',
     ]);
 
