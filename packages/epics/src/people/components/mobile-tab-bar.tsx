@@ -26,6 +26,11 @@ import type { Locale } from '@hypha-platform/i18n';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { getDhoSpaceSlugFromPathname } from '../../common/get-dho-space-slug-from-pathname';
+import { useMemberIntelligence } from '../../common/member-intelligence-swr';
+import {
+  readRecentSpaceSlugs,
+  subscribeRecentSpaceSlugs,
+} from '../../common/recent-space-history';
 import {
   toLinkPrefetch,
   useEnergyOverviewIdleGate,
@@ -58,6 +63,19 @@ import {
   shouldShowMessagesNav,
   shouldShowSpacesScreen,
 } from './app-nav-visibility';
+import {
+  isMemberCommunityPath,
+  isMemberEnergyPath,
+  isMemberMobilePersona,
+  isMemberSpaceHomePath,
+  MEMBER_COMMUNITY_SECTIONS,
+  memberCommunityHref,
+  memberCommunitySectionKey,
+  memberEnergyHref,
+  memberSpaceHomeHref,
+  memberSpaceSectionHref,
+  pickMemberFocusSpaceSlug,
+} from './member-mobile-nav';
 import { MobileSpacesSubnav } from './mobile-spaces-subnav';
 
 const OPEN_MOBILE_CREATE = 'hypha:open-mobile-create';
@@ -95,9 +113,13 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { open: isAiOpen } = useAiPanel();
+  const { person } = useMe();
   const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
-  // While the AI panel is open the spaces list takes the left menu slot.
-  const showSpacesRail = shouldShowMobileSpacesRail(pathname) && !isAiOpen;
+  // Members stay in one space. The multi-space row is the other personas' switcher.
+  const showSpacesRail =
+    shouldShowMobileSpacesRail(pathname) &&
+    !isAiOpen &&
+    !isMemberMobilePersona(person?.primaryOrientation);
   const [slideIn, setSlideIn] = useState(false);
 
   useEffect(() => {
@@ -163,9 +185,15 @@ export function MobileTabBar({
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { person } = useMe();
+  const memberMobile = isMemberMobilePersona(person?.primaryOrientation);
   const showMessages = shouldShowMessagesNav(person?.primaryOrientation);
   const showSpaces = shouldShowSpacesScreen(person?.primaryOrientation);
-  const appTabCount = 3 + Number(showMessages) + Number(showSpaces);
+  const { data: memberIntelligence } = useMemberIntelligence(undefined, {
+    enabled: memberMobile,
+  });
+  const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>(() =>
+    readRecentSpaceSlugs(),
+  );
   const onHome =
     pathname === `/${lang}/my-dashboard` ||
     pathname === `/${lang}/my-dashboard/` ||
@@ -183,6 +211,11 @@ export function MobileTabBar({
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    setRecentSpaceSlugs(readRecentSpaceSlugs());
+    return subscribeRecentSpaceSlugs(setRecentSpaceSlugs);
   }, []);
 
   useEffect(() => {
@@ -221,7 +254,27 @@ export function MobileTabBar({
     onClick?: () => void;
     external?: boolean;
     disabled?: boolean;
+    textOnly?: boolean;
   }> => {
+    if (memberMobile) {
+      if (!spaceSlug || !isMemberCommunityPath(pathname)) return [];
+      const activeKey = memberCommunitySectionKey(pathname);
+      return MEMBER_COMMUNITY_SECTIONS.map((section) => ({
+        key: section.key,
+        href: memberSpaceSectionHref(lang, spaceSlug, section.segment),
+        label:
+          section.key === 'coherence'
+            ? tCommon('Signals')
+            : section.key === 'agreements'
+            ? t('decisions')
+            : section.key === 'treasury'
+            ? tCommon('Treasury')
+            : tCommon('Members'),
+        active: activeKey === section.key,
+        textOnly: true,
+        icon: null,
+      }));
+    }
     const homeRoute =
       pathname === `/${lang}/my-dashboard` ||
       pathname === `/${lang}/my-dashboard/` ||
@@ -368,6 +421,8 @@ export function MobileTabBar({
     energyCommunities.length,
     homeView,
     lang,
+    memberMobile,
+    t,
     networkRoute,
     pathname,
     space?.pipelineEnabled,
@@ -399,7 +454,6 @@ export function MobileTabBar({
     };
   }, [showAppMenu, showSectionStrip]);
 
-  const dashboardHref = `/${lang}/home`;
   const connectionsHref = `/${lang}/messages`;
   const spacesHref = `/${lang}/my-spaces`;
   const walletHref = `/${lang}/my-wallet`;
@@ -408,10 +462,6 @@ export function MobileTabBar({
     ? `/${lang}/profile/${person.slug}`
     : `/${lang}/profile/signup`;
 
-  const dashboardActive =
-    !createOpen &&
-    (segmentActive(pathname, 'my-dashboard') ||
-      segmentActive(pathname, 'home'));
   const connectionsActive =
     !createOpen &&
     (segmentActive(pathname, 'messages') ||
@@ -421,6 +471,37 @@ export function MobileTabBar({
     (segmentActive(pathname, 'my-spaces') || segmentActive(pathname, 'dho'));
   const walletActive = !createOpen && segmentActive(pathname, 'my-wallet');
   const networkActive = !createOpen && segmentActive(pathname, 'network');
+  const focusSpaceSlug = memberMobile
+    ? pickMemberFocusSpaceSlug({
+        pathSlug: spaceSlug,
+        recentSlugs: recentSpaceSlugs,
+        membershipSlugs:
+          memberIntelligence?.spaces.map((space) => space.slug) ?? [],
+        membershipsLoaded: memberIntelligence != null,
+      })
+    : null;
+  const energyHref = memberEnergyHref(lang, focusSpaceSlug);
+  const { data: focusSpaceEnergy } = useSpaceEnergy(
+    memberMobile ? focusSpaceSlug ?? undefined : undefined,
+  );
+  // Same gate as the space menu: Energy only when this space is an energy community.
+  const showMemberEnergy = memberMobile && focusSpaceEnergy?.enabled === true;
+  const appTabCount = memberMobile
+    ? 4 + Number(showMemberEnergy)
+    : 3 + Number(showMessages) + Number(showSpaces);
+  const communityHref = memberCommunityHref(lang, focusSpaceSlug);
+  const dashboardHref = memberMobile
+    ? memberSpaceHomeHref(lang, focusSpaceSlug)
+    : `/${lang}/home`;
+  const dashboardActive =
+    !createOpen &&
+    (memberMobile
+      ? isMemberSpaceHomePath(pathname, focusSpaceSlug)
+      : segmentActive(pathname, 'my-dashboard') ||
+        segmentActive(pathname, 'home'));
+  const energyActive = !createOpen && isMemberEnergyPath(pathname);
+  const communityActive = !createOpen && isMemberCommunityPath(pathname);
+  const textStrip = secondLevel.every((item) => item.textOnly);
 
   if (!mounted) return null;
   if (!showSectionStrip && !showAppMenu) return null;
@@ -490,10 +571,15 @@ export function MobileTabBar({
       >
         {showSectionStrip ? (
           <div
-            className="flex justify-center gap-0.5 overflow-x-auto border-b border-border bg-background-2 px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className={cn(
+              'flex overflow-x-auto border-b border-border bg-background-2 px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+              textStrip ? null : 'justify-center gap-0.5',
+            )}
             style={{ height: SUB_NAV_PX }}
             aria-label={
-              spaceSlug
+              textStrip
+                ? t('community')
+                : spaceSlug
                 ? t('mySpaces')
                 : isMessagesSectionPath(pathname)
                 ? tConnections('tabs.messages')
@@ -501,6 +587,22 @@ export function MobileTabBar({
             }
           >
             {secondLevel.map((item) => {
+              if (item.textOnly) {
+                return (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    prefetch={toLinkPrefetch(prefetchNav)}
+                    aria-current={item.active ? 'page' : undefined}
+                    className={cn(
+                      'flex min-w-0 flex-1 items-center justify-center px-1 text-2 text-muted-foreground',
+                      item.active && 'text-foreground',
+                    )}
+                  >
+                    <span className="truncate">{item.label}</span>
+                  </Link>
+                );
+              }
               const className = cn(
                 'flex w-[4.25rem] shrink-0 flex-col items-center justify-end gap-0.5 border-0 bg-transparent px-0.5 pb-1.5 text-muted-foreground',
                 item.active && 'text-foreground',
@@ -578,7 +680,17 @@ export function MobileTabBar({
               onClick={() => setCreateOpen(false)}
               icon={<House className={iconClass} strokeWidth={1.25} />}
             />
-            {showMessages ? (
+            {showMemberEnergy ? (
+              <TabLink
+                href={energyHref}
+                label={t('energy')}
+                active={energyActive}
+                prefetch={toLinkPrefetch(prefetchNav)}
+                onClick={() => setCreateOpen(false)}
+                icon={<Zap className={iconClass} strokeWidth={1.25} />}
+              />
+            ) : null}
+            {showMessages && !memberMobile ? (
               <TabLink
                 href={connectionsHref}
                 label={t('chat')}
@@ -595,13 +707,26 @@ export function MobileTabBar({
               href={walletHref}
               label={t('myWallet')}
               active={walletActive}
-              center
+              center={!memberMobile}
               prefetch={toLinkPrefetch(prefetchNav)}
               onClick={() => setCreateOpen(false)}
               icon={
                 <Wallet className="block h-5 w-5 shrink-0" strokeWidth={1.25} />
               }
             />
+            {memberMobile ? (
+              <TabLink
+                href={connectionsHref}
+                label={t('chat')}
+                active={connectionsActive}
+                badge={unreadCount}
+                prefetch={toLinkPrefetch(prefetchNav)}
+                onClick={() => setCreateOpen(false)}
+                icon={
+                  <MessagesSquare className={iconClass} strokeWidth={1.25} />
+                }
+              />
+            ) : null}
             {showSpaces ? (
               <TabLink
                 href={spacesHref}
@@ -612,14 +737,25 @@ export function MobileTabBar({
                 icon={<LayoutGrid className={iconClass} strokeWidth={1.25} />}
               />
             ) : null}
-            <TabLink
-              href={networkHref}
-              label={t('network')}
-              active={networkActive}
-              prefetch={toLinkPrefetch(prefetchNav)}
-              onClick={() => setCreateOpen(false)}
-              icon={<Globe2 className={iconClass} strokeWidth={1.25} />}
-            />
+            {memberMobile ? (
+              <TabLink
+                href={communityHref}
+                label={t('community')}
+                active={communityActive}
+                prefetch={toLinkPrefetch(prefetchNav)}
+                onClick={() => setCreateOpen(false)}
+                icon={<Globe2 className={iconClass} strokeWidth={1.25} />}
+              />
+            ) : (
+              <TabLink
+                href={networkHref}
+                label={t('network')}
+                active={networkActive}
+                prefetch={toLinkPrefetch(prefetchNav)}
+                onClick={() => setCreateOpen(false)}
+                icon={<Globe2 className={iconClass} strokeWidth={1.25} />}
+              />
+            )}
           </div>
         ) : null}
       </nav>

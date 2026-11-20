@@ -1,5 +1,6 @@
 import { Locale } from '@hypha-platform/i18n';
 import { getTranslations } from 'next-intl/server';
+import { MemberHomeEntry } from '@hypha-platform/epics';
 
 import { MemberHomePage } from '../my-dashboard/member-home-page';
 
@@ -22,5 +23,9 @@ type PageProps = {
 
 export default async function HomePage(props: PageProps) {
   const { lang } = await props.params;
-  return <MemberHomePage lang={lang} />;
+  return (
+    <MemberHomeEntry lang={lang}>
+      <MemberHomePage lang={lang} />
+    </MemberHomeEntry>
+  );
 }

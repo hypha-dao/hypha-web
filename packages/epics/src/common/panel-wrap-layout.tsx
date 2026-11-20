@@ -25,7 +25,8 @@ import {
   useIsMobile,
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
-import { useJwt } from '@hypha-platform/core/client';
+import { useJwt, useMe } from '@hypha-platform/core/client';
+import { isMemberMobilePersona } from '../people/components/member-mobile-nav';
 import {
   AiPanelProvider,
   HumanChatPanelProvider,
@@ -57,12 +58,23 @@ import { useOpenSpacePublicChat } from './use-open-space-public-chat';
 // MenuTop) to access panel state via useAiPanel() and useHumanChatPanel().
 
 export function PanelProviders({ children }: { children: React.ReactNode }) {
+  const { person } = useMe();
+  const member = isMemberMobilePersona(person?.primaryOrientation);
+  const memberRef = useRef(false);
+  memberRef.current = member;
   const [leftOpen, setLeftOpen] = useState(false);
   const [leftOverlayVisible, setLeftOverlayVisible] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
 
+  useEffect(() => {
+    if (!member) return;
+    setLeftOpen(false);
+  }, [member]);
+
   const toggleRight = useCallback(() => setRightOpen((prev) => !prev), []);
   const openLeft = useCallback(() => {
+    // Members keep the space conversation on the page. This panel stays shut.
+    if (memberRef.current) return;
     // Conversation open is not the nav menu. Leaving the menu flag true
     // made the collapsed icon rail look "open" after this panel closed.
     setLeftOpen(true);
@@ -87,6 +99,7 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
   }, []);
   const toggleLeftFromTrigger = useCallback(() => {
     setLeftOpen((prev) => {
+      if (memberRef.current) return false;
       const next = !prev;
       // Trigger click controls chat panel visibility; hover controls overlay rail expansion.
       setLeftOverlayVisible(false);
@@ -221,8 +234,10 @@ export function AiPanelTrigger() {
   const isNetworkAi = isNetworkAiPath(pathname);
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
+  const { person } = useMe();
+  const member = isMemberMobilePersona(person?.primaryOrientation);
 
-  if (!isSpace && !isNetworkAi) {
+  if (member || (!isSpace && !isNetworkAi)) {
     return null;
   }
 

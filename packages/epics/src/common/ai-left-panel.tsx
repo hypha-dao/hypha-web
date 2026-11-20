@@ -20,13 +20,17 @@ import Link from 'next/link';
 import {
   ArrowLeftRight,
   Globe2,
+  House,
   LayoutGrid,
   Menu,
+  MessagesSquare,
   PanelLeftClose,
   Rows3,
   Settings,
   Sparkles,
   Target,
+  Wallet,
+  Zap,
   Volume2,
   VolumeX,
 } from 'lucide-react';
@@ -91,6 +95,19 @@ import {
   type HomeView,
 } from '../people/components/member-home-view';
 import { MobileSpacesSubnav } from '../people/components/mobile-spaces-subnav';
+import { useMessagesScreenCount } from '../people/components/my-connections';
+import {
+  isMemberEnergyPath,
+  isMemberMobilePersona,
+  isMemberSpaceHomePath,
+  MEMBER_COMMUNITY_SECTIONS,
+  memberCommunitySectionKey,
+  memberEnergyHref,
+  memberSpaceHomeHref,
+  memberSpaceSectionHref,
+  pickMemberFocusSpaceSlug,
+} from '../people/components/member-mobile-nav';
+import { useMemberIntelligence } from './member-intelligence-swr';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
@@ -344,6 +361,7 @@ type NavItem = {
   disabled?: boolean;
   external?: boolean;
   onSelect?: () => void;
+  badge?: number;
 };
 
 function formatChatStreamErrorMessage(error: unknown): string {
@@ -397,6 +415,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const tMyWallet = useTranslations('MyWallet');
   const tConnections = useTranslations('Connections');
   const tHome = useTranslations('MemberHome');
+  const tNav = useTranslations('Navigation');
   const [homeView, setHomeView] = useState<HomeView>('ai');
   const [mySpacesListing, setMySpacesListing] =
     useState<MySpacesListing>('spaces');
@@ -530,6 +549,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     false,
   );
   const { person: me } = useMe();
+  const memberPersona = isMemberMobilePersona(me?.primaryOrientation);
+  const { data: memberIntelligence } = useMemberIntelligence(undefined, {
+    enabled: memberPersona,
+  });
+  const unreadCount = useMessagesScreenCount();
   const { data: spaceEnergyData } = useSpaceEnergy(spaceSlugFromPath);
   const activeSpaceName =
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
@@ -849,6 +873,99 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       ? spacesNavItems
       : messagesNavItems;
 
+  const memberFocusSlug = memberPersona
+    ? pickMemberFocusSpaceSlug({
+        pathSlug: spaceSlug,
+        recentSlugs: recentSpaceSlugs,
+        membershipSlugs:
+          memberIntelligence?.spaces.map((space) => space.slug) ?? [],
+        membershipsLoaded: memberIntelligence != null,
+      })
+    : null;
+  const { data: memberFocusEnergy } = useSpaceEnergy(
+    memberPersona ? memberFocusSlug ?? undefined : undefined,
+  );
+  const showMemberEnergy = memberFocusEnergy?.enabled === true;
+  const memberYouItems = useMemo<NavItem[]>(() => {
+    if (!memberPersona || !lang) return [];
+    const homeHref = memberSpaceHomeHref(lang, memberFocusSlug);
+    const walletHref = `/${lang}/my-wallet`;
+    const messagesHref = `/${lang}/messages`;
+    const items: NavItem[] = [
+      {
+        key: 'home',
+        label: tNav('myDashboard'),
+        icon: House,
+        href: homeHref,
+        active: isMemberSpaceHomePath(pathname, memberFocusSlug),
+      },
+    ];
+    if (showMemberEnergy) {
+      items.push({
+        key: 'energy',
+        label: tNav('energy'),
+        icon: Zap,
+        href: memberEnergyHref(lang, memberFocusSlug),
+        active: Boolean(memberFocusSlug) && isMemberEnergyPath(pathname),
+      });
+    }
+    items.push(
+      {
+        key: 'wallet',
+        label: tNav('myWallet'),
+        icon: Wallet,
+        href: walletHref,
+        active: pathname.includes('/my-wallet'),
+      },
+      {
+        key: 'messages',
+        label: tNav('chat'),
+        icon: MessagesSquare,
+        href: messagesHref,
+        active: isMessagesSectionPath(pathname),
+        badge: unreadCount,
+      },
+    );
+    return items;
+  }, [
+    lang,
+    memberFocusSlug,
+    memberPersona,
+    pathname,
+    showMemberEnergy,
+    tNav,
+    unreadCount,
+  ]);
+  const memberCommunityItems = useMemo<NavItem[]>(() => {
+    if (!memberPersona || !lang || !memberFocusSlug) return [];
+    const activeKey =
+      spaceSlug === memberFocusSlug
+        ? memberCommunitySectionKey(pathname)
+        : null;
+    return MEMBER_COMMUNITY_SECTIONS.map((section) => ({
+      key: section.key,
+      label:
+        section.key === 'coherence'
+          ? tCommon('Signals')
+          : section.key === 'agreements'
+          ? tNav('decisions')
+          : section.key === 'treasury'
+          ? tCommon('Treasury')
+          : tCommon('Members'),
+      icon: SPACE_SECTION_NAV_ICONS[section.key],
+      href: memberSpaceSectionHref(lang, memberFocusSlug, section.segment),
+      active: activeKey === section.key,
+    }));
+  }, [
+    lang,
+    memberFocusSlug,
+    memberPersona,
+    pathname,
+    spaceSlug,
+    tCommon,
+    tNav,
+  ]);
+
   const isSpaceSettingsActive = useMemo(
     () =>
       Boolean(spaceSlug) &&
@@ -992,8 +1109,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
       const iconAndLabel = (
         <>
-          <span className={ICON_COLUMN_CLASS}>
+          <span className={`${ICON_COLUMN_CLASS} relative`}>
             <item.icon className={iconClassName} strokeWidth={1.25} />
+            {item.badge && item.badge > 0 ? (
+              <span className="absolute -top-1 -right-1 inline-grid min-h-4 min-w-4 place-items-center bg-foreground px-1 text-[9px] font-medium leading-none tabular-nums text-background">
+                {item.badge > 99 ? '99+' : item.badge}
+              </span>
+            ) : null}
           </span>
           {showLabel ? (
             <span className={labelClassName}>{item.label}</span>
@@ -1059,6 +1181,39 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       );
     },
     [handleExpandedMenuNavigation, prefetchNav],
+  );
+
+  const renderMemberWebMenu = useCallback(
+    (mode: 'expanded' | 'collapsed', keyPrefix: string) => {
+      const groups = [
+        { key: 'you', label: tNav('you'), items: memberYouItems },
+        {
+          key: 'community',
+          label: tNav('community'),
+          items: memberCommunityItems,
+        },
+      ];
+      return groups.map((group) => (
+        <SidebarGroup
+          key={`${keyPrefix}-${group.key}`}
+          className={group.key === 'you' ? 'p-2 pt-4' : 'p-2 pt-2'}
+        >
+          {mode === 'expanded' ? (
+            <SidebarGroupLabel className="pointer-events-none uppercase tracking-[0.14em]">
+              {group.label}
+            </SidebarGroupLabel>
+          ) : null}
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-2">
+              {group.items.map((item) =>
+                renderSectionNavItem(item, mode, `${keyPrefix}-${group.key}`),
+              )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      ));
+    },
+    [memberCommunityItems, memberYouItems, renderSectionNavItem, tNav],
   );
 
   const renderRecentSpaceItem = useCallback(
@@ -3307,15 +3462,22 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const collapsedRailContentClass = `relative overflow-visible ${NAV_CHROME_SURFACE_CLASS}`;
   const collapsedMenu = (
     <>
-      <SidebarGroup className="p-2 pt-4">
-        <SidebarGroupContent>
-          <SidebarMenu className="gap-2">
-            {menuNavItems.map((item) =>
-              renderSectionNavItem(item, 'collapsed', 'collapsed'),
-            )}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
+      {memberPersona ? (
+        <div className="hidden xl:contents">
+          {renderMemberWebMenu('collapsed', 'member-collapsed')}
+        </div>
+      ) : null}
+      <div className={memberPersona ? 'contents xl:hidden' : 'contents'}>
+        <SidebarGroup className="p-2 pt-4">
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-2">
+              {menuNavItems.map((item) =>
+                renderSectionNavItem(item, 'collapsed', 'collapsed'),
+              )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </div>
       {spaceSettingsItem ? (
         <SidebarGroup className="mt-auto p-2 pb-0">
           <SidebarGroupContent>
@@ -3412,7 +3574,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     );
   };
 
-  if (!isAiOpen) {
+  // Members keep the menu rail. The AI conversation stays in the page.
+  if (!isAiOpen || memberPersona) {
     if (overlayVisible) {
       return (
         <>
@@ -3425,15 +3588,22 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             />
           </SidebarHeader>
           <SidebarContent className={NAV_CHROME_SURFACE_CLASS}>
-            <SidebarGroup className="p-2 pt-4">
-              <SidebarGroupContent>
-                <SidebarMenu className="gap-2">
-                  {menuNavItems.map((item) =>
-                    renderSectionNavItem(item, 'expanded', 'overlay'),
-                  )}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+            {memberPersona ? (
+              <div className="hidden xl:contents">
+                {renderMemberWebMenu('expanded', 'member-overlay')}
+              </div>
+            ) : null}
+            <div className={memberPersona ? 'contents xl:hidden' : 'contents'}>
+              <SidebarGroup className="p-2 pt-4">
+                <SidebarGroupContent>
+                  <SidebarMenu className="gap-2">
+                    {menuNavItems.map((item) =>
+                      renderSectionNavItem(item, 'expanded', 'overlay'),
+                    )}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </div>
             {spaceSettingsItem ? (
               <SidebarGroup className="mt-auto p-2 pb-0">
                 <SidebarGroupContent>
