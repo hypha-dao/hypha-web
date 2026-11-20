@@ -1,8 +1,6 @@
 'use server';
 
-import { updatePerson } from './mutations';
 import {
-  EditPersonInput,
   GetPersonByIdInput,
   GetPersonBySubInput,
   GetPeopleBySubsInput,
@@ -14,13 +12,6 @@ import {
   findPeopleBySubs,
   listPayablePeople,
 } from './queries';
-
-export async function editPersonAction(
-  data: EditPersonInput,
-  { authToken }: { authToken?: string },
-) {
-  return updatePerson(data as any, { db });
-}
 
 export async function getPersonById(
   { id }: GetPersonByIdInput,
