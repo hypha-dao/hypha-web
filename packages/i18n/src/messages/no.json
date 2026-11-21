@@ -1,4 +1,12 @@
 {
+  "StaleDeployment": {
+    "reloadingTitle": "Her har vi jobbet!",
+    "reloading": "Et øyeblikk, vi friskner opp siden…",
+    "title": "Oops, her har vi jobbet!",
+    "description": "Vi har nettopp gjort endringer på siden. Oppdater når det passer.",
+    "refresh": "Oppdater",
+    "dismiss": "Lukk"
+  },
   "MemberHome": {
     "panelSpaces": "Rom og mennesker",
     "spacesRail": "Dine rom",

@@ -56,8 +56,8 @@ export const useMatrixUserIdsByPrivySubs = ({
       lastSubToMatrixByKey.set(subsCacheKey(a.privyUserIds), map);
       return map;
     },
-    /** Avoid flashing Privy/Matrix technical locals when JWT refreshes or focus revalidation races. */
-    { keepPreviousData: true },
+    /** Avoid flashing Privy/Matrix technical locals when the JWT refreshes. Mappings do not change on focus. */
+    { keepPreviousData: true, revalidateOnFocus: false },
   );
 
   const cachedMap =

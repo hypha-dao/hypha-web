@@ -1,4 +1,12 @@
 {
+  "StaleDeployment": {
+    "reloadingTitle": "Hier is gewerkt!",
+    "reloading": "Even geduld, we verversen de pagina…",
+    "title": "Oeps, hier is gewerkt!",
+    "description": "We hebben net wijzigingen aan de pagina aangebracht. Vernieuw wanneer het uitkomt.",
+    "refresh": "Vernieuwen",
+    "dismiss": "Sluiten"
+  },
   "MemberHome": {
     "panelSpaces": "Spaces en mensen",
     "spacesRail": "Jouw spaces",

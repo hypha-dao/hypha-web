@@ -7,6 +7,7 @@ import {
   requestRemoteGroupCallLeave,
   setGroupCallSessionActive,
   subscribeGroupCallPleaseLeave,
+  useBlockAutoReload,
   useMatrix,
   useSpaceGroupCall,
 } from '@hypha-platform/core/client';
@@ -192,6 +193,12 @@ function useGlobalCallDockValue() {
     onCallArtifactsUploaded,
     getCallLaunchContext: () => callLaunchContextRef.current,
   });
+  // A reload would drop an active call, or a recording still being kept or
+  // uploaded: a stale tab shows the banner instead.
+  useBlockAutoReload(
+    (call.callState !== 'idle' && call.callState !== 'error') ||
+      (call.recordingStatus !== 'idle' && call.recordingStatus !== 'error'),
+  );
   const currentUserId = client?.getUserId() ?? null;
   const callReactions = useCallReactions({
     client,
