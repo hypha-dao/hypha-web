@@ -462,9 +462,8 @@ export function PanelWrapLayout({
   const isOnboarding = isInteractiveCreatePath(pathname);
   const { person } = useMe();
   const memberExperience = isMemberOrientation(person?.primaryOrientation);
-  /** Space ecosystem AI, or shared Network AI (home / messages / wallet / my-spaces / network). Members keep the assistant on the space home instead of this rail. */
-  const showAiPanel =
-    !memberExperience && (isSpace || isNetworkAiPath(pathname));
+  /** Same menu rail for every persona. Members do not open the assistant here. */
+  const showAiPanel = isSpace || isNetworkAiPath(pathname);
   const effectiveLeft = showAiPanel ? left : undefined;
   // The chat icon is on home, connections, my spaces, my wallet, a space, and the network.
   const showHumanChat = showsHumanChatIcon(pathname, isSpace, isNetwork);
@@ -484,6 +483,10 @@ export function PanelWrapLayout({
       closeHumanChatPanel();
     }
   }, [showHumanChat, closeHumanChatPanel]);
+
+  useEffect(() => {
+    if (memberExperience && leftOpen) closeAiPanel();
+  }, [closeAiPanel, leftOpen, memberExperience]);
 
   const [viewportWidth, setViewportWidth] = useState<number>(() => {
     if (typeof window === 'undefined') {

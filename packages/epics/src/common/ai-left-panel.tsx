@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Suspense,
   useState,
   useCallback,
   useMemo,
@@ -13,22 +14,35 @@ import {
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useParams, usePathname, useRouter } from 'next/navigation';
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import {
   ArrowLeftRight,
+  Coins,
+  FileCheck2,
   Globe2,
+  House,
   LayoutGrid,
   Menu,
+  MessagesSquare,
   PanelLeftClose,
+  Radio,
   Rows3,
   Settings,
   Sparkles,
   Target,
+  UsersRound,
   Volume2,
   VolumeX,
+  Wallet,
+  Zap,
 } from 'lucide-react';
 import {
   Category,
@@ -92,6 +106,14 @@ import {
 } from '../people/components/member-home-view';
 import { MobileSpacesSubnav } from '../people/components/mobile-spaces-subnav';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
+import { useMemberNamedSpaces } from '../network-exchange/use-member-named-spaces';
+import {
+  buildMemberMenu,
+  isMemberOrientation,
+  memberMenuGroup,
+  resolveMemberSpaceSlug,
+  type MemberMenuKey,
+} from '../people/components/member-menu';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
 import {
@@ -348,6 +370,100 @@ type NavItem = {
   onSelect?: () => void;
 };
 
+const MEMBER_MENU_ICONS: Record<MemberMenuKey, ElementType> = {
+  home: House,
+  energy: Zap,
+  wallet: Wallet,
+  messages: MessagesSquare,
+  signals: Radio,
+  decisions: FileCheck2,
+  treasury: Coins,
+  members: UsersRound,
+};
+
+function MemberMenuSections({
+  mode,
+  keyPrefix,
+  renderItem,
+}: {
+  mode: 'expanded' | 'collapsed';
+  keyPrefix: string;
+  renderItem: (
+    item: NavItem,
+    mode: 'expanded' | 'collapsed',
+    keyPrefix: string,
+  ) => ReactNode;
+}) {
+  const pathname = usePathname() ?? '';
+  const searchParams = useSearchParams();
+  const params = useParams<{ lang?: string }>();
+  const lang = typeof params?.lang === 'string' ? params.lang : 'en';
+  const t = useTranslations('MemberMenu');
+  const named = useMemberNamedSpaces();
+  const [recent, setRecent] = useState<string[]>(() => readRecentSpaceSlugs());
+  useEffect(() => subscribeRecentSpaceSlugs(setRecent), []);
+  const pathSlug = getDhoSpaceSlugFromPathname(pathname) ?? null;
+  const onMessages = /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(
+    pathname,
+  );
+  const slug = resolveMemberSpaceSlug({
+    pathSlug,
+    querySlug: onMessages ? searchParams.get('space') : null,
+    memberSlugs: named.map((space) => space.slug),
+    recentSlugs: recent,
+  });
+  const { data: energy } = useSpaceEnergy(slug ?? undefined);
+  const items = buildMemberMenu({
+    lang,
+    spaceSlug: slug ?? '',
+    pathname,
+    energyEnabled: energy?.enabled === true,
+  });
+  const groups = [
+    { label: t('you'), items: memberMenuGroup(items, 'you') },
+    { label: t('community'), items: memberMenuGroup(items, 'community') },
+  ];
+  const toNav = (item: (typeof items)[number]): NavItem => ({
+    key: item.key,
+    label: t(item.key),
+    icon: MEMBER_MENU_ICONS[item.key],
+    href: item.href,
+    active: item.active,
+    disabled: !item.href,
+  });
+
+  if (mode === 'collapsed') {
+    return (
+      <SidebarGroup className="p-2 pt-4">
+        <SidebarGroupContent>
+          <SidebarMenu className="gap-2">
+            {items.map((item) => renderItem(toNav(item), mode, keyPrefix))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    );
+  }
+
+  return (
+    <>
+      {groups.map((group) => (
+        <SidebarGroup key={group.label} className="p-2 pt-4">
+          <SidebarGroupLabel className="pointer-events-none">
+            {group.label}
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-2">
+              {group.items.map((item) =>
+                renderItem(toNav(item), mode, keyPrefix),
+              )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      ))}
+    </>
+  );
+}
+
 function formatChatStreamErrorMessage(error: unknown): string {
   const rawMessage =
     error instanceof Error && error.message.trim().length > 0
@@ -537,6 +653,7 @@ export function AiLeftPanel({
     false,
   );
   const { person: me } = useMe();
+  const memberExperience = isMemberOrientation(me?.primaryOrientation);
   const { data: spaceEnergyData } = useSpaceEnergy(spaceSlugFromPath);
   const activeSpaceName =
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
@@ -3314,15 +3431,25 @@ export function AiLeftPanel({
   const collapsedRailContentClass = `relative overflow-visible ${NAV_CHROME_SURFACE_CLASS}`;
   const collapsedMenu = (
     <>
-      <SidebarGroup className="p-2 pt-4">
-        <SidebarGroupContent>
-          <SidebarMenu className="gap-2">
-            {menuNavItems.map((item) =>
-              renderSectionNavItem(item, 'collapsed', 'collapsed'),
-            )}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
+      {memberExperience ? (
+        <Suspense fallback={null}>
+          <MemberMenuSections
+            mode="collapsed"
+            keyPrefix="collapsed"
+            renderItem={renderSectionNavItem}
+          />
+        </Suspense>
+      ) : (
+        <SidebarGroup className="p-2 pt-4">
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-2">
+              {menuNavItems.map((item) =>
+                renderSectionNavItem(item, 'collapsed', 'collapsed'),
+              )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      )}
       {spaceSettingsItem ? (
         <SidebarGroup className="mt-auto p-2 pb-0">
           <SidebarGroupContent>
@@ -3439,15 +3566,25 @@ export function AiLeftPanel({
             />
           </SidebarHeader>
           <SidebarContent className={NAV_CHROME_SURFACE_CLASS}>
-            <SidebarGroup className="p-2 pt-4">
-              <SidebarGroupContent>
-                <SidebarMenu className="gap-2">
-                  {menuNavItems.map((item) =>
-                    renderSectionNavItem(item, 'expanded', 'overlay'),
-                  )}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+            {memberExperience ? (
+              <Suspense fallback={null}>
+                <MemberMenuSections
+                  mode="expanded"
+                  keyPrefix="overlay"
+                  renderItem={renderSectionNavItem}
+                />
+              </Suspense>
+            ) : (
+              <SidebarGroup className="p-2 pt-4">
+                <SidebarGroupContent>
+                  <SidebarMenu className="gap-2">
+                    {menuNavItems.map((item) =>
+                      renderSectionNavItem(item, 'expanded', 'overlay'),
+                    )}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )}
             {spaceSettingsItem ? (
               <SidebarGroup className="mt-auto p-2 pb-0">
                 <SidebarGroupContent>
@@ -3482,6 +3619,7 @@ export function AiLeftPanel({
             collapseLeftSlotAtMd={!isOnboardingPath}
             leftSlot={triggerButton}
             rightSlot={closeButton}
+            askTitle={embedOnPage && memberExperience}
           />
         </SidebarHeader>
         <SidebarContent className="flex flex-1 items-center justify-center bg-page-background dark:bg-background-2">
@@ -3500,6 +3638,7 @@ export function AiLeftPanel({
             collapseLeftSlotAtMd={!isOnboardingPath}
             leftSlot={triggerButton}
             rightSlot={closeButton}
+            askTitle={embedOnPage && memberExperience}
           />
         </SidebarHeader>
         <SidebarContent className="flex flex-1 items-center justify-center bg-page-background px-6 dark:bg-background-2">
@@ -3522,6 +3661,7 @@ export function AiLeftPanel({
             collapseLeftSlotAtMd={!isOnboardingPath}
             leftSlot={triggerButton}
             rightSlot={closeButton}
+            askTitle={embedOnPage && memberExperience}
           />
         </SidebarHeader>
         <SidebarContent className="flex flex-1 items-center justify-center bg-page-background px-6 dark:bg-background-2">
@@ -3543,6 +3683,7 @@ export function AiLeftPanel({
           collapseLeftSlotAtMd={!isOnboardingPath}
           leftSlot={triggerButton}
           rightSlot={closeButton}
+          askTitle={embedOnPage && memberExperience}
         />
       </SidebarHeader>
       <SidebarContent className="bg-page-background dark:bg-background-2 min-h-0">

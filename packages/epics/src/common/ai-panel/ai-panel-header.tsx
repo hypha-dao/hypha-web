@@ -51,12 +51,15 @@ export function AiPanelHeader({
   rightSlot,
   className,
   collapseLeftSlotAtMd = false,
+  askTitle = false,
 }: {
   showCloseButton?: boolean;
   onCloseButtonClick?: () => void;
   leftSlot?: ReactNode;
   rightSlot?: ReactNode;
   className?: string;
+  /** Page embed only. The space menu keeps its space switcher. */
+  askTitle?: boolean;
   /**
    * Hide the leading slot from the `md` breakpoint up and drop its grid column.
    * The desktop icon rail already owns the menu trigger; below `md` the rail
@@ -210,7 +213,7 @@ export function AiPanelHeader({
     </DropdownMenuItem>
   );
 
-  const memberAsk = person?.primaryOrientation === 'member';
+  const memberAsk = askTitle;
   const showLeftSlot = Boolean(leftSlot) && !memberAsk;
   const reserveDesktopLeftColumn = showLeftSlot && !collapseLeftSlotAtMd;
 

@@ -110,123 +110,6 @@ function useMemberMenuItems() {
   return { ...space, lang, pathname, items };
 }
 
-function MenuGlyph({
-  item,
-  unread,
-  className,
-}: {
-  item: MemberMenuItem;
-  unread: number;
-  className: string;
-}) {
-  const Icon = ICONS[item.key];
-  const count = item.key === 'messages' ? unread : 0;
-  return (
-    <span className="relative inline-flex">
-      <Icon className={className} strokeWidth={1.5} aria-hidden />
-      {count > 0 ? (
-        <span className="absolute -top-1.5 -right-2 inline-grid min-h-4 min-w-4 place-items-center bg-accent-9 px-1 text-[9px] font-medium leading-none text-accent-contrast">
-          {count > 99 ? '99+' : count}
-        </span>
-      ) : null}
-    </span>
-  );
-}
-
-function DesktopRow({
-  item,
-  label,
-  unread,
-}: {
-  item: MemberMenuItem;
-  label: string;
-  unread: number;
-}) {
-  const className = cn(
-    'flex h-10 w-full items-center gap-3 px-2 text-left text-2',
-    item.active
-      ? 'bg-accent-3 text-foreground'
-      : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
-    !item.href && 'pointer-events-none opacity-50',
-  );
-  const body = (
-    <>
-      <MenuGlyph item={item} unread={unread} className="h-4 w-4 shrink-0" />
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-    </>
-  );
-  if (!item.href) {
-    return (
-      <span className={className} aria-disabled="true">
-        {body}
-      </span>
-    );
-  }
-  return (
-    <Link
-      href={item.href}
-      aria-current={item.active ? 'page' : undefined}
-      className={className}
-    >
-      {body}
-    </Link>
-  );
-}
-
-export function MemberSpaceMenu() {
-  const t = useTranslations('MemberMenu');
-  const unread = useMessagesScreenCount();
-  const { title, items } = useMemberMenuItems();
-  const you = memberMenuGroup(items, 'you');
-  const community = memberMenuGroup(items, 'community');
-
-  return (
-    <aside
-      className="sticky top-[var(--menu-top-height,70px)] hidden h-[calc(100svh-var(--menu-top-height,70px))] w-60 shrink-0 flex-col border-r border-border bg-background xl:flex"
-      aria-label={t('menu')}
-    >
-      <div className="border-b border-border px-4 py-4">
-        <p className="truncate text-2 font-medium text-foreground">
-          {title ?? t('yourSpace')}
-        </p>
-      </div>
-      <nav className="narrow-scrollbar flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-3 py-4">
-        <MenuGroup label={t('you')} items={you} unread={unread} />
-        <MenuGroup label={t('community')} items={community} unread={unread} />
-      </nav>
-    </aside>
-  );
-}
-
-function MenuGroup({
-  label,
-  items,
-  unread,
-}: {
-  label: string;
-  items: MemberMenuItem[];
-  unread: number;
-}) {
-  const t = useTranslations('MemberMenu');
-  return (
-    <div>
-      <p className="px-2 pb-2 text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
-        {label}
-      </p>
-      <div className="flex flex-col gap-0.5">
-        {items.map((item) => (
-          <DesktopRow
-            key={item.key}
-            item={item}
-            label={t(item.key)}
-            unread={unread}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function MemberSpaceFrame({ children }: { children: ReactNode }) {
   const { person } = useMe();
   const member = isMemberOrientation(person?.primaryOrientation);
@@ -250,13 +133,7 @@ export function MemberSpaceFrame({ children }: { children: ReactNode }) {
     router.replace(next);
   }, [lang, member, pathname, router, search, slug]);
 
-  if (!member) return children;
-  return (
-    <div className="flex w-full min-w-0 items-stretch">
-      <MemberSpaceMenu />
-      <div className="min-w-0 flex-1">{children}</div>
-    </div>
-  );
+  return children;
 }
 
 export function MemberMobileNav() {
