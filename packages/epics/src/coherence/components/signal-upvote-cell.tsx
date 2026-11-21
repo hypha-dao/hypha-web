@@ -94,6 +94,7 @@ export function SignalUpvoteCellChrome({
   onDetailsOpenChange,
   detailsPanel,
   className,
+  layout = 'row',
   ...groupProps
 }: React.HTMLAttributes<HTMLDivElement> & {
   figure: string;
@@ -116,6 +117,8 @@ export function SignalUpvoteCellChrome({
   detailsOpen?: boolean;
   onDetailsOpenChange?: (open: boolean) => void;
   detailsPanel?: React.ReactNode;
+  /** Members stack the arrows. The shared row stays horizontal. */
+  layout?: 'row' | 'stack';
 }) {
   const selected = direction ?? (pressed ? 'up' : null);
   const allocates = allocationPanel != null;
@@ -145,7 +148,8 @@ export function SignalUpvoteCellChrome({
     <button
       type="button"
       className={cn(
-        'min-w-4 rounded-none bg-transparent px-1.5 text-1 font-medium tabular-nums leading-none',
+        'rounded-none bg-transparent font-medium tabular-nums leading-none',
+        layout === 'stack' ? 'px-1 py-0.5 text-2' : 'min-w-4 px-1.5 text-1',
         selected ? 'text-accent-11' : 'text-foreground',
       )}
       data-testid="signal-upvote-figure"
@@ -186,7 +190,10 @@ export function SignalUpvoteCellChrome({
       data-vote-direction={selected ?? 'none'}
       {...groupProps}
       className={cn(
-        'inline-flex h-7 items-center rounded-none border bg-transparent px-0.5',
+        'inline-flex rounded-none border bg-transparent',
+        layout === 'stack'
+          ? 'min-h-[4.25rem] min-w-[2.75rem] flex-col items-center justify-center px-0.5 py-0.5'
+          : 'h-7 items-center px-0.5',
         selected ? 'border-accent-8' : 'border-border',
         className,
       )}
