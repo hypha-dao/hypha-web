@@ -1932,11 +1932,17 @@ export function MyConnections({
     setConversationBoundLookupToken(jwt);
     if (client && jwt?.trim()) refreshBoundChatRooms(client);
   }, [client, jwt]);
-  const { openCoherenceChat, coherenceRoomId, coherencePeerPerson } =
-    useHumanChatPanel();
+  const {
+    openCoherenceChat,
+    closeCoherenceChat,
+    coherenceRoomId,
+    coherenceSpaceSlug,
+    coherencePeerPerson,
+  } = useHumanChatPanel();
   const searchParams = useSearchParams();
   const debugRooms = searchParams.get('debugRooms') === '1';
   const openedDirectChatRef = useRef<string | null>(null);
+  const scopedMessagesSpaceRef = useRef<string | null>(null);
   const openChatRef = useRef<MemberHomeOpenChat | null>(null);
   /** After a filter tap, open the first row once the filtered list is ready. */
   const pendingSelectFirstInboxRef = useRef(false);
@@ -2038,15 +2044,33 @@ export function MyConnections({
   useEffect(() => {
     if (spaceSlug) {
       setInboxFilter('spaces');
+      setPicking(false);
+      const selected = spaceSlug.trim().toLowerCase();
+      const previous = scopedMessagesSpaceRef.current;
+      scopedMessagesSpaceRef.current = selected;
+      if (previous === selected || !coherenceRoomId) return;
+      const recorded = coherenceSpaceSlug?.trim().toLowerCase() ?? '';
+      const requested = searchParams.get('chat')?.trim() ?? '';
+      // A chat query with no recorded space was opened for this page.
+      // Any other open chat belongs to the space we just left.
+      if (!recorded && requested === coherenceRoomId) return;
+      if (!recorded || recorded !== selected) closeCoherenceChat();
       return;
     }
+    scopedMessagesSpaceRef.current = null;
     try {
       const stored = window.sessionStorage.getItem(INBOX_FILTER_KEY);
       if (isInboxFilter(stored)) setInboxFilter(stored);
     } catch {
       // Private mode can block session storage. The default filter still works.
     }
-  }, [spaceSlug]);
+  }, [
+    closeCoherenceChat,
+    coherenceRoomId,
+    coherenceSpaceSlug,
+    searchParams,
+    spaceSlug,
+  ]);
   useEffect(() => {
     if (!inboxNavReady.current) {
       inboxNavReady.current = true;
@@ -3034,7 +3058,7 @@ export function MyConnections({
     groupMemberIds != null;
 
   async function startGroupChat() {
-    if (selectedPeople.length < 2 || starting) return;
+    if (spaceSlug || selectedPeople.length < 2 || starting) return;
     const memberIds = resolvedMatrixIdsForGroup(
       selectedPeople,
       personIdToMatrixUserId,
@@ -3275,7 +3299,7 @@ export function MyConnections({
                       className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-foreground focus-visible:ring-0"
                     />
                   </label>
-                  {section === 'archived' ? null : picking ? (
+                  {section === 'archived' || spaceSlug ? null : picking ? (
                     <Button
                       type="button"
                       variant="outline"

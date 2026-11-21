@@ -750,6 +750,8 @@
     "previousSignals": "Vorherige Signale",
     "nextSignals": "Nächste Signale",
     "noSignals": "Noch nichts Neues aus der Nachbarschaft.",
+    "signalsFailed": "Signale konnten nicht geladen werden.",
+    "retry": "Erneut versuchen",
     "spaceMessages": "Nachrichten in {space}"
   },
   "Connections": {

@@ -750,6 +750,8 @@
     "previousSignals": "Претходни сигнали",
     "nextSignals": "Следни сигнали",
     "noSignals": "Сè уште нема ништо ново од соседството.",
+    "signalsFailed": "Сигналите не се вчитаа.",
+    "retry": "Обиди се повторно",
     "spaceMessages": "Пораки во {space}"
   },
   "Connections": {

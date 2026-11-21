@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useAuthentication } from '@hypha-platform/authentication';
 import { AiLeftPanel } from '@hypha-platform/epics';
 import { SidebarProvider } from '@hypha-platform/ui';
 import type { Locale } from '@hypha-platform/i18n';
@@ -47,18 +48,26 @@ function safeImage(url: string | null) {
 
 export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
   const t = useTranslations('MemberMenu');
+  const signalTypes = useTranslations('CoherenceTab');
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const stripRef = useRef<HTMLDivElement>(null);
-  const { data, isLoading } = useSWR<{ data?: HomeSignal[] }>(
-    `/api/v1/spaces/${encodeURIComponent(
-      spaceSlug,
-    )}/coherences?pageSize=12&orderBy=mostrecent`,
+  const { getAccessToken, isLoading: authLoading } = useAuthentication();
+  const endpoint = authLoading
+    ? null
+    : `/api/v1/spaces/${encodeURIComponent(
+        spaceSlug,
+      )}/coherences?pageSize=12&orderBy=mostrecent`;
+  const { data, error, isLoading, mutate } = useSWR<{ data?: HomeSignal[] }>(
+    endpoint,
     async (url: string) => {
-      const response = await fetch(url, {
-        headers: { Accept: 'application/json' },
-      });
-      if (!response.ok) return { data: [] };
+      const headers: HeadersInit = { Accept: 'application/json' };
+      const token = await getAccessToken().catch(() => null);
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const response = await fetch(url, { headers });
+      if (!response.ok) {
+        throw new Error(`Failed to load signals: ${response.status}`);
+      }
       return (await response.json()) as { data?: HomeSignal[] };
     },
   );
@@ -109,10 +118,21 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
         >
           {t('around')}
         </h1>
-        {isLoading ? (
+        {authLoading || isLoading || (!data && !error) ? (
           <div className="mt-6 flex gap-4 overflow-hidden" aria-hidden>
             <div className="h-64 w-72 shrink-0 bg-accent-3" />
             <div className="h-64 w-72 shrink-0 bg-accent-3" />
+          </div>
+        ) : error ? (
+          <div className="mt-6 flex items-center gap-3">
+            <p className="text-2 text-muted-foreground">{t('signalsFailed')}</p>
+            <button
+              type="button"
+              className="inline-flex h-8 items-center border border-border px-3 text-1 text-foreground hover:bg-foreground/5"
+              onClick={() => void mutate()}
+            >
+              {t('retry')}
+            </button>
           </div>
         ) : signals.length === 0 ? (
           <p className="mt-6 max-w-md text-2 text-muted-foreground">
@@ -131,6 +151,11 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                   )}`
                 : `/${lang}/dho/${spaceSlug}/coherence`;
               const votes = signal.upvotes?.upvoteCount ?? 0;
+              const typeKey = `types.${signal.type.trim()}`;
+              const typeLabel =
+                signal.type.trim() && signalTypes.has(typeKey as never)
+                  ? signalTypes(typeKey as never)
+                  : signalKind(signal.type);
               return (
                 <article
                   key={signal.id}
@@ -146,7 +171,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                   ) : null}
                   <div className="flex flex-1 flex-col gap-2 p-4">
                     <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
-                      {signalKind(signal.type)}
+                      {typeLabel}
                     </p>
                     <h2
                       className="text-3 text-foreground"
