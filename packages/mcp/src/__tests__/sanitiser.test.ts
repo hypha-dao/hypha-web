@@ -144,3 +144,46 @@ describe('userText group', () => {
     });
   });
 });
+
+describe('sanitiseUserText at a word boundary', () => {
+  const text = 'alpha beta gamma delta epsilon zeta eta theta iota kappa';
+
+  it('does not cut a word in half', () => {
+    const r = sanitiseUserText(text, 24, { atWordBoundary: true });
+    // a hard cut at 24 would end in "gamma delta e"; the cut backs up to the word end
+    expect(r.text).toBe('alpha beta gamma delta');
+    expect(r.truncated).toBe(true);
+  });
+
+  it('keeps the whole text, unflagged, when it fits', () => {
+    const r = sanitiseUserText(text, 200, { atWordBoundary: true });
+    expect(r).toEqual({ text, truncated: false });
+  });
+
+  it('cuts exactly at the limit when it falls on a space', () => {
+    const r = sanitiseUserText('alpha beta gamma', 11, {
+      atWordBoundary: true,
+    });
+    expect(r.text).toBe('alpha beta');
+  });
+
+  it('drops a dangling markdown marker left at the end', () => {
+    const r = sanitiseUserText('Plan the garden ** and more words here', 18, {
+      atWordBoundary: true,
+    });
+    expect(r.text).toBe('Plan the garden');
+  });
+
+  it('keeps the hard cut for a very long unbroken word', () => {
+    const r = sanitiseUserText(`ab ${'x'.repeat(100)}`, 20, {
+      atWordBoundary: true,
+    });
+    expect(Array.from(r.text)).toHaveLength(20);
+  });
+
+  it('without the option the cut is unchanged (titles and labels)', () => {
+    // the hard cut keeps the partial word
+    expect(sanitiseUserText(text, 24).text).toBe('alpha beta gamma delta e');
+    expect(sanitiseUserText('abcdefghij', 5).text).toBe('abcde');
+  });
+});

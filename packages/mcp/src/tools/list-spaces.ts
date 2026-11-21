@@ -3,7 +3,10 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import { ERRORS, TOOLS } from '../descriptions';
 import type { McpDeps } from '../deps';
 import { presentSpace, spaceItemSchema } from '../presentation/spaces';
+import { decodeCursor, encodeCursor } from './cursor';
 import { failureText, runTool } from './run-tool';
+
+export { decodeCursor, encodeCursor };
 
 const P = TOOLS.hypha_list_spaces.params;
 const MAX_PAGE_SIZE = 50;
@@ -48,28 +51,6 @@ export const listSpacesOutput = z.object({
   total: z.number(),
   asOf: z.string(),
 });
-
-/**
- * The cursor is the offset of the next unseen item, so it keeps its meaning when `pageSize`
- * changes between calls (a page number would repeat or skip items).
- */
-export function encodeCursor(offset: number): string {
-  return Buffer.from(JSON.stringify({ o: offset })).toString('base64url');
-}
-
-export function decodeCursor(cursor: string | undefined): number | null {
-  if (cursor === undefined) return 0;
-  try {
-    const parsed = JSON.parse(
-      Buffer.from(cursor, 'base64url').toString('utf8'),
-    );
-    return Number.isInteger(parsed?.o) && parsed.o >= 0 && parsed.o <= 1_000_000
-      ? parsed.o
-      : null;
-  } catch {
-    return null;
-  }
-}
 
 export function registerListSpaces(server: McpServer, deps: McpDeps): void {
   server.registerTool(

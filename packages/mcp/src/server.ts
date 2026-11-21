@@ -8,12 +8,18 @@ import {
   type ToolName,
 } from './descriptions';
 import type { McpDeps } from './deps';
+import { registerGetSpace } from './tools/get-space';
 import { registerGetMyMembership } from './tools/get-my-membership';
+import { registerGetMyVote } from './tools/get-my-vote';
+import { registerListProposals } from './tools/list-proposals';
 import { registerListSpaces } from './tools/list-spaces';
 
 const REGISTRARS: Record<ToolName, (server: McpServer, deps: McpDeps) => void> =
   {
     hypha_list_spaces: registerListSpaces,
+    hypha_get_space: registerGetSpace,
+    hypha_list_proposals: registerListProposals,
+    hypha_get_my_vote: registerGetMyVote,
     hypha_get_my_membership: registerGetMyMembership,
   };
 

@@ -51,6 +51,49 @@ export function makeDeps(
           memberCountByWeb3Id: new Map([[11, 3]]),
         },
       }),
+      getSpace: async () => ({
+        ok: true,
+        data: {
+          ...rawSpace(),
+          subspaces: [],
+          parentSlug: null,
+          visibility: { discoverability: 0, access: 0 },
+          governance: {
+            quorum: 50,
+            unity: 60,
+            votingPowerSource: 2,
+            joinMethod: 0,
+          },
+          counts: { memberCount: 3 },
+          asOf: '2026-11-19T00:00:00.000Z',
+          asOfBlock: 1,
+        },
+      }),
+      listProposals: async () => ({
+        ok: true,
+        data: {
+          items: [],
+          total: 0,
+          asOf: '2026-11-19T00:00:00.000Z',
+          asOfBlock: 1,
+        },
+      }),
+      getMyVote: async () => ({
+        ok: true,
+        data: {
+          hasVoted: false,
+          vote: null,
+          isMember: true,
+          isDelegate: false,
+          votingPower: '1',
+          votingPowerDecimals: 0,
+          votingPowerSource: 2,
+          canVote: true,
+          reason: 'eligible',
+          asOf: '2026-11-19T00:00:00.000Z',
+          asOfBlock: 1,
+        },
+      }),
       getMyMembership: async () => ({
         ok: true,
         data: {
@@ -63,6 +106,8 @@ export function makeDeps(
       ...features,
     } as McpFeatures,
     spaceUrl: (slug) => `https://app.example/en/dho/${slug}/overview`,
+    proposalUrl: (space, slug) =>
+      `https://app.example/en/dho/${space}/agreements/proposal/${slug}`,
     log: (entry) => logs.push(entry),
     ...over,
   };

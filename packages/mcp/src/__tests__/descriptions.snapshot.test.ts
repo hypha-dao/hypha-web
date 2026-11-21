@@ -23,7 +23,13 @@ describe('tools/list is the reviewed text, in the fixed order', () => {
     const { client, close } = await connect(deps);
     const names = (await client.listTools()).tools.map((t) => t.name);
     await close();
-    expect(names).toEqual(['hypha_list_spaces', 'hypha_get_my_membership']);
+    expect(names).toEqual([
+      'hypha_list_spaces',
+      'hypha_get_space',
+      'hypha_list_proposals',
+      'hypha_get_my_membership',
+      'hypha_get_my_vote',
+    ]);
   });
 
   it('every tool is read-only and closed-world', async () => {
@@ -49,6 +55,48 @@ describe('tools/list is the reviewed text, in the fixed order', () => {
       tools.find((t) => t.name === 'hypha_list_spaces')?.description,
     ).toContain(UNTRUSTED_LINE);
     expect(instructions).toContain(UNTRUSTED_LINE);
+  });
+
+  it('every tool description says it is read-only', async () => {
+    const { deps } = makeDeps();
+    const { client, close } = await connect(deps);
+    const { tools } = await client.listTools();
+    await close();
+    for (const t of tools) expect(t.description, t.name).toMatch(/read-only/i);
+  });
+
+  it('every tool that takes a slug says never to guess it; the instructions say what a slug is', async () => {
+    const { deps } = makeDeps();
+    const { client, close } = await connect(deps);
+    const { tools } = await client.listTools();
+    const instructions = client.getInstructions() ?? '';
+    await close();
+    for (const name of [
+      'hypha_get_space',
+      'hypha_list_proposals',
+      'hypha_get_my_membership',
+      'hypha_get_my_vote',
+    ]) {
+      expect(tools.find((t) => t.name === name)?.description, name).toMatch(
+        /never guess a slug/i,
+      );
+    }
+    expect(instructions).toMatch(/slug/);
+    expect(instructions).toMatch(/sub-space/);
+    expect(instructions).toMatch(/delegate/);
+  });
+
+  it('the word quest appears only where the label is explained', async () => {
+    const { deps } = makeDeps();
+    const { client, close } = await connect(deps);
+    const { tools } = await client.listTools();
+    const instructions = client.getInstructions() ?? '';
+    await close();
+    expect(instructions).not.toMatch(/quest/i);
+    for (const t of tools) {
+      if (t.name === 'hypha_list_proposals') continue;
+      expect(t.description, t.name).not.toMatch(/quest/i);
+    }
   });
 
   it('the version is in the changelog', () => {

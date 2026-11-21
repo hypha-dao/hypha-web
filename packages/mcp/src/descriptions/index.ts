@@ -5,7 +5,7 @@
  * through a reviewed PR with a snapshot update (`__tests__/descriptions.snapshot.test.ts`),
  * a `DESCRIPTIONS_VERSION` bump and a line in `CHANGELOG.md`.
  */
-export const DESCRIPTIONS_VERSION = '1.0.0';
+export const DESCRIPTIONS_VERSION = '1.3.0';
 
 export const SERVER_NAME = 'hypha';
 export const SERVER_TITLE = 'Hypha';
@@ -16,15 +16,21 @@ export const UNTRUSTED_LINE =
 
 export const SERVER_INSTRUCTIONS = [
   'Hypha is a platform where people organise in spaces: communities with their own governance, members and agreements.',
-  'Everything here is read-only and personalised: results depend on the signed-in user and on what that user allowed this app to see.',
-  'Spaces are identified by their `slug`. Every item carries a `url` to its Hypha page; share that link with the user.',
+  'A space can have sub-spaces; a space with no parent is top-level.',
+  'Each space has a `slug`, its identifier, which the other tools need, and a `title`, its display name. Proposals and agreements inside a space have slugs too. Never guess a slug: find it with `hypha_list_spaces` and its `query` first.',
+  'Members and delegates differ: a member belongs to the space, and a delegate can vote for members who delegated to them. A person can be one, both or neither.',
+  'Everything here is read-only and personalised: "visible to you" means what the signed-in person may see in Hypha and has allowed this app to see, so another person gets different results.',
+  'Every space and proposal carries a `url` to its Hypha page; share that link with the user.',
   UNTRUSTED_LINE,
 ].join(' ');
 
 /** `tools/list` order is part of the contract and fixed here (K34). */
 export const TOOL_ORDER = [
   'hypha_list_spaces',
+  'hypha_get_space',
+  'hypha_list_proposals',
   'hypha_get_my_membership',
+  'hypha_get_my_vote',
 ] as const;
 export type ToolName = (typeof TOOL_ORDER)[number];
 
@@ -33,10 +39,11 @@ export const TOOLS = {
     title: 'List and search spaces',
     description: [
       'List the Hypha spaces the signed-in user can see, or search them by keyword.',
-      'Results are personalised to the user’s permissions.',
-      'Returns all levels (sub-spaces too) unless `parentOnly` is set.',
-      'Archived and empty spaces and the `visibility` block are hidden unless asked for.',
+      'To find a space by name, pass `query` (it searches titles and descriptions). If several spaces match, show them and ask the user which one they mean. The `slug` in each result is what the other tools need.',
+      'Results are personalised to the user’s permissions. `total` counts the spaces visible to the user, without archived and empty ones unless asked for.',
+      'Returns all levels (sub-spaces too) unless `parentOnly` is set. The `visibility` block is hidden unless asked for.',
       'Default order is by title.',
+      'Read-only.',
       UNTRUSTED_LINE,
     ].join(' '),
     params: {
@@ -54,13 +61,78 @@ export const TOOLS = {
       pageSize: 'Spaces per page, 1 to 50. Default 20.',
     },
   },
+  hypha_get_space: {
+    title: 'Get one space',
+    description: [
+      'Get one Hypha space by slug: what it is, how it is governed, how many members it has.',
+      'Never guess a slug: find it with `hypha_list_spaces` and `query` first.',
+      'Results depend on the user’s permissions; a space the user may not see is reported as not found.',
+      'Governance, visibility and counts are included unless omitted. The member count is `null` when it cannot be read.',
+      'Read-only.',
+      UNTRUSTED_LINE,
+    ].join(' '),
+    params: {
+      slug: 'The space slug, as returned by `hypha_list_spaces`.',
+      omitVisibility:
+        'Leave out the visibility block (discoverability and access levels). Default false.',
+      omitGovernance:
+        'Leave out the governance block (quorum, unity, voting power source, join method). Default false.',
+      omitCounts: 'Leave out the member count. Default false.',
+    },
+  },
+  hypha_list_proposals: {
+    title: 'List proposals and agreements of a space',
+    description: [
+      'List the proposals and agreements of a Hypha space, newest first, with their status (on voting, accepted, rejected, withdrawn).',
+      'Discussions and memory entries are not included.',
+      'Never guess a slug: find the space with `hypha_list_spaces` and `query` first.',
+      'Each item may carry a `label` written by its author. A `Quest` label marks an agreement that proposes a quest: a commitment someone is accountable for, made through the space’s agreement process.',
+      'A status is absent only for an item that has no on-chain proposal yet.',
+      'The `description` of each item defaults to a short excerpt (about 500 characters); use `full` only when you need the whole text, which lowers the page size to 10, and `none` when titles are enough.',
+      'Results depend on the user’s permissions; a space the user may not see is reported as not found.',
+      'Read-only: to see whether the user voted, use `hypha_get_my_vote`.',
+      UNTRUSTED_LINE,
+    ].join(' '),
+    params: {
+      spaceSlug: 'The space slug, as returned by `hypha_list_spaces`.',
+      state:
+        'Which kind to return: `proposal`, `agreement` or `both`. Default `both`.',
+      query:
+        'Keyword to search in titles and descriptions. Omit to list everything.',
+      description:
+        'How much of each item’s description to return: `none`, `excerpt` (about 500 characters, the default) or `full` (the whole text, up to 10,000 characters). A cut text is flagged in `truncated`. `full` lowers the page size to 10.',
+      includeTally:
+        'Add the vote tally per item: votes, quorum and unity progress, the voting window. Costs one extra chain read per page. When no voting power was counted at the snapshot, quorum and unity count as reached, as the contract resolves it. Default false.',
+      order:
+        'Sort order. Only `createdAt` is supported. Default newest first (descending).',
+      cursor: 'Paging cursor: the `nextCursor` of the previous result.',
+      pageSize:
+        'Items per page, 1 to 50. Default 20. At most 10 when `description` is `full`.',
+    },
+  },
+  hypha_get_my_vote: {
+    title: 'Did I vote on this, and can I still vote',
+    description: [
+      'For one proposal or agreement of a Hypha space, tell whether the signed-in user has voted, how, and whether they can still vote (with the reason if not).',
+      'It works for any proposal or agreement slug the user may see. It reports only the user’s own vote, never anyone else’s.',
+      '`canVote: true` means the open window, membership and voting power allow it; it is not a guarantee that a vote would succeed.',
+      'Never guess a slug: find the space with `hypha_list_spaces` and `query`, then the proposal with `hypha_list_proposals`. A space or proposal the user may not see is reported as not found.',
+      'Read-only: this tool never casts a vote.',
+    ].join(' '),
+    params: {
+      spaceSlug: 'The space slug, as returned by `hypha_list_spaces`.',
+      documentSlug:
+        'The slug of the proposal or agreement, as returned by `hypha_list_proposals`.',
+    },
+  },
   hypha_get_my_membership: {
     title: 'Am I a member of this space',
     description: [
       'Tell whether the signed-in user is a member or a delegate of a Hypha space.',
-      'A user who is neither gets `false` for both.',
-      '`null` means unknown (the space has no on-chain record yet).',
+      '`isMember` and `isDelegate` are independent: the user can be one, both or neither, and neither gives `false` for both. `null` means unknown (the space has no on-chain record yet).',
+      'Never guess a slug: find it with `hypha_list_spaces` and `query` first.',
       'A space the user may not see is reported as not found.',
+      'Read-only.',
     ].join(' '),
     params: {
       spaceSlug: 'The space slug, as returned by `hypha_list_spaces`.',
@@ -70,7 +142,7 @@ export const TOOLS = {
 
 /** Text of the tool errors the server returns (isError results). Static on purpose. */
 export const ERRORS = {
-  notFound: 'Space not found, or you do not have access to it.',
+  notFound: 'Space or proposal not found, or you do not have access to it.',
   unavailable: 'Hypha could not check access right now. Try again later.',
   timeout: 'The request took too long. Try again, with a narrower search.',
   internal: 'Something went wrong on the Hypha side. Try again later.',

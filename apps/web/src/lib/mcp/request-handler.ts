@@ -21,6 +21,7 @@ export type McpRequestDeps = {
   resolve(claims: VerifiedClaims): Promise<ResolveResult>;
   features: McpFeatures;
   spaceUrl(slug: string): string;
+  proposalUrl(spaceSlug: string, proposalSlug: string): string;
   slot?: RateSlot;
   /** Test seam: the issuer's key set. */
   keys?: AuthorizeDeps['keys'];
@@ -113,6 +114,7 @@ export function createMcpRequestHandlers(deps: McpRequestDeps) {
           access: authorized.access,
           features: deps.features,
           spaceUrl: deps.spaceUrl,
+          proposalUrl: deps.proposalUrl,
           log: deps.log ?? consoleLogger,
           deadlineMs: deps.deadlineMs,
           clientId: authorized.clientId,
