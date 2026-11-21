@@ -2719,6 +2719,10 @@ export function MyConnections({
               channels,
               inboxContext ?? EMPTY_INBOX_CONTEXT,
               t('inbox.networkTitle'),
+              Date.now(),
+              memberSpaceInbox
+                ? { includeInactiveSpaceRooms: true }
+                : undefined,
             ) as ConnectionMemberRow[],
             needle,
           ).map((row) =>
@@ -2923,6 +2927,7 @@ export function MyConnections({
       (hasMorePeople &&
         !needle &&
         section !== 'archived' &&
+        !(memberSpaceInbox && memberTab !== 'direct' && memberTab !== 'all') &&
         (picking || inboxFilter === 'all' || inboxFilter === 'direct')));
   useEffect(() => {
     const root = inboxListRef.current;
@@ -3570,6 +3575,8 @@ export function MyConnections({
                       ? picking || section === 'messages'
                         ? t('noMembersMatchSearch')
                         : t('noMatches')
+                      : memberSpaceInbox && memberTab !== 'direct'
+                      ? t('inbox.empty')
                       : showChannelTags && inboxFilter !== 'direct'
                       ? t('inbox.empty')
                       : t('empty')}

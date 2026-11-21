@@ -88,12 +88,12 @@ describe('messages inbox filters', () => {
       'quest',
       'proposal',
       'context',
-      'ecosystem',
-      'network',
     ] as const) {
       expect(rowMatchesMemberInboxTab(kind, 'channels')).toBe(true);
       expect(rowMatchesMemberInboxTab(kind, 'direct')).toBe(false);
     }
+    expect(rowMatchesMemberInboxTab('network', 'channels')).toBe(false);
+    expect(rowMatchesMemberInboxTab('ecosystem', 'channels')).toBe(false);
     expect(rowMatchesMemberInboxTab('proposal', 'all')).toBe(true);
     expect(rowMatchesInboxFilter('group', 'direct')).toBe(true);
 
@@ -826,6 +826,35 @@ describe('messages inbox context', () => {
       '!eco:hs',
       '!net:hs',
     ]);
+    const withQuietSpace = channelRowsFromSnapshots(
+      [
+        {
+          roomId: '!quiet:hs',
+          roomType: 'io.hypha.room.space',
+          name: 'Hypha Platform',
+          aliases: [],
+          preview: '',
+          mine: false,
+          lastTs: quiet,
+          unread: 0,
+        },
+        {
+          roomId: '!quiet-net:hs',
+          roomType: 'io.hypha.room.network',
+          name: 'Network',
+          aliases: ['#hypha-network:example.org'],
+          preview: '',
+          mine: false,
+          lastTs: quiet,
+          unread: 0,
+        },
+      ],
+      context,
+      'Network',
+      now,
+      { includeInactiveSpaceRooms: true },
+    );
+    expect(withQuietSpace.map((row) => row.roomId)).toEqual(['!quiet:hs']);
   });
 
   it('keeps a signal you are notified about even when the room has been quiet', () => {

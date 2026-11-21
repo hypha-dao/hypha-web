@@ -338,7 +338,9 @@ export function rowMatchesMemberInboxTab(
   if (tab === 'all') return true;
   if (tab === 'direct') return kind === 'dm';
   if (tab === 'groups') return kind === 'group';
-  return isInboxChannelKind(kind);
+  // Same rooms the full inbox calls space channels: the space rooms plus
+  // the signal, quest, proposal, and context threads that live in a space.
+  return rowMatchesInboxFilter(kind, 'spaces');
 }
 
 export function memberInboxTabCounts(
@@ -810,6 +812,7 @@ export function channelRowsFromSnapshots(
   context: InboxContext,
   networkFallback: string,
   now = Date.now(),
+  options?: { includeInactiveSpaceRooms?: boolean },
 ): InboxChannelRow[] {
   const rows: InboxChannelRow[] = [];
   const logoBySlug = new Map(
@@ -843,7 +846,13 @@ export function channelRowsFromSnapshots(
       if (!snapshot.preview.trim() && snapshot.unread <= 0) continue;
     } else if (
       place.kind !== 'signal' &&
-      !channelHasRecentActivity(snapshot.lastTs, now)
+      !channelHasRecentActivity(snapshot.lastTs, now) &&
+      // Member space home asks for every space room, including a quiet one.
+      // The full inbox still hides those until they have a recent message.
+      !(
+        options?.includeInactiveSpaceRooms &&
+        (place.kind === 'space' || place.kind === 'space-public')
+      )
     ) {
       continue;
     }
