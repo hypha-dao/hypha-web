@@ -283,6 +283,7 @@ export function HumanSidebarTrigger() {
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const { activeRoomId } = useGlobalCallDock();
   const { jwt } = useJwt();
+  const { person } = useMe();
   const elsewhereCallEntries = useCallMembershipRegistry({
     excludeRoomIds: [activeRoomId],
     getAccessToken: async () => jwt,
@@ -290,6 +291,10 @@ export function HumanSidebarTrigger() {
   });
   const hasCallElsewhere = elsewhereCallEntries.length > 0;
   const hasUnreadMentions = isSpace && unreadMentionCount > 0;
+
+  // Members use the space messages icon in the top bar. Builders and funders
+  // keep this chat bubble.
+  if (isMemberOrientation(person?.primaryOrientation)) return null;
 
   // Hide the header trigger while the panel is open. Unread mentions only exist in a space.
   if (!showsHumanChatIcon(pathname, isSpace, isNetwork) || open) return null;

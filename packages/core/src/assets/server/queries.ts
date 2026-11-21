@@ -1,4 +1,4 @@
-import { asc, eq, sql, and } from 'drizzle-orm';
+import { asc, eq, sql, and, type SQLWrapper } from 'drizzle-orm';
 import { documents, tokens } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '@hypha-platform/core/server';
 import { isHiddenToken } from '../../common/web3/tokens';
@@ -6,12 +6,31 @@ import { readTokenCapitals } from '../../network/capital-columns';
 
 type FindAllTokensProps = {
   search?: string;
+  /** Limit to tokens minted by one space. Omitted returns every token. */
+  spaceId?: number;
 };
 
 export const findAllTokens = async (
   { db }: DbConfig,
-  { search }: FindAllTokensProps = {},
+  { search, spaceId }: FindAllTokensProps = {},
 ) => {
+  const conditions: SQLWrapper[] = [];
+  if (typeof spaceId === 'number' && Number.isInteger(spaceId)) {
+    conditions.push(eq(tokens.spaceId, spaceId));
+  }
+  if (search) {
+    conditions.push(sql`(
+            -- Full-text search for exact word matches (highest priority)
+            (setweight(to_tsvector('english', ${tokens.name}), 'A') ||
+             setweight(to_tsvector('english', ${tokens.symbol}), 'B')
+            ) @@ plainto_tsquery('english', ${search})
+            OR
+            -- Partial word matching with ILIKE (case-insensitive)
+            ${tokens.name} ILIKE ${'%' + search + '%'}
+            OR
+            ${tokens.symbol} ILIKE ${'%' + search + '%'}
+          )`);
+  }
   const results = await db
     .select({
       id: tokens.id,
@@ -38,21 +57,7 @@ export const findAllTokens = async (
     })
     .from(tokens)
     .leftJoin(documents, eq(documents.id, tokens.agreementId))
-    .where(
-      search
-        ? sql`(
-            -- Full-text search for exact word matches (highest priority)
-            (setweight(to_tsvector('english', ${tokens.name}), 'A') ||
-             setweight(to_tsvector('english', ${tokens.symbol}), 'B')
-            ) @@ plainto_tsquery('english', ${search})
-            OR
-            -- Partial word matching with ILIKE (case-insensitive)
-            ${tokens.name} ILIKE ${'%' + search + '%'}
-            OR
-            ${tokens.symbol} ILIKE ${'%' + search + '%'}
-          )`
-        : undefined,
-    )
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
     .groupBy(
       tokens.id,
       tokens.spaceId,
