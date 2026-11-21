@@ -286,7 +286,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
                 refresh={refresh}
                 sort={sort}
                 summaryState={upvoteSummaryState}
-                showImage={showSignalImage}
+                memberLayout={showSignalImage}
               />
             ) : null,
           )}

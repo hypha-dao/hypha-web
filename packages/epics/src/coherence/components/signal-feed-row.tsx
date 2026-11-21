@@ -63,8 +63,12 @@ type SignalFeedRowProps = {
   refresh?: () => Promise<unknown>;
   sort: SignalSort;
   summaryState?: SignalUpvoteSummaryState;
-  /** Members see the signal image. Other personas keep the text row. */
-  showImage?: boolean;
+  /**
+   * Member list only. The existing upvote sits on the left and the signal
+   * image, when there is one, sits on the right. Other personas keep the
+   * current row.
+   */
+  memberLayout?: boolean;
 };
 
 export function SignalFeedRow({
@@ -80,7 +84,7 @@ export function SignalFeedRow({
   refresh,
   sort,
   summaryState,
-  showImage = false,
+  memberLayout = false,
 }: SignalFeedRowProps) {
   const t = useTranslations('CoherenceTab');
   const format = useFormatter();
@@ -94,7 +98,7 @@ export function SignalFeedRow({
   const media = React.useMemo(() => countSignalMedia(signal), [signal]);
   const created = shortDate(signal.createdAt);
   const comments = signalDiscussionCount(signal.messages, activity);
-  const image = showImage ? signalListImage(signal) : null;
+  const image = memberLayout ? signalListImage(signal) : null;
   const lastReply =
     activity?.lastReplyAt != null
       ? t('signalLastReply', {
@@ -104,14 +108,14 @@ export function SignalFeedRow({
       ? t('signalNoReplies')
       : null;
 
-  return (
-    <article
-      data-testid="signal-card"
-      data-signal-slug={signal.slug ?? undefined}
-      className="@container craft-card-interactive relative flex flex-col gap-1.5 p-4"
-    >
-      <div className="flex min-w-0 items-start gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+  if (!memberLayout) {
+    return (
+      <article
+        data-testid="signal-card"
+        data-signal-slug={signal.slug ?? undefined}
+        className="@container craft-card-interactive relative flex flex-col gap-1.5 p-4"
+      >
+        <div className="flex min-w-0 flex-col gap-1.5">
           <SignalTypeBadge type={signal.type} />
           <h3 className="m-0 truncate text-3 font-medium leading-snug text-foreground">
             <Link
@@ -165,13 +169,78 @@ export function SignalFeedRow({
             <SignalMediaChips counts={media} />
           </div>
         </div>
+      </article>
+    );
+  }
+
+  return (
+    <article
+      data-testid="signal-card"
+      data-signal-slug={signal.slug ?? undefined}
+      data-member-signal-row=""
+      className="@container craft-card-interactive relative flex flex-col gap-1.5 p-4"
+    >
+      <div className="flex min-w-0 items-start gap-3">
+        <div className="relative z-10 shrink-0">
+          <ActionGate kind="upvote" fullAppPath="" label={null}>
+            <SignalUpvoteButton
+              slug={signal.slug}
+              spaceSlug={spaceSlug}
+              upvotes={signal.upvotes}
+              votingMode={votingMode}
+              votingModeStatus={votingModeStatus}
+              onRetryVotingMode={onRetryVotingMode}
+              isNonMember={isNonMember}
+              isMembershipPending={isMembershipPending}
+              refresh={refresh}
+              archived={signal.archived}
+              sort={sort}
+              summaryState={summaryState}
+              className="relative z-10"
+            />
+          </ActionGate>
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <SignalTypeBadge type={signal.type} />
+          <h3 className="m-0 truncate text-3 font-medium leading-snug text-foreground">
+            <Link
+              href={href}
+              className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
+            >
+              {signal.title}
+            </Link>
+          </h3>
+          {about ? (
+            <p className="mb-0 line-clamp-2 text-1 text-muted-foreground">
+              {about}
+            </p>
+          ) : null}
+          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-1 text-muted-foreground">
+            {created ? (
+              <span className="inline-flex items-center gap-1.5">
+                <Clock className="craft-icon-sm" aria-hidden />
+                {t('signalCreated', { date: created })}
+              </span>
+            ) : null}
+            {lastReply ? (
+              <span className="inline-flex items-center gap-1.5">
+                <MessageSquare className="craft-icon-sm" aria-hidden />
+                {lastReply}
+              </span>
+            ) : null}
+            <span className={cn('tabular-nums')}>
+              {t('signalCommentsCount', { count: comments })}
+            </span>
+            <SignalMediaChips counts={media} />
+          </div>
+        </div>
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={image}
             alt=""
             data-testid="signal-card-image"
-            className="h-[72px] w-[72px] shrink-0 object-cover"
+            className="h-20 w-20 shrink-0 object-cover"
           />
         ) : null}
       </div>
