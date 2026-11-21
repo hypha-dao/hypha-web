@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import {
+  EnergyScreen,
   EnergySectionSkeleton,
-  SpaceEnergySection,
   SpaceTabAccessWrapper,
 } from '@hypha-platform/epics';
 
@@ -28,7 +28,7 @@ export default async function WhiteLabelEnergyPage(props: WhiteLabelPageProps) {
     >
       <div className="flex flex-col gap-6 py-4">
         {/* Explicit slug (#2622): nothing here reads the pathname. */}
-        <SpaceEnergySection spaceSlug={slug} />
+        <EnergyScreen spaceSlug={slug} />
       </div>
     </SpaceTabAccessWrapper>
   );
