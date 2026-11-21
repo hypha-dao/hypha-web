@@ -46,6 +46,8 @@ import {
   shouldShowSpacesScreen,
   shouldShowWalletNav,
 } from './app-nav-visibility';
+import { writeOrientationCookie } from './member-orientation-cookie';
+import { useMemberExperience } from './member-experience';
 
 type ConnectedButtonProfileProps = {
   useAuthentication: ProfileUseAuthentication;
@@ -212,6 +214,7 @@ export const ConnectedButtonProfile = ({
   const [loggingOut, setLoggingOut] = useState(false);
   const handleLogout = useCallback(() => {
     setLoggingOut(true);
+    writeOrientationCookie(null);
     logout();
   }, [logout]);
 
@@ -229,8 +232,8 @@ export const ConnectedButtonProfile = ({
     console.log('Delete profile');
   };
 
+  const { orientation } = useMemberExperience();
   const visibleNavItems = useMemo(() => {
-    const orientation = person?.primaryOrientation;
     return navItems.filter((item) => {
       if (isHomeNavHref(item.href) && !shouldShowHomeNav(orientation)) {
         return false;
@@ -249,7 +252,7 @@ export const ConnectedButtonProfile = ({
       }
       return true;
     });
-  }, [navItems, person?.primaryOrientation]);
+  }, [navItems, orientation]);
 
   return (
     <ButtonProfile

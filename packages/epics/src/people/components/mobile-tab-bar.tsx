@@ -58,7 +58,7 @@ import {
   shouldShowMessagesNav,
   shouldShowSpacesScreen,
 } from './app-nav-visibility';
-import { isMemberOrientation } from './member-menu';
+import { useMemberExperience } from './member-experience';
 import { MemberMobileNav } from './member-space-chrome';
 import { MobileSpacesSubnav } from './mobile-spaces-subnav';
 
@@ -97,14 +97,12 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { open: isAiOpen } = useAiPanel();
-  const { person } = useMe();
+  const { isMember } = useMemberExperience();
   const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
   // While the AI panel is open the spaces list takes the left menu slot.
   // Members stay in one space, so that list stays hidden.
   const showSpacesRail =
-    shouldShowMobileSpacesRail(pathname) &&
-    !isAiOpen &&
-    !isMemberOrientation(person?.primaryOrientation);
+    shouldShowMobileSpacesRail(pathname) && !isAiOpen && !isMember;
   const [slideIn, setSlideIn] = useState(false);
 
   useEffect(() => {
@@ -170,8 +168,9 @@ export function MobileTabBar({
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { person } = useMe();
-  const showMessages = shouldShowMessagesNav(person?.primaryOrientation);
-  const showSpaces = shouldShowSpacesScreen(person?.primaryOrientation);
+  const { orientation, isMember: memberNav } = useMemberExperience();
+  const showMessages = shouldShowMessagesNav(orientation);
+  const showSpaces = shouldShowSpacesScreen(orientation);
   const appTabCount = 3 + Number(showMessages) + Number(showSpaces);
   const onHome =
     pathname === `/${lang}/my-dashboard` ||
@@ -393,8 +392,6 @@ export function MobileTabBar({
 
   const showSectionStrip = secondLevel.length > 0;
   const showAppMenu = true;
-
-  const memberNav = isMemberOrientation(person?.primaryOrientation);
 
   useEffect(() => {
     if (memberNav) return;

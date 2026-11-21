@@ -25,7 +25,7 @@ import {
   useIsMobile,
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
-import { useJwt, useMe } from '@hypha-platform/core/client';
+import { useJwt } from '@hypha-platform/core/client';
 import {
   AiPanelProvider,
   HumanChatPanelProvider,
@@ -33,7 +33,7 @@ import {
   useHumanChatPanel,
 } from './human-chat-panel-context';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
-import { isMemberOrientation } from '../people/components/member-menu';
+import { useMemberExperience } from '../people/components/member-experience';
 import { isInteractiveCreatePath } from './get-path-function';
 import {
   isNetworkAiPath,
@@ -177,9 +177,9 @@ export function AiSidebarTrigger() {
   const isNetworkAi = isNetworkAiPath(pathname);
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
-  const { person } = useMe();
+  const { isMember } = useMemberExperience();
 
-  if (isMemberOrientation(person?.primaryOrientation)) return null;
+  if (isMember) return null;
   if (!isSpace && !isNetworkAi) {
     return null;
   }
@@ -224,9 +224,9 @@ export function AiPanelTrigger() {
   const isNetworkAi = isNetworkAiPath(pathname);
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
-  const { person } = useMe();
+  const { isMember } = useMemberExperience();
 
-  if (isMemberOrientation(person?.primaryOrientation)) return null;
+  if (isMember) return null;
   if (!isSpace && !isNetworkAi) {
     return null;
   }
@@ -283,7 +283,7 @@ export function HumanSidebarTrigger() {
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const { activeRoomId } = useGlobalCallDock();
   const { jwt } = useJwt();
-  const { person } = useMe();
+  const { isMember } = useMemberExperience();
   const elsewhereCallEntries = useCallMembershipRegistry({
     excludeRoomIds: [activeRoomId],
     getAccessToken: async () => jwt,
@@ -294,7 +294,7 @@ export function HumanSidebarTrigger() {
 
   // Members use the space messages icon in the top bar. Builders and funders
   // keep this chat bubble.
-  if (isMemberOrientation(person?.primaryOrientation)) return null;
+  if (isMember) return null;
 
   // Hide the header trigger while the panel is open. Unread mentions only exist in a space.
   if (!showsHumanChatIcon(pathname, isSpace, isNetwork) || open) return null;
@@ -465,8 +465,7 @@ export function PanelWrapLayout({
   const isSpace = useIsSpaceContext();
   const isNetwork = useIsNetworkContext();
   const isOnboarding = isInteractiveCreatePath(pathname);
-  const { person } = useMe();
-  const memberExperience = isMemberOrientation(person?.primaryOrientation);
+  const { isMember: memberExperience } = useMemberExperience();
   /** Same menu rail for every persona. Members do not open the assistant here. */
   const showAiPanel = isSpace || isNetworkAiPath(pathname);
   const effectiveLeft = showAiPanel ? left : undefined;

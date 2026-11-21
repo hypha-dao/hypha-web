@@ -13,7 +13,6 @@ import {
   rankSignals,
   signalListUpvoteSummaryState,
   useFindCoherences,
-  useMe,
   useSpaceBySlug,
   type SignalSort,
   type SignalTimeFrame,
@@ -34,7 +33,7 @@ import {
 import { SignalFeedFilters } from './signal-feed-filters';
 import { SignalFeedRow } from './signal-feed-row';
 import { useDebouncedFeedTitle } from '../lib/use-debounced-feed-title';
-import { isMemberOrientation } from '../../people/components/member-menu';
+import { useMemberExperience } from '../../people/components/member-experience';
 import type { UseMembers } from '../../spaces/hooks/types';
 
 export const SIGNAL_SORT_QUERY_KEY = 'sort';
@@ -62,9 +61,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   const searchParams = useSearchParams();
 
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
-  const { person, isLoading: isPersonLoading } = useMe();
-  const showSignalImage =
-    !isPersonLoading && isMemberOrientation(person?.primaryOrientation);
+  const { isMember: showSignalImage } = useMemberExperience();
   const {
     canMutate,
     isLoading: isMembershipLoading,

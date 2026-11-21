@@ -35,6 +35,8 @@ export * from './member-home-attention';
 export * from './member-home-notifications';
 export * from './mobile-tab-bar';
 export * from './member-menu';
+export * from './member-orientation-cookie';
+export * from './member-experience';
 export * from './member-space-chrome';
 export * from './spaces-rail-control';
 export * from './my-connections';

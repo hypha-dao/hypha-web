@@ -2,7 +2,7 @@
 
 import { useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMe } from '@hypha-platform/core/client';
+import { useMemberExperience } from '@hypha-platform/epics';
 
 /**
  * Members do not get the spaces listing. Other personas keep the screen,
@@ -15,9 +15,9 @@ export function MemberSpacesScreenGate({
   lang: string;
   children: ReactNode;
 }) {
-  const { person, isLoading } = useMe();
+  const { isMember, settled } = useMemberExperience();
   const router = useRouter();
-  const blocked = !isLoading && person?.primaryOrientation === 'member';
+  const blocked = settled && isMember;
 
   useEffect(() => {
     if (blocked) router.replace(`/${lang}/home`);
