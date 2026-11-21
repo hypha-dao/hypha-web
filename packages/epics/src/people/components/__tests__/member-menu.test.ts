@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  memberSurfaceSpaceQuery,
   activeMemberMenuKey,
   buildMemberMenu,
   isCommunityMenuKey,
@@ -53,6 +54,9 @@ describe('buildMemberMenu', () => {
     expect(items.find((item) => item.key === 'energy')?.href).toBe(
       '/en/dho/rue-verte/energy',
     );
+    expect(items.find((item) => item.key === 'wallet')?.href).toBe(
+      '/en/my-wallet?space=rue-verte',
+    );
     expect(items.find((item) => item.key === 'messages')?.href).toBe(
       '/en/messages?space=rue-verte',
     );
@@ -87,6 +91,23 @@ describe('buildMemberMenu', () => {
     expect(activeMemberMenuKey('/en/dho/my-wallet/treasury')).toBe('treasury');
     expect(isCommunityMenuKey('signals')).toBe(true);
     expect(isCommunityMenuKey('home')).toBe(false);
+  });
+});
+
+describe('memberSurfaceSpaceQuery', () => {
+  it('reads a space slug on wallet and messages, and ignores a wallet action id', () => {
+    expect(memberSurfaceSpaceQuery('/en/my-wallet', 'rue-verte')).toBe(
+      'rue-verte',
+    );
+    expect(memberSurfaceSpaceQuery('/en/messages', 'rue-verte')).toBe(
+      'rue-verte',
+    );
+    expect(
+      memberSurfaceSpaceQuery('/en/my-wallet/actions/activate-spaces', '42'),
+    ).toBeNull();
+    expect(memberSurfaceSpaceQuery('/en/dho/rue-verte/overview', 'other')).toBe(
+      null,
+    );
   });
 });
 
@@ -170,6 +191,14 @@ describe('memberPersonalRedirect', () => {
       memberPersonalRedirect({
         pathname: '/en/my-wallet',
         search: '',
+        lang: 'en',
+        spaceSlug: 'rue-verte',
+      }),
+    ).toBe('/en/my-wallet?space=rue-verte');
+    expect(
+      memberPersonalRedirect({
+        pathname: '/en/my-wallet',
+        search: '?space=rue-verte',
         lang: 'en',
         spaceSlug: 'rue-verte',
       }),

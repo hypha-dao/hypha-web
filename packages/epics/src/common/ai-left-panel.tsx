@@ -111,6 +111,7 @@ import {
   buildMemberMenu,
   isMemberOrientation,
   memberMenuGroup,
+  memberSurfaceSpaceQuery,
   resolveMemberSpaceSlug,
   type MemberMenuKey,
 } from '../people/components/member-menu';
@@ -403,12 +404,9 @@ function MemberMenuSections({
   const [recent, setRecent] = useState<string[]>(() => readRecentSpaceSlugs());
   useEffect(() => subscribeRecentSpaceSlugs(setRecent), []);
   const pathSlug = getDhoSpaceSlugFromPathname(pathname) ?? null;
-  const onMessages = /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(
-    pathname,
-  );
   const slug = resolveMemberSpaceSlug({
     pathSlug,
-    querySlug: onMessages ? searchParams.get('space') : null,
+    querySlug: memberSurfaceSpaceQuery(pathname, searchParams.get('space')),
     memberSlugs: named.map((space) => space.slug),
     recentSlugs: recent,
   });
