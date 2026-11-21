@@ -129,6 +129,7 @@ function neutraliseMarkup(text: string): string {
 export function sanitiseUserText(
   input: string | null | undefined,
   maxLength: number,
+  options: { atWordBoundary?: boolean } = {},
 ): Sanitised {
   if (!input) return { text: '', truncated: false };
   // Bound the work: nothing past this can survive the final cap anyway.
@@ -159,6 +160,19 @@ export function sanitiseUserText(
 
   const points = Array.from(text);
   if (points.length <= maxLength) return { text, truncated: cut };
-  text = points.slice(0, maxLength).join('').trimEnd();
+  let kept = points.slice(0, maxLength);
+  if (options.atWordBoundary && !/\s/u.test(points[maxLength] ?? ' ')) {
+    // The cut falls inside a word: back up to the last whitespace, unless that would lose
+    // more than 40% of the text (a very long unbroken word keeps the hard cut).
+    let i = kept.length - 1;
+    while (i >= 0 && !/\s/u.test(kept[i]!)) i -= 1;
+    if (i >= Math.floor(maxLength * 0.6)) kept = kept.slice(0, i);
+  }
+  // A bare markdown marker left at the end (`**`, `#`, a list dash) is dropped with its space.
+  text = kept
+    .join('')
+    .trimEnd()
+    .replace(/(?:\s+[*_`#>~-]+)+$/u, '')
+    .trimEnd();
   return { text, truncated: true };
 }

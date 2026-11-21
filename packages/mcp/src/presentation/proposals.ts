@@ -85,6 +85,7 @@ export function presentProposal(
       },
       // Absent in `none` mode; the same sanitiser and the same truncation flag as every field.
       description: {
+        atWordBoundary: true,
         value: ctx.description === 'none' ? null : item.description,
         max:
           ctx.description === 'full'

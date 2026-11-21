@@ -3,6 +3,11 @@
 Every change to `index.ts` in this folder needs a `DESCRIPTIONS_VERSION` bump, a snapshot
 update and a line here (K31).
 
+## 1.3.0
+
+- Text that stands alone for an assistant outside any Hypha repo: the server instructions now say what a sub-space is, that `slug` is the identifier and `title` the display name, how members and delegates differ, and what "visible to you" means; every tool that takes a slug says never to guess it and to find it with `hypha_list_spaces` and `query` first; `hypha_list_spaces` says how to find a space by name, to ask the user when several match, and what `total` counts; `hypha_get_my_membership` says `isMember` and `isDelegate` are independent. The word "quest" now appears only where the `label` is explained.
+- Description excerpts and full texts are cut at a word boundary, and a dangling markdown marker is dropped.
+
 ## 1.2.0
 
 - `hypha_list_proposals`: new `description` input (`none`, `excerpt` by default, `full`); excerpt is about 500 characters, full is up to 10,000, both flagged in `truncated`; full lowers the page size to 10. The tool text states the default and when to switch.
