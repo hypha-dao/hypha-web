@@ -293,7 +293,10 @@ export async function getSpaceMembersForHttpApi(
   const personRows = filtered.filter((e) => e.member_kind === 'person');
   const spaceRowsFiltered = filtered.filter((e) => e.member_kind === 'space');
 
-  const personsList = personRows.map((e) => e.person as Person);
+  const personsList = personRows.map((entry) => ({
+    ...entry.person,
+    joinedAt: entry.joined_at,
+  }));
   const spacesList = spaceRowsFiltered.map((e) => e.space);
 
   return {
