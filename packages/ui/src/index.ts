@@ -28,6 +28,7 @@ export * from './disposable-label';
 export * from './dropdown-menu';
 export * from './context-menu';
 export * from './error-alert';
+export * from './floating-notice';
 export * from './form';
 export * from './image';
 export * from './input';

@@ -78,7 +78,7 @@ export const useMatrixUserIdsByPersonIds = ({
       }
       return map;
     },
-    { keepPreviousData: true },
+    { keepPreviousData: true, revalidateOnFocus: false },
   );
 
   return {

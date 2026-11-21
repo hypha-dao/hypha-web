@@ -1,4 +1,12 @@
 {
+  "StaleDeployment": {
+    "reloadingTitle": "Hier wurde gearbeitet!",
+    "reloading": "Einen Moment, wir frischen die Seite auf…",
+    "title": "Hoppla, hier wurde gearbeitet!",
+    "description": "Wir haben gerade Änderungen an der Seite vorgenommen. Aktualisiere sie, sobald du kannst.",
+    "refresh": "Aktualisieren",
+    "dismiss": "Schließen"
+  },
   "MemberHome": {
     "panelSpaces": "Spaces und Menschen",
     "spacesRail": "Deine Spaces",

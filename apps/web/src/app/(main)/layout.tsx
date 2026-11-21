@@ -52,6 +52,7 @@ import { AppNavigationSessionCounter } from '@web/components/app-navigation-sess
 import { ConnectedMenuTop } from '@web/components/connected-menu-top';
 import { LocalizedIntlProvider } from '@web/components/localized-intl-provider';
 import { SwrProvider } from '@web/components/swr-provider';
+import { StaleDeploymentNotice } from '@web/components/stale-deployment-notice';
 import '@web/utils/initialize-proxy';
 
 export const viewport: Viewport = {
@@ -252,6 +253,7 @@ export default async function RootLayout({
             <ThemeStorageNormalize />
             <AppNavigationSessionCounter />
             <LocalizedIntlProvider locale={locale} messages={messages}>
+              <StaleDeploymentNotice />
               <TooltipProvider>
                 <NotificationSubscriber
                   appId={notificationAppId}
