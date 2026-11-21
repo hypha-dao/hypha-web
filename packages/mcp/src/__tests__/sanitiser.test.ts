@@ -149,8 +149,8 @@ describe('sanitiseUserText at a word boundary', () => {
   const text = 'alpha beta gamma delta epsilon zeta eta theta iota kappa';
 
   it('does not cut a word in half', () => {
-    const r = sanitiseUserText(text, 22, { atWordBoundary: true });
-    // a hard cut at 22 would end in "gamma delta e"
+    const r = sanitiseUserText(text, 24, { atWordBoundary: true });
+    // a hard cut at 24 would end in "gamma delta e"; the cut backs up to the word end
     expect(r.text).toBe('alpha beta gamma delta');
     expect(r.truncated).toBe(true);
   });
@@ -182,7 +182,8 @@ describe('sanitiseUserText at a word boundary', () => {
   });
 
   it('without the option the cut is unchanged (titles and labels)', () => {
-    expect(sanitiseUserText(text, 22).text).toBe('alpha beta gamma delta');
+    // the hard cut keeps the partial word
+    expect(sanitiseUserText(text, 24).text).toBe('alpha beta gamma delta e');
     expect(sanitiseUserText('abcdefghij', 5).text).toBe('abcde');
   });
 });
