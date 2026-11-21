@@ -99,8 +99,14 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
   const scrollStrip = (direction: -1 | 1) => {
     const strip = stripRef.current;
     if (!strip) return;
+    const card = strip.querySelector('article');
+    const styles = window.getComputedStyle(strip);
+    const gap = Number.parseFloat(styles.columnGap || styles.gap) || 0;
+    const distance = card
+      ? card.getBoundingClientRect().width + gap
+      : strip.clientWidth * 0.85;
     strip.scrollBy({
-      left: direction * strip.clientWidth * 0.85,
+      left: direction * distance,
       behavior: 'smooth',
     });
   };
@@ -139,9 +145,9 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
           {t('around')}
         </h1>
         {authLoading || isLoading || (!data && !error) ? (
-          <div className="mt-6 flex gap-4 overflow-hidden" aria-hidden>
-            <div className="h-64 w-72 shrink-0 bg-accent-3" />
-            <div className="h-64 w-72 shrink-0 bg-accent-3" />
+          <div className="mt-6 flex gap-4 overflow-hidden md:gap-5" aria-hidden>
+            <div className="aspect-[3/4] w-[calc(100%-2.75rem)] shrink-0 bg-accent-3 md:aspect-[4/5] md:w-[min(32rem,calc((100%-1.25rem)/2.15))]" />
+            <div className="hidden aspect-[4/5] w-[min(32rem,calc((100%-1.25rem)/2.15))] shrink-0 bg-accent-3 md:block" />
           </div>
         ) : error ? (
           <div className="mt-6 flex items-center gap-3">
@@ -161,7 +167,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
         ) : (
           <div
             ref={stripRef}
-            className="mt-6 flex snap-x gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="mt-6 flex snap-x gap-4 overflow-x-auto pb-2 [scrollbar-width:none] md:gap-5 [&::-webkit-scrollbar]:hidden"
           >
             {signals.map((signal) => {
               const image = safeImage(signal.leadImage);
@@ -178,30 +184,30 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
               return (
                 <article
                   key={signal.id}
-                  className="flex w-72 shrink-0 snap-start flex-col border border-border bg-background"
+                  className="flex w-[calc(100%-2.75rem)] shrink-0 snap-start flex-col border border-border bg-background md:w-[min(32rem,calc((100%-1.25rem)/2.15))]"
                 >
                   {image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={image}
                       alt=""
-                      className="h-36 w-full object-cover"
+                      className="aspect-[3/2] w-full object-cover"
                     />
                   ) : null}
-                  <div className="flex flex-1 flex-col gap-2 p-4">
+                  <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
                     <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
                       {typeLabel}
                     </p>
                     <h2
-                      className="text-3 text-foreground"
+                      className="text-4 text-foreground sm:text-5"
                       style={{ fontFamily: 'var(--font-family-heading)' }}
                     >
                       {signal.title}
                     </h2>
-                    <p className="line-clamp-3 text-1 text-muted-foreground">
+                    <p className="line-clamp-2 text-2 text-muted-foreground">
                       {plainText(signal.description)}
                     </p>
-                    <div className="mt-auto flex items-center justify-between gap-3 pt-3">
+                    <div className="mt-auto flex items-center gap-3 pt-4">
                       <ActionGate kind="upvote" fullAppPath="" label={null}>
                         <SignalUpvoteButton
                           slug={signal.slug}
