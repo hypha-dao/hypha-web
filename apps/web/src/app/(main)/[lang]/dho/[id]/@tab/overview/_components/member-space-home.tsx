@@ -83,9 +83,9 @@ function signalKind(type: string) {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-/** Two cards, with the next one peeking. Wide enough for the photo on top. */
+/** One card on a phone. Three across once the column is wide, still 3:2. */
 const HOME_CARD_WIDTH =
-  'w-[calc(100%-3.25rem)] md:w-[min(32rem,calc((100%-1.25rem)/2.15))]';
+  'w-[calc(100%-3.25rem)] md:w-[min(22rem,calc((100%-1.25rem)/2.15))] lg:w-[min(20rem,calc((100%-1.5rem)/3.2))]';
 
 function safeImage(url: string | null) {
   if (!url) return null;
@@ -201,6 +201,10 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
               <div className="h-40 bg-accent-3/50" />
             </div>
             <div className={`${HOME_CARD_WIDTH} hidden shrink-0 md:block`}>
+              <div className="aspect-[3/2] bg-accent-3" />
+              <div className="h-40 bg-accent-3/50" />
+            </div>
+            <div className={`${HOME_CARD_WIDTH} hidden shrink-0 lg:block`}>
               <div className="aspect-[3/2] bg-accent-3" />
               <div className="h-40 bg-accent-3/50" />
             </div>
