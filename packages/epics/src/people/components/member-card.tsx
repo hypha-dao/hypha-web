@@ -290,7 +290,7 @@ function stopCardNavigation(event: React.MouseEvent) {
   event.stopPropagation();
 }
 
-function MemberConnectActions({
+export function MemberConnectActions({
   chatLabel,
   callLabel,
   videoLabel,
