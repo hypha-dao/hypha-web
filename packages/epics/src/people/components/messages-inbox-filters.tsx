@@ -6,17 +6,25 @@ import {
   Circle,
   FileText,
   Globe2,
+  Hash,
   LayoutGrid,
   MessageSquare,
   MessagesSquare,
   Radio,
   Scroll,
   Target,
+  User,
+  Users,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 
-import { INBOX_FILTERS, type InboxFilter } from './messages-inbox';
+import {
+  INBOX_FILTERS,
+  MEMBER_INBOX_TABS,
+  type InboxFilter,
+  type MemberInboxTab,
+} from './messages-inbox';
 
 type FilterCounts = Record<InboxFilter, { total: number; unread: number }>;
 
@@ -107,6 +115,80 @@ function FilterRow({
         <span className="mt-1 block text-2 text-muted-foreground">{body}</span>
       </span>
     </button>
+  );
+}
+
+const MEMBER_TAB_ICONS: Record<MemberInboxTab, ElementType> = {
+  all: MessagesSquare,
+  direct: User,
+  groups: Users,
+  channels: Hash,
+};
+
+const MEMBER_TAB_LABEL: Record<MemberInboxTab, string> = {
+  all: 'memberAll',
+  direct: 'memberDirect',
+  groups: 'memberGroups',
+  channels: 'memberChannels',
+};
+
+/**
+ * The same four categories on every width. A phone shows them as one row
+ * above the list, so opening a conversation is a single tap. A wide screen
+ * keeps them beside the list.
+ */
+export function MemberInboxTabs({
+  value,
+  counts,
+  onChange,
+}: {
+  value: MemberInboxTab;
+  counts: Record<MemberInboxTab, { total: number; unread: number }>;
+  onChange: (tab: MemberInboxTab) => void;
+}) {
+  const t = useTranslations('Connections');
+  return (
+    <nav
+      aria-label={t('inbox.filterLabel')}
+      className="grid grid-cols-4 gap-1 rounded-lg bg-background-2 p-1 lg:flex lg:w-full lg:flex-col lg:gap-1 lg:rounded-none lg:bg-transparent lg:p-0"
+    >
+      {MEMBER_INBOX_TABS.map((tab) => {
+        const Icon = MEMBER_TAB_ICONS[tab];
+        const selected = value === tab;
+        const unread = counts[tab]?.unread ?? 0;
+        const label = t(`inbox.${MEMBER_TAB_LABEL[tab]}`);
+        return (
+          <button
+            key={tab}
+            type="button"
+            aria-pressed={selected}
+            data-testid={`member-inbox-tab-${tab}`}
+            onClick={() => onChange(tab)}
+            className={cn(
+              'flex min-w-0 items-center justify-center gap-1.5 rounded-md px-1 py-2 text-2 text-muted-foreground',
+              'lg:justify-start lg:gap-2 lg:rounded-none lg:px-2 lg:py-2',
+              selected &&
+                'bg-background text-foreground shadow-sm lg:bg-accent-2 lg:shadow-[inset_2px_0_0_var(--accent-9)]',
+            )}
+          >
+            <Icon
+              className="hidden size-4 shrink-0 lg:block"
+              strokeWidth={1.5}
+              aria-hidden
+            />
+            <span className="truncate">{label}</span>
+            {unread > 0 ? (
+              <span
+                className="grid h-[18px] min-w-[18px] shrink-0 place-items-center bg-accent-9 px-1 text-[10px] font-medium leading-none text-accent-contrast"
+                aria-label={t('unread', { count: unread > 99 ? 99 : unread })}
+              >
+                {unread > 99 ? '99+' : unread}
+              </span>
+            ) : null}
+          </button>
+        );
+      })}
+    </nav>
   );
 }
 

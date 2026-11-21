@@ -1603,6 +1603,10 @@
       "tagContext": "Contexto do espaço",
       "tagEcosystem": "Canal do ecossistema",
       "tagNetwork": "Canal da rede",
+      "memberAll": "Todas",
+      "memberDirect": "Direto",
+      "memberGroups": "Grupos",
+      "memberChannels": "Canais",
       "filterLabel": "Filtros de mensagens",
       "openContext": "Abrir {name}",
       "empty": "Nada neste filtro ainda."

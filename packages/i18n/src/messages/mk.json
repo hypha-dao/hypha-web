@@ -823,6 +823,10 @@
       "tagContext": "Контекст на просторот",
       "tagEcosystem": "Канал на екосистемот",
       "tagNetwork": "Канал на мрежата",
+      "memberAll": "Сите",
+      "memberDirect": "Директно",
+      "memberGroups": "Групи",
+      "memberChannels": "Канали",
       "filterLabel": "Филтри за пораки",
       "openContext": "Отвори {name}",
       "empty": "Сè уште нема ништо во овој филтер."

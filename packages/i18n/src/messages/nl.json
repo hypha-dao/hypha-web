@@ -823,6 +823,10 @@
       "tagContext": "Space-context",
       "tagEcosystem": "Ecosysteemkanaal",
       "tagNetwork": "Netwerkkanaal",
+      "memberAll": "Alles",
+      "memberDirect": "Direct",
+      "memberGroups": "Groepen",
+      "memberChannels": "Kanalen",
       "filterLabel": "Berichtfilters",
       "openContext": "Open {name}",
       "empty": "Nog niets in dit filter."
