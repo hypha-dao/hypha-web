@@ -146,9 +146,13 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
           {t('around')}
         </h1>
         {authLoading || isLoading || (!data && !error) ? (
-          <div className="mt-6 flex gap-4 overflow-hidden md:gap-5" aria-hidden>
-            <div className="aspect-[3/4] w-[calc(100%-2.75rem)] shrink-0 bg-accent-3 md:aspect-[4/5] md:w-[min(32rem,calc((100%-1.25rem)/2.15))]" />
-            <div className="hidden aspect-[4/5] w-[min(32rem,calc((100%-1.25rem)/2.15))] shrink-0 bg-accent-3 md:block" />
+          <div
+            className="mt-6 flex items-start gap-4 overflow-hidden"
+            aria-hidden
+          >
+            <div className="aspect-[16/9] w-[calc(100%-4.5rem)] shrink-0 bg-accent-3 md:w-[min(18rem,calc((100%-2.5rem)/3.3))]" />
+            <div className="hidden aspect-[16/9] w-[min(18rem,calc((100%-2.5rem)/3.3))] shrink-0 bg-accent-3 md:block" />
+            <div className="hidden aspect-[16/9] w-[min(18rem,calc((100%-2.5rem)/3.3))] shrink-0 bg-accent-3 lg:block" />
           </div>
         ) : error ? (
           <div className="mt-6 flex items-center gap-3">
@@ -168,7 +172,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
         ) : (
           <div
             ref={stripRef}
-            className="mt-6 flex snap-x gap-4 overflow-x-auto pb-2 [scrollbar-width:none] md:gap-5 [&::-webkit-scrollbar]:hidden"
+            className="mt-6 flex snap-x items-start gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {signals.map((signal) => {
               const image = safeImage(signal.leadImage);
@@ -187,22 +191,22 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
               return (
                 <article
                   key={signal.id}
-                  className="flex w-[calc(100%-2.75rem)] shrink-0 snap-start flex-col border border-border bg-background md:w-[min(32rem,calc((100%-1.25rem)/2.15))]"
+                  className="flex w-[calc(100%-4.5rem)] shrink-0 snap-start flex-col border border-border bg-background md:w-[min(18rem,calc((100%-2.5rem)/3.3))]"
                 >
                   {image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={image}
                       alt=""
-                      className="aspect-[3/2] w-full object-cover"
+                      className="aspect-[16/9] w-full object-cover"
                     />
                   ) : null}
-                  <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
+                  <div className="flex flex-col gap-2 p-3">
                     <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
                       {typeLabel}
                     </p>
                     <h2
-                      className="text-4 text-foreground sm:text-5"
+                      className="text-3 text-foreground"
                       style={{ fontFamily: 'var(--font-family-heading)' }}
                     >
                       {signal.title}
@@ -210,7 +214,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                     <p className="line-clamp-2 text-2 text-muted-foreground">
                       {plainText(signal.description)}
                     </p>
-                    <div className="mt-auto flex items-center gap-3 pt-4">
+                    <div className="flex items-center gap-3 pt-2">
                       <ActionGate kind="upvote" fullAppPath="" label={null}>
                         <SignalUpvoteButton
                           slug={signal.slug}
