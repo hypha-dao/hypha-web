@@ -241,7 +241,7 @@ export function SignalFeedRow({
             src={image}
             alt=""
             data-testid="signal-card-image"
-            className="h-20 w-20 shrink-0 object-cover"
+            className="h-24 w-36 shrink-0 self-center object-cover sm:h-32 sm:w-48"
           />
         ) : null}
       </div>
