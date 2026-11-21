@@ -3433,15 +3433,20 @@ export function AiLeftPanel({
     showAiOverlay,
   ]);
   const shouldCloseFromTrigger = isAiOpen || overlayVisible;
+  const showSpaceMark = memberExperience && !shouldCloseFromTrigger;
 
   const triggerButton = (
     <button
       type="button"
       onClick={handleTriggerClick}
-      className={MENU_TRIGGER_CANVAS_CLASS}
+      className={
+        showSpaceMark
+          ? 'box-border flex h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden rounded-full border-0 bg-transparent p-0 text-muted-foreground shadow-none outline-none ring-0'
+          : MENU_TRIGGER_CANVAS_CLASS
+      }
       aria-label={shouldCloseFromTrigger ? t('closePanel') : t('openPanel')}
     >
-      {memberExperience && !shouldCloseFromTrigger ? (
+      {showSpaceMark ? (
         <Suspense fallback={null}>
           <MemberCollapsedSpaceIcon />
         </Suspense>
