@@ -15,6 +15,7 @@ import {
   ActionGate,
   AiLeftPanel,
   SignalUpvoteButton,
+  signalDetailPath,
   signalVotingSpaceId,
   useSignalSpaceMembership,
   useSignalVotingMode,
@@ -172,9 +173,11 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
             {signals.map((signal) => {
               const image = safeImage(signal.leadImage);
               const href = signal.slug
-                ? `/${lang}/dho/${spaceSlug}/coherence?signal=${encodeURIComponent(
+                ? `${signalDetailPath(
+                    lang,
+                    spaceSlug,
                     signal.slug,
-                  )}`
+                  )}?discussion=open`
                 : `/${lang}/dho/${spaceSlug}/coherence`;
               const typeKey = `types.${signal.type.trim()}`;
               const typeLabel =
