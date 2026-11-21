@@ -300,6 +300,64 @@ export function conversationInSpace(
   return space === wanted || ecosystem === wanted;
 }
 
+/** Member space inbox. Same kinds as the full inbox, folded into four tabs. */
+export const MEMBER_INBOX_TABS = [
+  'all',
+  'direct',
+  'groups',
+  'channels',
+] as const;
+
+export type MemberInboxTab = (typeof MEMBER_INBOX_TABS)[number];
+
+/**
+ * A member's space inbox. Channels stay in the space they belong to.
+ * Direct chats and groups are not tagged with a space, so they stay in
+ * the space the member is viewing unless a tag says they belong elsewhere.
+ */
+export function memberConversationInSpace(
+  place: {
+    kind: InboxChannelKind;
+    spaceSlug?: string | null;
+    ecosystemSlug?: string | null;
+  },
+  spaceSlug: string,
+): boolean {
+  if (place.kind === 'dm' || place.kind === 'group') {
+    const tagged = place.spaceSlug?.trim() || place.ecosystemSlug?.trim();
+    if (!tagged) return true;
+    return conversationInSpace(place, spaceSlug);
+  }
+  return conversationInSpace(place, spaceSlug);
+}
+
+export function rowMatchesMemberInboxTab(
+  kind: InboxChannelKind,
+  tab: MemberInboxTab,
+): boolean {
+  if (tab === 'all') return true;
+  if (tab === 'direct') return kind === 'dm';
+  if (tab === 'groups') return kind === 'group';
+  return isInboxChannelKind(kind);
+}
+
+export function memberInboxTabCounts(
+  rows: readonly { kind: InboxChannelKind; unread: number }[],
+): Record<MemberInboxTab, { total: number; unread: number }> {
+  const counts = Object.fromEntries(
+    MEMBER_INBOX_TABS.map((tab) => [tab, { total: 0, unread: 0 }]),
+  ) as Record<MemberInboxTab, { total: number; unread: number }>;
+  for (const row of rows) {
+    const unread = row.unread > 0 ? row.unread : 0;
+    for (const tab of MEMBER_INBOX_TABS) {
+      if (!rowMatchesMemberInboxTab(row.kind, tab)) continue;
+      counts[tab].total += 1;
+      counts[tab].unread += unread;
+    }
+  }
+  return counts;
+}
+
 export function rowMatchesInboxFilter(
   kind: InboxChannelKind,
   filter: InboxFilter,

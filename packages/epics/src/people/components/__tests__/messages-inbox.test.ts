@@ -17,6 +17,9 @@ import {
   isInboxChannelKind,
   resolveInboxPlace,
   conversationInSpace,
+  memberConversationInSpace,
+  memberInboxTabCounts,
+  rowMatchesMemberInboxTab,
   rowMatchesInboxFilter,
   type InboxContext,
 } from '../messages-inbox';
@@ -71,6 +74,72 @@ describe('messages inbox filters', () => {
     expect(rowMatchesInboxFilter('ecosystem', 'ecosystem')).toBe(true);
     expect(rowMatchesInboxFilter('network', 'network')).toBe(true);
     expect(rowMatchesInboxFilter('space', 'all')).toBe(true);
+  });
+
+  it('folds the same kinds into the four member space tabs', () => {
+    expect(rowMatchesMemberInboxTab('dm', 'direct')).toBe(true);
+    expect(rowMatchesMemberInboxTab('group', 'direct')).toBe(false);
+    expect(rowMatchesMemberInboxTab('group', 'groups')).toBe(true);
+    expect(rowMatchesMemberInboxTab('dm', 'groups')).toBe(false);
+    for (const kind of [
+      'space',
+      'space-public',
+      'signal',
+      'quest',
+      'proposal',
+      'context',
+      'ecosystem',
+      'network',
+    ] as const) {
+      expect(rowMatchesMemberInboxTab(kind, 'channels')).toBe(true);
+      expect(rowMatchesMemberInboxTab(kind, 'direct')).toBe(false);
+    }
+    expect(rowMatchesMemberInboxTab('proposal', 'all')).toBe(true);
+    expect(rowMatchesInboxFilter('group', 'direct')).toBe(true);
+
+    const counts = memberInboxTabCounts([
+      { kind: 'dm', unread: 1 },
+      { kind: 'group', unread: 0 },
+      { kind: 'space', unread: 2 },
+      { kind: 'signal', unread: 0 },
+    ]);
+    expect(counts.all).toEqual({ total: 4, unread: 3 });
+    expect(counts.direct).toEqual({ total: 1, unread: 1 });
+    expect(counts.groups).toEqual({ total: 1, unread: 0 });
+    expect(counts.channels).toEqual({ total: 2, unread: 2 });
+  });
+
+  it('keeps a member space inbox inside that space', () => {
+    expect(
+      memberConversationInSpace(
+        { kind: 'dm', spaceSlug: null, ecosystemSlug: null },
+        'rue-verte',
+      ),
+    ).toBe(true);
+    expect(
+      memberConversationInSpace(
+        { kind: 'group', spaceSlug: 'other', ecosystemSlug: null },
+        'rue-verte',
+      ),
+    ).toBe(false);
+    expect(
+      memberConversationInSpace(
+        { kind: 'space', spaceSlug: 'rue-verte', ecosystemSlug: null },
+        'rue-verte',
+      ),
+    ).toBe(true);
+    expect(
+      memberConversationInSpace(
+        { kind: 'network', spaceSlug: null, ecosystemSlug: null },
+        'rue-verte',
+      ),
+    ).toBe(false);
+    expect(
+      memberConversationInSpace(
+        { kind: 'signal', spaceSlug: 'garden', ecosystemSlug: null },
+        'rue-verte',
+      ),
+    ).toBe(false);
   });
 
   it('treats proposal rooms as their own messages channel', () => {

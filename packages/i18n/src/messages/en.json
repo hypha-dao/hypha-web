@@ -222,6 +222,10 @@
       "tagContext": "Space Context",
       "tagEcosystem": "Ecosystem Channel",
       "tagNetwork": "Network Channel",
+      "memberAll": "All",
+      "memberDirect": "Direct",
+      "memberGroups": "Groups",
+      "memberChannels": "Channels",
       "filterLabel": "Message filters",
       "openContext": "Open {name}",
       "empty": "Nothing in this filter yet."

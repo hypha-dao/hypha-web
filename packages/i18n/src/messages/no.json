@@ -822,6 +822,10 @@
       "tagContext": "Områdekontekst",
       "tagEcosystem": "Økosystemkanal",
       "tagNetwork": "Nettverkskanal",
+      "memberAll": "Alle",
+      "memberDirect": "Direkte",
+      "memberGroups": "Grupper",
+      "memberChannels": "Kanaler",
       "filterLabel": "Meldingsfiltre",
       "openContext": "Åpne {name}",
       "empty": "Ingenting i dette filteret ennå."
