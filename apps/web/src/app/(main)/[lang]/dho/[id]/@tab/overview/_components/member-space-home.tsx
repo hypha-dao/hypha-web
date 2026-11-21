@@ -7,8 +7,20 @@ import useSWR from 'swr';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { AiLeftPanel } from '@hypha-platform/epics';
+import {
+  useSpaceBySlug,
+  type CoherenceUpvoteSummary,
+} from '@hypha-platform/core/client';
+import {
+  ActionGate,
+  AiLeftPanel,
+  SignalUpvoteButton,
+  signalVotingSpaceId,
+  useSignalSpaceMembership,
+  useSignalVotingMode,
+} from '@hypha-platform/epics';
 import { SidebarProvider } from '@hypha-platform/ui';
+import { stripDescription } from '@hypha-platform/ui-utils';
 import type { Locale } from '@hypha-platform/i18n';
 
 type HomeSignal = {
@@ -18,11 +30,12 @@ type HomeSignal = {
   slug: string | null;
   type: string;
   leadImage: string | null;
-  upvotes?: { upvoteCount?: number };
+  archived?: boolean;
+  upvotes?: CoherenceUpvoteSummary;
 };
 
 function plainText(value: string) {
-  return value
+  return stripDescription(value)
     .replace(/<[^>]*>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -53,6 +66,13 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const stripRef = useRef<HTMLDivElement>(null);
   const { getAccessToken, isLoading: authLoading } = useAuthentication();
+  const { space } = useSpaceBySlug(spaceSlug);
+  const {
+    votingMode,
+    status: votingModeStatus,
+    retry: retryVotingMode,
+  } = useSignalVotingMode(signalVotingSpaceId(space));
+  const { isNonMember, isMembershipPending } = useSignalSpaceMembership(space);
   const endpoint = authLoading
     ? null
     : `/api/v1/spaces/${encodeURIComponent(
@@ -150,7 +170,6 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                     signal.slug,
                   )}`
                 : `/${lang}/dho/${spaceSlug}/coherence`;
-              const votes = signal.upvotes?.upvoteCount ?? 0;
               const typeKey = `types.${signal.type.trim()}`;
               const typeLabel =
                 signal.type.trim() && signalTypes.has(typeKey as never)
@@ -183,9 +202,21 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                       {plainText(signal.description)}
                     </p>
                     <div className="mt-auto flex items-center justify-between gap-3 pt-3">
-                      <span className="text-1 tabular-nums text-muted-foreground">
-                        {votes}
-                      </span>
+                      <ActionGate kind="upvote" fullAppPath="" label={null}>
+                        <SignalUpvoteButton
+                          slug={signal.slug}
+                          spaceSlug={spaceSlug}
+                          upvotes={signal.upvotes}
+                          votingMode={votingMode}
+                          votingModeStatus={votingModeStatus}
+                          onRetryVotingMode={retryVotingMode}
+                          isNonMember={isNonMember}
+                          isMembershipPending={isMembershipPending}
+                          refresh={() => mutate()}
+                          archived={signal.archived}
+                          summaryState="ready"
+                        />
+                      </ActionGate>
                       <Link
                         href={href}
                         className="inline-flex h-8 items-center gap-1 border border-border px-3 text-1 text-foreground hover:bg-foreground/5"
