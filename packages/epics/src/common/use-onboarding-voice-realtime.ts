@@ -842,8 +842,10 @@ export function useOnboardingVoiceRealtime({
     connectionRef.current = null;
     if (connection) {
       connection.close();
+      // Only the session that opened the mic may release it. A closed menu
+      // copy of this panel must not stop the space assistant on the page.
+      releaseWarmMicStream();
     }
-    releaseWarmMicStream();
     setPhase('idle');
   }, [
     clearConnectRetryTimer,
