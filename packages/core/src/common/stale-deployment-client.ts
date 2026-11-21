@@ -76,7 +76,11 @@ function setUnloadGuard(enabled: boolean) {
   }
 }
 
-/** The leave prompt is on only while the banner shows and work is in progress. */
+/**
+ * The leave prompt is on while the tab is stale (banner state) and work is in
+ * progress. It follows that state, not whether the notice is visible, so it
+ * stays on after the user dismisses the notice.
+ */
 function syncUnloadGuard() {
   setUnloadGuard(
     staleDeployment.getStatus() === 'banner' && workInProgress.isActive(),
@@ -93,8 +97,9 @@ export function refreshNow(): void {
  * Browser wiring, installed once by the notice component:
  *  - direct Server Action calls that fail outside SWR (unhandled rejections);
  *  - user input tracking (passive, never blocks typing);
- *  - the browser's own leave prompt, only while the banner is showing and
- *    work is in progress, so normal navigation and tab closing are untouched.
+ *  - the browser's own leave prompt, only while the tab is stale (banner
+ *    state, even if the notice was dismissed) and work is in progress, so
+ *    normal navigation and tab closing are untouched.
  */
 export function installStaleDeploymentListeners(): () => void {
   const onRejection = (event: PromiseRejectionEvent) => {
