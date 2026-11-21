@@ -1,9 +1,10 @@
 {
   "StaleDeployment": {
-    "reloading": "Er is een nieuwe versie beschikbaar. Pagina wordt herladen…",
-    "title": "Nieuwe versie beschikbaar",
-    "description": "Deze pagina werkt mogelijk niet goed totdat je vernieuwt. Heb je niet-opgeslagen werk, rond het dan eerst af of kopieer het.",
-    "refresh": "Vernieuwen"
+    "reloading": "Pagina wordt bijgewerkt…",
+    "title": "Vernieuw wanneer het uitkomt",
+    "description": "We hebben net wijzigingen aan de pagina aangebracht.",
+    "refresh": "Vernieuwen",
+    "dismiss": "Sluiten"
   },
   "MemberHome": {
     "panelSpaces": "Spaces en mensen",

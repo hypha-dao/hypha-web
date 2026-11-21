@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button, FloatingNotice } from '@hypha-platform/ui';
 import {
@@ -20,6 +20,9 @@ import { isProposalCreateFormPath } from '@hypha-platform/epics';
 export function StaleDeploymentNotice() {
   const t = useTranslations('StaleDeployment');
   const status = useStaleDeploymentStatus();
+  // Dismissing only hides the notice (so it never blocks a submit button); the
+  // leave prompt for unsaved work stays on.
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     const removeProbe = workInProgress.addProbe(() =>
@@ -35,11 +38,18 @@ export function StaleDeploymentNotice() {
   if (status === 'reloading') {
     return <FloatingNotice>{t('reloading')}</FloatingNotice>;
   }
-  if (status === 'banner') {
+  if (status === 'banner' && !dismissed) {
     return (
       <FloatingNotice
+        variant="warning"
         title={t('title')}
-        action={<Button onClick={refreshNow}>{t('refresh')}</Button>}
+        action={
+          <Button size="sm" onClick={refreshNow}>
+            {t('refresh')}
+          </Button>
+        }
+        onDismiss={() => setDismissed(true)}
+        dismissLabel={t('dismiss')}
       >
         {t('description')}
       </FloatingNotice>

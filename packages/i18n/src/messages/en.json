@@ -1,9 +1,10 @@
 {
   "StaleDeployment": {
-    "reloading": "A new version is available. Reloading…",
-    "title": "New version available",
-    "description": "This page may not work correctly until you refresh. If you have unsaved work, finish it or copy it first.",
-    "refresh": "Refresh"
+    "reloading": "Updating the page…",
+    "title": "Refresh when possible",
+    "description": "We just made changes to the page.",
+    "refresh": "Refresh",
+    "dismiss": "Dismiss"
   },
   "Common": {
     "openInFullApp": "Open in the full app",

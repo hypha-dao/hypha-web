@@ -1,9 +1,10 @@
 {
   "StaleDeployment": {
-    "reloading": "En ny versjon er tilgjengelig. Laster inn på nytt…",
-    "title": "Ny versjon tilgjengelig",
-    "description": "Denne siden fungerer kanskje ikke riktig før du oppdaterer. Hvis du har ulagret arbeid, fullfør det eller kopier det først.",
-    "refresh": "Oppdater"
+    "reloading": "Oppdaterer siden…",
+    "title": "Oppdater når det passer",
+    "description": "Vi har nettopp gjort endringer på siden.",
+    "refresh": "Oppdater",
+    "dismiss": "Lukk"
   },
   "MemberHome": {
     "panelSpaces": "Rom og mennesker",
