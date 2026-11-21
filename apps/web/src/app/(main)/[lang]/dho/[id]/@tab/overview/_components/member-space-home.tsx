@@ -48,6 +48,10 @@ function signalKind(type: string) {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+/** Two cards, with the next one peeking. Wide enough for the photo on top. */
+const HOME_CARD_WIDTH =
+  'w-[calc(100%-3.25rem)] md:w-[min(32rem,calc((100%-1.25rem)/2.15))]';
+
 function safeImage(url: string | null) {
   if (!url) return null;
   if (
@@ -115,44 +119,58 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
   return (
     <div className="flex flex-col gap-10 px-4 py-2 sm:px-5">
       <section aria-labelledby="member-space-home-title">
-        <div className="mb-3 flex items-center justify-between gap-4">
-          <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
-            {t('communitySignals')}
-          </p>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              className="grid h-8 w-8 place-items-center text-muted-foreground hover:text-foreground"
-              aria-label={t('previousSignals')}
-              onClick={() => scrollStrip(-1)}
+        <div className="flex items-end justify-between gap-4">
+          <div className="min-w-0">
+            {space?.title ? (
+              <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
+                {space.title}
+              </p>
+            ) : null}
+            <h1
+              id="member-space-home-title"
+              className="text-7 text-foreground sm:text-8"
+              style={{ fontFamily: 'var(--font-family-heading)' }}
             >
-              <ChevronLeft className="h-4 w-4" aria-hidden />
-            </button>
-            <button
-              type="button"
-              className="grid h-8 w-8 place-items-center text-muted-foreground hover:text-foreground"
-              aria-label={t('nextSignals')}
-              onClick={() => scrollStrip(1)}
-            >
-              <ChevronRight className="h-4 w-4" aria-hidden />
-            </button>
+              {t('around')}
+            </h1>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
+              {t('communitySignals')}
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                className="grid h-8 w-8 place-items-center border border-border text-muted-foreground hover:text-foreground"
+                aria-label={t('previousSignals')}
+                onClick={() => scrollStrip(-1)}
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden />
+              </button>
+              <button
+                type="button"
+                className="grid h-8 w-8 place-items-center border border-border text-muted-foreground hover:text-foreground"
+                aria-label={t('nextSignals')}
+                onClick={() => scrollStrip(1)}
+              >
+                <ChevronRight className="h-4 w-4" aria-hidden />
+              </button>
+            </div>
           </div>
         </div>
-        <h1
-          id="member-space-home-title"
-          className="text-7 text-foreground sm:text-8"
-          style={{ fontFamily: 'var(--font-family-heading)' }}
-        >
-          {t('around')}
-        </h1>
         {authLoading || isLoading || (!data && !error) ? (
           <div
-            className="mt-6 flex items-start gap-4 overflow-hidden"
+            className="mt-6 flex items-stretch gap-4 overflow-hidden"
             aria-hidden
           >
-            <div className="aspect-[16/9] w-[calc(100%-4.5rem)] shrink-0 bg-accent-3 md:w-[min(18rem,calc((100%-2.5rem)/3.3))]" />
-            <div className="hidden aspect-[16/9] w-[min(18rem,calc((100%-2.5rem)/3.3))] shrink-0 bg-accent-3 md:block" />
-            <div className="hidden aspect-[16/9] w-[min(18rem,calc((100%-2.5rem)/3.3))] shrink-0 bg-accent-3 lg:block" />
+            <div className={`${HOME_CARD_WIDTH} shrink-0`}>
+              <div className="aspect-[3/2] bg-accent-3" />
+              <div className="h-40 bg-accent-3/50" />
+            </div>
+            <div className={`${HOME_CARD_WIDTH} hidden shrink-0 md:block`}>
+              <div className="aspect-[3/2] bg-accent-3" />
+              <div className="h-40 bg-accent-3/50" />
+            </div>
           </div>
         ) : error ? (
           <div className="mt-6 flex items-center gap-3">
@@ -191,30 +209,32 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
               return (
                 <article
                   key={signal.id}
-                  className="flex w-[calc(100%-4.5rem)] shrink-0 snap-start flex-col border border-border bg-background md:w-[min(18rem,calc((100%-2.5rem)/3.3))]"
+                  className={`flex ${HOME_CARD_WIDTH} shrink-0 snap-start flex-col border border-border bg-background`}
                 >
                   {image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={image}
                       alt=""
-                      className="aspect-[16/9] w-full object-cover"
+                      className="aspect-[3/2] w-full object-cover"
                     />
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-2 p-3">
+                  ) : (
+                    <div className="aspect-[3/2] w-full bg-accent-3" />
+                  )}
+                  <div className="flex flex-1 flex-col gap-2 p-4">
                     <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
                       {typeLabel}
                     </p>
                     <h2
-                      className="text-3 text-foreground"
+                      className="text-5 text-foreground sm:text-6"
                       style={{ fontFamily: 'var(--font-family-heading)' }}
                     >
                       {signal.title}
                     </h2>
-                    <p className="line-clamp-2 text-2 text-muted-foreground">
+                    <p className="line-clamp-3 text-2 text-muted-foreground">
                       {plainText(signal.description)}
                     </p>
-                    <div className="mt-auto flex items-center gap-3 pt-2">
+                    <div className="mt-auto flex items-center gap-3 border-t border-border pt-3">
                       <ActionGate kind="upvote" fullAppPath="" label={null}>
                         <SignalUpvoteButton
                           slug={signal.slug}
@@ -232,7 +252,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                       </ActionGate>
                       <Link
                         href={href}
-                        className="inline-flex h-8 items-center gap-1 border border-border px-3 text-1 text-foreground hover:bg-foreground/5"
+                        className="inline-flex h-7 items-center gap-1 border border-border px-3 text-1 text-foreground hover:bg-foreground/5"
                       >
                         {t('open')}
                         <ChevronRight className="h-3.5 w-3.5" aria-hidden />
