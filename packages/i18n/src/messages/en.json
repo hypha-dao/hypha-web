@@ -129,6 +129,28 @@
     "mobileSpacesEmpty": "You have no spaces yet.",
     "mobileSpacesAll": "All spaces"
   },
+  "MemberMenu": {
+    "you": "You",
+    "community": "Community",
+    "home": "Home",
+    "energy": "Energy",
+    "wallet": "Wallet",
+    "messages": "Messages",
+    "signals": "Signals",
+    "decisions": "Decisions",
+    "treasury": "Treasury",
+    "members": "Members",
+    "menu": "Member menu",
+    "yourSpace": "Your space",
+    "around": "Around the community.",
+    "communitySignals": "Community signals",
+    "askThisSpace": "Ask this space.",
+    "open": "Open",
+    "previousSignals": "Previous signals",
+    "nextSignals": "Next signals",
+    "noSignals": "Nothing new from the neighbourhood yet.",
+    "spaceMessages": "Messages in {space}"
+  },
   "Connections": {
     "titleLineOne": "Stay close,",
     "titleLineTwo": "Share messages",

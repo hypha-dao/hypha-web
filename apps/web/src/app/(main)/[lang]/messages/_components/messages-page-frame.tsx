@@ -5,18 +5,24 @@ import { getTranslations } from 'next-intl/server';
 export async function MessagesPageFrame({
   children,
   heading = 'messages',
+  spaceSlug,
 }: {
   children: ReactNode;
   /** Suggestions uses its own title. The messages screen keeps "Share messages". */
   heading?: 'messages' | 'suggestions' | 'archived';
+  /** Member messages stay inside this space. */
+  spaceSlug?: string;
 }) {
   const t = await getTranslations('Connections');
-  const titleLineTwo =
-    heading === 'suggestions'
-      ? t('reachOut')
-      : heading === 'archived'
-      ? t('tabs.archived')
-      : t('titleLineTwo');
+  const tMember = await getTranslations('MemberMenu');
+  const spaceLabel = spaceSlug?.replace(/-/g, ' ');
+  const titleLineTwo = spaceSlug
+    ? tMember('spaceMessages', { space: spaceLabel ?? spaceSlug })
+    : heading === 'suggestions'
+    ? t('reachOut')
+    : heading === 'archived'
+    ? t('tabs.archived')
+    : t('titleLineTwo');
 
   return (
     <div className="w-full min-w-0 overflow-x-clip">

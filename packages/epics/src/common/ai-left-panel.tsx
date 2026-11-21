@@ -333,6 +333,8 @@ const NAV_CHROME_SURFACE_CLASS = 'bg-background-2 dark:bg-background-5';
 
 type AiLeftPanelProps = {
   enableSpaceMemory?: boolean;
+  /** Member space home: the conversation sits on the page, not in the left rail. */
+  embed?: 'page';
 };
 
 type NavItem = {
@@ -370,7 +372,10 @@ function formatChatStreamErrorMessage(error: unknown): string {
   return rawMessage;
 }
 
-export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
+export function AiLeftPanel({
+  enableSpaceMemory = false,
+  embed,
+}: AiLeftPanelProps) {
   const { isAuthenticated, isLoading, getAccessToken } = useAuthentication();
   const matrix = useMatrix();
   const params = useParams<{ id?: string; lang?: string }>();
@@ -494,6 +499,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     showAiOverlay,
     hideAiOverlay,
   } = useAiPanel();
+  const embedOnPage = embed === 'page';
+  const showingAi = embedOnPage || isAiOpen;
   const [micOn, setMicOn] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
   const [voiceReady, setVoiceReady] = useState(false);
@@ -513,7 +520,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, [voicePrefSlug]);
 
   const conversationOpen =
-    isAiOpen &&
+    showingAi &&
     !blockSpaceAiForActivityAccess &&
     !blockSpaceAiForInteraction &&
     (Boolean(spaceSlug?.trim()) || isMemberAiSurface);
@@ -3396,6 +3403,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   };
   const withDesktopIconRail = (conversation: ReactNode) => {
     if (isOnboardingPath) return conversation;
+    if (embedOnPage) {
+      return (
+        <div className="flex min-h-[28rem] w-full min-w-0 flex-col bg-background">
+          {conversation}
+        </div>
+      );
+    }
     return (
       <div className="flex h-full min-h-0 w-full flex-1">
         <div
@@ -3412,7 +3426,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     );
   };
 
-  if (!isAiOpen) {
+  if (!showingAi) {
     if (overlayVisible) {
       return (
         <>

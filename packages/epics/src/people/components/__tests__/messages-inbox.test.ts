@@ -16,6 +16,7 @@ import {
   inboxKindForRoomType,
   isInboxChannelKind,
   resolveInboxPlace,
+  conversationInSpace,
   rowMatchesInboxFilter,
   type InboxContext,
 } from '../messages-inbox';
@@ -942,5 +943,20 @@ describe('inboxContextHref', () => {
 
   it('leaves direct chats in the inbox', () => {
     expect(inboxContextHref('en', { ...place, kind: 'dm' })).toBeNull();
+  });
+
+  it('keeps a conversation when it belongs to the space', () => {
+    expect(
+      conversationInSpace(
+        { spaceSlug: 'Rue-Verte', ecosystemSlug: null },
+        'rue-verte',
+      ),
+    ).toBe(true);
+    expect(
+      conversationInSpace(
+        { spaceSlug: null, ecosystemSlug: 'canal' },
+        'rue-verte',
+      ),
+    ).toBe(false);
   });
 });

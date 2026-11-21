@@ -1510,6 +1510,28 @@
     "mobileSpacesEmpty": "Você ainda não tem espaços.",
     "mobileSpacesAll": "Todos os espaços"
   },
+  "MemberMenu": {
+    "you": "Você",
+    "community": "Comunidade",
+    "home": "Início",
+    "energy": "Energia",
+    "wallet": "Carteira",
+    "messages": "Mensagens",
+    "signals": "Sinais",
+    "decisions": "Decisões",
+    "treasury": "Tesouraria",
+    "members": "Membros",
+    "menu": "Menu do membro",
+    "yourSpace": "O seu espaço",
+    "around": "Na comunidade.",
+    "communitySignals": "Sinais da comunidade",
+    "askThisSpace": "Perguntar a este espaço.",
+    "open": "Abrir",
+    "previousSignals": "Sinais anteriores",
+    "nextSignals": "Próximos sinais",
+    "noSignals": "Ainda não há novidades da vizinhança.",
+    "spaceMessages": "Mensagens em {space}"
+  },
   "Connections": {
     "titleLineOne": "Fique perto,",
     "titleLineTwo": "Partilhe mensagens",

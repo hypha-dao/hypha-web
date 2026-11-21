@@ -34,6 +34,8 @@ export * from './member-spaces-entry';
 export * from './member-home-attention';
 export * from './member-home-notifications';
 export * from './mobile-tab-bar';
+export * from './member-menu';
+export * from './member-space-chrome';
 export * from './spaces-rail-control';
 export * from './my-connections';
 export * from './account-required-gate';

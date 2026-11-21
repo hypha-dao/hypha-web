@@ -19,6 +19,7 @@ import {
   PanelProviders,
   PanelWrapLayout,
   HumanSidebarTrigger,
+  MemberSpaceFrame,
   MobileContentFrame,
   MobileTabBar,
   RecentSpaceHistoryTracker,
@@ -399,7 +400,11 @@ export default async function RootLayout({
                                   <MobileContentFrame>
                                     <div className="flex h-full justify-normal pt-4 md:pt-5">
                                       <div className="w-full h-full">
-                                        {children}
+                                        <Suspense fallback={children}>
+                                          <MemberSpaceFrame>
+                                            {children}
+                                          </MemberSpaceFrame>
+                                        </Suspense>
                                       </div>
                                     </div>
                                   </MobileContentFrame>

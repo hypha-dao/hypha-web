@@ -730,6 +730,28 @@
     "mobileSpacesEmpty": "Сè уште немаш простори.",
     "mobileSpacesAll": "Сите простори"
   },
+  "MemberMenu": {
+    "you": "Ти",
+    "community": "Заедница",
+    "home": "Дома",
+    "energy": "Енергија",
+    "wallet": "Паричник",
+    "messages": "Пораки",
+    "signals": "Сигнали",
+    "decisions": "Одлуки",
+    "treasury": "Каса",
+    "members": "Членови",
+    "menu": "Мени за член",
+    "yourSpace": "Твојот простор",
+    "around": "Околу заедницата.",
+    "communitySignals": "Сигнали од заедницата",
+    "askThisSpace": "Прашај го овој простор.",
+    "open": "Отвори",
+    "previousSignals": "Претходни сигнали",
+    "nextSignals": "Следни сигнали",
+    "noSignals": "Сè уште нема ништо ново од соседството.",
+    "spaceMessages": "Пораки во {space}"
+  },
   "Connections": {
     "titleLineOne": "Остани блиску,",
     "titleLineTwo": "Сподели пораки",

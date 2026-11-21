@@ -25,7 +25,7 @@ import {
   useIsMobile,
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
-import { useJwt } from '@hypha-platform/core/client';
+import { useJwt, useMe } from '@hypha-platform/core/client';
 import {
   AiPanelProvider,
   HumanChatPanelProvider,
@@ -33,6 +33,7 @@ import {
   useHumanChatPanel,
 } from './human-chat-panel-context';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
+import { isMemberOrientation } from '../people/components/member-menu';
 import { isInteractiveCreatePath } from './get-path-function';
 import {
   isNetworkAiPath,
@@ -176,7 +177,9 @@ export function AiSidebarTrigger() {
   const isNetworkAi = isNetworkAiPath(pathname);
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
+  const { person } = useMe();
 
+  if (isMemberOrientation(person?.primaryOrientation)) return null;
   if (!isSpace && !isNetworkAi) {
     return null;
   }
@@ -221,7 +224,9 @@ export function AiPanelTrigger() {
   const isNetworkAi = isNetworkAiPath(pathname);
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
+  const { person } = useMe();
 
+  if (isMemberOrientation(person?.primaryOrientation)) return null;
   if (!isSpace && !isNetworkAi) {
     return null;
   }
@@ -455,8 +460,11 @@ export function PanelWrapLayout({
   const isSpace = useIsSpaceContext();
   const isNetwork = useIsNetworkContext();
   const isOnboarding = isInteractiveCreatePath(pathname);
-  /** Space ecosystem AI, or shared Network AI (home / messages / wallet / my-spaces / network). */
-  const showAiPanel = isSpace || isNetworkAiPath(pathname);
+  const { person } = useMe();
+  const memberExperience = isMemberOrientation(person?.primaryOrientation);
+  /** Space ecosystem AI, or shared Network AI (home / messages / wallet / my-spaces / network). Members keep the assistant on the space home instead of this rail. */
+  const showAiPanel =
+    !memberExperience && (isSpace || isNetworkAiPath(pathname));
   const effectiveLeft = showAiPanel ? left : undefined;
   // The chat icon is on home, connections, my spaces, my wallet, a space, and the network.
   const showHumanChat = showsHumanChatIcon(pathname, isSpace, isNetwork);

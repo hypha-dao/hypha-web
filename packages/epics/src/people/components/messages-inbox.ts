@@ -288,6 +288,18 @@ export function channelIsRelevantToMember(
   return false;
 }
 
+/** A conversation belongs to this space when the room is tagged with it. */
+export function conversationInSpace(
+  place: { spaceSlug?: string | null; ecosystemSlug?: string | null },
+  spaceSlug: string,
+): boolean {
+  const wanted = spaceSlug.trim().toLowerCase();
+  if (!wanted) return false;
+  const space = place.spaceSlug?.trim().toLowerCase() ?? '';
+  const ecosystem = place.ecosystemSlug?.trim().toLowerCase() ?? '';
+  return space === wanted || ecosystem === wanted;
+}
+
 export function rowMatchesInboxFilter(
   kind: InboxChannelKind,
   filter: InboxFilter,

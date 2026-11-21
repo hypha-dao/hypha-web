@@ -729,6 +729,28 @@
     "mobileSpacesEmpty": "Du har ingen spaces ennå.",
     "mobileSpacesAll": "Alle spaces"
   },
+  "MemberMenu": {
+    "you": "Du",
+    "community": "Fellesskap",
+    "home": "Hjem",
+    "energy": "Energi",
+    "wallet": "Lommebok",
+    "messages": "Meldinger",
+    "signals": "Signaler",
+    "decisions": "Beslutninger",
+    "treasury": "Kasse",
+    "members": "Medlemmer",
+    "menu": "Medlemsmeny",
+    "yourSpace": "Ditt område",
+    "around": "Rundt i fellesskapet.",
+    "communitySignals": "Signaler fra fellesskapet",
+    "askThisSpace": "Spør dette området.",
+    "open": "Åpne",
+    "previousSignals": "Forrige signaler",
+    "nextSignals": "Neste signaler",
+    "noSignals": "Ingenting nytt fra nabolaget ennå.",
+    "spaceMessages": "Meldinger i {space}"
+  },
   "Connections": {
     "titleLineOne": "Hold deg nær,",
     "titleLineTwo": "Del meldinger",
