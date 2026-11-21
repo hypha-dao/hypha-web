@@ -53,16 +53,18 @@ const StackVoteArrow = React.forwardRef<HTMLButtonElement, VoteArrowProps>(
         aria-expanded={allocates ? expanded : undefined}
         disabled={disabled}
         className={cn(
-          'grid h-5 w-5 place-items-center rounded-none bg-transparent p-0',
-          active ? 'text-foreground' : 'text-muted-foreground',
-          'hover:text-foreground disabled:opacity-40',
+          'flex h-7 w-full items-center justify-center rounded-none p-0',
+          active
+            ? 'bg-foreground text-background'
+            : 'bg-transparent text-foreground hover:bg-foreground/5',
+          'disabled:opacity-40',
         )}
         onClick={(event) => {
           event.stopPropagation();
           onClick();
         }}
       >
-        <Icon className="size-3.5" strokeWidth={1.75} aria-hidden />
+        <Icon className="size-4" strokeWidth={2} aria-hidden />
       </button>
     );
   },
@@ -184,10 +186,10 @@ export function SignalUpvoteCellChrome({
     <button
       type="button"
       className={cn(
-        'rounded-none bg-transparent font-medium tabular-nums leading-none',
+        'rounded-none bg-transparent tabular-nums leading-none',
         layout === 'stack'
-          ? 'px-0.5 py-0.5 text-2 text-foreground'
-          : 'min-w-4 px-1.5 text-1',
+          ? 'w-full px-2 py-1.5 text-center text-3 font-semibold text-foreground'
+          : 'min-w-4 px-1.5 text-1 font-medium',
         layout === 'stack'
           ? null
           : selected
@@ -234,7 +236,7 @@ export function SignalUpvoteCellChrome({
       className={cn(
         'inline-flex rounded-none border bg-transparent',
         layout === 'stack'
-          ? 'min-w-[3.25rem] flex-col items-center border-border px-2 py-1'
+          ? 'min-w-[4.75rem] flex-col items-stretch overflow-hidden border-border bg-background p-0'
           : 'h-7 items-center px-0.5',
         layout === 'stack'
           ? null
