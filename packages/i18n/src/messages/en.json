@@ -149,6 +149,8 @@
     "previousSignals": "Previous signals",
     "nextSignals": "Next signals",
     "noSignals": "Nothing new from the neighbourhood yet.",
+    "signalsFailed": "Signals didn't load.",
+    "retry": "Try again",
     "spaceMessages": "Messages in {space}"
   },
   "Connections": {

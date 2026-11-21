@@ -1530,6 +1530,8 @@
     "previousSignals": "Sinais anteriores",
     "nextSignals": "Próximos sinais",
     "noSignals": "Ainda não há novidades da vizinhança.",
+    "signalsFailed": "Não foi possível carregar os sinais.",
+    "retry": "Tentar novamente",
     "spaceMessages": "Mensagens em {space}"
   },
   "Connections": {

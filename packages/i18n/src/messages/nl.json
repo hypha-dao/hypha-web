@@ -750,6 +750,8 @@
     "previousSignals": "Vorige signalen",
     "nextSignals": "Volgende signalen",
     "noSignals": "Nog niets nieuws uit de buurt.",
+    "signalsFailed": "Signalen konden niet worden geladen.",
+    "retry": "Opnieuw proberen",
     "spaceMessages": "Berichten in {space}"
   },
   "Connections": {

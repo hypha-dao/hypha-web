@@ -750,6 +750,8 @@
     "previousSignals": "Signaux précédents",
     "nextSignals": "Signaux suivants",
     "noSignals": "Rien de nouveau dans le quartier pour le moment.",
+    "signalsFailed": "Les signaux n'ont pas pu être chargés.",
+    "retry": "Réessayer",
     "spaceMessages": "Messages dans {space}"
   },
   "Connections": {

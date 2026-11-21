@@ -433,9 +433,11 @@ export default async function RootLayout({
                                   />
                                 </div>
                               </Suspense>
-                              <MobileTabBar
-                                spaceMemoryEnabled={spaceMemoryEnabled}
-                              />
+                              <Suspense fallback={null}>
+                                <MobileTabBar
+                                  spaceMemoryEnabled={spaceMemoryEnabled}
+                                />
+                              </Suspense>
                             </PanelWrapLayout>
                             <Suspense fallback={null}>
                               <NotificationCentreDialogHost />

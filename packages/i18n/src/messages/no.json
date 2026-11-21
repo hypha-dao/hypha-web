@@ -749,6 +749,8 @@
     "previousSignals": "Forrige signaler",
     "nextSignals": "Neste signaler",
     "noSignals": "Ingenting nytt fra nabolaget ennå.",
+    "signalsFailed": "Signalene ble ikke lastet.",
+    "retry": "Prøv igjen",
     "spaceMessages": "Meldinger i {space}"
   },
   "Connections": {

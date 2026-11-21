@@ -49,16 +49,19 @@ export function memberMenuHref(
   spaceSlug: string,
   key: MemberMenuKey,
 ): string {
-  const space = `/${lang}/dho/${spaceSlug}`;
+  if (key === 'wallet') return `/${lang}/my-wallet`;
+  const slug = spaceSlug.trim();
+  if (!slug) {
+    return key === 'messages' ? `/${lang}/messages` : '';
+  }
+  const space = `/${lang}/dho/${slug}`;
   switch (key) {
     case 'home':
       return `${space}/overview?board=space`;
     case 'energy':
       return `${space}/energy`;
-    case 'wallet':
-      return `/${lang}/my-wallet`;
     case 'messages':
-      return `/${lang}/messages?space=${encodeURIComponent(spaceSlug)}`;
+      return `/${lang}/messages?space=${encodeURIComponent(slug)}`;
     case 'signals':
       return `${space}/coherence`;
     case 'decisions':
@@ -71,8 +74,9 @@ export function memberMenuHref(
 }
 
 export function activeMemberMenuKey(pathname: string): MemberMenuKey | null {
-  if (/\/my-wallet(?:\/|$)/.test(pathname)) return 'wallet';
-  if (/\/(?:messages|connections)(?:\/|$)/.test(pathname)) return 'messages';
+  if (/^\/[^/]+\/my-wallet(?:\/|$)/.test(pathname)) return 'wallet';
+  if (/^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(pathname))
+    return 'messages';
   if (!/\/dho\/[^/]+/.test(pathname)) return null;
   switch (getActiveTabFromPath(pathname)) {
     case 'overview':
@@ -110,9 +114,7 @@ export function buildMemberMenu(input: {
   return keys.map((key) => ({
     key,
     group: YOU_KEYS.includes(key) ? 'you' : 'community',
-    href: input.spaceSlug
-      ? memberMenuHref(input.lang, input.spaceSlug, key)
-      : '',
+    href: memberMenuHref(input.lang, input.spaceSlug, key),
     active: active === key,
   }));
 }
@@ -128,13 +130,19 @@ export function memberMenuGroup(
  * The space in the URL wins. Otherwise the most recently opened space the
  * member belongs to, then the first membership.
  */
+const QUERY_SPACE_SLUG = /^[a-z0-9_-]{1,80}$/i;
+
 export function resolveMemberSpaceSlug(input: {
   pathSlug: string | null;
+  /** `?space=` on Messages. Wins over recent history, loses to a `/dho/` path. */
+  querySlug?: string | null;
   memberSlugs: readonly string[];
   recentSlugs: readonly string[];
 }): string | null {
   const pathSlug = input.pathSlug?.trim() || null;
   if (pathSlug) return pathSlug;
+  const querySlug = input.querySlug?.trim() || null;
+  if (querySlug && QUERY_SPACE_SLUG.test(querySlug)) return querySlug;
   const member = new Set(input.memberSlugs);
   for (const slug of input.recentSlugs) {
     if (member.has(slug)) return slug;
@@ -155,9 +163,9 @@ export function memberPersonalRedirect(input: {
 }): string | null {
   const slug = input.spaceSlug.trim();
   if (!slug) return null;
-  if (/\/my-wallet(?:\/|$)/.test(input.pathname)) return null;
+  if (/^\/[^/]+\/my-wallet(?:\/|$)/.test(input.pathname)) return null;
   if (/\/dho\/[^/]+/.test(input.pathname)) return null;
-  if (/\/(?:messages|connections)(?:\/|$)/.test(input.pathname)) {
+  if (/^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(input.pathname)) {
     const params = new URLSearchParams(
       input.search.startsWith('?') ? input.search.slice(1) : input.search,
     );

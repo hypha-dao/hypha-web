@@ -60,7 +60,12 @@ const SUB_NAV_PX = 52;
 
 export function useMemberSpace() {
   const pathname = usePathname() ?? '';
-  const pathSlug = getDhoSpaceSlugFromPathname(pathname);
+  const searchParams = useSearchParams();
+  const pathSlug = getDhoSpaceSlugFromPathname(pathname) ?? null;
+  const onMessages = /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(
+    pathname,
+  );
+  const querySlug = onMessages ? searchParams.get('space') : null;
   const named = useMemberNamedSpaces();
   const [recent, setRecent] = useState<string[]>(() => readRecentSpaceSlugs());
 
@@ -70,10 +75,11 @@ export function useMemberSpace() {
     () =>
       resolveMemberSpaceSlug({
         pathSlug,
+        querySlug,
         memberSlugs: named.map((space) => space.slug),
         recentSlugs: recent,
       }),
-    [named, pathSlug, recent],
+    [named, pathSlug, querySlug, recent],
   );
   const namedSpace = named.find((space) => space.slug === slug) ?? null;
   const { space } = useSpaceBySlug(namedSpace || !slug ? '' : slug);

@@ -61,6 +61,18 @@ describe('buildMemberMenu', () => {
     );
   });
 
+  it('keeps wallet and messages when the member has no space yet', () => {
+    const items = buildMemberMenu({ ...base, spaceSlug: '' });
+    expect(items.find((item) => item.key === 'wallet')?.href).toBe(
+      '/en/my-wallet',
+    );
+    expect(items.find((item) => item.key === 'messages')?.href).toBe(
+      '/en/messages',
+    );
+    expect(items.find((item) => item.key === 'home')?.href).toBe('');
+    expect(items.find((item) => item.key === 'signals')?.href).toBe('');
+  });
+
   it('marks the screen that is open', () => {
     const items = buildMemberMenu({
       ...base,
@@ -69,6 +81,10 @@ describe('buildMemberMenu', () => {
     expect(items.find((item) => item.active)?.key).toBe('treasury');
     expect(activeMemberMenuKey('/en/my-wallet')).toBe('wallet');
     expect(activeMemberMenuKey('/en/messages')).toBe('messages');
+    expect(activeMemberMenuKey('/en/dho/messages/agreements')).toBe(
+      'decisions',
+    );
+    expect(activeMemberMenuKey('/en/dho/my-wallet/treasury')).toBe('treasury');
     expect(isCommunityMenuKey('signals')).toBe(true);
     expect(isCommunityMenuKey('home')).toBe(false);
   });
@@ -95,6 +111,22 @@ describe('resolveMemberSpaceSlug', () => {
         pathSlug: null,
         memberSlugs: ['rue-verte'],
         recentSlugs: [],
+      }),
+    ).toBe('rue-verte');
+    expect(
+      resolveMemberSpaceSlug({
+        pathSlug: null,
+        querySlug: 'canal',
+        memberSlugs: ['rue-verte', 'canal'],
+        recentSlugs: ['rue-verte'],
+      }),
+    ).toBe('canal');
+    expect(
+      resolveMemberSpaceSlug({
+        pathSlug: 'rue-verte',
+        querySlug: 'canal',
+        memberSlugs: ['rue-verte', 'canal'],
+        recentSlugs: ['canal'],
       }),
     ).toBe('rue-verte');
   });
