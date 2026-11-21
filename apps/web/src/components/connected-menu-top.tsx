@@ -12,11 +12,12 @@ import {
   toNextImageOptimizerSrc,
   useAiPanel,
   AiPanelTrigger,
+  isMemberOrientation,
   SpacesRailTopToggle,
   useSpacesRailControl,
 } from '@hypha-platform/epics';
 import useSWR from 'swr';
-import { Space } from '@hypha-platform/core/client';
+import { Space, useMe } from '@hypha-platform/core/client';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
@@ -63,6 +64,9 @@ export function ConnectedMenuTop({
   const { resolvedTheme } = useTheme();
   const params = useParams<{ lang?: string }>();
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
+  const { person, isLoading: personLoading } = useMe();
+  const hideHyphaMark =
+    !personLoading && isMemberOrientation(person?.primaryOrientation);
   const activeSpaceSlug = useMemo(
     () => getDhoSpaceSlugFromPathname(pathname),
     [pathname],
@@ -205,8 +209,14 @@ export function ConnectedMenuTop({
 
   return (
     <MenuTop
-      logoHref={useReplacementLogoNode ? undefined : logoHref}
-      logoNode={useReplacementLogoNode ? logoNode : undefined}
+      logoHref={hideHyphaMark || useReplacementLogoNode ? undefined : logoHref}
+      logoNode={
+        hideHyphaMark
+          ? undefined
+          : useReplacementLogoNode
+          ? logoNode
+          : undefined
+      }
       hrefTarget={hrefTarget}
       openMenuLabel={openMenuLabel}
       closeMenuLabel={closeMenuLabel}
