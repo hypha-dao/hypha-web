@@ -196,6 +196,7 @@ export function SignalFeedRow({
               archived={signal.archived}
               sort={sort}
               summaryState={summaryState}
+              layout="stack"
               className="relative z-10"
             />
           </ActionGate>

@@ -118,6 +118,8 @@ type SignalUpvoteButtonProps = {
    */
   summaryState?: SignalUpvoteSummaryState;
   className?: string;
+  /** Members stack up, the count, and down. Everyone else keeps the row. */
+  layout?: 'row' | 'stack';
 };
 
 /**
@@ -142,6 +144,7 @@ export function SignalUpvoteButton({
   sort = 'top-voters',
   summaryState = 'ready',
   className,
+  layout = 'row',
 }: SignalUpvoteButtonProps) {
   const t = useTranslations('SignalCard');
   const locale = useLocale();
@@ -369,6 +372,7 @@ export function SignalUpvoteButton({
       onKeyDown={stopPropagation}
     >
       <SignalUpvoteCellChrome
+        layout={layout}
         figure={figureLabel}
         exactLabel={exactLabel}
         pressed={hasVoted}
