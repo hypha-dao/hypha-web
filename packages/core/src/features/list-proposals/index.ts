@@ -35,6 +35,8 @@ export type ListProposalsInput = {
 export type ProposalListItem = {
   slug: string;
   title: string;
+  /** Markdown as the author wrote it, or `null`. Cut and sanitised by the presentation. */
+  description: string | null;
   /** The stored state of the document. */
   kind: 'proposal' | 'agreement';
   /**
@@ -150,6 +152,7 @@ export async function listProposals(
       const item: ProposalListItem = {
         slug: doc.slug ?? '',
         title: doc.title,
+        description: doc.description ? doc.description : null,
         kind: doc.state === 'agreement' ? 'agreement' : 'proposal',
         label: doc.label ? doc.label : null,
         status: outcomes

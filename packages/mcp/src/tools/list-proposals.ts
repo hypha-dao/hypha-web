@@ -9,6 +9,8 @@ import { failureText, runTool } from './run-tool';
 const P = TOOLS.hypha_list_proposals.params;
 const MAX_PAGE_SIZE = 50;
 const DEFAULT_PAGE_SIZE = 20;
+/** Full descriptions are long, so a page holds at most this many items. */
+const FULL_DESCRIPTION_MAX_PAGE_SIZE = 10;
 
 export const listProposalsInput = z.object({
   spaceSlug: z
@@ -19,6 +21,10 @@ export const listProposalsInput = z.object({
     .describe(P.spaceSlug),
   state: z.enum(['proposal', 'agreement', 'both']).optional().describe(P.state),
   query: z.string().trim().min(1).max(200).optional().describe(P.query),
+  description: z
+    .enum(['none', 'excerpt', 'full'])
+    .optional()
+    .describe(P.description),
   includeTally: z.boolean().optional().describe(P.includeTally),
   order: z
     .array(
@@ -69,7 +75,13 @@ export function registerListProposals(server: McpServer, deps: McpDeps): void {
             outcome: 'bad_input',
           };
         }
-        const pageSize = args.pageSize ?? DEFAULT_PAGE_SIZE;
+        const description = args.description ?? 'excerpt';
+        const pageSize = Math.min(
+          args.pageSize ?? DEFAULT_PAGE_SIZE,
+          description === 'full'
+            ? FULL_DESCRIPTION_MAX_PAGE_SIZE
+            : MAX_PAGE_SIZE,
+        );
 
         const r = await deps.features.listProposals(
           {
@@ -89,6 +101,7 @@ export function registerListProposals(server: McpServer, deps: McpDeps): void {
         const items = data.items.map((item) =>
           presentProposal(item, {
             proposalUrl: (slug) => deps.proposalUrl(args.spaceSlug, slug),
+            description,
           }),
         );
         const hasMore = offset + pageSize < data.total;

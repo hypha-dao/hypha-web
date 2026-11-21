@@ -3,6 +3,10 @@
 Every change to `index.ts` in this folder needs a `DESCRIPTIONS_VERSION` bump, a snapshot
 update and a line here (K31).
 
+## 1.2.0
+
+- `hypha_list_proposals`: new `description` input (`none`, `excerpt` by default, `full`); excerpt is about 500 characters, full is up to 10,000, both flagged in `truncated`; full lowers the page size to 10. The tool text states the default and when to switch.
+
 ## 1.1.0
 
 - Added `hypha_get_space`, `hypha_list_proposals` and `hypha_get_my_vote`; tool order is now list spaces, get space, list proposals, get my membership, get my vote.
