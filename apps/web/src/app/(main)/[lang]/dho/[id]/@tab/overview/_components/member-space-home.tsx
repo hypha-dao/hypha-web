@@ -228,7 +228,6 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                           refresh={() => mutate()}
                           archived={signal.archived}
                           summaryState="ready"
-                          layout="stack"
                         />
                       </ActionGate>
                       <Link
