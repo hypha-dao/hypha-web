@@ -172,7 +172,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
         ) : (
           <div
             ref={stripRef}
-            className="mt-6 flex snap-x items-start gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="mt-6 flex snap-x items-stretch gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {signals.map((signal) => {
               const image = safeImage(signal.leadImage);
@@ -201,7 +201,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                       className="aspect-[16/9] w-full object-cover"
                     />
                   ) : null}
-                  <div className="flex flex-col gap-2 p-3">
+                  <div className="flex flex-1 flex-col gap-2 p-3">
                     <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
                       {typeLabel}
                     </p>
@@ -214,7 +214,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                     <p className="line-clamp-2 text-2 text-muted-foreground">
                       {plainText(signal.description)}
                     </p>
-                    <div className="flex items-center gap-3 pt-2">
+                    <div className="mt-auto flex items-center gap-3 pt-2">
                       <ActionGate kind="upvote" fullAppPath="" label={null}>
                         <SignalUpvoteButton
                           slug={signal.slug}
