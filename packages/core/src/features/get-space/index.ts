@@ -13,7 +13,7 @@ import { failure, type Failure } from '../../access/failure';
 import { decideSpaceAccess, filterSpacesForCaller } from '../../access/policy';
 import {
   findSpaceById,
-  findSpaceBySlug,
+  findSpaceWithSubspacesBySlug,
   findSpaceHostFieldsBySlug,
 } from '../../space/server/queries';
 import type { Space } from '../../space/types';
@@ -107,7 +107,7 @@ export async function getSpace(
         : failure('not_found', 'Space not found');
     }
 
-    const space = await findSpaceBySlug({ slug }, { db });
+    const space = await findSpaceWithSubspacesBySlug({ slug }, { db });
     if (!space) return failure('not_found', 'Space not found');
 
     const id = typeof space.web3SpaceId === 'number' ? space.web3SpaceId : null;

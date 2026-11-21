@@ -429,3 +429,23 @@ export const findSpaceByAddresses = async (
     },
   };
 };
+
+/**
+ * A space and its direct sub-spaces, without the member rows and without the documents that
+ * `findSpaceBySlug` loads. For readers that expose neither.
+ */
+export const findSpaceWithSubspacesBySlug = async (
+  { slug }: FindSpaceBySlugInput,
+  { db }: DbConfig,
+): Promise<(Space & { subspaces: Space[] }) | null> => {
+  const response = await db.query.spaces.findFirst({
+    where: (spaces, { eq }) => eq(spaces.slug, slug),
+    with: { subspaces: true },
+  });
+  if (!response) return null;
+  const { subspaces, ...spaceRow } = response;
+  return {
+    ...mapDbSpaceToSpace(spaceRow),
+    subspaces: (subspaces ?? []).map(mapDbSpaceToSpace),
+  } as Space & { subspaces: Space[] };
+};

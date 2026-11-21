@@ -74,7 +74,7 @@ vi.mock('../../space/server/queries', () => ({
   findSpaceHostFieldsBySlug: vi.fn(
     async ({ slug }: { slug: string }) => hostFields.bySlug.get(slug) ?? null,
   ),
-  findSpaceBySlug: vi.fn(
+  findSpaceWithSubspacesBySlug: vi.fn(
     async ({ slug }: { slug: string }) => hostFields.full.get(slug) ?? null,
   ),
   findSpaceById: vi.fn(
