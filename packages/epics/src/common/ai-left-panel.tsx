@@ -105,7 +105,6 @@ import {
   type HomeView,
 } from '../people/components/member-home-view';
 import { MobileSpacesSubnav } from '../people/components/mobile-spaces-subnav';
-import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
 import { useMemberNamedSpaces } from '../network-exchange/use-member-named-spaces';
 import {
