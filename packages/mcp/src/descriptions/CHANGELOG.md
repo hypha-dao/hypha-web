@@ -7,7 +7,7 @@ update and a line here (K31).
 
 - Added `hypha_get_space`, `hypha_list_proposals` and `hypha_get_my_vote`; tool order is now list spaces, get space, list proposals, get my membership, get my vote.
 - `hypha_list_proposals` items carry an additive `label`; the description explains that a `Quest` label marks an agreement that proposes a quest, a commitment someone is accountable for.
-- The tally text says quorum `reached` is false when no voting power was counted at the snapshot (today's behaviour, to be aligned with the contract after a decision).
+- The tally text says that when no voting power was counted at the snapshot, quorum and unity count as reached, as the contract resolves it (decided: follow the contract).
 - Server instructions: proposals and agreements are identified by slug too, and carry a `url`.
 - Every tool description now states it is read-only.
 - Tool error text for not found now says "Space or proposal".

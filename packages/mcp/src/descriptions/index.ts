@@ -94,7 +94,7 @@ export const TOOLS = {
       query:
         'Keyword to search in titles and descriptions. Omit to list everything.',
       includeTally:
-        'Add the vote tally per item: votes, quorum and unity progress, the voting window. Costs one extra chain read per page. Quorum `reached` is false when no voting power was counted at the snapshot. Default false.',
+        'Add the vote tally per item: votes, quorum and unity progress, the voting window. Costs one extra chain read per page. When no voting power was counted at the snapshot, quorum and unity count as reached, as the contract resolves it. Default false.',
       order:
         'Sort order. Only `createdAt` is supported. Default newest first (descending).',
       cursor: 'Paging cursor: the `nextCursor` of the previous result.',

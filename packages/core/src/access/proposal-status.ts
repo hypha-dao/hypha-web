@@ -110,8 +110,14 @@ export function buildProposalTally(
   let unityReached: boolean | null = null;
   if (space) {
     quorumRequiredVotes = (space.quorum * snapshot + 99n) / 100n;
-    quorumReached = snapshot > 0n && total >= quorumRequiredVotes;
-    unityReached = total > 0n && core.yesVotes * 100n >= space.unity * total;
+    // With no voting power at the snapshot the contract takes its "all possible votes cast"
+    // branch (checkAndExecuteProposal: totalVotesCast >= snapshot) and resolves on unity alone,
+    // where 0 >= 0 holds. Follow it, so the tally agrees with the status the chain produces.
+    const noPowerAtSnapshot = snapshot === 0n;
+    quorumReached = noPowerAtSnapshot || total >= quorumRequiredVotes;
+    unityReached =
+      (noPowerAtSnapshot || total > 0n) &&
+      core.yesVotes * 100n >= space.unity * total;
   }
 
   return {
