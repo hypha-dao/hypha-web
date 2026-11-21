@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsUpDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
@@ -14,13 +14,19 @@ import {
 import {
   ActionGate,
   AiLeftPanel,
+  MySpacesSwitcherMenu,
   SignalUpvoteButton,
   signalDetailPath,
   signalVotingSpaceId,
   useSignalSpaceMembership,
   useSignalVotingMode,
 } from '@hypha-platform/epics';
-import { SidebarProvider } from '@hypha-platform/ui';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  SidebarProvider,
+} from '@hypha-platform/ui';
 import { stripDescription } from '@hypha-platform/ui-utils';
 import type { Locale } from '@hypha-platform/i18n';
 
@@ -34,6 +40,35 @@ type HomeSignal = {
   archived?: boolean;
   upvotes?: CoherenceUpvoteSummary;
 };
+
+function MemberHomeSpaceSwitcher({ title }: { title: string }) {
+  const tNavigation = useTranslations('Navigation');
+  const [open, setOpen] = useState(false);
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="flex min-w-0 max-w-full items-center gap-1 text-[11px] tracking-[0.14em] text-muted-foreground uppercase"
+          aria-label={tNavigation('mySpaces')}
+        >
+          <span className="min-w-0 truncate">{title}</span>
+          <ChevronsUpDown className="h-3 w-3 shrink-0" aria-hidden />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        sideOffset={6}
+        className="z-[70] w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden p-0"
+      >
+        <div className="h-72">
+          <MySpacesSwitcherMenu open={open} onSelect={() => setOpen(false)} />
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 function plainText(value: string) {
   return stripDescription(value)
@@ -122,9 +157,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
             {space?.title ? (
-              <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
-                {space.title}
-              </p>
+              <MemberHomeSpaceSwitcher title={space.title} />
             ) : null}
             <h1
               id="member-space-home-title"

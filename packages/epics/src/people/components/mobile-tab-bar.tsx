@@ -97,12 +97,10 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { open: isAiOpen } = useAiPanel();
-  const { isMember } = useMemberExperience();
   const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
   // While the AI panel is open the spaces list takes the left menu slot.
-  // Members stay in one space, so that list stays hidden.
-  const showSpacesRail =
-    shouldShowMobileSpacesRail(pathname) && !isAiOpen && !isMember;
+  // Members still get this row: it is how they move to another space.
+  const showSpacesRail = shouldShowMobileSpacesRail(pathname) && !isAiOpen;
   const [slideIn, setSlideIn] = useState(false);
 
   useEffect(() => {

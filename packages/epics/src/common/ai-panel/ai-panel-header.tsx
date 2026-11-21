@@ -17,7 +17,12 @@ import {
   useMe,
   useSpacesBySlugs,
 } from '@hypha-platform/core/client';
-import { usePathname, useParams, useSearchParams } from 'next/navigation';
+import {
+  usePathname,
+  useParams,
+  useRouter,
+  useSearchParams,
+} from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useAiPanel } from '../human-chat-panel-context';
@@ -77,7 +82,8 @@ export function AiPanelHeader({
    */
   collapseLeftSlotAtMd?: boolean;
 }) {
-  const { closeAiPanel } = useAiPanel();
+  const { closeAiPanel, hideAiOverlay } = useAiPanel();
+  const router = useRouter();
   const t = useTranslations('AiPanel');
   const tNavigation = useTranslations('Navigation');
   const tSpaces = useTranslations('Spaces');
@@ -234,33 +240,39 @@ export function AiPanelHeader({
     };
   }, [spaceMenuOpen]);
 
-  const renderSpaceOption = (space: Space) => (
-    <DropdownMenuItem
-      key={space.id}
-      asChild
-      className="rounded-lg py-1.5 hover:bg-background-4/70"
-    >
-      <SpaceSwitcherOption
-        href={
-          member &&
+  const renderSpaceOption = (space: Space) => {
+    const href =
+      member && !pathSlug && /^\/[^/]+\/my-wallet(?:\/|$)/.test(pathname ?? '')
+        ? memberMenuHref(lang, space.slug, 'wallet')
+        : member &&
           !pathSlug &&
-          /^\/[^/]+\/my-wallet(?:\/|$)/.test(pathname ?? '')
-            ? memberMenuHref(lang, space.slug, 'wallet')
-            : member &&
-              !pathSlug &&
-              /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(pathname ?? '')
-            ? memberMenuHref(lang, space.slug, 'messages')
-            : getDhoSpaceContextPath({
-                pathname,
-                lang,
-                spaceSlug: space.slug,
-              }) ?? `/${lang}/dho/${space.slug}/agreements`
-        }
-        title={space.title}
-        iconUrl={getDisplayIcon(space, logoVariant)}
-      />
-    </DropdownMenuItem>
-  );
+          /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(pathname ?? '')
+        ? memberMenuHref(lang, space.slug, 'messages')
+        : getDhoSpaceContextPath({
+            pathname,
+            lang,
+            spaceSlug: space.slug,
+          }) ?? `/${lang}/dho/${space.slug}/agreements`;
+    return (
+      <DropdownMenuItem
+        key={space.id}
+        asChild
+        className="rounded-lg py-1.5 hover:bg-background-4/70"
+        onSelect={() => {
+          // The menu item swallows the link click. Push the route, then leave
+          // the open menu so the chosen space is the page in front.
+          hideAiOverlay();
+          router.push(href);
+        }}
+      >
+        <SpaceSwitcherOption
+          href={href}
+          title={space.title}
+          iconUrl={getDisplayIcon(space, logoVariant)}
+        />
+      </DropdownMenuItem>
+    );
+  };
 
   const memberAsk = askTitle;
   const showLeftSlot = Boolean(leftSlot) && !memberAsk;
