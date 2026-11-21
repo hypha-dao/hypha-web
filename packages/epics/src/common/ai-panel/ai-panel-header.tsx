@@ -17,12 +17,22 @@ import {
   useMe,
   useSpacesBySlugs,
 } from '@hypha-platform/core/client';
-import { usePathname, useParams } from 'next/navigation';
+import { usePathname, useParams, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useAiPanel } from '../human-chat-panel-context';
 import { getDhoSpaceContextPath } from '../get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from '../get-dho-space-slug-from-pathname';
+import {
+  readRecentSpaceSlugs,
+  subscribeRecentSpaceSlugs,
+} from '../recent-space-history';
+import {
+  isMemberOrientation,
+  memberMenuHref,
+  memberSurfaceSpaceQuery,
+  resolveMemberSpaceSlug,
+} from '../../people/components/member-menu';
 import { getRootSpace } from '../get-root-space';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
 import { MemberHomeMark } from '../../people/components/member-home-mark';
@@ -74,16 +84,19 @@ export function AiPanelHeader({
   const tMember = useTranslations('MemberMenu');
   const { resolvedTheme } = useTheme();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const params = useParams<{ lang?: string }>();
-  const activeSpaceSlug = useMemo(
-    () => getDhoSpaceSlugFromPathname(pathname),
-    [pathname],
+  const { person, isLoading: personLoading } = useMe();
+  const member = isMemberOrientation(person?.primaryOrientation);
+  const [recentSlugs, setRecentSlugs] = useState<string[]>(() =>
+    readRecentSpaceSlugs(),
   );
-  const { spaces: activeSpaces } = useSpacesBySlugs(
-    activeSpaceSlug ? [activeSpaceSlug] : [],
-    false,
+  useEffect(() => subscribeRecentSpaceSlugs(setRecentSlugs), []);
+  const pathSlug = getDhoSpaceSlugFromPathname(pathname) ?? null;
+  const surfaceQuery = memberSurfaceSpaceQuery(
+    pathname ?? '',
+    searchParams.get('space'),
   );
-  const { person } = useMe();
   const { web3SpaceIds } = useMemberWeb3SpaceIds({
     personAddress: person?.address as Address | undefined,
   });
@@ -102,6 +115,34 @@ export function AiPanelHeader({
       }
       return (await response.json()) as Space[];
     },
+  );
+  const memberSlugs = useMemo(() => {
+    const ids = new Set((web3SpaceIds ?? []).map((id) => id.toString()));
+    return allSpaces
+      .filter(
+        (space) =>
+          space.web3SpaceId != null && ids.has(String(space.web3SpaceId)),
+      )
+      .map((space) => space.slug);
+  }, [allSpaces, web3SpaceIds]);
+  // A space URL wins for everyone. Members keep that space on wallet and
+  // messages, which are not under `/dho/`. Builders and funders do not.
+  const activeSpaceSlug = useMemo(() => {
+    if (pathSlug) return pathSlug;
+    const keepSpace = member || (personLoading && Boolean(surfaceQuery));
+    if (!keepSpace) return undefined;
+    return (
+      resolveMemberSpaceSlug({
+        pathSlug: null,
+        querySlug: surfaceQuery,
+        memberSlugs,
+        recentSlugs,
+      }) ?? undefined
+    );
+  }, [member, memberSlugs, pathSlug, personLoading, recentSlugs, surfaceQuery]);
+  const { spaces: activeSpaces } = useSpacesBySlugs(
+    activeSpaceSlug ? [activeSpaceSlug] : [],
+    false,
   );
   const activeSpace = useMemo(
     () =>
@@ -201,11 +242,19 @@ export function AiPanelHeader({
     >
       <SpaceSwitcherOption
         href={
-          getDhoSpaceContextPath({
-            pathname,
-            lang,
-            spaceSlug: space.slug,
-          }) ?? `/${lang}/dho/${space.slug}/agreements`
+          member &&
+          !pathSlug &&
+          /^\/[^/]+\/my-wallet(?:\/|$)/.test(pathname ?? '')
+            ? memberMenuHref(lang, space.slug, 'wallet')
+            : member &&
+              !pathSlug &&
+              /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(pathname ?? '')
+            ? memberMenuHref(lang, space.slug, 'messages')
+            : getDhoSpaceContextPath({
+                pathname,
+                lang,
+                spaceSlug: space.slug,
+              }) ?? `/${lang}/dho/${space.slug}/agreements`
         }
         title={space.title}
         iconUrl={getDisplayIcon(space, logoVariant)}

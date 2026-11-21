@@ -49,8 +49,12 @@ export function memberMenuHref(
   spaceSlug: string,
   key: MemberMenuKey,
 ): string {
-  if (key === 'wallet') return `/${lang}/my-wallet`;
   const slug = spaceSlug.trim();
+  if (key === 'wallet') {
+    return slug
+      ? `/${lang}/my-wallet?space=${encodeURIComponent(slug)}`
+      : `/${lang}/my-wallet`;
+  }
   if (!slug) {
     return key === 'messages' ? `/${lang}/messages` : '';
   }
@@ -152,9 +156,28 @@ export function resolveMemberSpaceSlug(input: {
 
 /**
  * Personal home, spaces, and network send a member into their space.
- * Messages without a space query open that space's messages.
- * Wallet and space routes stay where they are.
+ * Wallet and messages stay on that space instead of falling back to the network.
  */
+/**
+ * `?space=` on a member's wallet or messages screen. A bare number is a
+ * wallet action id, not a space slug.
+ */
+export function memberSurfaceSpaceQuery(
+  pathname: string,
+  querySlug: string | null | undefined,
+): string | null {
+  const onSurface =
+    /^\/[^/]+\/my-wallet(?:\/|$)/.test(pathname) ||
+    /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(pathname);
+  if (!onSurface) return null;
+  const slug = querySlug?.trim() || '';
+  if (!slug || !/^[a-z0-9_-]{1,80}$/i.test(slug) || /^\d+$/.test(slug)) {
+    return null;
+  }
+  return slug;
+}
+
+/** Personal routes send a member back into the space they already have open. */
 export function memberPersonalRedirect(input: {
   pathname: string;
   search: string;
@@ -163,7 +186,13 @@ export function memberPersonalRedirect(input: {
 }): string | null {
   const slug = input.spaceSlug.trim();
   if (!slug) return null;
-  if (/^\/[^/]+\/my-wallet(?:\/|$)/.test(input.pathname)) return null;
+  if (/^\/[^/]+\/my-wallet\/?$/.test(input.pathname)) {
+    const params = new URLSearchParams(
+      input.search.startsWith('?') ? input.search.slice(1) : input.search,
+    );
+    if (params.get('space') === slug) return null;
+    return memberMenuHref(input.lang, slug, 'wallet');
+  }
   if (/\/dho\/[^/]+/.test(input.pathname)) return null;
   if (/^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(input.pathname)) {
     const params = new URLSearchParams(
