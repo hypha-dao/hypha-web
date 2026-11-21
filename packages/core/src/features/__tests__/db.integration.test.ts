@@ -53,6 +53,13 @@ describe.skipIf(!HAS_DB)('queries behind the MCP features (database)', () => {
     childId = await mk(`${PREFIX}-child`, spaceId);
 
     const t = (n: number) => new Date(Date.UTC(2026, 0, n));
+    // title only: its description column is null
+    await insertDoc(
+      `${PREFIX}-wolf`,
+      { state: 'proposal', title: 'Wolfpack gathering' },
+      t(8),
+      otherSpaceId,
+    );
     await insertDoc(
       `${PREFIX}-p1`,
       { state: 'proposal', web3ProposalId: 1 },
@@ -131,6 +138,24 @@ describe.skipIf(!HAS_DB)('queries behind the MCP features (database)', () => {
     );
     const quest = r.data.find((d) => d.slug === `${PREFIX}-quest`);
     expect(quest).toMatchObject({ label: 'Quest', state: 'proposal' });
+  });
+
+  it('a title-only search finds a document whose description is null', async () => {
+    const { findProposalDocumentsPage } = await import(
+      '../../governance/server/queries'
+    );
+    const r = await findProposalDocumentsPage(
+      {
+        spaceId: otherSpaceId,
+        states: ['proposal'],
+        searchTerm: 'Wolfpack',
+        direction: 'desc',
+        offset: 0,
+        limit: 10,
+      },
+      { db },
+    );
+    expect(r.data.map((d) => d.slug)).toEqual([`${PREFIX}-wolf`]);
   });
 
   it('the state filter and ascending order work; an offset past the end keeps the total', async () => {

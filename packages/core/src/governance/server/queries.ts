@@ -574,9 +574,10 @@ export const findProposalDocumentsPage = async (
   ];
   if (searchTerm) {
     conditions.push(
+      // coalesce: a null title or description must not null the whole vector
       sql`(
-        setweight(to_tsvector('english', ${documents.title}), 'A') ||
-        setweight(to_tsvector('english', ${documents.description}), 'B')
+        setweight(to_tsvector('english', coalesce(${documents.title}, '')), 'A') ||
+        setweight(to_tsvector('english', coalesce(${documents.description}, '')), 'B')
       ) @@ plainto_tsquery('english', ${searchTerm})`,
     );
   }

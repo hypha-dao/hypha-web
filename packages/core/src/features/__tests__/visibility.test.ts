@@ -444,6 +444,18 @@ describe('visibility: get space', () => {
     expect(await ask('s2', mcpUser([2]))).toMatchObject({ ok: true });
   });
 
+  it('a slug that resolves to another space on the second read is not found', async () => {
+    // the policy decided on s1 (id 1); the content read returns a different space
+    hostFields.full.set('s1', {
+      ...(hostFields.full.get('s1') as object),
+      id: 99,
+    });
+    expect(await ask('s1', mcpUser())).toMatchObject({
+      ok: false,
+      code: 'not_found',
+    });
+  });
+
   it('an unknown slug and a hidden space give the same answer', async () => {
     expect(await ask('nope', mcpUser())).toEqual(await ask('s4', mcpUser()));
   });

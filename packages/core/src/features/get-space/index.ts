@@ -108,7 +108,10 @@ export async function getSpace(
     }
 
     const space = await findSpaceWithSubspacesBySlug({ slug }, { db });
-    if (!space) return failure('not_found', 'Space not found');
+    // The access decision was made on `host`; the loaded space must be that same space.
+    if (!space || space.id !== host.id) {
+      return failure('not_found', 'Space not found');
+    }
 
     const id = typeof space.web3SpaceId === 'number' ? space.web3SpaceId : null;
     const wantsGovernance =
