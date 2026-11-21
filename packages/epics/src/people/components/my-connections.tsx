@@ -147,6 +147,7 @@ import {
   inboxCoherenceSlug,
   inboxContextHref,
   inboxContextLine,
+  conversationInSpace,
   inboxFilterCounts,
   isInboxDirectConversation,
   inboxListWindow,
@@ -1845,11 +1846,28 @@ function sameChannelSnapshots(
   return true;
 }
 
+function rowsInSpace<
+  T extends {
+    inbox?: {
+      spaceSlug?: string | null;
+      ecosystemSlug?: string | null;
+    } | null;
+  },
+>(list: T[], spaceSlug: string | undefined): T[] {
+  if (!spaceSlug) return list;
+  return list.filter(
+    (row) => row.inbox != null && conversationInSpace(row.inbox, spaceSlug),
+  );
+}
+
 export function MyConnections({
   section = 'messages',
+  spaceSlug,
 }: {
   /** Messages is the conversation list. Suggestions and Archived are their own screens. */
   section?: 'messages' | 'suggestions' | 'archived';
+  /** When set, the list is this space's conversations. */
+  spaceSlug?: string;
 }) {
   const t = useTranslations('Connections');
   const tChat = useTranslations('MemberHome');
@@ -2018,13 +2036,17 @@ export function MyConnections({
     },
   );
   useEffect(() => {
+    if (spaceSlug) {
+      setInboxFilter('spaces');
+      return;
+    }
     try {
       const stored = window.sessionStorage.getItem(INBOX_FILTER_KEY);
       if (isInboxFilter(stored)) setInboxFilter(stored);
     } catch {
       // Private mode can block session storage. The default filter still works.
     }
-  }, []);
+  }, [spaceSlug]);
   useEffect(() => {
     if (!inboxNavReady.current) {
       inboxNavReady.current = true;
@@ -2654,30 +2676,32 @@ export function MyConnections({
             ),
           )
         : [];
+    const scopedDirect = rowsInSpace(directForList, spaceSlug);
+    const scopedChannels = rowsInSpace(channelRows, spaceSlug);
     const counts = inboxFilterCounts([
-      ...directConversations.map((row) => ({
+      ...rowsInSpace(directConversations, spaceSlug).map((row) => ({
         kind: row.inbox?.kind ?? 'dm',
         unread: row.unread,
       })),
-      ...channelRows.flatMap((row) =>
+      ...scopedChannels.flatMap((row) =>
         row.inbox ? [{ kind: row.inbox.kind, unread: row.unread }] : [],
       ),
     ]);
     if (section !== 'messages' || picking || inboxFilter === 'direct') {
-      return { rows: directForList, counts };
+      return { rows: scopedDirect, counts };
     }
     if (inboxFilter === 'all') {
       return {
         rows: sortConversationsByLastMessage([
-          ...directForList,
-          ...channelRows,
+          ...scopedDirect,
+          ...scopedChannels,
         ]),
         counts,
       };
     }
     return {
       rows: sortConversationsByLastMessage(
-        channelRows.filter(
+        scopedChannels.filter(
           (row) =>
             row.inbox != null &&
             rowMatchesInboxFilter(row.inbox.kind, inboxFilter),
@@ -2696,6 +2720,7 @@ export function MyConnections({
     peopleBySub,
     picking,
     section,
+    spaceSlug,
     t,
   ]);
   function selectInboxFilter(next: InboxFilter) {
@@ -2708,6 +2733,7 @@ export function MyConnections({
     setInboxFilter(next);
     setInboxVisibleCount(INBOX_LIST_PAGE);
     setInboxChannelOpen(true);
+    if (spaceSlug) return;
     try {
       window.sessionStorage.setItem(INBOX_FILTER_KEY, next);
     } catch {

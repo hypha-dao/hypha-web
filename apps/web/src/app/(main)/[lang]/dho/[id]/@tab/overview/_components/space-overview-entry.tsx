@@ -2,6 +2,7 @@
 
 import { useEffect, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useMe } from '@hypha-platform/core/client';
 import { useSpaceEnergy } from '@hypha-platform/epics';
 
 /**
@@ -18,9 +19,15 @@ export function SpaceOverviewEntry({
   children: ReactNode;
 }) {
   const { data, isLoading, error } = useSpaceEnergy(spaceSlug);
+  const { person, isLoading: personLoading } = useMe();
   const pathname = usePathname();
   const router = useRouter();
-  const energyHome = !stay && data?.enabled === true;
+  // Members land on the space home. Energy stays its own screen in their menu.
+  const energyHome =
+    !stay &&
+    !personLoading &&
+    person?.primaryOrientation !== 'member' &&
+    data?.enabled === true;
 
   useEffect(() => {
     if (!energyHome || !pathname) return;

@@ -730,6 +730,28 @@
     "mobileSpacesEmpty": "Je hebt nog geen spaces.",
     "mobileSpacesAll": "Alle spaces"
   },
+  "MemberMenu": {
+    "you": "Jij",
+    "community": "Gemeenschap",
+    "home": "Home",
+    "energy": "Energie",
+    "wallet": "Portemonnee",
+    "messages": "Berichten",
+    "signals": "Signalen",
+    "decisions": "Besluiten",
+    "treasury": "Kas",
+    "members": "Leden",
+    "menu": "Ledemenu",
+    "yourSpace": "Jouw space",
+    "around": "Rond de gemeenschap.",
+    "communitySignals": "Signalen uit de gemeenschap",
+    "askThisSpace": "Vraag deze space.",
+    "open": "Open",
+    "previousSignals": "Vorige signalen",
+    "nextSignals": "Volgende signalen",
+    "noSignals": "Nog niets nieuws uit de buurt.",
+    "spaceMessages": "Berichten in {space}"
+  },
   "Connections": {
     "titleLineOne": "Blijf dichtbij,",
     "titleLineTwo": "Deel berichten",
