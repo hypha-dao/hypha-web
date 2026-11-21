@@ -1,8 +1,9 @@
 {
   "StaleDeployment": {
-    "reloading": "Mise à jour de la page…",
-    "title": "Actualisez dès que possible",
-    "description": "Nous venons d’apporter des modifications à la page.",
+    "reloadingTitle": "Nous avons travaillé par ici !",
+    "reloading": "Un instant, nous rafraîchissons la page…",
+    "title": "Oups, nous avons travaillé par ici !",
+    "description": "Nous venons d’apporter des modifications à la page. Actualisez dès que possible.",
     "refresh": "Actualiser",
     "dismiss": "Fermer"
   },

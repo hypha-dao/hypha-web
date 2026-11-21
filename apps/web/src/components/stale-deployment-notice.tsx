@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Button, FloatingNotice } from '@hypha-platform/ui';
+import { FloatingNotice } from '@hypha-platform/ui';
 import {
   installStaleDeploymentListeners,
   refreshNow,
@@ -36,7 +36,11 @@ export function StaleDeploymentNotice() {
   }, []);
 
   if (status === 'reloading') {
-    return <FloatingNotice>{t('reloading')}</FloatingNotice>;
+    return (
+      <FloatingNotice withIcon title={t('reloadingTitle')}>
+        {t('reloading')}
+      </FloatingNotice>
+    );
   }
   if (status === 'banner' && !dismissed) {
     return (
@@ -44,9 +48,14 @@ export function StaleDeploymentNotice() {
         variant="warning"
         title={t('title')}
         action={
-          <Button size="sm" onClick={refreshNow}>
+          // A text link, not a button, so it is not mistaken for page actions.
+          <button
+            type="button"
+            onClick={refreshNow}
+            className="font-semibold underline underline-offset-4 hover:no-underline"
+          >
             {t('refresh')}
-          </Button>
+          </button>
         }
         onDismiss={() => setDismissed(true)}
         dismissLabel={t('dismiss')}

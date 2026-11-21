@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { AlertTriangle, X } from 'lucide-react';
+import { Construction, X } from 'lucide-react';
 
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -18,18 +18,20 @@ export type FloatingNoticeProps = Omit<
   'title'
 > &
   DismissProps & {
-    /** Short lead-in, shown in bold before the message and followed by a colon. */
+    /** Short bold lead-in, shown before the message. Include its punctuation. */
     title?: React.ReactNode;
-    /** `warning` adds warning colors and an alert icon; `neutral` is plain. */
+    /** `warning` adds soft warning colors. */
     variant?: 'neutral' | 'warning';
-    /** Optional action, for example a `Button`. */
+    /** Show the work-in-progress icon. Defaults to on for `warning`. */
+    withIcon?: boolean;
+    /** Optional action, for example a text link styled button. */
     action?: React.ReactNode;
   };
 
 /**
- * A one-line notice floating at the bottom centre of the viewport (about 90%
- * wide, wrapping to more lines only when the text needs it). It floats above
- * the page, so showing it never shifts the layout.
+ * A slim notice floating at the bottom centre of the viewport. It floats above
+ * the page, so showing it never shifts the layout. Content is centred and the
+ * text wraps to more lines only when it has to.
  */
 const FloatingNotice = React.forwardRef<HTMLDivElement, FloatingNoticeProps>(
   (
@@ -37,6 +39,7 @@ const FloatingNotice = React.forwardRef<HTMLDivElement, FloatingNoticeProps>(
       className,
       title,
       variant = 'neutral',
+      withIcon = variant === 'warning',
       action,
       onDismiss,
       dismissLabel,
@@ -50,7 +53,9 @@ const FloatingNotice = React.forwardRef<HTMLDivElement, FloatingNoticeProps>(
       role="status"
       aria-live="polite"
       className={cn(
-        'fixed bottom-4 left-1/2 z-[60] flex w-[90%] max-w-3xl -translate-x-1/2 items-center gap-3 border p-3 text-left text-sm text-foreground shadow-lg',
+        // Narrow screens: one flex row. From `sm`: three columns, so the text
+        // is centred in the notice and the actions stay at the right edge.
+        'fixed bottom-4 left-1/2 z-[60] flex w-[92%] max-w-5xl -translate-x-1/2 items-center gap-2 rounded-xl border px-3 py-2 text-center text-xs text-foreground shadow-md sm:grid sm:grid-cols-[1fr_auto_1fr]',
         variant === 'warning'
           ? 'border-warning-7 bg-warning-2'
           : 'bg-background',
@@ -58,27 +63,38 @@ const FloatingNotice = React.forwardRef<HTMLDivElement, FloatingNoticeProps>(
       )}
       {...props}
     >
-      {variant === 'warning' ? (
-        <AlertTriangle
-          aria-hidden="true"
-          className="size-5 shrink-0 text-warning-11"
-        />
-      ) : null}
-      <p className="min-w-0 flex-1">
-        {title ? <span className="font-semibold">{title}: </span> : null}
-        {children}
-      </p>
-      {action ? <div className="shrink-0">{action}</div> : null}
-      {onDismiss ? (
-        <button
-          type="button"
-          aria-label={dismissLabel}
-          onClick={onDismiss}
-          className="shrink-0 p-1 text-muted-foreground hover:text-foreground"
-        >
-          <X aria-hidden="true" className="size-4" />
-        </button>
-      ) : null}
+      {/* Empty left column that balances the actions on the right. */}
+      <span aria-hidden="true" className="hidden sm:block" />
+      <div className="flex min-w-0 flex-1 items-center justify-center gap-2 sm:flex-none">
+        {withIcon ? (
+          <Construction
+            aria-hidden="true"
+            className={cn(
+              'size-4 shrink-0',
+              variant === 'warning'
+                ? 'text-warning-11'
+                : 'text-muted-foreground',
+            )}
+          />
+        ) : null}
+        <p className="min-w-0">
+          {title ? <span className="font-semibold">{title} </span> : null}
+          {children}
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center justify-end gap-2">
+        {action}
+        {onDismiss ? (
+          <button
+            type="button"
+            aria-label={dismissLabel}
+            onClick={onDismiss}
+            className="shrink-0 rounded-full p-1 text-muted-foreground hover:text-foreground"
+          >
+            <X aria-hidden="true" className="size-3.5" />
+          </button>
+        ) : null}
+      </div>
     </div>
   ),
 );

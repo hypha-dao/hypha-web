@@ -1,8 +1,9 @@
 {
   "StaleDeployment": {
-    "reloading": "Updating the page…",
-    "title": "Refresh when possible",
-    "description": "We just made changes to the page.",
+    "reloadingTitle": "We’ve been working here!",
+    "reloading": "Just a moment while we freshen up the page…",
+    "title": "Oops, we’ve been working here!",
+    "description": "We just made changes to the page. Refresh whenever you can.",
     "refresh": "Refresh",
     "dismiss": "Dismiss"
   },

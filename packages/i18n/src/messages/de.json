@@ -1,8 +1,9 @@
 {
   "StaleDeployment": {
-    "reloading": "Seite wird aktualisiert…",
-    "title": "Bitte bei Gelegenheit aktualisieren",
-    "description": "Wir haben gerade Änderungen an der Seite vorgenommen.",
+    "reloadingTitle": "Hier wurde gearbeitet!",
+    "reloading": "Einen Moment, wir frischen die Seite auf…",
+    "title": "Hoppla, hier wurde gearbeitet!",
+    "description": "Wir haben gerade Änderungen an der Seite vorgenommen. Aktualisiere sie, sobald du kannst.",
     "refresh": "Aktualisieren",
     "dismiss": "Schließen"
   },
