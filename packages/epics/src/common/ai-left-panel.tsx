@@ -105,6 +105,7 @@ import {
   type HomeView,
 } from '../people/components/member-home-view';
 import { MobileSpacesSubnav } from '../people/components/mobile-spaces-subnav';
+import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
 import { useMemberNamedSpaces } from '../network-exchange/use-member-named-spaces';
 import {
@@ -459,6 +460,38 @@ function MemberMenuSections({
         </SidebarGroup>
       ))}
     </>
+  );
+}
+
+/** Collapsed member menu control: the open space's icon, not the hamburger. */
+function MemberCollapsedSpaceIcon() {
+  const pathname = usePathname() ?? '';
+  const searchParams = useSearchParams();
+  const { resolvedTheme } = useTheme();
+  const named = useMemberNamedSpaces();
+  const [recent, setRecent] = useState<string[]>(() => readRecentSpaceSlugs());
+  useEffect(() => subscribeRecentSpaceSlugs(setRecent), []);
+  const slug = resolveMemberSpaceSlug({
+    pathSlug: getDhoSpaceSlugFromPathname(pathname) ?? null,
+    querySlug: memberSurfaceSpaceQuery(pathname, searchParams.get('space')),
+    memberSlugs: named.map((space) => space.slug),
+    recentSlugs: recent,
+  });
+  const { space } = useSpaceBySlug(slug ?? '');
+  const logo = resolveSpaceDisplayLogoUrl(
+    space,
+    resolvedTheme === 'dark' ? 'dark' : 'light',
+  );
+  if (!logo) {
+    return <Menu className="craft-icon pointer-events-none" />;
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={logo}
+      alt=""
+      className="pointer-events-none h-full w-full object-cover"
+    />
   );
 }
 
@@ -3410,7 +3443,13 @@ export function AiLeftPanel({
       className={MENU_TRIGGER_CANVAS_CLASS}
       aria-label={shouldCloseFromTrigger ? t('closePanel') : t('openPanel')}
     >
-      <Menu className="craft-icon pointer-events-none" />
+      {memberExperience && !shouldCloseFromTrigger ? (
+        <Suspense fallback={null}>
+          <MemberCollapsedSpaceIcon />
+        </Suspense>
+      ) : (
+        <Menu className="craft-icon pointer-events-none" />
+      )}
     </button>
   );
   const closeButton = shouldCloseFromTrigger ? (
