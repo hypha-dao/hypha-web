@@ -3793,7 +3793,9 @@ export function AiLeftPanel({
           messages={messages as ChatUIMessage[]}
           suggestionItems={suggestionItems}
           welcomeText={welcomeText}
-          showInlineSuggestions={!hasUserMessage && !blockSpaceAiForInteraction}
+          showInlineSuggestions={
+            !embedOnPage && !hasUserMessage && !blockSpaceAiForInteraction
+          }
           onSuggestionSelect={
             blockSpaceAiForInteraction ? undefined : handleSuggestionSelect
           }
@@ -3850,11 +3852,12 @@ export function AiLeftPanel({
         />
       </SidebarContent>
       <SidebarFooter className="relative z-20 overflow-visible bg-page-background p-0 dark:bg-background-2">
-        {hasUserMessage && !blockSpaceAiForInteraction ? (
+        {(embedOnPage || hasUserMessage) && !blockSpaceAiForInteraction ? (
           <AiPanelSuggestions
             items={suggestionItems}
             onSelect={handleSuggestionSelect}
             variant="tags"
+            wrap={embedOnPage}
           />
         ) : null}
         {dialogue && voiceInterview.voiceError ? (
