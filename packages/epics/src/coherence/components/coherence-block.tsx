@@ -273,7 +273,15 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
                 key={signal.id}
                 signal={signal}
                 spaceSlug={spaceSlug}
-                href={getSignalPath(lang, spaceSlug, signal.slug)}
+                href={
+                  showSignalImage
+                    ? `${getSignalPath(
+                        lang,
+                        spaceSlug,
+                        signal.slug,
+                      )}?discussion=open`
+                    : getSignalPath(lang, spaceSlug, signal.slug)
+                }
                 votingMode={votingMode}
                 votingModeStatus={votingModeStatus}
                 onRetryVotingMode={retryVotingMode}

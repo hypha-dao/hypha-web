@@ -4,8 +4,8 @@ import { useEffect, useRef } from 'react';
 import { useHumanChatPanel, useMemberExperience } from '@hypha-platform/epics';
 
 /**
- * Members who open a signal from their home land on the detail with the
- * discussion panel already open. Everyone else keeps the panel closed.
+ * Members who open a signal land on the detail and the discussion slides
+ * open. Everyone else keeps the panel closed.
  */
 export function OpenMemberDiscussion({
   enabled,
