@@ -43,6 +43,8 @@ import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
 import { APP_CHROME_AVATAR_TRIGGER } from '../../common/chrome-radius';
+import { isMemberOrientation } from './member-menu';
+import { MemberTopBar } from './member-top-bar';
 import { useCompactPanelsMode, useIsMobile } from '@hypha-platform/ui';
 import { useFundWallet } from '../../treasury/hooks';
 import {
@@ -222,6 +224,15 @@ export const ButtonProfile = ({
   const sheetNavItems = useSheetProfileMenu
     ? navItems.filter((item) => !isMobileTabBarNavHref(item.href))
     : navItems;
+  const memberExperience = isMemberOrientation(person?.primaryOrientation);
+  const memberTopBar = memberExperience ? (
+    <MemberTopBar
+      personSlug={person?.slug}
+      language={trailingBeforeProfile}
+      resolvedTheme={resolvedTheme}
+      onToggleTheme={onChangeThemeMode}
+    />
+  ) : null;
 
   useEffect(() => {
     setProfileMenuOpen(false);
@@ -261,7 +272,7 @@ export const ButtonProfile = ({
     if (!useSheetProfileMenu) {
       return (
         <div className="flex items-center gap-2">
-          {trailingBeforeProfile}
+          {memberExperience ? memberTopBar : trailingBeforeProfile}
           <DropdownMenu
             open={profileMenuOpen}
             onOpenChange={setProfileMenuOpen}
@@ -477,6 +488,7 @@ export const ButtonProfile = ({
 
     return (
       <div className="flex items-center gap-1.5 sm:gap-2">
+        {memberTopBar}
         <Sheet open={profileMenuOpen} onOpenChange={setProfileMenuOpen}>
           <button
             type="button"
@@ -529,7 +541,7 @@ export const ButtonProfile = ({
               </div>
 
               <div className="flex-1 overflow-y-auto">
-                {trailingBeforeProfile ? (
+                {!memberExperience && trailingBeforeProfile ? (
                   <>
                     <div className="px-3 py-2">{trailingBeforeProfile}</div>
                     <div className="border-t border-border" />
@@ -818,19 +830,25 @@ export const ButtonProfile = ({
 
           {/* Desktop */}
           <div className="hidden items-center gap-2 md:flex">
-            <div className="flex items-center gap-2">
-              {navItems.map((item) => (
-                <ButtonNavItem
-                  key={item.href ?? item.label}
-                  href={item.href}
-                  label={item.label}
-                  icon={resolveNavItemIcon(item.href)}
-                  badge={messageBadge(item.href)}
-                  ariaLabel={messageAria(item.href, item.label)}
-                />
-              ))}
-            </div>
-            {trailingBeforeProfile}
+            {memberExperience ? (
+              memberTopBar
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  {navItems.map((item) => (
+                    <ButtonNavItem
+                      key={item.href ?? item.label}
+                      href={item.href}
+                      label={item.label}
+                      icon={resolveNavItemIcon(item.href)}
+                      badge={messageBadge(item.href)}
+                      ariaLabel={messageAria(item.href, item.label)}
+                    />
+                  ))}
+                </div>
+                {trailingBeforeProfile}
+              </>
+            )}
             <DropdownMenu
               open={profileMenuOpen}
               onOpenChange={setProfileMenuOpen}
