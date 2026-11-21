@@ -28,11 +28,11 @@ import {
   subscribeRecentSpaceSlugs,
 } from '../recent-space-history';
 import {
-  isMemberOrientation,
   memberMenuHref,
   memberSurfaceSpaceQuery,
   resolveMemberSpaceSlug,
 } from '../../people/components/member-menu';
+import { useMemberExperience } from '../../people/components/member-experience';
 import { getRootSpace } from '../get-root-space';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
 import { MemberHomeMark } from '../../people/components/member-home-mark';
@@ -87,7 +87,7 @@ export function AiPanelHeader({
   const searchParams = useSearchParams();
   const params = useParams<{ lang?: string }>();
   const { person, isLoading: personLoading } = useMe();
-  const member = isMemberOrientation(person?.primaryOrientation);
+  const { isMember: member } = useMemberExperience();
   const [recentSlugs, setRecentSlugs] = useState<string[]>(() =>
     readRecentSpaceSlugs(),
   );

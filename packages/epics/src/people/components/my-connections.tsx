@@ -145,7 +145,7 @@ import {
   MemberInboxTabs,
   MessagesInboxFilters,
 } from './messages-inbox-filters';
-import { isMemberOrientation } from './member-menu';
+import { useMemberExperience } from './member-experience';
 import {
   channelRowsFromSnapshots,
   directInboxPlace,
@@ -1897,10 +1897,9 @@ export function MyConnections({
   const tChat = useTranslations('MemberHome');
   const tCommon = useTranslations('Common');
   const { person: me, isLoading: meLoading } = useMe();
-  const memberExperience = isMemberOrientation(me?.primaryOrientation);
+  const { isMember: memberExperience } = useMemberExperience();
   /** Members on a space messages page. Builders and funders keep the full filters. */
-  const memberSpaceInbox =
-    Boolean(spaceSlug) && (meLoading || memberExperience);
+  const memberSpaceInbox = Boolean(spaceSlug) && memberExperience;
   const locale = useLocale();
   const { user } = useAuthentication();
   const { jwt } = useJwt();

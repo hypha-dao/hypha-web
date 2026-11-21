@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useMe } from '@hypha-platform/core/client';
-import { isMemberOrientation, useHumanChatPanel } from '@hypha-platform/epics';
+import { useHumanChatPanel, useMemberExperience } from '@hypha-platform/epics';
 
 /**
  * Members who open a signal from their home land on the detail with the
@@ -23,23 +22,22 @@ export function OpenMemberDiscussion({
   description: string | null;
   roomId: string | null;
 }) {
-  const { person, isLoading } = useMe();
+  const { isMember, settled } = useMemberExperience();
   const { openCoherenceChat } = useHumanChatPanel();
   const opened = useRef(false);
 
   useEffect(() => {
-    if (!enabled || isLoading) return;
-    if (!isMemberOrientation(person?.primaryOrientation)) return;
+    if (!enabled || !settled || !isMember) return;
     if (opened.current) return;
     opened.current = true;
     openCoherenceChat(roomId, title, slug, description, spaceSlug);
   }, [
     description,
     enabled,
-    isLoading,
+    isMember,
     openCoherenceChat,
-    person?.primaryOrientation,
     roomId,
+    settled,
     slug,
     spaceSlug,
     title,

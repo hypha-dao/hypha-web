@@ -43,7 +43,7 @@ import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
 import { APP_CHROME_AVATAR_TRIGGER } from '../../common/chrome-radius';
-import { isMemberOrientation } from './member-menu';
+import { useMemberExperience } from './member-experience';
 import { MemberTopBar } from './member-top-bar';
 import { useCompactPanelsMode, useIsMobile } from '@hypha-platform/ui';
 import { useFundWallet } from '../../treasury/hooks';
@@ -224,7 +224,7 @@ export const ButtonProfile = ({
   const sheetNavItems = useSheetProfileMenu
     ? navItems.filter((item) => !isMobileTabBarNavHref(item.href))
     : navItems;
-  const memberExperience = isMemberOrientation(person?.primaryOrientation);
+  const { isMember: memberExperience } = useMemberExperience();
   const memberTopBar = memberExperience ? (
     <MemberTopBar
       personSlug={person?.slug}

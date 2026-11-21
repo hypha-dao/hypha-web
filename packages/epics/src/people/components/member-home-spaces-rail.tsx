@@ -18,8 +18,9 @@ import {
   TooltipTrigger,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { useMemberExperience } from './member-experience';
 import type { Locale } from '@hypha-platform/i18n';
-import { useMe, type MemberIntelligence } from '@hypha-platform/core/client';
+import { type MemberIntelligence } from '@hypha-platform/core/client';
 
 import {
   readRecentSpaceSlugs,
@@ -72,8 +73,7 @@ export function MemberHomeSpacesRail({
   layout?: 'column' | 'row';
 }) {
   const t = useTranslations('MemberHome');
-  const { person } = useMe();
-  const hideSpacesListing = person?.primaryOrientation === 'member';
+  const { isMember: hideSpacesListing } = useMemberExperience();
   const { resolvedTheme } = useTheme();
   const prefetchNav = useEnergyOverviewIdleGate();
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';

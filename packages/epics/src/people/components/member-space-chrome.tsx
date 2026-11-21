@@ -22,7 +22,7 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react';
-import { useMe, useSpaceBySlug } from '@hypha-platform/core/client';
+import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { getDhoSpaceSlugFromPathname } from '../../common/get-dho-space-slug-from-pathname';
@@ -36,13 +36,13 @@ import { useMessagesScreenCount } from './my-connections';
 import {
   buildMemberMenu,
   isCommunityMenuKey,
-  isMemberOrientation,
   memberMenuGroup,
   memberPersonalRedirect,
   resolveMemberSpaceSlug,
   type MemberMenuItem,
   type MemberMenuKey,
 } from './member-menu';
+import { useMemberExperience } from './member-experience';
 
 const ICONS: Record<MemberMenuKey, LucideIcon> = {
   home: House,
@@ -111,8 +111,7 @@ function useMemberMenuItems() {
 }
 
 export function MemberSpaceFrame({ children }: { children: ReactNode }) {
-  const { person } = useMe();
-  const member = isMemberOrientation(person?.primaryOrientation);
+  const { isMember: member } = useMemberExperience();
   const router = useRouter();
   const pathname = usePathname() ?? '';
   const searchParams = useSearchParams();

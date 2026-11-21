@@ -1,8 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useMe } from '@hypha-platform/core/client';
-import { isMemberOrientation } from '@hypha-platform/epics';
+import { useMemberExperience } from '@hypha-platform/epics';
 
 import { TabScreenTitle } from '../../_components/tab-screen-title';
 
@@ -21,9 +20,7 @@ export function MembersChrome({
   lang?: string;
   children: ReactNode;
 }) {
-  const { person, isLoading } = useMe();
-  const memberDirectory =
-    !isLoading && isMemberOrientation(person?.primaryOrientation);
+  const { isMember: memberDirectory } = useMemberExperience();
 
   return (
     <div className="flex flex-col gap-4 py-4">

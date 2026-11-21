@@ -10,7 +10,7 @@ import {
   MEMBER_DIRECTORY_PAGE_SIZE,
   useMembersSection,
 } from '../hooks/use-members-section';
-import { isMemberOrientation } from './member-menu';
+import { useMemberExperience } from './member-experience';
 import { ExitSpace, UseMembers, useSpaceMember } from '../../spaces';
 import { Empty } from '../../common';
 import { ActionGate } from '../../common/action-capabilities';
@@ -76,9 +76,8 @@ export const MembersSection: FC<MemberSectionProps> = ({
   });
   const params = useParams();
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
-  const { person, isLoading: profileLoading } = useMe();
-  const memberDirectory =
-    !profileLoading && isMemberOrientation(person?.primaryOrientation);
+  const { person } = useMe();
+  const { isMember: memberDirectory } = useMemberExperience();
   const { isAuthenticated, canLogin } = useAuthentication();
   const { isDelegate } = useIsDelegate({
     spaceId: space?.web3SpaceId as number,

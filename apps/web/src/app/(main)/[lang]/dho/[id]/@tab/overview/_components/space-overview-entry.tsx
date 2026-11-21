@@ -2,8 +2,7 @@
 
 import { useEffect, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useMe } from '@hypha-platform/core/client';
-import { useSpaceEnergy } from '@hypha-platform/epics';
+import { useMemberExperience, useSpaceEnergy } from '@hypha-platform/epics';
 
 /**
  * Energy communities open on the energy dashboard. Overview stays available
@@ -19,15 +18,12 @@ export function SpaceOverviewEntry({
   children: ReactNode;
 }) {
   const { data, isLoading, error } = useSpaceEnergy(spaceSlug);
-  const { person, isLoading: personLoading } = useMe();
+  const { isMember, settled } = useMemberExperience();
   const pathname = usePathname();
   const router = useRouter();
   // Members land on the space home. Energy stays its own screen in their menu.
-  const energyHome =
-    !stay &&
-    !personLoading &&
-    person?.primaryOrientation !== 'member' &&
-    data?.enabled === true;
+  // Wait until the persona is known so a member is not sent to energy first.
+  const energyHome = !stay && settled && !isMember && data?.enabled === true;
 
   useEffect(() => {
     if (!energyHome || !pathname) return;

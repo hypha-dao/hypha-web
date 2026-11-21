@@ -109,12 +109,12 @@ import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
 import { useMemberNamedSpaces } from '../network-exchange/use-member-named-spaces';
 import {
   buildMemberMenu,
-  isMemberOrientation,
   memberMenuGroup,
   memberSurfaceSpaceQuery,
   resolveMemberSpaceSlug,
   type MemberMenuKey,
 } from '../people/components/member-menu';
+import { useMemberExperience } from '../people/components/member-experience';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
 import {
@@ -683,7 +683,7 @@ export function AiLeftPanel({
     false,
   );
   const { person: me } = useMe();
-  const memberExperience = isMemberOrientation(me?.primaryOrientation);
+  const { isMember: memberExperience, orientation } = useMemberExperience();
   const { data: spaceEnergyData } = useSpaceEnergy(spaceSlugFromPath);
   const activeSpaceName =
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
@@ -1072,7 +1072,6 @@ export function AiLeftPanel({
     // Member surfaces: the left panel is the network outlook. Home keeps the
     // personal prompts. Builder and funder keep their own network prompts.
     if (isMemberAiSurface) {
-      const orientation = me?.primaryOrientation;
       const ids =
         orientation === 'builder'
           ? [
@@ -1108,18 +1107,18 @@ export function AiLeftPanel({
       card('spaceMemory'),
       card('valueFlows'),
     ];
-  }, [isMemberAiSurface, me?.primaryOrientation, spaceSlug, t]);
+  }, [isMemberAiSurface, orientation, spaceSlug, t]);
 
   const welcomeText = useMemo(() => {
     if (!isMemberAiSurface) return t('welcome');
-    if (me?.primaryOrientation === 'builder') {
+    if (orientation === 'builder') {
       return t('welcomeNetworkBuilder');
     }
-    if (me?.primaryOrientation === 'investor') {
+    if (orientation === 'investor') {
       return t('welcomeNetworkFunder');
     }
     return t('welcomeNetworkMember');
-  }, [isMemberAiSurface, me?.primaryOrientation, t]);
+  }, [isMemberAiSurface, orientation, t]);
 
   const handleOverlayClose = useCallback(() => {
     hideAiOverlay();
