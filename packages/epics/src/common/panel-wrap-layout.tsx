@@ -33,6 +33,7 @@ import {
   useHumanChatPanel,
 } from './human-chat-panel-context';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
+import { useMemberExperience } from '../people/components/member-experience';
 import { isInteractiveCreatePath } from './get-path-function';
 import {
   isNetworkAiPath,
@@ -176,7 +177,9 @@ export function AiSidebarTrigger() {
   const isNetworkAi = isNetworkAiPath(pathname);
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
+  const { isMember } = useMemberExperience();
 
+  if (isMember) return null;
   if (!isSpace && !isNetworkAi) {
     return null;
   }
@@ -221,7 +224,9 @@ export function AiPanelTrigger() {
   const isNetworkAi = isNetworkAiPath(pathname);
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
+  const { isMember } = useMemberExperience();
 
+  if (isMember) return null;
   if (!isSpace && !isNetworkAi) {
     return null;
   }
@@ -278,6 +283,7 @@ export function HumanSidebarTrigger() {
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const { activeRoomId } = useGlobalCallDock();
   const { jwt } = useJwt();
+  const { isMember } = useMemberExperience();
   const elsewhereCallEntries = useCallMembershipRegistry({
     excludeRoomIds: [activeRoomId],
     getAccessToken: async () => jwt,
@@ -285,6 +291,10 @@ export function HumanSidebarTrigger() {
   });
   const hasCallElsewhere = elsewhereCallEntries.length > 0;
   const hasUnreadMentions = isSpace && unreadMentionCount > 0;
+
+  // Members use the space messages icon in the top bar. Builders and funders
+  // keep this chat bubble.
+  if (isMember) return null;
 
   // Hide the header trigger while the panel is open. Unread mentions only exist in a space.
   if (!showsHumanChatIcon(pathname, isSpace, isNetwork) || open) return null;
@@ -455,7 +465,8 @@ export function PanelWrapLayout({
   const isSpace = useIsSpaceContext();
   const isNetwork = useIsNetworkContext();
   const isOnboarding = isInteractiveCreatePath(pathname);
-  /** Space ecosystem AI, or shared Network AI (home / messages / wallet / my-spaces / network). */
+  const { isMember: memberExperience } = useMemberExperience();
+  /** Same menu rail for every persona. Members do not open the assistant here. */
   const showAiPanel = isSpace || isNetworkAiPath(pathname);
   const effectiveLeft = showAiPanel ? left : undefined;
   // The chat icon is on home, connections, my spaces, my wallet, a space, and the network.
@@ -476,6 +487,10 @@ export function PanelWrapLayout({
       closeHumanChatPanel();
     }
   }, [showHumanChat, closeHumanChatPanel]);
+
+  useEffect(() => {
+    if (memberExperience && leftOpen) closeAiPanel();
+  }, [closeAiPanel, leftOpen, memberExperience]);
 
   const [viewportWidth, setViewportWidth] = useState<number>(() => {
     if (typeof window === 'undefined') {

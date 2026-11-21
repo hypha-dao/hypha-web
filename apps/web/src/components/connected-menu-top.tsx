@@ -12,6 +12,7 @@ import {
   toNextImageOptimizerSrc,
   useAiPanel,
   AiPanelTrigger,
+  useMemberExperience,
   SpacesRailTopToggle,
   useSpacesRailControl,
 } from '@hypha-platform/epics';
@@ -63,6 +64,7 @@ export function ConnectedMenuTop({
   const { resolvedTheme } = useTheme();
   const params = useParams<{ lang?: string }>();
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
+  const { isMember: hideHyphaMark } = useMemberExperience();
   const activeSpaceSlug = useMemo(
     () => getDhoSpaceSlugFromPathname(pathname),
     [pathname],
@@ -205,8 +207,14 @@ export function ConnectedMenuTop({
 
   return (
     <MenuTop
-      logoHref={useReplacementLogoNode ? undefined : logoHref}
-      logoNode={useReplacementLogoNode ? logoNode : undefined}
+      logoHref={hideHyphaMark || useReplacementLogoNode ? undefined : logoHref}
+      logoNode={
+        hideHyphaMark
+          ? undefined
+          : useReplacementLogoNode
+          ? logoNode
+          : undefined
+      }
       hrefTarget={hrefTarget}
       openMenuLabel={openMenuLabel}
       closeMenuLabel={closeMenuLabel}

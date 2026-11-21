@@ -49,6 +49,22 @@ export type SignalMediaCounts = {
   documents: number;
 };
 
+/** Lead image, otherwise the first image attachment. Unsafe URLs are dropped. */
+export function signalListImage(input?: {
+  leadImage?: string | null;
+  attachments?: SignalMediaItem[] | null;
+}): string | null {
+  const url = splitSignalMedia(input).images[0]?.url?.trim() ?? '';
+  if (
+    url.startsWith('https://') ||
+    url.startsWith('http://') ||
+    url.startsWith('/')
+  ) {
+    return url;
+  }
+  return null;
+}
+
 export function countSignalMedia(input?: {
   leadImage?: string | null;
   videoUrl?: string | null;

@@ -17,12 +17,22 @@ import {
   useMe,
   useSpacesBySlugs,
 } from '@hypha-platform/core/client';
-import { usePathname, useParams } from 'next/navigation';
+import { usePathname, useParams, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useAiPanel } from '../human-chat-panel-context';
 import { getDhoSpaceContextPath } from '../get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from '../get-dho-space-slug-from-pathname';
+import {
+  readRecentSpaceSlugs,
+  subscribeRecentSpaceSlugs,
+} from '../recent-space-history';
+import {
+  memberMenuHref,
+  memberSurfaceSpaceQuery,
+  resolveMemberSpaceSlug,
+} from '../../people/components/member-menu';
+import { useMemberExperience } from '../../people/components/member-experience';
 import { getRootSpace } from '../get-root-space';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
 import { MemberHomeMark } from '../../people/components/member-home-mark';
@@ -51,12 +61,15 @@ export function AiPanelHeader({
   rightSlot,
   className,
   collapseLeftSlotAtMd = false,
+  askTitle = false,
 }: {
   showCloseButton?: boolean;
   onCloseButtonClick?: () => void;
   leftSlot?: ReactNode;
   rightSlot?: ReactNode;
   className?: string;
+  /** Page embed only. The space menu keeps its space switcher. */
+  askTitle?: boolean;
   /**
    * Hide the leading slot from the `md` breakpoint up and drop its grid column.
    * The desktop icon rail already owns the menu trigger; below `md` the rail
@@ -68,18 +81,22 @@ export function AiPanelHeader({
   const t = useTranslations('AiPanel');
   const tNavigation = useTranslations('Navigation');
   const tSpaces = useTranslations('Spaces');
+  const tMember = useTranslations('MemberMenu');
   const { resolvedTheme } = useTheme();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const params = useParams<{ lang?: string }>();
-  const activeSpaceSlug = useMemo(
-    () => getDhoSpaceSlugFromPathname(pathname),
-    [pathname],
+  const { person, isLoading: personLoading } = useMe();
+  const { isMember: member } = useMemberExperience();
+  const [recentSlugs, setRecentSlugs] = useState<string[]>(() =>
+    readRecentSpaceSlugs(),
   );
-  const { spaces: activeSpaces } = useSpacesBySlugs(
-    activeSpaceSlug ? [activeSpaceSlug] : [],
-    false,
+  useEffect(() => subscribeRecentSpaceSlugs(setRecentSlugs), []);
+  const pathSlug = getDhoSpaceSlugFromPathname(pathname) ?? null;
+  const surfaceQuery = memberSurfaceSpaceQuery(
+    pathname ?? '',
+    searchParams.get('space'),
   );
-  const { person } = useMe();
   const { web3SpaceIds } = useMemberWeb3SpaceIds({
     personAddress: person?.address as Address | undefined,
   });
@@ -98,6 +115,34 @@ export function AiPanelHeader({
       }
       return (await response.json()) as Space[];
     },
+  );
+  const memberSlugs = useMemo(() => {
+    const ids = new Set((web3SpaceIds ?? []).map((id) => id.toString()));
+    return allSpaces
+      .filter(
+        (space) =>
+          space.web3SpaceId != null && ids.has(String(space.web3SpaceId)),
+      )
+      .map((space) => space.slug);
+  }, [allSpaces, web3SpaceIds]);
+  // A space URL wins for everyone. Members keep that space on wallet and
+  // messages, which are not under `/dho/`. Builders and funders do not.
+  const activeSpaceSlug = useMemo(() => {
+    if (pathSlug) return pathSlug;
+    const keepSpace = member || (personLoading && Boolean(surfaceQuery));
+    if (!keepSpace) return undefined;
+    return (
+      resolveMemberSpaceSlug({
+        pathSlug: null,
+        querySlug: surfaceQuery,
+        memberSlugs,
+        recentSlugs,
+      }) ?? undefined
+    );
+  }, [member, memberSlugs, pathSlug, personLoading, recentSlugs, surfaceQuery]);
+  const { spaces: activeSpaces } = useSpacesBySlugs(
+    activeSpaceSlug ? [activeSpaceSlug] : [],
+    false,
   );
   const activeSpace = useMemo(
     () =>
@@ -197,11 +242,19 @@ export function AiPanelHeader({
     >
       <SpaceSwitcherOption
         href={
-          getDhoSpaceContextPath({
-            pathname,
-            lang,
-            spaceSlug: space.slug,
-          }) ?? `/${lang}/dho/${space.slug}/agreements`
+          member &&
+          !pathSlug &&
+          /^\/[^/]+\/my-wallet(?:\/|$)/.test(pathname ?? '')
+            ? memberMenuHref(lang, space.slug, 'wallet')
+            : member &&
+              !pathSlug &&
+              /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(pathname ?? '')
+            ? memberMenuHref(lang, space.slug, 'messages')
+            : getDhoSpaceContextPath({
+                pathname,
+                lang,
+                spaceSlug: space.slug,
+              }) ?? `/${lang}/dho/${space.slug}/agreements`
         }
         title={space.title}
         iconUrl={getDisplayIcon(space, logoVariant)}
@@ -209,14 +262,17 @@ export function AiPanelHeader({
     </DropdownMenuItem>
   );
 
-  const showLeftSlot = Boolean(leftSlot);
+  const memberAsk = askTitle;
+  const showLeftSlot = Boolean(leftSlot) && !memberAsk;
   const reserveDesktopLeftColumn = showLeftSlot && !collapseLeftSlotAtMd;
 
   return (
     <div
       className={cn(
         'grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center gap-3 border-b border-border/70 bg-page-background py-2 dark:bg-background-2',
-        reserveDesktopLeftColumn
+        memberAsk
+          ? 'grid-cols-1 px-4'
+          : reserveDesktopLeftColumn
           ? 'grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] ps-4 pe-4'
           : 'grid-cols-[minmax(0,1fr)_2.25rem] ps-4 pe-4',
         showLeftSlot &&
@@ -237,128 +293,144 @@ export function AiPanelHeader({
       ) : null}
 
       <div className="min-w-0">
-        <div className="mx-auto flex w-full min-w-0 justify-center">
-          {canOpenSpaceMenu ? (
-            <DropdownMenu
-              modal={true}
-              open={spaceMenuOpen}
-              onOpenChange={setSpaceMenuOpen}
-            >
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className={cn(
-                    SPACE_SWITCHER_CLASS,
-                    'shadow-none transition-colors hover:bg-foreground/5',
-                  )}
-                  aria-label={tNavigation('mySpaces')}
-                >
-                  {currentIcon ? (
-                    <SpaceSwitcherMark
-                      iconUrl={currentIcon}
-                      alt={currentTitle}
-                    />
-                  ) : (
-                    <MemberHomeMark className="h-6 w-6" />
-                  )}
-                  <span className="min-w-0 truncate text-center leading-snug">
-                    {currentTitle}
-                  </span>
-
-                  <ChevronsUpDown className="craft-icon shrink-0 text-muted-foreground" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="bottom"
-                align="center"
-                sideOffset={4}
-                collisionPadding={8}
-                className="relative isolate z-[70] w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-lg border border-border/60 bg-background-2 p-0 shadow-md data-[state=open]:animate-none data-[state=closed]:animate-none"
+        {memberAsk ? (
+          <h2
+            className="text-3 text-foreground"
+            style={{ fontFamily: 'var(--font-family-heading)' }}
+          >
+            {tMember('askThisSpace')}
+          </h2>
+        ) : (
+          <div className="mx-auto flex w-full min-w-0 justify-center">
+            {canOpenSpaceMenu ? (
+              <DropdownMenu
+                modal={true}
+                open={spaceMenuOpen}
+                onOpenChange={setSpaceMenuOpen}
               >
-                <div className="flex max-h-[24.5rem] min-h-0 flex-col">
-                  <div
-                    className="relative z-[1] shrink-0 border-b border-border/70 bg-background-3 px-2 pb-1.5 pt-1"
-                    onPointerDown={(event) => event.stopPropagation()}
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      SPACE_SWITCHER_CLASS,
+                      'shadow-none transition-colors hover:bg-foreground/5',
+                    )}
+                    aria-label={tNavigation('mySpaces')}
                   >
-                    <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
-                      {tNavigation('mySpaces')}
-                    </DropdownMenuLabel>
-                    <div className="px-1">
-                      <input
-                        ref={spaceSearchInputRef}
-                        type="text"
-                        value={spaceSearch}
-                        onChange={(event) => setSpaceSearch(event.target.value)}
-                        onPointerDown={(event) => {
-                          event.stopPropagation();
-                          spaceSearchInputRef.current?.focus({
-                            preventScroll: true,
-                          });
-                        }}
-                        onKeyDown={(event) => {
-                          // Keep typing out of DropdownMenu typeahead; Escape still
-                          // closes, and Tab/Shift+Tab must reach Radix focus handling.
-                          if (event.key === 'Escape' || event.key === 'Tab') {
-                            return;
-                          }
-                          event.stopPropagation();
-                        }}
-                        placeholder={tSpaces('search')}
-                        className="pointer-events-auto relative z-[1] h-8 w-full rounded-lg border border-border/60 bg-background-2 px-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/85"
-                        aria-label={tSpaces('search')}
+                    {currentIcon ? (
+                      <SpaceSwitcherMark
+                        iconUrl={currentIcon}
+                        alt={currentTitle}
                       />
+                    ) : (
+                      <MemberHomeMark className="h-6 w-6" />
+                    )}
+                    <span className="min-w-0 truncate text-center leading-snug">
+                      {currentTitle}
+                    </span>
+
+                    <ChevronsUpDown className="craft-icon shrink-0 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side="bottom"
+                  align="center"
+                  sideOffset={4}
+                  collisionPadding={8}
+                  className="relative isolate z-[70] w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-lg border border-border/60 bg-background-2 p-0 shadow-md data-[state=open]:animate-none data-[state=closed]:animate-none"
+                >
+                  <div className="flex max-h-[24.5rem] min-h-0 flex-col">
+                    <div
+                      className="relative z-[1] shrink-0 border-b border-border/70 bg-background-3 px-2 pb-1.5 pt-1"
+                      onPointerDown={(event) => event.stopPropagation()}
+                    >
+                      <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
+                        {tNavigation('mySpaces')}
+                      </DropdownMenuLabel>
+                      <div className="px-1">
+                        <input
+                          ref={spaceSearchInputRef}
+                          type="text"
+                          value={spaceSearch}
+                          onChange={(event) =>
+                            setSpaceSearch(event.target.value)
+                          }
+                          onPointerDown={(event) => {
+                            event.stopPropagation();
+                            spaceSearchInputRef.current?.focus({
+                              preventScroll: true,
+                            });
+                          }}
+                          onKeyDown={(event) => {
+                            // Keep typing out of DropdownMenu typeahead; Escape still
+                            // closes, and Tab/Shift+Tab must reach Radix focus handling.
+                            if (event.key === 'Escape' || event.key === 'Tab') {
+                              return;
+                            }
+                            event.stopPropagation();
+                          }}
+                          placeholder={tSpaces('search')}
+                          className="pointer-events-auto relative z-[1] h-8 w-full rounded-lg border border-border/60 bg-background-2 px-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/85"
+                          aria-label={tSpaces('search')}
+                        />
+                      </div>
+                    </div>
+                    <div className="min-h-0 overflow-y-auto p-1.5 narrow-scrollbar">
+                      {!hasFilteredSpaces ? (
+                        <DropdownMenuItem disabled>
+                          {normalizedSearch
+                            ? tSpaces('noSpacesFound')
+                            : fallbackTitle}
+                        </DropdownMenuItem>
+                      ) : null}
+                      {hasFilteredSpaces &&
+                        filteredGroupedSpaces.ecosystem.map(renderSpaceOption)}
+                      {filteredGroupedSpaces.ecosystem.length > 0 &&
+                      filteredGroupedSpaces.others.length > 0 ? (
+                        <DropdownMenuSeparator />
+                      ) : null}
+                      {hasFilteredSpaces &&
+                        filteredGroupedSpaces.others.map(renderSpaceOption)}
                     </div>
                   </div>
-                  <div className="min-h-0 overflow-y-auto p-1.5 narrow-scrollbar">
-                    {!hasFilteredSpaces ? (
-                      <DropdownMenuItem disabled>
-                        {normalizedSearch
-                          ? tSpaces('noSpacesFound')
-                          : fallbackTitle}
-                      </DropdownMenuItem>
-                    ) : null}
-                    {hasFilteredSpaces &&
-                      filteredGroupedSpaces.ecosystem.map(renderSpaceOption)}
-                    {filteredGroupedSpaces.ecosystem.length > 0 &&
-                    filteredGroupedSpaces.others.length > 0 ? (
-                      <DropdownMenuSeparator />
-                    ) : null}
-                    {hasFilteredSpaces &&
-                      filteredGroupedSpaces.others.map(renderSpaceOption)}
-                  </div>
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className={SPACE_SWITCHER_CLASS}>
-              {currentIcon ? (
-                <SpaceSwitcherMark iconUrl={currentIcon} alt={fallbackTitle} />
-              ) : (
-                <MemberHomeMark className="h-6 w-6" />
-              )}
-              <span className="min-w-0 truncate text-center leading-snug">
-                {fallbackTitle}
-              </span>
-            </div>
-          )}
-        </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className={SPACE_SWITCHER_CLASS}>
+                {currentIcon ? (
+                  <SpaceSwitcherMark
+                    iconUrl={currentIcon}
+                    alt={fallbackTitle}
+                  />
+                ) : (
+                  <MemberHomeMark className="h-6 w-6" />
+                )}
+                <span className="min-w-0 truncate text-center leading-snug">
+                  {fallbackTitle}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-end">
-        {rightSlot ? (
-          rightSlot
-        ) : showCloseButton ? (
-          <button
-            type="button"
-            onClick={onCloseButtonClick ?? closeAiPanel}
-            className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
-            title={t('hidePanel')}
-            aria-label={t('closePanel')}
-          >
-            <PanelLeftClose className="craft-icon" />
-          </button>
-        ) : null}
-      </div>
+      {memberAsk ? null : (
+        <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-end">
+          {rightSlot ? (
+            rightSlot
+          ) : showCloseButton ? (
+            <button
+              type="button"
+              onClick={onCloseButtonClick ?? closeAiPanel}
+              className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+              title={t('hidePanel')}
+              aria-label={t('closePanel')}
+            >
+              <PanelLeftClose className="craft-icon" />
+            </button>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

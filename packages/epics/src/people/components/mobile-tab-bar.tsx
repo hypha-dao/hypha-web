@@ -58,6 +58,8 @@ import {
   shouldShowMessagesNav,
   shouldShowSpacesScreen,
 } from './app-nav-visibility';
+import { useMemberExperience } from './member-experience';
+import { MemberMobileNav } from './member-space-chrome';
 import { MobileSpacesSubnav } from './mobile-spaces-subnav';
 
 const OPEN_MOBILE_CREATE = 'hypha:open-mobile-create';
@@ -95,9 +97,12 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { open: isAiOpen } = useAiPanel();
+  const { isMember } = useMemberExperience();
   const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
   // While the AI panel is open the spaces list takes the left menu slot.
-  const showSpacesRail = shouldShowMobileSpacesRail(pathname) && !isAiOpen;
+  // Members stay in one space, so that list stays hidden.
+  const showSpacesRail =
+    shouldShowMobileSpacesRail(pathname) && !isAiOpen && !isMember;
   const [slideIn, setSlideIn] = useState(false);
 
   useEffect(() => {
@@ -163,8 +168,9 @@ export function MobileTabBar({
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { person } = useMe();
-  const showMessages = shouldShowMessagesNav(person?.primaryOrientation);
-  const showSpaces = shouldShowSpacesScreen(person?.primaryOrientation);
+  const { orientation, isMember: memberNav } = useMemberExperience();
+  const showMessages = shouldShowMessagesNav(orientation);
+  const showSpaces = shouldShowSpacesScreen(orientation);
   const appTabCount = 3 + Number(showMessages) + Number(showSpaces);
   const onHome =
     pathname === `/${lang}/my-dashboard` ||
@@ -388,6 +394,7 @@ export function MobileTabBar({
   const showAppMenu = true;
 
   useEffect(() => {
+    if (memberNav) return;
     const px =
       (showAppMenu ? TAB_BAR_PX : 0) + (showSectionStrip ? SUB_NAV_PX : 0);
     document.documentElement.style.setProperty(
@@ -397,7 +404,7 @@ export function MobileTabBar({
     return () => {
       document.documentElement.style.removeProperty('--mobile-tab-offset');
     };
-  }, [showAppMenu, showSectionStrip]);
+  }, [memberNav, showAppMenu, showSectionStrip]);
 
   const dashboardHref = `/${lang}/home`;
   const connectionsHref = `/${lang}/messages`;
@@ -423,6 +430,7 @@ export function MobileTabBar({
   const networkActive = !createOpen && segmentActive(pathname, 'network');
 
   if (!mounted) return null;
+  if (memberNav) return <MemberMobileNav />;
   if (!showSectionStrip && !showAppMenu) return null;
 
   return createPortal(

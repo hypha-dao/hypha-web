@@ -24,51 +24,88 @@ export function SignalUpvoteTriangle({ className }: { className?: string }) {
 const arrowButtonClass =
   'h-6 min-h-0 w-6 rounded-none border-0 px-0 normal-case tracking-normal shadow-none ring-0 hover:shadow-none focus-visible:ring-1 focus-visible:ring-offset-0';
 
+type VoteArrowProps = {
+  direction: 'up' | 'down';
+  selected: 'up' | 'down' | null;
+  label: string;
+  disabled: boolean;
+  allocates: boolean;
+  expanded: boolean;
+  onClick: () => void;
+};
+
+/** Plain arrows for the member stack. The row keeps the shared button. */
+const StackVoteArrow = React.forwardRef<HTMLButtonElement, VoteArrowProps>(
+  function StackVoteArrow(
+    { direction, selected, label, disabled, allocates, expanded, onClick },
+    ref,
+  ) {
+    const active = selected === direction;
+    const Icon = direction === 'up' ? ArrowUp : ArrowDown;
+    return (
+      <button
+        ref={ref}
+        type="button"
+        data-testid={direction === 'up' ? 'signal-vote-up' : 'signal-vote-down'}
+        aria-pressed={active}
+        aria-label={label}
+        aria-haspopup={allocates ? 'dialog' : undefined}
+        aria-expanded={allocates ? expanded : undefined}
+        disabled={disabled}
+        className={cn(
+          'flex h-7 w-full items-center justify-center rounded-none p-0',
+          active
+            ? 'bg-foreground text-background'
+            : 'bg-transparent text-foreground hover:bg-foreground/5',
+          'disabled:opacity-40',
+        )}
+        onClick={(event) => {
+          event.stopPropagation();
+          onClick();
+        }}
+      >
+        <Icon className="size-4" strokeWidth={2} aria-hidden />
+      </button>
+    );
+  },
+);
+
 /**
  * The allocation popover anchors to this button. The ref has to reach the
  * DOM node: Radix leaves an unanchored panel at `translate(0, -200%)`,
  * which is off-screen, so the click looks like it did nothing.
  */
-const VoteArrow = React.forwardRef<
-  HTMLButtonElement,
-  {
-    direction: 'up' | 'down';
-    selected: 'up' | 'down' | null;
-    label: string;
-    disabled: boolean;
-    allocates: boolean;
-    expanded: boolean;
-    onClick: () => void;
-  }
->(function VoteArrow(
-  { direction, selected, label, disabled, allocates, expanded, onClick },
-  ref,
-) {
-  const active = selected === direction;
-  const Icon = direction === 'up' ? ArrowUp : ArrowDown;
-  return (
-    <Button
-      ref={ref}
-      type="button"
-      variant={active ? 'default' : 'ghost'}
-      colorVariant={active ? 'accent' : 'neutral'}
-      size="sm"
-      data-testid={direction === 'up' ? 'signal-vote-up' : 'signal-vote-down'}
-      aria-pressed={active}
-      aria-label={label}
-      aria-haspopup={allocates ? 'dialog' : undefined}
-      aria-expanded={allocates ? expanded : undefined}
-      disabled={disabled}
-      className={cn(arrowButtonClass)}
-      onClick={(event) => {
-        event.stopPropagation();
-        onClick();
-      }}
-    >
-      <Icon className="size-3.5" strokeWidth={2} aria-hidden />
-    </Button>
-  );
-});
+const VoteArrow = React.forwardRef<HTMLButtonElement, VoteArrowProps>(
+  function VoteArrow(
+    { direction, selected, label, disabled, allocates, expanded, onClick },
+    ref,
+  ) {
+    const active = selected === direction;
+    const Icon = direction === 'up' ? ArrowUp : ArrowDown;
+    return (
+      <Button
+        ref={ref}
+        type="button"
+        variant={active ? 'default' : 'ghost'}
+        colorVariant={active ? 'accent' : 'neutral'}
+        size="sm"
+        data-testid={direction === 'up' ? 'signal-vote-up' : 'signal-vote-down'}
+        aria-pressed={active}
+        aria-label={label}
+        aria-haspopup={allocates ? 'dialog' : undefined}
+        aria-expanded={allocates ? expanded : undefined}
+        disabled={disabled}
+        className={cn(arrowButtonClass)}
+        onClick={(event) => {
+          event.stopPropagation();
+          onClick();
+        }}
+      >
+        <Icon className="size-3.5" strokeWidth={2} aria-hidden />
+      </Button>
+    );
+  },
+);
 
 /**
  * Shared face of the list and detail vote control. A square outlined row:
@@ -94,6 +131,7 @@ export function SignalUpvoteCellChrome({
   onDetailsOpenChange,
   detailsPanel,
   className,
+  layout = 'row',
   ...groupProps
 }: React.HTMLAttributes<HTMLDivElement> & {
   figure: string;
@@ -116,11 +154,14 @@ export function SignalUpvoteCellChrome({
   detailsOpen?: boolean;
   onDetailsOpenChange?: (open: boolean) => void;
   detailsPanel?: React.ReactNode;
+  /** Members stack the arrows. The shared row stays horizontal. */
+  layout?: 'row' | 'stack';
 }) {
   const selected = direction ?? (pressed ? 'up' : null);
   const allocates = allocationPanel != null;
+  const Arrow = layout === 'stack' ? StackVoteArrow : VoteArrow;
   const up = (
-    <VoteArrow
+    <Arrow
       direction="up"
       selected={selected}
       label={upLabel}
@@ -131,7 +172,7 @@ export function SignalUpvoteCellChrome({
     />
   );
   const down = (
-    <VoteArrow
+    <Arrow
       direction="down"
       selected={selected}
       label={downLabel}
@@ -145,8 +186,15 @@ export function SignalUpvoteCellChrome({
     <button
       type="button"
       className={cn(
-        'min-w-4 rounded-none bg-transparent px-1.5 text-1 font-medium tabular-nums leading-none',
-        selected ? 'text-accent-11' : 'text-foreground',
+        'rounded-none bg-transparent tabular-nums leading-none',
+        layout === 'stack'
+          ? 'w-full px-2 py-1.5 text-center text-3 font-semibold text-foreground'
+          : 'min-w-4 px-1.5 text-1 font-medium',
+        layout === 'stack'
+          ? null
+          : selected
+          ? 'text-accent-11'
+          : 'text-foreground',
       )}
       data-testid="signal-upvote-figure"
       aria-label={figureLabel ?? exactLabel}
@@ -186,8 +234,15 @@ export function SignalUpvoteCellChrome({
       data-vote-direction={selected ?? 'none'}
       {...groupProps}
       className={cn(
-        'inline-flex h-7 items-center rounded-none border bg-transparent px-0.5',
-        selected ? 'border-accent-8' : 'border-border',
+        'inline-flex rounded-none border bg-transparent',
+        layout === 'stack'
+          ? 'min-w-[4.75rem] flex-col items-stretch overflow-hidden border-border bg-background p-0'
+          : 'h-7 items-center px-0.5',
+        layout === 'stack'
+          ? null
+          : selected
+          ? 'border-accent-8'
+          : 'border-border',
         className,
       )}
     >

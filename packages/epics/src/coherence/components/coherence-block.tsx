@@ -33,6 +33,7 @@ import {
 import { SignalFeedFilters } from './signal-feed-filters';
 import { SignalFeedRow } from './signal-feed-row';
 import { useDebouncedFeedTitle } from '../lib/use-debounced-feed-title';
+import { useMemberExperience } from '../../people/components/member-experience';
 import type { UseMembers } from '../../spaces/hooks/types';
 
 export const SIGNAL_SORT_QUERY_KEY = 'sort';
@@ -60,6 +61,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   const searchParams = useSearchParams();
 
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
+  const { isMember: showSignalImage } = useMemberExperience();
   const {
     canMutate,
     isLoading: isMembershipLoading,
@@ -271,7 +273,15 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
                 key={signal.id}
                 signal={signal}
                 spaceSlug={spaceSlug}
-                href={getSignalPath(lang, spaceSlug, signal.slug)}
+                href={
+                  showSignalImage
+                    ? `${getSignalPath(
+                        lang,
+                        spaceSlug,
+                        signal.slug,
+                      )}?discussion=open`
+                    : getSignalPath(lang, spaceSlug, signal.slug)
+                }
                 votingMode={votingMode}
                 votingModeStatus={votingModeStatus}
                 onRetryVotingMode={retryVotingMode}
@@ -281,6 +291,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
                 refresh={refresh}
                 sort={sort}
                 summaryState={upvoteSummaryState}
+                memberLayout={showSignalImage}
               />
             ) : null,
           )}

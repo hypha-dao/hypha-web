@@ -6,7 +6,11 @@ import { SectionLoadMore } from '@hypha-platform/ui/server';
 
 import { MembersList } from './members-list';
 import { SpaceMemberInviteButton } from './space-member-invite-button';
-import { useMembersSection } from '../hooks/use-members-section';
+import {
+  MEMBER_DIRECTORY_PAGE_SIZE,
+  useMembersSection,
+} from '../hooks/use-members-section';
+import { useMemberExperience } from './member-experience';
 import { ExitSpace, UseMembers, useSpaceMember } from '../../spaces';
 import { Empty } from '../../common';
 import { ActionGate } from '../../common/action-capabilities';
@@ -73,6 +77,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
   const params = useParams();
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
   const { person } = useMe();
+  const { isMember: memberDirectory } = useMemberExperience();
   const { isAuthenticated, canLogin } = useAuthentication();
   const { isDelegate } = useIsDelegate({
     spaceId: space?.web3SpaceId as number,
@@ -87,6 +92,72 @@ export const MembersSection: FC<MemberSectionProps> = ({
 
   const aiAgents = useMobilizedAiAgents(spaceSlug);
   const aiAgentCount = aiAgents.length;
+
+  const shownMembers = Math.min(
+    pages * MEMBER_DIRECTORY_PAGE_SIZE,
+    personCount,
+  );
+
+  if (memberDirectory) {
+    return (
+      <div className="flex w-full flex-col">
+        <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
+          <h1 className="text-[11px] tracking-[0.14em] text-foreground uppercase">
+            {tCommon('Members')}
+          </h1>
+          <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
+            {tMembers('shownOfTotal', {
+              shown: shownMembers,
+              total: personCount,
+            })}
+          </p>
+        </div>
+        {personCount === 0 && !isLoading ? (
+          <Empty>
+            <p>{tMembers('listIsEmpty')}</p>
+          </Empty>
+        ) : (
+          <div className="w-full">
+            {Array.from({ length: pages }).map((_, index) => (
+              <MembersList
+                basePath={basePath}
+                page={index + 1}
+                key={index}
+                useMembers={useMembers}
+                spaceId={space?.id}
+                spaceSlug={spaceSlug}
+                searchTerm={searchTerm}
+                refreshInterval={refreshInterval}
+                energySharingOnly={energySharingOnly}
+                entityFilter="member"
+                rows
+              />
+            ))}
+          </div>
+        )}
+        {personCount === 0 ? null : (
+          <SectionLoadMore
+            onClick={loadMore}
+            disabled={
+              isLoading ||
+              (pagination &&
+                (pagination.totalPages === pages || !pagination.hasNextPage))
+            }
+            isLoading={isLoading}
+          >
+            <Text>
+              {isLoading
+                ? tMembers('loading')
+                : pagination &&
+                  (pagination.totalPages === pages || !pagination.hasNextPage)
+                ? tMembers('noMoreMembers')
+                : tMembers('loadMoreMembers')}
+            </Text>
+          </SectionLoadMore>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">

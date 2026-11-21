@@ -11,9 +11,11 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import { notFound, redirect } from 'next/navigation';
 import { getDhoPathOverview } from '../../../overview/constants';
+import { OpenMemberDiscussion } from './open-member-discussion';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string; signalSlug: string }>;
+  searchParams: Promise<{ discussion?: string | string[] }>;
 };
 
 function safeDecode(value: string): string {
@@ -26,6 +28,10 @@ function safeDecode(value: string): string {
 
 export default async function SignalDetailPage(props: PageProps) {
   const { lang, id, signalSlug: rawSlug } = await props.params;
+  const searchParams = await props.searchParams;
+  const discussion = searchParams.discussion;
+  const openDiscussion =
+    (Array.isArray(discussion) ? discussion[0] : discussion) === 'open';
   const signalSlug = safeDecode(rawSlug).trim();
 
   if (!(await getEnableCoherence())) {
@@ -48,6 +54,16 @@ export default async function SignalDetailPage(props: PageProps) {
   return (
     <SpaceTabAccessWrapper spaceSlug={id}>
       <div className="flex flex-col gap-4 py-4">
+        {openDiscussion && humanChatEnabled ? (
+          <OpenMemberDiscussion
+            enabled
+            spaceSlug={id}
+            slug={signal.slug ?? signalSlug}
+            title={signal.title}
+            description={signal.description}
+            roomId={signal.roomId ?? null}
+          />
+        ) : null}
         <SignalPage
           lang={lang}
           spaceSlug={id}

@@ -35,11 +35,19 @@ import {
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
 import {
+  isHomeNavHref,
   isMessagesNavHref,
+  isNetworkNavHref,
   isSpacesNavHref,
+  isWalletNavHref,
+  shouldShowHomeNav,
   shouldShowMessagesNav,
+  shouldShowNetworkNav,
   shouldShowSpacesScreen,
+  shouldShowWalletNav,
 } from './app-nav-visibility';
+import { writeOrientationCookie } from './member-orientation-cookie';
+import { useMemberExperience } from './member-experience';
 
 type ConnectedButtonProfileProps = {
   useAuthentication: ProfileUseAuthentication;
@@ -206,6 +214,7 @@ export const ConnectedButtonProfile = ({
   const [loggingOut, setLoggingOut] = useState(false);
   const handleLogout = useCallback(() => {
     setLoggingOut(true);
+    writeOrientationCookie(null);
     logout();
   }, [logout]);
 
@@ -223,18 +232,27 @@ export const ConnectedButtonProfile = ({
     console.log('Delete profile');
   };
 
+  const { orientation } = useMemberExperience();
   const visibleNavItems = useMemo(() => {
-    const orientation = person?.primaryOrientation;
     return navItems.filter((item) => {
+      if (isHomeNavHref(item.href) && !shouldShowHomeNav(orientation)) {
+        return false;
+      }
       if (isMessagesNavHref(item.href) && !shouldShowMessagesNav(orientation)) {
+        return false;
+      }
+      if (isWalletNavHref(item.href) && !shouldShowWalletNav(orientation)) {
         return false;
       }
       if (isSpacesNavHref(item.href) && !shouldShowSpacesScreen(orientation)) {
         return false;
       }
+      if (isNetworkNavHref(item.href) && !shouldShowNetworkNav(orientation)) {
+        return false;
+      }
       return true;
     });
-  }, [navItems, person?.primaryOrientation]);
+  }, [navItems, orientation]);
 
   return (
     <ButtonProfile
