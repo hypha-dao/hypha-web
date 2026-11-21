@@ -3,19 +3,28 @@ import { AlertTriangle, X } from 'lucide-react';
 
 import { cn } from '@hypha-platform/ui-utils';
 
-export interface FloatingNoticeProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
-  /** Short lead-in, shown in bold before the message and followed by a colon. */
-  title?: React.ReactNode;
-  /** `warning` adds warning colors and an alert icon; `neutral` is plain. */
-  variant?: 'neutral' | 'warning';
-  /** Optional action, for example a `Button`. */
-  action?: React.ReactNode;
-  /** When set, a close button is shown; the parent decides what closing does. */
-  onDismiss?: () => void;
-  /** Accessible name of the close button (required to be useful with onDismiss). */
-  dismissLabel?: string;
-}
+/** A close button needs an accessible name, so the two props go together. */
+type DismissProps =
+  | {
+      /** Shows a close button; the parent decides what closing does. */
+      onDismiss: () => void;
+      /** Accessible name of the close button. */
+      dismissLabel: string;
+    }
+  | { onDismiss?: undefined; dismissLabel?: undefined };
+
+export type FloatingNoticeProps = Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'title'
+> &
+  DismissProps & {
+    /** Short lead-in, shown in bold before the message and followed by a colon. */
+    title?: React.ReactNode;
+    /** `warning` adds warning colors and an alert icon; `neutral` is plain. */
+    variant?: 'neutral' | 'warning';
+    /** Optional action, for example a `Button`. */
+    action?: React.ReactNode;
+  };
 
 /**
  * A one-line notice floating at the bottom centre of the viewport (about 90%
