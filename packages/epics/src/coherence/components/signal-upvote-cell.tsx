@@ -233,7 +233,7 @@ export function SignalUpvoteCellChrome({
     <div
       role="group"
       aria-pressed={pressed}
-      title={exactLabel}
+      title={exactLabel.length > 18 ? figure : exactLabel}
       data-testid="signal-upvote-cell"
       data-vote-direction={selected ?? 'none'}
       {...groupProps}

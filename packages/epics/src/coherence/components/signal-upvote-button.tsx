@@ -399,17 +399,15 @@ export function SignalUpvoteButton({
             <PopoverContent
               align="start"
               side="bottom"
-              sideOffset={6}
+              sideOffset={8}
               collisionPadding={12}
               data-testid="signal-vote-allocation"
-              className="w-[min(18rem,calc(100vw-2rem))] rounded-none border border-border/80 bg-background-2 p-3 shadow-md"
-              style={spaceAccentPortalStyle}
-              data-space-accent-scope
+              className="w-[min(18rem,calc(100vw-2rem))] rounded-none border border-border bg-background p-4 shadow-none"
               onClick={stopPropagation}
             >
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 <p
-                  className="m-0 text-2 font-semibold tabular-nums text-foreground"
+                  className="m-0 text-4 font-medium tabular-nums tracking-[-0.02em] text-foreground"
                   data-testid="signal-vote-amount"
                 >
                   {chosenAmount ?? '—'}
@@ -418,6 +416,7 @@ export function SignalUpvoteButton({
                   min={1}
                   max={100}
                   step={1}
+                  tone="ink"
                   value={[percent]}
                   onValueChange={(value) => setPercent(value[0] ?? 100)}
                   disabled={isMutating}
@@ -430,6 +429,7 @@ export function SignalUpvoteButton({
                     variant="outline"
                     colorVariant="neutral"
                     size="sm"
+                    className="h-9"
                     disabled={isMutating}
                     data-testid="signal-vote-cancel"
                     onClick={() => setAllocationDirection(null)}
@@ -438,8 +438,10 @@ export function SignalUpvoteButton({
                   </Button>
                   <Button
                     type="button"
-                    colorVariant="accent"
+                    variant="default"
+                    colorVariant="neutral"
                     size="sm"
+                    className="h-9 bg-foreground text-background hover:bg-foreground/90"
                     disabled={isMutating}
                     data-testid="signal-vote-confirm"
                     onClick={handleConfirmAllocation}
@@ -453,7 +455,7 @@ export function SignalUpvoteButton({
                     variant="ghost"
                     colorVariant="neutral"
                     size="sm"
-                    className="w-full text-muted-foreground hover:text-foreground"
+                    className="h-8 w-full text-muted-foreground hover:text-foreground"
                     disabled={isMutating}
                     onClick={() => void handleRemove()}
                   >
@@ -470,7 +472,7 @@ export function SignalUpvoteButton({
                     {error}
                   </p>
                 ) : null}
-                <Separator className="bg-border/70" />
+                <Separator className="bg-border" />
                 <SignalAllocationVoters summary={summary} />
               </div>
             </PopoverContent>
