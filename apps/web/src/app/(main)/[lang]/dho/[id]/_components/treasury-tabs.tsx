@@ -57,7 +57,11 @@ export function TreasuryTabs({
 
   return (
     <div className="flex w-full flex-col gap-4 py-4">
-      <TabScreenTitle title={tCommon('Treasury')} count={walletCount} />
+      <TabScreenTitle
+        title={tCommon('Treasury')}
+        screen="treasury"
+        count={walletCount}
+      />
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}

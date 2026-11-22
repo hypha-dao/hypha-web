@@ -30,7 +30,7 @@ export async function WalletPageFrame({
   return (
     <div className="w-full min-w-0 overflow-x-hidden overflow-y-auto">
       <MemberPageShell>
-        <MemberScreenTitle memberTitle={memberTitle}>
+        <MemberScreenTitle screen="wallet" memberTitle={memberTitle}>
           <header className="xl:hidden">
             <p className="mb-2 text-1 font-bold uppercase text-foreground">
               {t(titleKey)}

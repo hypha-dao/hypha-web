@@ -36,6 +36,7 @@ export default async function AgreementsPage(props: PageProps) {
       <div className="flex flex-col gap-4 py-4">
         <TabScreenTitle
           title={tCommon('Agreements')}
+          screen="decisions"
           count={spaceFromDb?.documentCount ?? null}
           lang={lang}
         />

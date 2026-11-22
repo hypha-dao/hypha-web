@@ -757,7 +757,23 @@
     "darkMode": "Dunkelmodus",
     "language": "Sprache",
     "logOut": "Abmelden",
-    "spaceMessages": "Nachrichten in {space}"
+    "spaceMessages": "Nachrichten in {space}",
+    "titles": {
+      "signalsEyebrow": "Signale · Neuigkeiten aus der Community",
+      "signalsTitle": "Neues aus der Community.",
+      "decisionsEyebrow": "Community-Entscheidungen · Abstimmen, was wir bauen",
+      "decisionsTitle": "Offene Abstimmungen und bisherige Ergebnisse.",
+      "messagesEyebrow": "Nachrichten · Chats und Kanäle",
+      "messagesTitle": "Deine Unterhaltungen.",
+      "walletEyebrow": "Dein Wallet · Credits und Auszahlungen",
+      "walletTitle": "Deine Credits und Mittel.",
+      "energyEyebrow": "Deine Energie · Dein Zuhause und die Community",
+      "energyTitle": "Was dein Zuhause heute erzeugt und verbraucht hat.",
+      "membersEyebrow": "Mitglieder · {count} Haushalte",
+      "membersTitle": "Wer hier lebt und teilt.",
+      "treasuryEyebrow": "Community-Treasury · Gemeinsames Geld und Ausgaben",
+      "treasuryTitle": "Ressourcen, die wir teilen."
+    }
   },
   "Connections": {
     "titleLineOne": "Bleib nah,",

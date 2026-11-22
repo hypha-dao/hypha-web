@@ -36,7 +36,7 @@ export async function MessagesPageFrame({
   return (
     <div className="w-full min-w-0 overflow-x-clip">
       <MemberPageShell>
-        <MemberScreenTitle memberTitle={memberTitle}>
+        <MemberScreenTitle screen="messages" memberTitle={memberTitle}>
           <header className="shrink-0 xl:hidden">
             <p className="mb-2 text-1 font-bold uppercase text-foreground">
               {t('titleLineOne')}

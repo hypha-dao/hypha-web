@@ -757,7 +757,23 @@
     "darkMode": "Donkere modus",
     "language": "Taal",
     "logOut": "Uitloggen",
-    "spaceMessages": "Berichten in {space}"
+    "spaceMessages": "Berichten in {space}",
+    "titles": {
+      "signalsEyebrow": "Signalen · Nieuws uit de community",
+      "signalsTitle": "Het laatste uit de community.",
+      "decisionsEyebrow": "Communitybesluiten · Stem op wat we bouwen",
+      "decisionsTitle": "Open stemmingen en eerdere resultaten.",
+      "messagesEyebrow": "Berichten · Chats en kanalen",
+      "messagesTitle": "Jouw gesprekken.",
+      "walletEyebrow": "Jouw wallet · Credits en uitbetalingen",
+      "walletTitle": "Jouw credits en middelen.",
+      "energyEyebrow": "Jouw energie · Jouw huis en de community",
+      "energyTitle": "Wat jouw huis vandaag maakte en gebruikte.",
+      "membersEyebrow": "Leden · {count} huishoudens",
+      "membersTitle": "Wie hier woont en deelt.",
+      "treasuryEyebrow": "Community-treasury · Gedeeld geld en uitgaven",
+      "treasuryTitle": "Middelen die we delen."
+    }
   },
   "Connections": {
     "titleLineOne": "Blijf dichtbij,",

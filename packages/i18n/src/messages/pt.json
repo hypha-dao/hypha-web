@@ -1537,7 +1537,23 @@
     "darkMode": "Modo escuro",
     "language": "Idioma",
     "logOut": "Terminar sessão",
-    "spaceMessages": "Mensagens em {space}"
+    "spaceMessages": "Mensagens em {space}",
+    "titles": {
+      "signalsEyebrow": "Sinais · Notícias da comunidade",
+      "signalsTitle": "O mais recente da comunidade.",
+      "decisionsEyebrow": "Decisões da comunidade · Vote no que construímos",
+      "decisionsTitle": "Votações abertas e resultados anteriores.",
+      "messagesEyebrow": "Mensagens · Chats e canais",
+      "messagesTitle": "As suas conversas.",
+      "walletEyebrow": "A sua carteira · Créditos e pagamentos",
+      "walletTitle": "Os seus créditos e fundos.",
+      "energyEyebrow": "A sua energia · A sua casa e a comunidade",
+      "energyTitle": "O que a sua casa produziu e usou hoje.",
+      "membersEyebrow": "Membros · {count} agregados",
+      "membersTitle": "Quem vive e partilha aqui.",
+      "treasuryEyebrow": "Tesouraria da comunidade · Dinheiro partilhado e despesas",
+      "treasuryTitle": "Recursos que partilhamos."
+    }
   },
   "Connections": {
     "titleLineOne": "Fique perto,",

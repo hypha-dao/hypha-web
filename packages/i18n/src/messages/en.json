@@ -156,7 +156,23 @@
     "darkMode": "Dark mode",
     "language": "Language",
     "logOut": "Log out",
-    "spaceMessages": "Messages in {space}"
+    "spaceMessages": "Messages in {space}",
+    "titles": {
+      "signalsEyebrow": "Signals · News from the community",
+      "signalsTitle": "Latest from the community.",
+      "decisionsEyebrow": "Community decisions · Vote on what we build",
+      "decisionsTitle": "Open votes and past results.",
+      "messagesEyebrow": "Messages · Chats and channels",
+      "messagesTitle": "Your conversations.",
+      "walletEyebrow": "Your wallet · Credits and payouts",
+      "walletTitle": "Your credits and funds.",
+      "energyEyebrow": "Your energy · Your home and the community",
+      "energyTitle": "What your home made and used today.",
+      "membersEyebrow": "Members · {count} households",
+      "membersTitle": "Who lives and shares here.",
+      "treasuryEyebrow": "Community treasury · Shared money and spending",
+      "treasuryTitle": "Resources we share."
+    }
   },
   "Connections": {
     "titleLineOne": "Stay close,",
@@ -5250,7 +5266,7 @@
     },
     "memberDiagram": {
       "eyebrow": "Your energy · Your home and the community",
-      "title7d": "What your home made and used this week.",
+      "title7d": "What your home made and used today.",
       "title30d": "What your home made and used this month.",
       "title90d": "What your home made and used these three months.",
       "title12m": "What your home made and used this year.",
@@ -5271,7 +5287,7 @@
       "grid": "Grid",
       "zoneRoof": "Your roof",
       "zoneBattery": "Shared battery",
-      "zoneNeighbours": "Neighbours",
+      "zoneNeighbours": "Community",
       "communityMakes": "Community makes",
       "communityUses": "Community uses",
       "battery": "Battery",

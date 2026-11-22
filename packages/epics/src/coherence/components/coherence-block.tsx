@@ -190,6 +190,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
     <div className="flex flex-col gap-4">
       <MemberSpacePageTitle
         title={t('signals')}
+        screen="signals"
         count={
           typeof signals?.length === 'number' && !loadFailed && !isLoading
             ? ranked.length

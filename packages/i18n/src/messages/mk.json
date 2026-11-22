@@ -757,7 +757,23 @@
     "darkMode": "Темен режим",
     "language": "Јазик",
     "logOut": "Одјави се",
-    "spaceMessages": "Пораки во {space}"
+    "spaceMessages": "Пораки во {space}",
+    "titles": {
+      "signalsEyebrow": "Сигнали · Вести од заедницата",
+      "signalsTitle": "Најново од заедницата.",
+      "decisionsEyebrow": "Одлуки на заедницата · Гласај што градиме",
+      "decisionsTitle": "Отворени гласања и минати резултати.",
+      "messagesEyebrow": "Пораки · Разговори и канали",
+      "messagesTitle": "Вашите разговори.",
+      "walletEyebrow": "Вашиот паричник · Кредити и исплати",
+      "walletTitle": "Вашите кредити и средства.",
+      "energyEyebrow": "Вашата енергија · Вашиот дом и заедницата",
+      "energyTitle": "Што вашиот дом произведе и потроши денес.",
+      "membersEyebrow": "Членови · {count} домаќинства",
+      "membersTitle": "Кој живее и споделува овде.",
+      "treasuryEyebrow": "Благајна на заедницата · Заеднички пари и трошоци",
+      "treasuryTitle": "Ресурси што ги споделуваме."
+    }
   },
   "Connections": {
     "titleLineOne": "Остани блиску,",

@@ -3,20 +3,24 @@
 import type { ReactNode } from 'react';
 import {
   MemberSpacePageTitle,
+  type MemberTitleScreen,
   useMemberExperience,
 } from '@hypha-platform/epics';
 
 /**
- * Members see the Community / page-name double title used on space screens.
+ * Members get the small screen label + large title sentence.
  * Everyone else keeps the existing heading.
  */
 export function MemberScreenTitle({
+  screen,
   memberTitle,
   count,
   lang,
   children,
 }: {
-  memberTitle: string;
+  screen: MemberTitleScreen;
+  /** Unused for members when `screen` supplies copy; kept for clarity. */
+  memberTitle?: string;
   count?: number | null;
   lang?: string;
   children: ReactNode;
@@ -24,5 +28,12 @@ export function MemberScreenTitle({
   const { isMember } = useMemberExperience();
   if (!isMember) return children;
 
-  return <MemberSpacePageTitle title={memberTitle} count={count} lang={lang} />;
+  return (
+    <MemberSpacePageTitle
+      title={memberTitle ?? screen}
+      screen={screen}
+      count={count}
+      lang={lang}
+    />
+  );
 }

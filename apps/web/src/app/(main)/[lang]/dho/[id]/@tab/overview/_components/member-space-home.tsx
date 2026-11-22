@@ -127,7 +127,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
             <p className="mb-1 text-1 font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              {t('community')}
+              {space?.title?.trim() || t('yourSpace')}
             </p>
             <h1
               id="member-space-home-title"
