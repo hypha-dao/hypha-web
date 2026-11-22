@@ -251,7 +251,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
               return (
                 <article
                   key={signal.id}
-                  className={`flex ${HOME_CARD_WIDTH} shrink-0 snap-start flex-col border border-border bg-background`}
+                  className={`flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 snap-start flex-col overflow-hidden border border-border bg-background`}
                 >
                   {image ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -259,38 +259,40 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                   ) : (
                     <div className="aspect-[16/10] w-full bg-accent-3" />
                   )}
-                  <div className="flex flex-1 flex-col gap-2 p-4">
+                  <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
                     <p className="text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
                       {typeLabel}
                     </p>
                     <h2
-                      className="text-3 leading-snug text-foreground"
+                      className="min-w-0 break-words text-3 leading-snug text-foreground"
                       style={{ fontFamily: 'var(--font-family-heading)' }}
                     >
                       {signal.title}
                     </h2>
-                    <p className="line-clamp-3 text-1 text-muted-foreground">
+                    <p className="line-clamp-3 min-w-0 text-1 text-muted-foreground">
                       {plainText(signal.description)}
                     </p>
-                    <div className="mt-auto flex items-center gap-3 border-t border-border pt-3">
-                      <ActionGate kind="upvote" fullAppPath="" label={null}>
-                        <SignalUpvoteButton
-                          slug={signal.slug}
-                          spaceSlug={spaceSlug}
-                          upvotes={signal.upvotes}
-                          votingMode={votingMode}
-                          votingModeStatus={votingModeStatus}
-                          onRetryVotingMode={retryVotingMode}
-                          isNonMember={isNonMember}
-                          isMembershipPending={isMembershipPending}
-                          refresh={() => mutate()}
-                          archived={signal.archived}
-                          summaryState="ready"
-                        />
-                      </ActionGate>
+                    <div className="mt-auto flex w-full min-w-0 flex-wrap items-center gap-2 border-t border-border pt-3">
+                      <div className="min-w-0 max-w-full">
+                        <ActionGate kind="upvote" fullAppPath="" label={null}>
+                          <SignalUpvoteButton
+                            slug={signal.slug}
+                            spaceSlug={spaceSlug}
+                            upvotes={signal.upvotes}
+                            votingMode={votingMode}
+                            votingModeStatus={votingModeStatus}
+                            onRetryVotingMode={retryVotingMode}
+                            isNonMember={isNonMember}
+                            isMembershipPending={isMembershipPending}
+                            refresh={() => mutate()}
+                            archived={signal.archived}
+                            summaryState="ready"
+                          />
+                        </ActionGate>
+                      </div>
                       <Link
                         href={href}
-                        className="inline-flex h-7 items-center gap-1 border border-border px-3 text-1 text-foreground hover:bg-foreground/5"
+                        className="ml-auto inline-flex h-7 shrink-0 items-center gap-1 border border-border px-2.5 text-1 text-foreground hover:bg-foreground/5"
                       >
                         {t('open')}
                         <ChevronRight className="h-3.5 w-3.5" aria-hidden />
