@@ -2,10 +2,24 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { useParams, usePathname, useSearchParams } from 'next/navigation';
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
-import { MessagesSquare, Moon, Sun, Wallet } from 'lucide-react';
+import {
+  Check,
+  ChevronRight,
+  ChevronsUpDown,
+  MessagesSquare,
+  Moon,
+  Sun,
+  Wallet,
+} from 'lucide-react';
+import { Sheet, SheetContent, SheetTitle } from '@hypha-platform/ui';
 import {
   getEnergyCommunityTokensForSpace,
   useSpaceBySlug,
@@ -19,6 +33,7 @@ import {
 } from '../../common/recent-space-history';
 import { useMemberNamedSpaces } from '../../network-exchange/use-member-named-spaces';
 import { useUserAssets } from '../../treasury/hooks/use-user-assets';
+import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import {
   memberMenuHref,
   memberSurfaceSpaceQuery,
@@ -60,6 +75,124 @@ function useMemberBarSpaceSlug(): string | null {
         recentSlugs: recent,
       }),
     [named, pathSlug, recent, surfaceQuery],
+  );
+}
+
+function MemberCommunitySwitcher({
+  lang,
+  slug,
+  resolvedTheme,
+}: {
+  lang: string;
+  slug: string | null;
+  resolvedTheme?: string;
+}) {
+  const tMember = useTranslations('MemberMenu');
+  const tCommon = useTranslations('Common');
+  const router = useRouter();
+  const named = useMemberNamedSpaces();
+  const [open, setOpen] = useState(false);
+  const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
+  const current = named.find((space) => space.slug === slug) ?? null;
+  const title = current?.title?.trim() || slug || '';
+  const location = current?.locationLabel?.trim() || '';
+  const logo = resolveSpaceDisplayLogoUrl(current, logoVariant);
+
+  if (!title) return null;
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <button
+        type="button"
+        className="flex min-w-0 max-w-[11rem] items-center gap-2 xl:hidden"
+        aria-label={tMember('yourCommunities')}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={() => setOpen(true)}
+      >
+        <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-accent-3 text-[11px] font-medium text-foreground">
+          {logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logo} alt="" className="h-full w-full object-cover" />
+          ) : (
+            title.charAt(0).toUpperCase()
+          )}
+        </span>
+        <span className="min-w-0 text-left">
+          <span className="block truncate text-2 font-medium leading-tight text-foreground">
+            {title}
+          </span>
+          {location ? (
+            <span className="block truncate text-1 leading-tight text-muted-foreground">
+              {location}
+            </span>
+          ) : null}
+        </span>
+        <ChevronsUpDown
+          className="h-4 w-4 shrink-0 text-muted-foreground"
+          aria-hidden
+        />
+      </button>
+      <SheetContent
+        side="bottom"
+        closeLabel={tCommon('close')}
+        className="max-h-[80vh] rounded-t-2xl px-4 pb-8 pt-3"
+      >
+        <SheetTitle className="pr-8 text-left text-5 font-medium">
+          {tMember('yourCommunities')}
+        </SheetTitle>
+        <ul className="mt-4 divide-y divide-border">
+          {named.map((space) => {
+            const active = space.slug === slug;
+            const mark = resolveSpaceDisplayLogoUrl(space, logoVariant);
+            const place = space.locationLabel?.trim() || '';
+            return (
+              <li key={space.slug}>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-3 py-3 text-left"
+                  onClick={() => {
+                    setOpen(false);
+                    if (active) return;
+                    router.push(`/${lang}/dho/${space.slug}/overview`);
+                  }}
+                >
+                  <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-accent-3 text-[11px] font-medium">
+                    {mark ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={mark}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      space.title.charAt(0).toUpperCase()
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-3 font-medium">
+                    {space.title}
+                    {place ? (
+                      <span className="font-normal text-muted-foreground">
+                        {' '}
+                        · {place}
+                      </span>
+                    ) : null}
+                  </span>
+                  {active ? (
+                    <Check className="h-4 w-4 shrink-0" aria-hidden />
+                  ) : (
+                    <ChevronRight
+                      className="h-4 w-4 shrink-0 text-muted-foreground"
+                      aria-hidden
+                    />
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -143,64 +276,71 @@ export function MemberTopBar({
 
   return (
     <div className="flex items-center gap-1.5 sm:gap-2" data-member-top-bar>
-      {pill && amount && walletHref ? (
-        <Link
-          href={walletHref}
-          data-member-token-pill
-          className="inline-flex h-[36px] shrink-0 items-center gap-1.5 rounded-full border border-border/70 px-3 text-accent-11 transition-colors hover:bg-accent-2"
-        >
-          <Wallet
-            className="size-3.5 shrink-0"
-            strokeWidth={1.25}
-            aria-hidden
-          />
-          <span className="text-[12px] font-medium tabular-nums leading-none">
-            {amount} {pill.symbol}
-          </span>
-        </Link>
-      ) : null}
-      <span className="relative inline-flex">
-        <Link
-          href={messagesHref}
-          className={APP_CHROME_ICON_TRIGGER}
-          aria-label={messageLabel}
-        >
-          <MessagesSquare
-            className="craft-icon"
-            strokeWidth={1.25}
-            aria-hidden
-          />
-        </Link>
-        {unread > 0 ? (
-          <span
-            className="pointer-events-none absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center bg-accent-9 px-1 text-[10px] font-medium leading-none text-accent-contrast"
-            aria-hidden
+      <MemberCommunitySwitcher
+        lang={lang}
+        slug={slug}
+        resolvedTheme={resolvedTheme}
+      />
+      <div className="hidden items-center gap-1.5 sm:gap-2 xl:flex">
+        {pill && amount && walletHref ? (
+          <Link
+            href={walletHref}
+            data-member-token-pill
+            className="inline-flex h-[36px] shrink-0 items-center gap-1.5 rounded-full border border-border/70 px-3 text-accent-11 transition-colors hover:bg-accent-2"
           >
-            {unread > 99 ? '99+' : unread}
-          </span>
+            <Wallet
+              className="size-3.5 shrink-0"
+              strokeWidth={1.25}
+              aria-hidden
+            />
+            <span className="text-[12px] font-medium tabular-nums leading-none">
+              {amount} {pill.symbol}
+            </span>
+          </Link>
         ) : null}
-      </span>
-      {language ? (
-        <div className="[&_button[data-language-select-trigger]]:box-border [&_button[data-language-select-trigger]]:h-[36px] [&_button[data-language-select-trigger]]:w-[36px] [&_button[data-language-select-trigger]]:justify-center [&_button[data-language-select-trigger]]:gap-0 [&_button[data-language-select-trigger]]:border [&_button[data-language-select-trigger]]:border-border/70 [&_button[data-language-select-trigger]]:px-0 [&_button[data-language-select-trigger]>span[aria-hidden]]:hidden">
-          {language}
-        </div>
-      ) : null}
-      {onToggleTheme ? (
-        <button
-          type="button"
-          className={APP_CHROME_ICON_TRIGGER}
-          onClick={onToggleTheme}
-          aria-label={
-            dark ? tNav('switchToLightMode') : tNav('switchToDarkMode')
-          }
-        >
-          {dark ? (
-            <Sun className="craft-icon" strokeWidth={1.25} aria-hidden />
-          ) : (
-            <Moon className="craft-icon" strokeWidth={1.25} aria-hidden />
-          )}
-        </button>
-      ) : null}
+        <span className="relative inline-flex">
+          <Link
+            href={messagesHref}
+            className={APP_CHROME_ICON_TRIGGER}
+            aria-label={messageLabel}
+          >
+            <MessagesSquare
+              className="craft-icon"
+              strokeWidth={1.25}
+              aria-hidden
+            />
+          </Link>
+          {unread > 0 ? (
+            <span
+              className="pointer-events-none absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center bg-accent-9 px-1 text-[10px] font-medium leading-none text-accent-contrast"
+              aria-hidden
+            >
+              {unread > 99 ? '99+' : unread}
+            </span>
+          ) : null}
+        </span>
+        {language ? (
+          <div className="[&_button[data-language-select-trigger]]:box-border [&_button[data-language-select-trigger]]:h-[36px] [&_button[data-language-select-trigger]]:w-[36px] [&_button[data-language-select-trigger]]:justify-center [&_button[data-language-select-trigger]]:gap-0 [&_button[data-language-select-trigger]]:border [&_button[data-language-select-trigger]]:border-border/70 [&_button[data-language-select-trigger]]:px-0 [&_button[data-language-select-trigger]>span[aria-hidden]]:hidden">
+            {language}
+          </div>
+        ) : null}
+        {onToggleTheme ? (
+          <button
+            type="button"
+            className={APP_CHROME_ICON_TRIGGER}
+            onClick={onToggleTheme}
+            aria-label={
+              dark ? tNav('switchToLightMode') : tNav('switchToDarkMode')
+            }
+          >
+            {dark ? (
+              <Sun className="craft-icon" strokeWidth={1.25} aria-hidden />
+            ) : (
+              <Moon className="craft-icon" strokeWidth={1.25} aria-hidden />
+            )}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { useMemberWeb3SpaceIds } from '../spaces/hooks/use-member-web3-space-ids
 export type MemberNamedSpace = {
   slug: string;
   title: string;
+  locationLabel?: string | null;
   logoUrl?: string | null;
   ecosystemLogoUrlLight?: string | null;
   ecosystemLogoUrlDark?: string | null;
@@ -47,6 +48,7 @@ export function useMemberNamedSpaces(): MemberNamedSpace[] {
       .map((space) => ({
         slug: space.slug as string,
         title: space.title as string,
+        locationLabel: space.locationLabel,
         logoUrl: space.logoUrl,
         ecosystemLogoUrlLight: space.ecosystemLogoUrlLight,
         ecosystemLogoUrlDark: space.ecosystemLogoUrlDark,
