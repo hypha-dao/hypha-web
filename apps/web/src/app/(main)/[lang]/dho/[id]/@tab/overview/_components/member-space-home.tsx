@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, ChevronsUpDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
+  DEFAULT_SPACE_LEAD_IMAGE,
   useSpaceBySlug,
   type CoherenceUpvoteSummary,
 } from '@hypha-platform/core/client';
@@ -230,7 +231,8 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
             className="mt-6 flex snap-x items-stretch gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {signals.map((signal) => {
-              const image = safeImage(signal.leadImage);
+              const image =
+                safeImage(signal.leadImage) ?? DEFAULT_SPACE_LEAD_IMAGE;
               const href = signal.slug
                 ? `${signalDetailPath(
                     lang,
@@ -248,16 +250,12 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                   key={signal.id}
                   className={`flex ${HOME_CARD_WIDTH} shrink-0 snap-start flex-col border border-border bg-background`}
                 >
-                  {image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={image}
-                      alt=""
-                      className="aspect-[3/2] w-full object-cover"
-                    />
-                  ) : (
-                    <div className="aspect-[3/2] w-full bg-accent-3" />
-                  )}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={image}
+                    alt=""
+                    className="aspect-[3/2] w-full object-cover"
+                  />
                   <div className="flex flex-1 flex-col gap-2 p-4">
                     <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
                       {typeLabel}
