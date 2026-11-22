@@ -99,22 +99,25 @@ export function MemberTopBar({
   const dark = resolvedTheme === 'dark';
 
   const minted = useMemo(() => {
-    if (!slug || spaceId == null || !spaceTokens) return [];
-    const byAddress = new Map<string, MemberMintedToken>();
-    for (const token of getEnergyCommunityTokensForSpace(spaceTokens, {
-      id: spaceId,
+    const catalogue: MemberMintedToken[] = getEnergyCommunityTokensForSpace(
       slug,
-    })) {
-      const address = token.address?.trim();
-      if (!address) continue;
-      const key = address.toLowerCase();
-      if (!byAddress.has(key)) {
-        byAddress.set(key, {
-          address,
-          symbol: token.symbol,
-          name: token.name,
-          type: token.type,
-        });
+    ).map((token) => ({
+      address: token.address,
+      symbol: token.symbol,
+      type: token.type,
+    }));
+    const db = (Array.isArray(spaceTokens) ? spaceTokens : []).filter(
+      (token) => spaceId != null && token.spaceId === spaceId,
+    );
+    const byAddress = new Map<string, MemberMintedToken>();
+    for (const token of catalogue) {
+      const key = token.address?.trim().toLowerCase();
+      if (key) byAddress.set(key, token);
+    }
+    if (!tokensError) {
+      for (const token of db) {
+        const key = token.address?.trim().toLowerCase();
+        if (key) byAddress.set(key, token);
       }
     }
     return [...byAddress.values()];
