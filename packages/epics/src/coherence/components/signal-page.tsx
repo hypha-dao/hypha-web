@@ -545,10 +545,15 @@ export function SignalPage({
     const byline = [creatorDisplayName, created, discussion]
       .filter(Boolean)
       .join(' · ');
+    const { images: memberImages, documents: memberDocuments } =
+      splitSignalMedia(signal);
+    const memberVideo = resolveSignalVideo(signal.videoUrl);
+    const leadImage = memberImages[0] ?? null;
+    const moreImages = memberImages.slice(1);
 
     return (
       <div
-        className="flex min-w-0 flex-col gap-5"
+        className="flex min-w-0 flex-col gap-6"
         data-testid="signal-page"
         data-member-signal-detail
       >
@@ -564,67 +569,132 @@ export function SignalPage({
 
         {loadErrorBanner}
 
-        <article className="flex min-w-0 flex-col gap-6 border border-border bg-background p-5 sm:p-6">
-          <header className="flex flex-col gap-3">
-            <SignalTypeBadge type={signal.type} variant="box" />
-            <h1 className="m-0 text-4 font-medium leading-snug text-foreground">
-              {signal.title}
-            </h1>
-            <div className="flex min-w-0 flex-wrap items-center gap-2 text-1 text-muted-foreground">
-              <PersonAvatar
-                size="sm"
-                shape="circle"
-                avatarSrc={creator?.avatarUrl ?? ''}
-                userName={creatorDisplayName ?? undefined}
-                personId={signal.creatorId ?? undefined}
-              />
-              <p className="m-0 min-w-0 break-words">{byline}</p>
+        <article className="flex min-w-0 flex-col gap-8">
+          <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-start sm:gap-8">
+            <div className="flex min-w-0 flex-1 flex-col gap-4">
+              <SignalTypeBadge type={signal.type} variant="pill" />
+              <h1 className="m-0 text-4 font-medium leading-snug text-foreground sm:text-5">
+                {signal.title}
+              </h1>
+              <div className="flex min-w-0 flex-wrap items-center gap-2 text-1 text-muted-foreground">
+                <PersonAvatar
+                  size="sm"
+                  shape="circle"
+                  avatarSrc={creator?.avatarUrl ?? ''}
+                  userName={creatorDisplayName ?? undefined}
+                  personId={signal.creatorId ?? undefined}
+                />
+                <p className="m-0 min-w-0 break-words">{byline}</p>
+              </div>
+              {lastReply ? (
+                <p className="m-0 text-1 text-muted-foreground">{lastReply}</p>
+              ) : null}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                {!canUpvote ? null : (
+                  <SignalUpvoteButton
+                    slug={signal.slug}
+                    spaceSlug={spaceSlug}
+                    upvotes={signal.upvotes}
+                    votingMode={votingMode}
+                    votingModeStatus={votingModeStatus}
+                    onRetryVotingMode={retryVotingMode}
+                    isNonMember={isNonMember}
+                    isMembershipPending={isMembershipPending}
+                    refresh={refresh}
+                    archived={signal.archived}
+                    summaryState={upvoteSummary}
+                    className="self-start"
+                  />
+                )}
+                {humanChatEnabled ? (
+                  <button
+                    type="button"
+                    data-testid="signal-open-discussion"
+                    onClick={openChat}
+                    className="inline-flex items-center gap-1 text-1 font-medium text-foreground underline-offset-4 hover:underline"
+                  >
+                    {t('openDiscussion')}
+                    <span aria-hidden>→</span>
+                  </button>
+                ) : null}
+              </div>
             </div>
-            {lastReply ? (
-              <p className="m-0 text-1 text-muted-foreground">
-                {t('signalLastReplyLabel')}: {lastReply}
-              </p>
-            ) : null}
-          </header>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {!canUpvote ? null : (
-              <SignalUpvoteButton
-                slug={signal.slug}
-                spaceSlug={spaceSlug}
-                upvotes={signal.upvotes}
-                votingMode={votingMode}
-                votingModeStatus={votingModeStatus}
-                onRetryVotingMode={retryVotingMode}
-                isNonMember={isNonMember}
-                isMembershipPending={isMembershipPending}
-                refresh={refresh}
-                archived={signal.archived}
-                variant="page"
-                summaryState={upvoteSummary}
-                className="self-start"
-              />
-            )}
-            {humanChatEnabled ? (
-              <button
-                type="button"
-                data-testid="signal-open-discussion"
-                onClick={openChat}
-                className="inline-flex h-9 items-center gap-1.5 border border-border px-4 text-1 font-medium text-foreground hover:bg-foreground/5"
+            {leadImage ? (
+              <a
+                href={leadImage.url}
+                target="_blank"
+                rel="noreferrer"
+                className="block w-full shrink-0 overflow-hidden sm:w-[min(42%,18rem)]"
               >
-                {t('openDiscussion')}
-                <span aria-hidden>→</span>
-              </button>
+                <img
+                  src={leadImage.url}
+                  alt={leadImage.name}
+                  className="aspect-[4/3] w-full object-cover"
+                />
+              </a>
+            ) : memberVideo ? (
+              <div className="w-full shrink-0 overflow-hidden bg-black sm:w-[min(42%,18rem)]">
+                <div className="relative aspect-video w-full">
+                  <SignalVideoPlayer video={memberVideo} title={signal.title} />
+                </div>
+              </div>
             ) : null}
           </div>
 
           {description ? (
-            <div className="border-t border-border pt-5 text-2 leading-relaxed text-foreground">
+            <div className="max-w-3xl text-2 leading-relaxed text-foreground">
               <SignalDescriptionBody source={description} />
             </div>
           ) : null}
 
-          <SignalMediaSection signal={signal} embedded />
+          {moreImages.length > 0 || memberDocuments.length > 0 ? (
+            <div className="flex max-w-3xl flex-col gap-4">
+              {moreImages.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {moreImages.map((image) => (
+                    <a
+                      key={image.url}
+                      href={image.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block overflow-hidden"
+                    >
+                      <img
+                        src={image.url}
+                        alt={image.name}
+                        className="aspect-[4/3] w-full object-cover"
+                      />
+                    </a>
+                  ))}
+                </div>
+              ) : null}
+              {memberDocuments.length > 0 ? (
+                <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                  {memberDocuments.map((doc) => (
+                    <li key={doc.url} className="flex items-center gap-3 py-1">
+                      <span className="text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+                        {fileExtension(doc.name, doc.url)}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-1 text-foreground">
+                        {doc.name}
+                      </span>
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        download
+                        className="inline-flex shrink-0 items-center gap-1 text-1 text-muted-foreground hover:text-foreground"
+                      >
+                        {t('signalDownload')}
+                        <Download className="craft-icon-sm" aria-hidden />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          ) : null}
         </article>
 
         {/* TODO: Temporary for Reciprocal Exchange. Delete with legacy-signal-fields/. */}
