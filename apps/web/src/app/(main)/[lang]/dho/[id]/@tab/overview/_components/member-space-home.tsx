@@ -136,26 +136,34 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
               {t('around')}
             </h1>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
               {t('communitySignals')}
             </p>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               <button
                 type="button"
-                className="grid h-8 w-8 place-items-center border border-border text-muted-foreground hover:text-foreground"
+                className="grid size-6 place-items-center border border-border text-muted-foreground hover:text-foreground"
                 aria-label={t('previousSignals')}
                 onClick={() => scrollStrip(-1)}
               >
-                <ChevronLeft className="h-4 w-4" aria-hidden />
+                <ChevronLeft
+                  className="size-3.5"
+                  strokeWidth={1.5}
+                  aria-hidden
+                />
               </button>
               <button
                 type="button"
-                className="grid h-8 w-8 place-items-center border border-border text-muted-foreground hover:text-foreground"
+                className="grid size-6 place-items-center border border-border text-muted-foreground hover:text-foreground"
                 aria-label={t('nextSignals')}
                 onClick={() => scrollStrip(1)}
               >
-                <ChevronRight className="h-4 w-4" aria-hidden />
+                <ChevronRight
+                  className="size-3.5"
+                  strokeWidth={1.5}
+                  aria-hidden
+                />
               </button>
             </div>
           </div>
