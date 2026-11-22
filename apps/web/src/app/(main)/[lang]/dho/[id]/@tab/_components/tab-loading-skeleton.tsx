@@ -3,11 +3,16 @@ import { cn } from '@hypha-platform/ui-utils';
 
 type TabLoadingLayout =
   | 'overview'
+  | 'member-home'
   | 'members'
   | 'agreements'
   | 'coherence'
   | 'treasury'
   | 'rows';
+
+/** Matches MemberSpaceHome card width. */
+const MEMBER_HOME_CARD_WIDTH =
+  'w-[calc(100%-2.75rem)] md:w-[min(20rem,calc((100%-1rem)/2.15))] lg:w-[min(22rem,calc((100%-2rem)/2.55))]';
 
 type TabLoadingSkeletonProps = {
   layout?: TabLoadingLayout;
@@ -83,6 +88,69 @@ function OverviewSkeleton() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function MemberHomeCardSkeleton({
+  delayMs = 0,
+  className,
+}: {
+  delayMs?: number;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        `flex min-w-0 ${MEMBER_HOME_CARD_WIDTH} shrink-0 flex-col overflow-hidden border border-border bg-background`,
+        className,
+      )}
+    >
+      <Pulse className="aspect-[16/10] w-full" delayMs={delayMs} />
+      <div className="flex flex-1 flex-col gap-2 p-4">
+        <Pulse className="h-2.5 w-16" delayMs={delayMs + 30} />
+        <Pulse className="h-4 w-4/5" delayMs={delayMs + 50} />
+        <Pulse className="h-3 w-full" delayMs={delayMs + 70} />
+        <Pulse className="h-3 w-5/6" delayMs={delayMs + 90} />
+        <div className="mt-auto flex items-center gap-2 border-t border-border pt-3">
+          <Pulse className="h-7 w-24" delayMs={delayMs + 110} />
+          <Pulse className="ml-auto h-7 w-16" delayMs={delayMs + 130} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Same shape as MemberSpaceHome: title row, signal strip, ask panel. */
+function MemberHomeSkeleton() {
+  return (
+    <div className="flex flex-col gap-10 px-4 py-2 sm:px-5" aria-hidden>
+      <section>
+        <div className="flex items-end justify-between gap-4">
+          <div className="min-w-0">
+            <Pulse text className="hidden h-3 w-28 xl:block" />
+            <Pulse text className="mt-1 h-8 w-56 max-w-full sm:h-9 sm:w-72" />
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <Pulse className="h-3 w-28" delayMs={40} />
+            <div className="flex items-center gap-1">
+              <Pulse className="h-8 w-8" delayMs={60} />
+              <Pulse className="h-8 w-8" delayMs={80} />
+            </div>
+          </div>
+        </div>
+        <div className="mt-6 flex snap-x items-stretch gap-4 overflow-hidden pb-2">
+          <MemberHomeCardSkeleton />
+          <MemberHomeCardSkeleton className="hidden md:flex" delayMs={80} />
+          <MemberHomeCardSkeleton className="hidden lg:flex" delayMs={160} />
+        </div>
+      </section>
+      <section className="min-w-0">
+        <Pulse
+          className="h-[28rem] w-full border border-border"
+          delayMs={120}
+        />
+      </section>
     </div>
   );
 }
@@ -218,6 +286,8 @@ export function TabLoadingSkeleton({
     <div data-tab-loading="">
       {layout === 'overview' ? (
         <OverviewSkeleton />
+      ) : layout === 'member-home' ? (
+        <MemberHomeSkeleton />
       ) : layout === 'members' ? (
         <MembersSkeleton showTitle={showTitle} />
       ) : layout === 'agreements' ? (

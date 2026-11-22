@@ -28,7 +28,7 @@ import {
   DropdownMenuTrigger,
   SidebarProvider,
 } from '@hypha-platform/ui';
-import { stripDescription } from '@hypha-platform/ui-utils';
+import { cn, stripDescription } from '@hypha-platform/ui-utils';
 import type { Locale } from '@hypha-platform/i18n';
 
 type HomeSignal = {
@@ -200,21 +200,31 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
         </div>
         {authLoading || isLoading || (!data && !error) ? (
           <div
-            className="mt-6 flex items-stretch gap-4 overflow-hidden"
+            className="mt-6 flex snap-x items-stretch gap-4 overflow-hidden pb-2"
             aria-hidden
           >
-            <div className={`${HOME_CARD_WIDTH} shrink-0`}>
-              <div className="aspect-[16/10] bg-accent-3" />
-              <div className="h-36 bg-accent-3/50" />
-            </div>
-            <div className={`${HOME_CARD_WIDTH} hidden shrink-0 md:block`}>
-              <div className="aspect-[16/10] bg-accent-3" />
-              <div className="h-36 bg-accent-3/50" />
-            </div>
-            <div className={`${HOME_CARD_WIDTH} hidden shrink-0 lg:block`}>
-              <div className="aspect-[16/10] bg-accent-3" />
-              <div className="h-36 bg-accent-3/50" />
-            </div>
+            {[0, 1, 2].map((index) => (
+              <div
+                key={index}
+                className={cn(
+                  `flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 flex-col overflow-hidden border border-border bg-background`,
+                  index === 1 && 'hidden md:flex',
+                  index === 2 && 'hidden lg:flex',
+                )}
+              >
+                <div className="aspect-[16/10] w-full bg-accent-3" />
+                <div className="flex flex-1 flex-col gap-2 p-4">
+                  <div className="h-2.5 w-16 bg-accent-3/60" />
+                  <div className="h-4 w-4/5 bg-accent-3/60" />
+                  <div className="h-3 w-full bg-accent-3/50" />
+                  <div className="h-3 w-5/6 bg-accent-3/50" />
+                  <div className="mt-auto flex items-center gap-2 border-t border-border pt-3">
+                    <div className="h-7 w-24 bg-accent-3/60" />
+                    <div className="ml-auto h-7 w-16 bg-accent-3/60" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div className="mt-6 flex items-center gap-3">
