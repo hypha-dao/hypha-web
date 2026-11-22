@@ -91,7 +91,7 @@ export function MemberTopBar({ personSlug }: MemberTopBarProps) {
   const {
     open: chatOpen,
     toggle: toggleChat,
-    openHumanChatPanel,
+    requestMemberInbox,
   } = useHumanChatPanel();
 
   const minted = useMemo(() => {
@@ -145,7 +145,8 @@ export function MemberTopBar({ personSlug }: MemberTopBarProps) {
       toggleChat();
       return;
     }
-    openHumanChatPanel();
+    // Conversations list in the right panel (energy-community messages dock).
+    requestMemberInbox();
   };
 
   return (

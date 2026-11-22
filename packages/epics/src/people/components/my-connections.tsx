@@ -1887,12 +1887,19 @@ function rowsInMemberSpace<
 export function MyConnections({
   section = 'messages',
   spaceSlug,
+  variant = 'page',
 }: {
   /** Messages is the conversation list. Suggestions and Archived are their own screens. */
   section?: 'messages' | 'suggestions' | 'archived';
   /** When set, the list is this space's conversations. */
   spaceSlug?: string;
+  /**
+   * `panel` — compact list for the member right-panel dock (no home strip,
+   * stacked filters, no desktop auto-open of the first row).
+   */
+  variant?: 'page' | 'panel';
 }) {
+  const isPanel = variant === 'panel';
   const t = useTranslations('Connections');
   const tChat = useTranslations('MemberHome');
   const tCommon = useTranslations('Common');
@@ -2843,10 +2850,11 @@ export function MyConnections({
 
   // Desktop / iPad (lg+): select the first conversation in the new filter so
   // the side-by-side chat panel matches the list. Mobile stays on the list —
-  // auto-opening would skip the list and jump into fullscreen chat.
+  // auto-opening would skip the list and jump into fullscreen chat. The
+  // member right-panel dock always stays on the list until a row is tapped.
   useEffect(() => {
     if (!pendingSelectFirstInboxRef.current) return;
-    if (section !== 'messages' || picking) return;
+    if (section !== 'messages' || picking || isPanel) return;
     if (
       typeof window === 'undefined' ||
       !window.matchMedia('(min-width: 64rem)').matches
@@ -2858,7 +2866,7 @@ export function MyConnections({
     if (!first) return;
     pendingSelectFirstInboxRef.current = false;
     void openInboxRowRef.current?.(first);
-  }, [inboxFilter, inboxView.rows, picking, section]);
+  }, [inboxFilter, inboxView.rows, isPanel, picking, section]);
 
   // Newest chats stay first, so a new message lands in this first screen.
   // Filter badges and the nav count still use every row, including ones
@@ -3213,16 +3221,18 @@ export function MyConnections({
   }
 
   return (
-    <div className="flex min-w-0 flex-col gap-6">
-      <MemberHomePeople
-        people={connections}
-        extraPersonIds={[...reachOutIds, ...peerPersonIds]}
-        chatSpaceSlug={home?.chatSpaceSlug ?? null}
-        fallbackName={t('someone')}
-        onOpenChatReady={(openChat) => {
-          openChatRef.current = openChat;
-        }}
-      />
+    <div className={cn('flex min-w-0 flex-col', isPanel ? 'gap-3' : 'gap-6')}>
+      <div className={isPanel ? 'hidden' : undefined}>
+        <MemberHomePeople
+          people={connections}
+          extraPersonIds={[...reachOutIds, ...peerPersonIds]}
+          chatSpaceSlug={home?.chatSpaceSlug ?? null}
+          fallbackName={t('someone')}
+          onOpenChatReady={(openChat) => {
+            openChatRef.current = openChat;
+          }}
+        />
+      </div>
 
       {section === 'suggestions' ? (
         <section className="flex flex-col gap-3" aria-label={t('reachOut')}>
@@ -3304,7 +3314,9 @@ export function MyConnections({
           className={cn(
             'flex min-h-0 min-w-0 flex-1 flex-col gap-6',
             section === 'messages' &&
+              !isPanel &&
               'min-h-0 flex-1 gap-4 lg:flex-row lg:items-start lg:gap-6',
+            section === 'messages' && isPanel && 'gap-3',
           )}
         >
           {section === 'messages' ? (
@@ -3315,10 +3327,14 @@ export function MyConnections({
                 // Same sticky edge as the conversation list. Page scroll and
                 // the list's own scroll are unchanged. The unread counts stay
                 // in view instead of leaving with the page.
-                'narrow-scrollbar w-full shrink-0 lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:self-start lg:min-h-0 lg:bg-page-background',
-                memberSpaceInbox ? 'lg:w-40' : 'lg:w-80',
-                memberSpaceInbox || !(picking || inboxChannelOpen)
-                  ? 'lg:flex-none'
+                'narrow-scrollbar w-full shrink-0',
+                !isPanel &&
+                  'lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:self-start lg:min-h-0 lg:bg-page-background',
+                !isPanel && (memberSpaceInbox ? 'lg:w-40' : 'lg:w-80'),
+                isPanel || memberSpaceInbox || !(picking || inboxChannelOpen)
+                  ? isPanel
+                    ? 'flex-none'
+                    : 'lg:flex-none'
                   : 'hidden lg:block',
               )}
             >
@@ -3340,11 +3356,14 @@ export function MyConnections({
           <div
             data-messages-list-frame=""
             className={cn(
-              'min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-visible lg:overflow-hidden',
+              'min-h-0 min-w-0 flex-1 flex-col gap-3',
+              isPanel
+                ? 'flex overflow-visible'
+                : 'overflow-visible lg:overflow-hidden lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)]',
               // Sticky + viewport height from MessagesViewportLock so the
               // list scrolls inside while the page still moves.
-              'lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)]',
-              section === 'messages' &&
+              !isPanel &&
+                section === 'messages' &&
                 !picking &&
                 !inboxChannelOpen &&
                 !memberSpaceInbox
@@ -3352,7 +3371,10 @@ export function MyConnections({
                 : 'flex',
             )}
           >
-            {section === 'messages' && !picking && !memberSpaceInbox ? (
+            {section === 'messages' &&
+            !picking &&
+            !memberSpaceInbox &&
+            !isPanel ? (
               <button
                 type="button"
                 aria-label={tCommon('back')}

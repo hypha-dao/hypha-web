@@ -135,6 +135,8 @@ import { GroupFaces } from '../people/components/group-faces';
 import type { GroupFace } from '../people/components/member-connections';
 import { PersonAvatar } from '../people/components/person-avatar';
 import { MemberHomeMark } from '../people/components/member-home-mark';
+import { MemberInboxSidePanel } from '../people/components/member-inbox-side-panel';
+import { memberSurfaceSpaceQuery } from '../people/components/member-menu';
 import {
   chatRoomAliasLocalpart,
   computeAggregateUnreadMentionCount,
@@ -1051,6 +1053,8 @@ export function HumanRightPanel(props: HumanRightPanelProps) {
     spaceQuestDraft,
     questChatRequested,
     closeHumanChatPanel,
+    memberInboxRequested,
+    mode,
   } = useHumanChatPanel();
   const routeSpaceSlug = getDhoSpaceSlugFromPathname(pathname) || '';
   const section =
@@ -1085,6 +1089,12 @@ export function HumanRightPanel(props: HumanRightPanelProps) {
       />
     );
   }
+
+  // Member chat icon: conversations list until a row opens a coherence chat.
+  if (memberInboxRequested && mode !== 'coherence') {
+    return <MemberInboxSidePanel onClose={closeHumanChatPanel} />;
+  }
+
   return <HumanChatRightPanel {...props} />;
 }
 
@@ -1147,6 +1157,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     openCoherenceChat,
     openHumanChatPanel,
     closeHumanChatPanel,
+    memberInboxRequested,
     setUnreadMentionCount,
   } = useHumanChatPanel();
   const chatModeRef = useRef(mode);
@@ -1181,12 +1192,22 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     isPublic: coherencePublic,
   });
   const isStartConversation = isDirectConversation && !coherenceRoomId?.trim();
+  // Member wallet / messages `?space=` keeps that space's channel — not Network.
+  const memberSurfaceSpace = memberSurfaceSpaceQuery(
+    pathname,
+    searchParams?.get('space'),
+  );
   // Shared network room for Network and the member shell pages when no channel
   // is selected (Home / Messages / Wallet / My Spaces). A DM or inbox channel
-  // stays in coherence mode and does not hit this path. DHO routes keep their
-  // own space chat. The panel unmounts when closed on these shell pages, so
-  // this does not call ensureNetworkRoom in the background.
-  const isNetworkSpaceChat = isNetworkAiPath(pathname) && mode === 'space';
+  // stays in coherence mode and does not hit this path. DHO routes and a
+  // member surface `?space=` keep their own space chat. The panel unmounts
+  // when closed on these shell pages, so this does not call ensureNetworkRoom
+  // in the background.
+  const isNetworkSpaceChat =
+    isNetworkAiPath(pathname) &&
+    mode === 'space' &&
+    !memberSurfaceSpace &&
+    !routeSpaceSlug?.trim();
   // Network page space-mode is only the shared network room — never inherit a
   // leftover DHO slug (route or coherence) or space/ecosystem tabs appear with
   // that space's timeline under the Network chrome.
@@ -1195,8 +1216,14 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     : isNetworkSpaceChat
     ? undefined
     : coherencePublic
-    ? coherenceSpaceSlug?.trim() || routeSpaceSlug || undefined
-    : routeSpaceSlug || coherenceSpaceSlug?.trim() || undefined;
+    ? coherenceSpaceSlug?.trim() ||
+      routeSpaceSlug ||
+      memberSurfaceSpace ||
+      undefined
+    : routeSpaceSlug ||
+      memberSurfaceSpace ||
+      coherenceSpaceSlug?.trim() ||
+      undefined;
   const [spaceRoom, setSpaceRoom] = useState<'space' | 'ecosystem' | 'public'>(
     'space',
   );
@@ -1989,6 +2016,10 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     }
     signalDismissUntilClosedRef.current = false;
     closeCoherenceChat();
+    // Member conversations dock: Back returns to the list, panel stays open.
+    if (memberInboxRequested) {
+      return;
+    }
     if (isConnectionsPage) {
       closeHumanChatPanel();
       setOpenMobile(false);
@@ -1998,6 +2029,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     closeHumanChatPanel,
     coherenceSlug,
     isConnectionsPage,
+    memberInboxRequested,
     pathname,
     routeSpaceSlug,
     router,

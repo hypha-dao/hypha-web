@@ -182,6 +182,13 @@ export type HumanChatPanelContextValue = {
   questChatRequested: boolean;
   requestQuestChat: () => void;
   dismissQuestChat: () => void;
+  /**
+   * Member top-bar chat icon: show the conversations list in the right panel
+   * (energy-community messages dock), not a single channel.
+   */
+  memberInboxRequested: boolean;
+  requestMemberInbox: () => void;
+  dismissMemberInbox: () => void;
 };
 
 const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
@@ -215,6 +222,9 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   questChatRequested: false,
   requestQuestChat: () => {},
   dismissQuestChat: () => {},
+  memberInboxRequested: false,
+  requestMemberInbox: () => {},
+  dismissMemberInbox: () => {},
 });
 
 /**
@@ -259,9 +269,13 @@ export function HumanChatPanelProvider({
   const [spaceQuestDraft, setSpaceQuestDraft] =
     useState<SpaceQuestDraftPanelSession | null>(null);
   const [questChatRequested, setQuestChatRequested] = useState(false);
+  const [memberInboxRequested, setMemberInboxRequested] = useState(false);
 
   useEffect(() => {
-    if (!open) setSpaceContextSection(null);
+    if (!open) {
+      setSpaceContextSection(null);
+      setMemberInboxRequested(false);
+    }
   }, [open]);
 
   const openSpaceContextSection = useCallback(
@@ -343,6 +357,7 @@ export function HumanChatPanelProvider({
       setSpaceContextSection(null);
       // A real room replaces the quest helper. This does not create a room.
       setQuestChatRequested(false);
+      // Keep member inbox requested so Back returns to the conversations list.
       // Idempotently open the sidebar — avoids race condition with toggle()
       setOpen(true);
     },
@@ -368,6 +383,7 @@ export function HumanChatPanelProvider({
 
   const closeHumanChatPanel = useCallback(() => {
     setQuestChatRequested(false);
+    setMemberInboxRequested(false);
     setOpen(false);
   }, [setOpen]);
 
@@ -378,6 +394,27 @@ export function HumanChatPanelProvider({
 
   const dismissQuestChat = useCallback(() => {
     setQuestChatRequested(false);
+  }, []);
+
+  const requestMemberInbox = useCallback(() => {
+    setMode('space');
+    setCoherenceRoomId(null);
+    setCoherenceTitle(null);
+    setCoherenceSlug(null);
+    setCoherenceDescription(null);
+    setCoherenceSpaceSlug(null);
+    setCoherencePublic(false);
+    setCoherencePeerPerson(null);
+    setCoherenceChannel(null);
+    setCoherenceContextSectionKey(null);
+    setSpaceContextSection(null);
+    setQuestChatRequested(false);
+    setMemberInboxRequested(true);
+    setOpen(true);
+  }, [setOpen]);
+
+  const dismissMemberInbox = useCallback(() => {
+    setMemberInboxRequested(false);
   }, []);
 
   return (
@@ -413,6 +450,9 @@ export function HumanChatPanelProvider({
         questChatRequested,
         requestQuestChat,
         dismissQuestChat,
+        memberInboxRequested,
+        requestMemberInbox,
+        dismissMemberInbox,
       }}
     >
       {children}
