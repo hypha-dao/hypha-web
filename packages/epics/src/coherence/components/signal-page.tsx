@@ -553,7 +553,7 @@ export function SignalPage({
 
     return (
       <div
-        className="flex min-w-0 flex-col gap-6"
+        className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-6 py-2"
         data-testid="signal-page"
         data-member-signal-detail
       >
@@ -569,87 +569,87 @@ export function SignalPage({
 
         {loadErrorBanner}
 
-        <article className="flex min-w-0 flex-col gap-8">
-          <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-start sm:gap-8">
-            <div className="flex min-w-0 flex-1 flex-col gap-4">
-              <SignalTypeBadge type={signal.type} variant="pill" />
-              <h1 className="m-0 text-4 font-medium leading-snug text-foreground sm:text-5">
-                {signal.title}
-              </h1>
-              <div className="flex min-w-0 flex-wrap items-center gap-2 text-1 text-muted-foreground">
-                <PersonAvatar
-                  size="sm"
-                  shape="circle"
-                  avatarSrc={creator?.avatarUrl ?? ''}
-                  userName={creatorDisplayName ?? undefined}
-                  personId={signal.creatorId ?? undefined}
-                />
-                <p className="m-0 min-w-0 break-words">{byline}</p>
-              </div>
-              {lastReply ? (
-                <p className="m-0 text-1 text-muted-foreground">{lastReply}</p>
-              ) : null}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                {!canUpvote ? null : (
-                  <SignalUpvoteButton
-                    slug={signal.slug}
-                    spaceSlug={spaceSlug}
-                    upvotes={signal.upvotes}
-                    votingMode={votingMode}
-                    votingModeStatus={votingModeStatus}
-                    onRetryVotingMode={retryVotingMode}
-                    isNonMember={isNonMember}
-                    isMembershipPending={isMembershipPending}
-                    refresh={refresh}
-                    archived={signal.archived}
-                    summaryState={upvoteSummary}
-                    className="self-start"
-                  />
-                )}
-                {humanChatEnabled ? (
-                  <button
-                    type="button"
-                    data-testid="signal-open-discussion"
-                    onClick={openChat}
-                    className="inline-flex items-center gap-1 text-1 font-medium text-foreground underline-offset-4 hover:underline"
-                  >
-                    {t('openDiscussion')}
-                    <span aria-hidden>→</span>
-                  </button>
-                ) : null}
+        <article className="flex min-w-0 flex-col gap-6">
+          {leadImage ? (
+            <a
+              href={leadImage.url}
+              target="_blank"
+              rel="noreferrer"
+              className="block w-full overflow-hidden border border-border/70"
+            >
+              <img
+                src={leadImage.url}
+                alt={leadImage.name}
+                className="aspect-[16/10] w-full object-cover"
+              />
+            </a>
+          ) : memberVideo ? (
+            <div className="w-full overflow-hidden border border-border/70 bg-black">
+              <div className="relative aspect-video w-full">
+                <SignalVideoPlayer video={memberVideo} title={signal.title} />
               </div>
             </div>
+          ) : null}
 
-            {leadImage ? (
-              <a
-                href={leadImage.url}
-                target="_blank"
-                rel="noreferrer"
-                className="block w-full shrink-0 overflow-hidden sm:w-[min(42%,18rem)]"
+          <header className="flex min-w-0 flex-col gap-3">
+            <SignalTypeBadge type={signal.type} variant="pill" />
+            <h1
+              className="m-0 text-6 font-light leading-[1.1] tracking-[-0.02em] text-foreground sm:text-7"
+              style={{ fontFamily: 'var(--font-family-heading)' }}
+            >
+              {signal.title}
+            </h1>
+            <div className="flex min-w-0 flex-wrap items-center gap-2 text-1 text-muted-foreground">
+              <PersonAvatar
+                size="sm"
+                shape="circle"
+                avatarSrc={creator?.avatarUrl ?? ''}
+                userName={creatorDisplayName ?? undefined}
+                personId={signal.creatorId ?? undefined}
+              />
+              <p className="m-0 min-w-0 break-words">{byline}</p>
+            </div>
+          </header>
+
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            {!canUpvote ? null : (
+              <SignalUpvoteButton
+                slug={signal.slug}
+                spaceSlug={spaceSlug}
+                upvotes={signal.upvotes}
+                votingMode={votingMode}
+                votingModeStatus={votingModeStatus}
+                onRetryVotingMode={retryVotingMode}
+                isNonMember={isNonMember}
+                isMembershipPending={isMembershipPending}
+                refresh={refresh}
+                archived={signal.archived}
+                summaryState={upvoteSummary}
+                layout="stack"
+                className="self-start"
+              />
+            )}
+            {humanChatEnabled ? (
+              <button
+                type="button"
+                data-testid="signal-open-discussion"
+                onClick={openChat}
+                className="inline-flex h-9 items-center gap-1.5 border border-border px-3 text-1 font-medium text-foreground hover:bg-foreground/5"
               >
-                <img
-                  src={leadImage.url}
-                  alt={leadImage.name}
-                  className="aspect-[4/3] w-full object-cover"
-                />
-              </a>
-            ) : memberVideo ? (
-              <div className="w-full shrink-0 overflow-hidden bg-black sm:w-[min(42%,18rem)]">
-                <div className="relative aspect-video w-full">
-                  <SignalVideoPlayer video={memberVideo} title={signal.title} />
-                </div>
-              </div>
+                {t('openDiscussion')}
+                <span aria-hidden>→</span>
+              </button>
             ) : null}
           </div>
 
           {description ? (
-            <div className="max-w-3xl text-2 leading-relaxed text-foreground">
+            <div className="text-2 leading-[1.65] text-muted-foreground [&_strong]:font-medium [&_strong]:text-foreground">
               <SignalDescriptionBody source={description} />
             </div>
           ) : null}
 
           {moreImages.length > 0 || memberDocuments.length > 0 ? (
-            <div className="flex max-w-3xl flex-col gap-4">
+            <div className="flex flex-col gap-4 border-t border-border/70 pt-5">
               {moreImages.length > 0 ? (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {moreImages.map((image) => (
@@ -658,7 +658,7 @@ export function SignalPage({
                       href={image.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="block overflow-hidden"
+                      className="block overflow-hidden border border-border/70"
                     >
                       <img
                         src={image.url}
@@ -672,7 +672,10 @@ export function SignalPage({
               {memberDocuments.length > 0 ? (
                 <ul className="m-0 flex list-none flex-col gap-2 p-0">
                   {memberDocuments.map((doc) => (
-                    <li key={doc.url} className="flex items-center gap-3 py-1">
+                    <li
+                      key={doc.url}
+                      className="flex items-center gap-3 border border-border/70 px-3 py-2"
+                    >
                       <span className="text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
                         {fileExtension(doc.name, doc.url)}
                       </span>
