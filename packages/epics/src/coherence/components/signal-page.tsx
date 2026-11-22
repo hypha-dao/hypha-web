@@ -42,6 +42,7 @@ import { useSignalShortDate } from './signal-feed-row';
 import { SignalTypeBadge } from './signal-type-badge';
 import { SignalUpvoteButton } from './signal-upvote-button';
 import { useVoteEnabled } from '../../common/action-capabilities';
+import { useMemberExperience } from '../../people/components/member-experience';
 import { SignalVideoPlayer } from './signal-video-player';
 import { LegacySignalFieldsDetail } from './legacy-signal-fields/legacy-signal-fields-detail';
 
@@ -186,7 +187,14 @@ const SignalDescriptionBody = React.memo(function SignalDescriptionBody({
   );
 });
 
-function SignalMediaSection({ signal }: { signal: Coherence }) {
+function SignalMediaSection({
+  signal,
+  embedded = false,
+}: {
+  signal: Coherence;
+  /** Nested in the member detail — no second card chrome. */
+  embedded?: boolean;
+}) {
   const t = useTranslations('CoherenceTab');
   const { images, documents } = React.useMemo(
     () => splitSignalMedia(signal),
@@ -200,10 +208,18 @@ function SignalMediaSection({ signal }: { signal: Coherence }) {
   if (galleryCount === 0 && documents.length === 0) return null;
 
   return (
-    <section className="craft-card flex flex-col gap-4 p-5">
-      <h2 className={cn(SECTION_LABEL_CLASS, 'm-0')}>
-        {t('signalMedia')} · {galleryCount + documents.length}
-      </h2>
+    <section
+      className={
+        embedded
+          ? 'flex flex-col gap-4 border-t border-border pt-5'
+          : 'craft-card flex flex-col gap-4 p-5'
+      }
+    >
+      {embedded ? null : (
+        <h2 className={cn(SECTION_LABEL_CLASS, 'm-0')}>
+          {t('signalMedia')} · {galleryCount + documents.length}
+        </h2>
+      )}
       {galleryCount > 0 ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {video ? (
@@ -289,6 +305,7 @@ export function SignalPage({
   const format = useFormatter();
   const now = useNow({ updateInterval: 60_000 });
   const shortDate = useSignalShortDate();
+  const { isMember: memberExperience } = useMemberExperience();
 
   const { space } = useSpaceBySlug(spaceSlug);
   const {
@@ -500,6 +517,121 @@ export function SignalPage({
     .filter(Boolean)
     .join(' · ');
   const description = signal.description?.trim() ?? '';
+  const upvoteSummary = signalListUpvoteSummaryState({
+    hasSettledList: Boolean(coherences),
+    isLoading: isSignalsLoading,
+    hasError: signalsError != null,
+  });
+  const loadErrorBanner = signalsError ? (
+    <div
+      role="alert"
+      className="flex flex-wrap items-center justify-between gap-3 border border-error-6 bg-error-2 px-3 py-2 text-1 text-error-11"
+    >
+      <span>{t('signalLoadFailed')}</span>
+      <Button
+        type="button"
+        variant="outline"
+        colorVariant="neutral"
+        size="sm"
+        disabled={isRetrying}
+        onClick={() => void retryLoad()}
+      >
+        {t('signalLoadRetry')}
+      </Button>
+    </div>
+  ) : null;
+
+  if (memberExperience) {
+    const byline = [creatorDisplayName, created, discussion]
+      .filter(Boolean)
+      .join(' · ');
+
+    return (
+      <div
+        className="flex min-w-0 flex-col gap-5"
+        data-testid="signal-page"
+        data-member-signal-detail
+      >
+        <nav aria-label={t('signals')}>
+          <Link
+            href={feedHref}
+            className="inline-flex items-center gap-1.5 text-1 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="craft-icon" aria-hidden />
+            {t('signals')}
+          </Link>
+        </nav>
+
+        {loadErrorBanner}
+
+        <article className="flex min-w-0 flex-col gap-6 border border-border bg-background p-5 sm:p-6">
+          <header className="flex flex-col gap-3">
+            <SignalTypeBadge type={signal.type} variant="box" />
+            <h1 className="m-0 text-4 font-medium leading-snug text-foreground">
+              {signal.title}
+            </h1>
+            <div className="flex min-w-0 flex-wrap items-center gap-2 text-1 text-muted-foreground">
+              <PersonAvatar
+                size="sm"
+                shape="circle"
+                avatarSrc={creator?.avatarUrl ?? ''}
+                userName={creatorDisplayName ?? undefined}
+                personId={signal.creatorId ?? undefined}
+              />
+              <p className="m-0 min-w-0 break-words">{byline}</p>
+            </div>
+            {lastReply ? (
+              <p className="m-0 text-1 text-muted-foreground">
+                {t('signalLastReplyLabel')}: {lastReply}
+              </p>
+            ) : null}
+          </header>
+
+          <div className="flex flex-wrap items-center gap-3">
+            {!canUpvote ? null : (
+              <SignalUpvoteButton
+                slug={signal.slug}
+                spaceSlug={spaceSlug}
+                upvotes={signal.upvotes}
+                votingMode={votingMode}
+                votingModeStatus={votingModeStatus}
+                onRetryVotingMode={retryVotingMode}
+                isNonMember={isNonMember}
+                isMembershipPending={isMembershipPending}
+                refresh={refresh}
+                archived={signal.archived}
+                variant="page"
+                summaryState={upvoteSummary}
+                className="self-start"
+              />
+            )}
+            {humanChatEnabled ? (
+              <button
+                type="button"
+                data-testid="signal-open-discussion"
+                onClick={openChat}
+                className="inline-flex h-9 items-center gap-1.5 border border-border px-4 text-1 font-medium text-foreground hover:bg-foreground/5"
+              >
+                {t('openDiscussion')}
+                <span aria-hidden>→</span>
+              </button>
+            ) : null}
+          </div>
+
+          {description ? (
+            <div className="border-t border-border pt-5 text-2 leading-relaxed text-foreground">
+              <SignalDescriptionBody source={description} />
+            </div>
+          ) : null}
+
+          <SignalMediaSection signal={signal} embedded />
+        </article>
+
+        {/* TODO: Temporary for Reciprocal Exchange. Delete with legacy-signal-fields/. */}
+        <LegacySignalFieldsDetail signal={signal} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-w-0 flex-col gap-4" data-testid="signal-page">
@@ -518,24 +650,7 @@ export function SignalPage({
         <span className="truncate text-foreground">{signal.title}</span>
       </nav>
 
-      {signalsError ? (
-        <div
-          role="alert"
-          className="flex flex-wrap items-center justify-between gap-3 border border-error-6 bg-error-2 px-3 py-2 text-1 text-error-11"
-        >
-          <span>{t('signalLoadFailed')}</span>
-          <Button
-            type="button"
-            variant="outline"
-            colorVariant="neutral"
-            size="sm"
-            disabled={isRetrying}
-            onClick={() => void retryLoad()}
-          >
-            {t('signalLoadRetry')}
-          </Button>
-        </div>
-      ) : null}
+      {loadErrorBanner}
 
       <section className={SIGNAL_PAGE_CARD_CLASS}>
         <div className={SIGNAL_PAGE_CARD_BODY_CLASS}>
@@ -558,11 +673,7 @@ export function SignalPage({
                   refresh={refresh}
                   archived={signal.archived}
                   variant="page"
-                  summaryState={signalListUpvoteSummaryState({
-                    hasSettledList: Boolean(coherences),
-                    isLoading: isSignalsLoading,
-                    hasError: signalsError != null,
-                  })}
+                  summaryState={upvoteSummary}
                   className="self-start"
                 />
               )}
