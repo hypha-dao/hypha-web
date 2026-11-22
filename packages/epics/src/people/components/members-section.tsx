@@ -6,10 +6,7 @@ import { SectionLoadMore } from '@hypha-platform/ui/server';
 
 import { MembersList } from './members-list';
 import { SpaceMemberInviteButton } from './space-member-invite-button';
-import {
-  MEMBER_DIRECTORY_PAGE_SIZE,
-  useMembersSection,
-} from '../hooks/use-members-section';
+import { useMembersSection } from '../hooks/use-members-section';
 import { useMemberExperience } from './member-experience';
 import { ExitSpace, UseMembers, useSpaceMember } from '../../spaces';
 import { Empty } from '../../common';
@@ -93,25 +90,9 @@ export const MembersSection: FC<MemberSectionProps> = ({
   const aiAgents = useMobilizedAiAgents(spaceSlug);
   const aiAgentCount = aiAgents.length;
 
-  const shownMembers = Math.min(
-    pages * MEMBER_DIRECTORY_PAGE_SIZE,
-    personCount,
-  );
-
   if (memberDirectory) {
     return (
-      <div className="flex w-full flex-col">
-        <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
-          <h1 className="text-[11px] tracking-[0.14em] text-foreground uppercase">
-            {tCommon('Members')}
-          </h1>
-          <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
-            {tMembers('shownOfTotal', {
-              shown: shownMembers,
-              total: personCount,
-            })}
-          </p>
-        </div>
+      <div className="flex w-full flex-col gap-4">
         {personCount === 0 && !isLoading ? (
           <Empty>
             <p>{tMembers('listIsEmpty')}</p>

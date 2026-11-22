@@ -34,13 +34,7 @@ export async function MessagesPageFrame({
 
   return (
     <div className="w-full min-w-0 overflow-x-clip">
-      <Container
-        className={
-          // Match One Wallet: xl:gap-9 under the title. Page still scrolls;
-          // the conversation list is capped separately so it scrolls too.
-          'flex min-w-0 flex-col gap-4 py-3 sm:py-4 lg:py-5 xl:gap-9 xl:pt-3 xl:pb-9'
-        }
-      >
+      <Container className="flex min-w-0 flex-col gap-4 py-4 xl:gap-4 xl:pt-4 xl:pb-9">
         <MemberScreenTitle memberTitle={memberTitle}>
           <header className="shrink-0 xl:hidden">
             <p className="mb-2 text-1 font-bold uppercase text-foreground">
