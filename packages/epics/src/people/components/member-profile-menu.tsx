@@ -13,6 +13,7 @@ import {
   LogOutIcon,
   Moon,
   Sparkles,
+  User,
 } from 'lucide-react';
 import { useSpaceBySlug, type Person } from '@hypha-platform/core/client';
 import {
@@ -71,17 +72,14 @@ function useMemberProfileSpaceLabel() {
 
   const namedMatch = named.find((space) => space.slug === slug);
   const { space } = useSpaceBySlug(slug ?? '');
-  const title = namedMatch?.title ?? space?.title ?? null;
-  const location = namedMatch?.locationLabel ?? space?.locationLabel ?? null;
-
-  if (!title) return null;
-  if (location?.trim()) return `${title} · ${location.trim()}`;
-  return title;
+  // Space title only — locationLabel is often raw lat/long from the map pin.
+  return namedMatch?.title ?? space?.title ?? null;
 }
 
 type MemberProfileMenuProps = {
   variant: 'dropdown' | 'sheet';
   person?: Person;
+  profileUrl?: string;
   notificationCentrePath?: string;
   language?: ReactNode;
   resolvedTheme?: string;
@@ -94,6 +92,7 @@ type MemberProfileMenuProps = {
 export function MemberProfileMenu({
   variant,
   person,
+  profileUrl,
   notificationCentrePath,
   language,
   resolvedTheme,
@@ -149,6 +148,20 @@ export function MemberProfileMenu({
       <div className="flex h-full flex-col">
         <div className="border-b border-border">{header}</div>
         <div className="flex-1 overflow-y-auto">
+          {profileUrl ? (
+            <Link
+              href={profileUrl}
+              className={sheetItemClass}
+              onClick={onClose}
+            >
+              <User className="craft-icon" aria-hidden />
+              <span className="flex-1 font-medium">{tNav('viewProfile')}</span>
+              <ChevronRight
+                className="ml-auto craft-icon opacity-60"
+                aria-hidden
+              />
+            </Link>
+          ) : null}
           <button type="button" className={sheetItemClass} onClick={openAsk}>
             <Sparkles className="craft-icon" aria-hidden />
             <span className="flex-1 font-medium">{t('askGuide')}</span>
@@ -239,6 +252,18 @@ export function MemberProfileMenu({
       </DropdownMenuLabel>
       <DropdownMenuSeparator className={separatorClass} />
       <DropdownMenuGroup>
+        {profileUrl ? (
+          <DropdownMenuItem className={menuItemClass} asChild>
+            <Link href={profileUrl}>
+              <User className="craft-icon" aria-hidden />
+              <span className="flex-1 font-medium">{tNav('viewProfile')}</span>
+              <ChevronRight
+                className="ml-auto craft-icon opacity-60"
+                aria-hidden
+              />
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem className={menuItemClass} onSelect={openAsk}>
           <Sparkles className="craft-icon" aria-hidden />
           <span className="flex-1 font-medium">{t('askGuide')}</span>

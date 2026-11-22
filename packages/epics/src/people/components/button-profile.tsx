@@ -234,6 +234,7 @@ export const ButtonProfile = ({
       <MemberProfileMenu
         variant={variant}
         person={person}
+        profileUrl={profileUrl}
         notificationCentrePath={notificationCentrePath}
         language={trailingBeforeProfile}
         resolvedTheme={resolvedTheme}
