@@ -240,8 +240,9 @@ export function SignalUpvoteCellChrome({
       className={cn(
         'inline-flex rounded-none border bg-transparent',
         layout === 'stack'
-          ? 'w-max min-w-9 flex-col items-stretch overflow-hidden border-border/80 bg-background py-0.5'
-          : 'h-7 items-center px-0.5',
+          ? 'w-[56px] min-w-[56px] flex-col items-stretch overflow-hidden border-border/80 bg-background py-0.5'
+          : // Theme spacing-9 is 64px — lock the row control to the 36px reference.
+            'h-[36px] items-center px-0.5',
         layout === 'stack'
           ? null
           : selected

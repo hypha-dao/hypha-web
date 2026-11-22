@@ -10,9 +10,9 @@ type TabLoadingLayout =
   | 'treasury'
   | 'rows';
 
-/** Matches MemberSpaceHome card width. */
+/** Matches MemberSpaceHome card width (lovable: (100% - 24px) / 2.2). */
 const MEMBER_HOME_CARD_WIDTH =
-  'w-[calc(100%-2.75rem)] md:w-[min(20rem,calc((100%-1rem)/2.15))] lg:w-[min(22rem,calc((100%-2rem)/2.55))]';
+  'w-[min(100%,calc((100%-24px)/2.2))] max-md:w-[82%] min-w-[240px]';
 
 type TabLoadingSkeletonProps = {
   layout?: TabLoadingLayout;
@@ -102,19 +102,19 @@ function MemberHomeCardSkeleton({
   return (
     <div
       className={cn(
-        `flex min-w-0 ${MEMBER_HOME_CARD_WIDTH} shrink-0 flex-col overflow-hidden border border-border bg-background`,
+        `flex min-w-0 ${MEMBER_HOME_CARD_WIDTH} shrink-0 flex-col border border-border bg-transparent p-3`,
         className,
       )}
     >
-      <Pulse className="aspect-[16/10] w-full" delayMs={delayMs} />
-      <div className="flex flex-1 flex-col gap-2 p-4">
+      <Pulse className="mb-2.5 aspect-video w-full" delayMs={delayMs} />
+      <div className="flex flex-1 flex-col gap-2">
         <Pulse className="h-2.5 w-16" delayMs={delayMs + 30} />
-        <Pulse className="h-4 w-4/5" delayMs={delayMs + 50} />
+        <Pulse className="h-5 w-4/5" delayMs={delayMs + 50} />
         <Pulse className="h-3 w-full" delayMs={delayMs + 70} />
         <Pulse className="h-3 w-5/6" delayMs={delayMs + 90} />
-        <div className="mt-auto flex items-center gap-2 border-t border-border pt-3">
-          <Pulse className="h-7 w-24" delayMs={delayMs + 110} />
-          <Pulse className="ml-auto h-7 w-16" delayMs={delayMs + 130} />
+        <div className="mt-auto flex items-center gap-2.5 border-t border-border pt-4">
+          <Pulse className="h-[36px] w-24" delayMs={delayMs + 110} />
+          <Pulse className="h-[34px] w-16" delayMs={delayMs + 130} />
         </div>
       </div>
     </div>
@@ -130,20 +130,18 @@ function MemberHomeSkeleton() {
       data-member-home-skeleton=""
     >
       <section>
-        <div className="flex items-end justify-between gap-4">
-          <div className="min-w-0">
-            <Pulse text className="hidden h-3 w-28 xl:block" />
-            <Pulse text className="mt-1 h-8 w-56 max-w-full sm:h-9 sm:w-72" />
-          </div>
-          <div className="flex shrink-0 flex-col items-end gap-2">
-            <Pulse className="h-3 w-28" delayMs={40} />
-            <div className="flex items-center gap-1">
-              <Pulse className="h-8 w-8" delayMs={60} />
-              <Pulse className="h-8 w-8" delayMs={80} />
-            </div>
+        <div className="flex items-center justify-between gap-4">
+          <Pulse text className="h-3 w-28" />
+          <Pulse className="h-3 w-28" delayMs={40} />
+        </div>
+        <div className="mt-2.5 mb-[18px] flex items-center justify-between gap-4">
+          <Pulse text className="h-8 w-56 max-w-full sm:h-9 sm:w-72" />
+          <div className="hidden items-center gap-1.5 md:flex">
+            <Pulse className="h-[36px] w-[36px]" delayMs={60} />
+            <Pulse className="h-[36px] w-[36px]" delayMs={80} />
           </div>
         </div>
-        <div className="mt-6 flex snap-x items-stretch gap-4 overflow-hidden pb-2">
+        <div className="flex snap-x items-stretch gap-5 overflow-hidden">
           <MemberHomeCardSkeleton />
           <MemberHomeCardSkeleton className="hidden md:flex" delayMs={80} />
           <MemberHomeCardSkeleton className="hidden lg:flex" delayMs={160} />

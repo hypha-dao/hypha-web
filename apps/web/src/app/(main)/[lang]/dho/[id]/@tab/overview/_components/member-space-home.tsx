@@ -51,11 +51,16 @@ function signalKind(type: string) {
 }
 
 /**
- * Energy-community home strip:
- * ~2.2 cards on desktop with a peek; ~82% width on phone.
+ * Energy-community / lovable home strip:
+ * gap 24px, ~2.2 cards on desktop with a peek; ~82% width on phone.
+ * Use pixel calc — theme spacing-5 is 24px (gap-5), not 1.5rem.
  */
 const HOME_CARD_WIDTH =
-  'w-[min(100%,calc((100%-1.5rem)/2.2))] max-md:w-[82%] min-w-[15rem]';
+  'w-[min(100%,calc((100%-24px)/2.2))] max-md:w-[82%] min-w-[240px]';
+
+/** Theme `size-9` is 64px — arrows must stay 36px like the reference. */
+const HOME_ARROW_CLASS =
+  'box-border grid h-[36px] w-[36px] min-h-[36px] min-w-[36px] shrink-0 place-items-center border border-border bg-transparent p-0 text-foreground transition-colors hover:bg-foreground/5';
 
 function safeImage(url: string | null) {
   if (!url) return null;
@@ -125,9 +130,6 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
     });
   };
 
-  const arrowClass =
-    'grid size-9 shrink-0 place-items-center border border-border bg-transparent text-foreground transition-colors hover:bg-foreground/5';
-
   return (
     <div className={MEMBER_SCREEN_STACK} data-member-home="">
       <section
@@ -137,26 +139,26 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
       >
         {/* Eyebrow row — space left, section right (energy-community). */}
         <div className="flex items-center justify-between gap-4">
-          <p className="m-0 text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+          <p className="m-0 text-[11px] font-bold tracking-[0.12em] text-muted-foreground uppercase">
             {spaceTitle}
           </p>
-          <p className="m-0 text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+          <p className="m-0 text-[11px] font-bold tracking-[0.12em] text-muted-foreground uppercase">
             {t('communitySignals')}
           </p>
         </div>
 
-        {/* Title + 36px arrows on one row. */}
+        {/* Title + 36px arrows on one row (lovable compact 32px). */}
         <div className="mt-2.5 mb-[18px] flex items-center justify-between gap-4">
           <h1
             id="member-space-home-title"
-            className="craft-page-title m-0 text-[34px] font-light leading-[1.08] tracking-[-0.02em] text-foreground sm:text-[42px]"
+            className="craft-page-title m-0 text-[28px] font-light leading-[1.15] tracking-normal text-foreground sm:text-[32px]"
           >
             {t('around')}
           </h1>
           <div className="hidden shrink-0 items-center gap-1.5 md:flex">
             <button
               type="button"
-              className={arrowClass}
+              className={HOME_ARROW_CLASS}
               aria-label={t('previousSignals')}
               onClick={() => scrollStrip(-1)}
             >
@@ -164,7 +166,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
             </button>
             <button
               type="button"
-              className={arrowClass}
+              className={HOME_ARROW_CLASS}
               aria-label={t('nextSignals')}
               onClick={() => scrollStrip(1)}
             >
@@ -175,7 +177,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
 
         {authLoading || isLoading || (!data && !error) ? (
           <div
-            className="flex snap-x items-stretch gap-6 overflow-hidden"
+            className="flex snap-x items-stretch gap-5 overflow-hidden"
             aria-hidden
           >
             {[0, 1, 2].map((index) => (
@@ -194,7 +196,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                   <div className="h-3 w-full bg-accent-3/50" />
                   <div className="h-3 w-5/6 bg-accent-3/50" />
                   <div className="mt-auto flex items-center gap-2.5 border-t border-border pt-4">
-                    <div className="h-9 w-24 bg-accent-3/60" />
+                    <div className="h-[36px] w-24 bg-accent-3/60" />
                     <div className="h-[34px] w-16 bg-accent-3/60" />
                   </div>
                 </div>
@@ -219,7 +221,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
         ) : (
           <div
             ref={stripRef}
-            className="flex snap-x items-stretch gap-6 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex snap-x items-stretch gap-5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {signals.map((signal) => {
               const image = safeImage(signal.leadImage) ?? spaceHeader;
@@ -247,13 +249,13 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                     <img
                       src={image}
                       alt=""
-                      className="aspect-video w-full object-cover"
+                      className="mb-2.5 aspect-video w-full object-cover"
                     />
                   ) : (
-                    <div className="aspect-video w-full bg-accent-3" />
+                    <div className="mb-2.5 aspect-video w-full bg-accent-3" />
                   )}
-                  <div className="mt-2.5 flex min-h-0 min-w-0 flex-1 flex-col">
-                    <p className="m-0 text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                  <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                    <p className="m-0 text-[11px] font-bold tracking-[0.12em] text-muted-foreground uppercase">
                       {typeLabel}
                     </p>
                     <h2
@@ -280,13 +282,13 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                             refresh={() => mutate()}
                             archived={signal.archived}
                             summaryState="ready"
-                            className="h-9 [&_[data-testid='signal-upvote-cell']]:h-9"
+                            className="h-[36px] [&_[data-testid='signal-upvote-cell']]:h-[36px]"
                           />
                         </ActionGate>
                       </div>
                       <Link
                         href={href}
-                        className="inline-flex h-[34px] shrink-0 items-center gap-2 border border-border bg-transparent px-3.5 text-[13px] text-foreground hover:bg-foreground/5"
+                        className="inline-flex h-[34px] min-h-[34px] shrink-0 items-center gap-2 border border-border bg-transparent px-3.5 text-[13px] text-foreground hover:bg-foreground/5"
                       >
                         {t('open')}
                         <ChevronRight
