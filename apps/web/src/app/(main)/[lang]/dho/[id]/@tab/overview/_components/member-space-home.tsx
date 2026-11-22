@@ -84,9 +84,9 @@ function signalKind(type: string) {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-/** One card on a phone. Three across once the column is wide, still 3:2. */
+/** One card on a phone. Five across on a wide column, still 3:2. */
 const HOME_CARD_WIDTH =
-  'w-[calc(100%-3.25rem)] md:w-[min(22rem,calc((100%-1.25rem)/2.15))] lg:w-[min(20rem,calc((100%-1.5rem)/3.2))]';
+  'w-[calc(100%-3.25rem)] md:w-[min(16rem,calc((100%-1.25rem)/2.4))] lg:w-[min(14rem,calc((100%-2rem)/5.15))]';
 
 function safeImage(url: string | null) {
   if (!url) return null;
@@ -202,15 +202,23 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
           >
             <div className={`${HOME_CARD_WIDTH} shrink-0`}>
               <div className="aspect-[3/2] bg-accent-3" />
-              <div className="h-40 bg-accent-3/50" />
+              <div className="h-28 bg-accent-3/50" />
             </div>
             <div className={`${HOME_CARD_WIDTH} hidden shrink-0 md:block`}>
               <div className="aspect-[3/2] bg-accent-3" />
-              <div className="h-40 bg-accent-3/50" />
+              <div className="h-28 bg-accent-3/50" />
             </div>
             <div className={`${HOME_CARD_WIDTH} hidden shrink-0 lg:block`}>
               <div className="aspect-[3/2] bg-accent-3" />
-              <div className="h-40 bg-accent-3/50" />
+              <div className="h-28 bg-accent-3/50" />
+            </div>
+            <div className={`${HOME_CARD_WIDTH} hidden shrink-0 lg:block`}>
+              <div className="aspect-[3/2] bg-accent-3" />
+              <div className="h-28 bg-accent-3/50" />
+            </div>
+            <div className={`${HOME_CARD_WIDTH} hidden shrink-0 lg:block`}>
+              <div className="aspect-[3/2] bg-accent-3" />
+              <div className="h-28 bg-accent-3/50" />
             </div>
           </div>
         ) : error ? (
@@ -262,17 +270,17 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                   ) : (
                     <div className="aspect-[3/2] w-full bg-accent-3" />
                   )}
-                  <div className="flex flex-1 flex-col gap-2 p-4">
+                  <div className="flex flex-1 flex-col gap-1.5 p-3">
                     <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
                       {typeLabel}
                     </p>
                     <h2
-                      className="text-5 text-foreground sm:text-6"
+                      className="text-4 text-foreground"
                       style={{ fontFamily: 'var(--font-family-heading)' }}
                     >
                       {signal.title}
                     </h2>
-                    <p className="line-clamp-3 text-2 text-muted-foreground">
+                    <p className="line-clamp-2 text-2 text-muted-foreground">
                       {plainText(signal.description)}
                     </p>
                     <div className="mt-auto flex items-center gap-3 border-t border-border pt-3">
