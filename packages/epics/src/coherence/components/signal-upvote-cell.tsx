@@ -34,7 +34,7 @@ type VoteArrowProps = {
   onClick: () => void;
 };
 
-/** Plain arrows for the member stack. The row keeps the shared button. */
+/** Plain arrows for the member stack. Keep the outlined cell — no filled block. */
 const StackVoteArrow = React.forwardRef<HTMLButtonElement, VoteArrowProps>(
   function StackVoteArrow(
     { direction, selected, label, disabled, allocates, expanded, onClick },
@@ -53,10 +53,10 @@ const StackVoteArrow = React.forwardRef<HTMLButtonElement, VoteArrowProps>(
         aria-expanded={allocates ? expanded : undefined}
         disabled={disabled}
         className={cn(
-          'flex h-4 w-full items-center justify-center rounded-none p-0',
+          'flex h-5 w-full items-center justify-center rounded-none border-0 bg-transparent p-0',
           active
-            ? 'bg-foreground text-background'
-            : 'bg-transparent text-foreground hover:bg-foreground/5',
+            ? 'text-foreground'
+            : 'text-muted-foreground hover:text-foreground',
           'disabled:opacity-40',
         )}
         onClick={(event) => {
@@ -64,7 +64,11 @@ const StackVoteArrow = React.forwardRef<HTMLButtonElement, VoteArrowProps>(
           onClick();
         }}
       >
-        <Icon className="size-2.5" strokeWidth={2} aria-hidden />
+        <Icon
+          className="size-3"
+          strokeWidth={active ? 2.25 : 1.5}
+          aria-hidden
+        />
       </button>
     );
   },
@@ -188,7 +192,7 @@ export function SignalUpvoteCellChrome({
       className={cn(
         'rounded-none bg-transparent tabular-nums leading-none',
         layout === 'stack'
-          ? 'h-4 w-full px-1 text-center text-[11px] font-medium leading-none text-foreground'
+          ? 'flex h-5 w-full items-center justify-center border-y border-border px-1 text-center text-[11px] font-semibold leading-none text-foreground'
           : 'min-w-4 px-1.5 text-1 font-medium',
         layout === 'stack'
           ? null
@@ -236,7 +240,7 @@ export function SignalUpvoteCellChrome({
       className={cn(
         'inline-flex rounded-none border bg-transparent',
         layout === 'stack'
-          ? 'w-max min-w-8 flex-col items-stretch overflow-hidden border-border bg-background p-0'
+          ? 'w-max min-w-9 flex-col items-stretch overflow-hidden border-border/80 bg-background py-0.5'
           : 'h-7 items-center px-0.5',
         layout === 'stack'
           ? null
