@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
-import { MessagesSquare, Moon, Sun, Wallet } from 'lucide-react';
+import { MessagesSquare, Wallet } from 'lucide-react';
 import {
   getEnergyCommunityTokensForSpace,
   useSpaceBySlug,
@@ -33,9 +33,6 @@ import {
 
 type MemberTopBarProps = {
   personSlug?: string;
-  language?: ReactNode;
-  resolvedTheme?: string;
-  onToggleTheme?: () => void;
 };
 
 function useMemberBarSpaceSlug(): string | null {
@@ -63,13 +60,7 @@ function useMemberBarSpaceSlug(): string | null {
   );
 }
 
-export function MemberTopBar({
-  personSlug,
-  language,
-  resolvedTheme,
-  onToggleTheme,
-}: MemberTopBarProps) {
-  const tNav = useTranslations('Navigation');
+export function MemberTopBar({ personSlug }: MemberTopBarProps) {
   const tMember = useTranslations('MemberMenu');
   const tConnections = useTranslations('Connections');
   const params = useParams<{ lang?: string }>();
@@ -96,7 +87,6 @@ export function MemberTopBar({
     refreshInterval: 0,
   });
   const unread = useMessagesScreenCount();
-  const dark = resolvedTheme === 'dark';
 
   const minted = useMemo(() => {
     const catalogue: MemberMintedToken[] = getEnergyCommunityTokensForSpace(
@@ -184,27 +174,6 @@ export function MemberTopBar({
           </span>
         ) : null}
       </span>
-      {language ? (
-        <div className="[&_button[data-language-select-trigger]]:box-border [&_button[data-language-select-trigger]]:h-[36px] [&_button[data-language-select-trigger]]:w-[36px] [&_button[data-language-select-trigger]]:justify-center [&_button[data-language-select-trigger]]:gap-0 [&_button[data-language-select-trigger]]:border [&_button[data-language-select-trigger]]:border-border/70 [&_button[data-language-select-trigger]]:px-0 [&_button[data-language-select-trigger]>span[aria-hidden]]:hidden">
-          {language}
-        </div>
-      ) : null}
-      {onToggleTheme ? (
-        <button
-          type="button"
-          className={APP_CHROME_ICON_TRIGGER}
-          onClick={onToggleTheme}
-          aria-label={
-            dark ? tNav('switchToLightMode') : tNav('switchToDarkMode')
-          }
-        >
-          {dark ? (
-            <Sun className="craft-icon" strokeWidth={1.25} aria-hidden />
-          ) : (
-            <Moon className="craft-icon" strokeWidth={1.25} aria-hidden />
-          )}
-        </button>
-      ) : null}
     </div>
   );
 }

@@ -753,6 +753,10 @@
     "noSignals": "Rien de nouveau dans la communauté pour le moment.",
     "signalsFailed": "Les signaux n'ont pas pu être chargés.",
     "retry": "Réessayer",
+    "askGuide": "Demander à cet espace",
+    "darkMode": "Mode sombre",
+    "language": "Langue",
+    "logOut": "Se déconnecter",
     "spaceMessages": "Messages dans {space}"
   },
   "Connections": {

@@ -753,6 +753,10 @@
     "noSignals": "Сè уште нема ништо ново од заедницата.",
     "signalsFailed": "Сигналите не се вчитаа.",
     "retry": "Обиди се повторно",
+    "askGuide": "Прашај го овој простор",
+    "darkMode": "Темен режим",
+    "language": "Јазик",
+    "logOut": "Одјави се",
     "spaceMessages": "Пораки во {space}"
   },
   "Connections": {

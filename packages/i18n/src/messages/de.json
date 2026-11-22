@@ -753,6 +753,10 @@
     "noSignals": "Noch nichts Neues aus der Community.",
     "signalsFailed": "Signale konnten nicht geladen werden.",
     "retry": "Erneut versuchen",
+    "askGuide": "Diesen Space fragen",
+    "darkMode": "Dunkelmodus",
+    "language": "Sprache",
+    "logOut": "Abmelden",
     "spaceMessages": "Nachrichten in {space}"
   },
   "Connections": {

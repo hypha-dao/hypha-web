@@ -753,6 +753,10 @@
     "noSignals": "Nog niets nieuws uit de community.",
     "signalsFailed": "Signalen konden niet worden geladen.",
     "retry": "Opnieuw proberen",
+    "askGuide": "Vraag deze space",
+    "darkMode": "Donkere modus",
+    "language": "Taal",
+    "logOut": "Uitloggen",
     "spaceMessages": "Berichten in {space}"
   },
   "Connections": {

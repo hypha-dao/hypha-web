@@ -152,6 +152,10 @@
     "noSignals": "Nothing new from the community yet.",
     "signalsFailed": "Signals didn't load.",
     "retry": "Try again",
+    "askGuide": "Ask this space",
+    "darkMode": "Dark mode",
+    "language": "Language",
+    "logOut": "Log out",
     "spaceMessages": "Messages in {space}"
   },
   "Connections": {

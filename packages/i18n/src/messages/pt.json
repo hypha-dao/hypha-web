@@ -1533,6 +1533,10 @@
     "noSignals": "Ainda não há novidades da comunidade.",
     "signalsFailed": "Não foi possível carregar os sinais.",
     "retry": "Tentar novamente",
+    "askGuide": "Perguntar a este espaço",
+    "darkMode": "Modo escuro",
+    "language": "Idioma",
+    "logOut": "Terminar sessão",
     "spaceMessages": "Mensagens em {space}"
   },
   "Connections": {

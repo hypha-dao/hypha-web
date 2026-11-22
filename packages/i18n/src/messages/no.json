@@ -752,6 +752,10 @@
     "noSignals": "Ingenting nytt fra fellesskapet ennå.",
     "signalsFailed": "Signalene ble ikke lastet.",
     "retry": "Prøv igjen",
+    "askGuide": "Spør dette området",
+    "darkMode": "Mørk modus",
+    "language": "Språk",
+    "logOut": "Logg ut",
     "spaceMessages": "Meldinger i {space}"
   },
   "Connections": {

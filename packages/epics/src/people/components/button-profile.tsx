@@ -44,6 +44,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
 import { APP_CHROME_AVATAR_TRIGGER } from '../../common/chrome-radius';
 import { useMemberExperience } from './member-experience';
+import { MemberProfileMenu } from './member-profile-menu';
 import { MemberTopBar } from './member-top-bar';
 import { useCompactPanelsMode, useIsMobile } from '@hypha-platform/ui';
 import { useFundWallet } from '../../treasury/hooks';
@@ -226,13 +227,22 @@ export const ButtonProfile = ({
     : navItems;
   const { isMember: memberExperience } = useMemberExperience();
   const memberTopBar = memberExperience ? (
-    <MemberTopBar
-      personSlug={person?.slug}
-      language={trailingBeforeProfile}
-      resolvedTheme={resolvedTheme}
-      onToggleTheme={onChangeThemeMode}
-    />
+    <MemberTopBar personSlug={person?.slug} />
   ) : null;
+  const memberProfileMenu = (variant: 'dropdown' | 'sheet') =>
+    memberExperience ? (
+      <MemberProfileMenu
+        variant={variant}
+        person={person}
+        notificationCentrePath={notificationCentrePath}
+        language={trailingBeforeProfile}
+        resolvedTheme={resolvedTheme}
+        onChangeThemeMode={onChangeThemeMode}
+        onLogout={onLogout}
+        loggingOut={loggingOut}
+        onClose={() => setProfileMenuOpen(false)}
+      />
+    ) : null;
 
   useEffect(() => {
     setProfileMenuOpen(false);
@@ -301,181 +311,197 @@ export const ButtonProfile = ({
               collisionPadding={12}
               className={profileMenuPanelClass}
             >
-              <DropdownMenuLabel className={profileMenuLabelClass}>
-                <div className="flex items-center gap-2.5">
-                  <PersonAvatar
-                    size="md"
-                    avatarSrc={person?.avatarUrl}
-                    userName={person?.nickname}
-                    shape="square"
-                    className="border-0 shadow-none ring-0"
-                  />
-                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className={profileMenuNameClass}>{primaryLine}</span>
-                    {displayName.trim() && person?.nickname ? (
-                      <span className={profileMenuSlugClass}>
-                        {person.nickname}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-              </DropdownMenuLabel>
-              {address ? (
-                <div className={profileMenuWalletClass}>
-                  <EthAddress address={address} onClick={handleAddressCopy} />
-                </div>
-              ) : null}
-              {navItems.length > 0 ? (
+              {memberProfileMenu('dropdown') ?? (
                 <>
-                  <DropdownMenuSeparator
-                    className={profileMenuSeparatorClass}
-                  />
-                  <DropdownMenuGroup>
-                    {showNetworkFeedback ? (
-                      <HyphaNetworkFeedbackMenuItem
-                        variant="menu"
-                        onOpen={openNetworkFeedbackFromProfileMenu}
+                  <DropdownMenuLabel className={profileMenuLabelClass}>
+                    <div className="flex items-center gap-2.5">
+                      <PersonAvatar
+                        size="md"
+                        avatarSrc={person?.avatarUrl}
+                        userName={person?.nickname}
+                        shape="square"
+                        className="border-0 shadow-none ring-0"
                       />
-                    ) : null}
-                    {navItems.map((item) => (
-                      <Fragment key={item.href ?? item.label}>
-                        {item.href ? (
-                          <DropdownMenuItem
-                            key={item.href}
-                            className={menuItemClass}
-                            asChild
-                          >
-                            <Link href={item.href}>
-                              {resolveNavItemIcon(item.href)}
-                              <span className="flex-1">{item.label}</span>
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span className={profileMenuNameClass}>
+                          {primaryLine}
+                        </span>
+                        {displayName.trim() && person?.nickname ? (
+                          <span className={profileMenuSlugClass}>
+                            {person.nickname}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  {address ? (
+                    <div className={profileMenuWalletClass}>
+                      <EthAddress
+                        address={address}
+                        onClick={handleAddressCopy}
+                      />
+                    </div>
+                  ) : null}
+                  {navItems.length > 0 ? (
+                    <>
+                      <DropdownMenuSeparator
+                        className={profileMenuSeparatorClass}
+                      />
+                      <DropdownMenuGroup>
+                        {showNetworkFeedback ? (
+                          <HyphaNetworkFeedbackMenuItem
+                            variant="menu"
+                            onOpen={openNetworkFeedbackFromProfileMenu}
+                          />
+                        ) : null}
+                        {navItems.map((item) => (
+                          <Fragment key={item.href ?? item.label}>
+                            {item.href ? (
+                              <DropdownMenuItem
+                                key={item.href}
+                                className={menuItemClass}
+                                asChild
+                              >
+                                <Link href={item.href}>
+                                  {resolveNavItemIcon(item.href)}
+                                  <span className="flex-1">{item.label}</span>
+                                  <ChevronRight
+                                    className="ml-auto craft-icon opacity-60"
+                                    aria-hidden
+                                  />
+                                </Link>
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                key={`nav-action-${item.label}`}
+                                className={menuItemClass}
+                                onClick={item.onClick}
+                              >
+                                <span className="flex-1">{item.label}</span>
+                              </DropdownMenuItem>
+                            )}
+                          </Fragment>
+                        ))}
+                      </DropdownMenuGroup>
+                    </>
+                  ) : null}
+                  {(profileUrl || onboardingUrl || notificationCentrePath) && (
+                    <>
+                      <DropdownMenuSeparator
+                        className={profileMenuSeparatorClass}
+                      />
+                      <DropdownMenuGroup>
+                        {profileUrl ? (
+                          <DropdownMenuItem className={menuItemClass} asChild>
+                            <Link href={profileUrl}>
+                              <UserRound className="craft-icon" aria-hidden />
+                              <span className="flex-1">{t('viewProfile')}</span>
                               <ChevronRight
                                 className="ml-auto craft-icon opacity-60"
                                 aria-hidden
                               />
                             </Link>
                           </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem
-                            key={`nav-action-${item.label}`}
-                            className={menuItemClass}
-                            onClick={item.onClick}
-                          >
-                            <span className="flex-1">{item.label}</span>
+                        ) : null}
+                        {onboardingUrl ? (
+                          <DropdownMenuItem className={menuItemClass} asChild>
+                            <Link href={onboardingUrl}>
+                              <Compass className="craft-icon" aria-hidden />
+                              <span className="flex-1">
+                                {t('continueAdventure')}
+                              </span>
+                              <ChevronRight
+                                className="ml-auto craft-icon opacity-60"
+                                aria-hidden
+                              />
+                            </Link>
                           </DropdownMenuItem>
-                        )}
-                      </Fragment>
-                    ))}
-                  </DropdownMenuGroup>
-                </>
-              ) : null}
-              {(profileUrl || onboardingUrl || notificationCentrePath) && (
-                <>
+                        ) : null}
+                        {notificationCentrePath ? (
+                          <DropdownMenuItem className={menuItemClass} asChild>
+                            <Link href={notificationCentrePath}>
+                              <Bell className="craft-icon" aria-hidden />
+                              <span className="flex-1">
+                                {t('notificationCentre')}
+                              </span>
+                              <ChevronRight
+                                className="ml-auto craft-icon opacity-60"
+                                aria-hidden
+                              />
+                            </Link>
+                          </DropdownMenuItem>
+                        ) : null}
+                      </DropdownMenuGroup>
+                    </>
+                  )}
                   <DropdownMenuSeparator
                     className={profileMenuSeparatorClass}
                   />
                   <DropdownMenuGroup>
-                    {profileUrl ? (
-                      <DropdownMenuItem className={menuItemClass} asChild>
-                        <Link href={profileUrl}>
-                          <UserRound className="craft-icon" aria-hidden />
-                          <span className="flex-1">{t('viewProfile')}</span>
-                          <ChevronRight
-                            className="ml-auto craft-icon opacity-60"
-                            aria-hidden
-                          />
-                        </Link>
+                    {onChangeThemeMode ? (
+                      <DropdownMenuItem
+                        className={menuItemClass}
+                        onClick={onChangeThemeMode}
+                      >
+                        <span className="flex-1">
+                          {resolvedTheme === 'dark'
+                            ? t('switchToLightMode')
+                            : t('switchToDarkMode')}
+                        </span>
+                        <Repeat className="craft-icon" aria-hidden />
                       </DropdownMenuItem>
                     ) : null}
-                    {onboardingUrl ? (
-                      <DropdownMenuItem className={menuItemClass} asChild>
-                        <Link href={onboardingUrl}>
-                          <Compass className="craft-icon" aria-hidden />
-                          <span className="flex-1">
-                            {t('continueAdventure')}
-                          </span>
-                          <ChevronRight
-                            className="ml-auto craft-icon opacity-60"
-                            aria-hidden
-                          />
-                        </Link>
-                      </DropdownMenuItem>
-                    ) : null}
-                    {notificationCentrePath ? (
-                      <DropdownMenuItem className={menuItemClass} asChild>
-                        <Link href={notificationCentrePath}>
-                          <Bell className="craft-icon" aria-hidden />
-                          <span className="flex-1">
-                            {t('notificationCentre')}
-                          </span>
-                          <ChevronRight
-                            className="ml-auto craft-icon opacity-60"
-                            aria-hidden
-                          />
-                        </Link>
-                      </DropdownMenuItem>
-                    ) : null}
+                    <DropdownMenuItem
+                      className={menuItemClass}
+                      onClick={showMfaEnrollmentModal}
+                    >
+                      <span className="flex-1">
+                        {hasMfaMethods ? t('updateMfa') : t('protectMfa')}
+                      </span>
+                      <Shield className="craft-icon" aria-hidden />
+                    </DropdownMenuItem>
                   </DropdownMenuGroup>
-                </>
-              )}
-              <DropdownMenuSeparator className={profileMenuSeparatorClass} />
-              <DropdownMenuGroup>
-                {onChangeThemeMode ? (
-                  <DropdownMenuItem
-                    className={menuItemClass}
-                    onClick={onChangeThemeMode}
-                  >
-                    <span className="flex-1">
-                      {resolvedTheme === 'dark'
-                        ? t('switchToLightMode')
-                        : t('switchToDarkMode')}
-                    </span>
-                    <Repeat className="craft-icon" aria-hidden />
-                  </DropdownMenuItem>
-                ) : null}
-                <DropdownMenuItem
-                  className={menuItemClass}
-                  onClick={showMfaEnrollmentModal}
-                >
-                  <span className="flex-1">
-                    {hasMfaMethods ? t('updateMfa') : t('protectMfa')}
-                  </span>
-                  <Shield className="craft-icon" aria-hidden />
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              {onDelete ? (
-                <>
+                  {onDelete ? (
+                    <>
+                      <DropdownMenuSeparator
+                        className={profileMenuSeparatorClass}
+                      />
+                      <DropdownMenuItem
+                        onClick={onDelete}
+                        className={cn(
+                          menuItemClass,
+                          'text-error-11 focus:text-error-11',
+                        )}
+                        disabled
+                      >
+                        <span className="flex-1">{t('delete')}</span>
+                        <TrashIcon className="craft-icon" aria-hidden />
+                      </DropdownMenuItem>
+                    </>
+                  ) : null}
                   <DropdownMenuSeparator
                     className={profileMenuSeparatorClass}
                   />
                   <DropdownMenuItem
-                    onClick={onDelete}
+                    onClick={onLogout}
+                    disabled={loggingOut}
                     className={cn(
                       menuItemClass,
-                      'text-error-11 focus:text-error-11',
+                      'text-error-11 focus:bg-error-3 focus:text-error-12 data-[highlighted]:bg-error-3',
                     )}
-                    disabled
                   >
-                    <span className="flex-1">{t('delete')}</span>
-                    <TrashIcon className="craft-icon" aria-hidden />
+                    <span className="flex-1">{t('logout')}</span>
+                    {loggingOut ? (
+                      <Loader2
+                        className="craft-icon animate-spin"
+                        aria-hidden
+                      />
+                    ) : (
+                      <LogOutIcon className="craft-icon" aria-hidden />
+                    )}
                   </DropdownMenuItem>
                 </>
-              ) : null}
-              <DropdownMenuSeparator className={profileMenuSeparatorClass} />
-              <DropdownMenuItem
-                onClick={onLogout}
-                disabled={loggingOut}
-                className={cn(
-                  menuItemClass,
-                  'text-error-11 focus:bg-error-3 focus:text-error-12 data-[highlighted]:bg-error-3',
-                )}
-              >
-                <span className="flex-1">{t('logout')}</span>
-                {loggingOut ? (
-                  <Loader2 className="craft-icon animate-spin" aria-hidden />
-                ) : (
-                  <LogOutIcon className="craft-icon" aria-hidden />
-                )}
-              </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
           <HyphaNetworkFeedbackDialog
@@ -514,160 +540,185 @@ export const ButtonProfile = ({
               'bg-background-2 font-sans text-foreground',
             )}
           >
-            <div className="flex h-full flex-col">
-              <div className="border-b border-border">
-                <div className="flex items-center gap-2.5 px-3 py-2">
-                  <PersonAvatar
-                    size="md"
-                    avatarSrc={person?.avatarUrl}
-                    userName={person?.nickname}
-                    shape="square"
-                    className="border-0 shadow-none ring-0"
-                  />
-                  <div className="flex min-w-0 flex-1 flex-col gap-0.5 pr-8">
-                    <span className={profileMenuNameClass}>{primaryLine}</span>
-                    {displayName.trim() && person?.nickname ? (
-                      <span className={profileMenuSlugClass}>
-                        {person.nickname}
+            {memberProfileMenu('sheet') ?? (
+              <div className="flex h-full flex-col">
+                <div className="border-b border-border">
+                  <div className="flex items-center gap-2.5 px-3 py-2">
+                    <PersonAvatar
+                      size="md"
+                      avatarSrc={person?.avatarUrl}
+                      userName={person?.nickname}
+                      shape="square"
+                      className="border-0 shadow-none ring-0"
+                    />
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5 pr-8">
+                      <span className={profileMenuNameClass}>
+                        {primaryLine}
                       </span>
+                      {displayName.trim() && person?.nickname ? (
+                        <span className={profileMenuSlugClass}>
+                          {person.nickname}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                  {address ? (
+                    <div className={profileMenuWalletClass}>
+                      <EthAddress
+                        address={address}
+                        onClick={handleAddressCopy}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="flex-1 overflow-y-auto">
+                  {trailingBeforeProfile ? (
+                    <>
+                      <div className="px-3 py-2">{trailingBeforeProfile}</div>
+                      <div className="border-t border-border" />
+                    </>
+                  ) : null}
+
+                  <div>
+                    {showNetworkFeedback ? (
+                      <HyphaNetworkFeedbackMenuItem
+                        variant="sheet"
+                        onOpen={openNetworkFeedbackFromProfileMenu}
+                      />
+                    ) : null}
+                    {sheetNavItems.map((item) => (
+                      <Fragment key={item.href ?? item.label}>
+                        {item.href ? (
+                          <Link
+                            href={item.href}
+                            className={compactSheetItemClass}
+                            onClick={() => setProfileMenuOpen(false)}
+                          >
+                            {resolveNavItemIcon(item.href)}
+                            <span className="flex-1">{item.label}</span>
+                            <ChevronRight
+                              className="ml-auto craft-icon text-muted-foreground"
+                              aria-hidden
+                            />
+                          </Link>
+                        ) : (
+                          <button
+                            type="button"
+                            className={compactSheetItemClass}
+                            onClick={(event) => {
+                              setProfileMenuOpen(false);
+                              item.onClick?.(event);
+                            }}
+                          >
+                            <span className="flex-1">{item.label}</span>
+                          </button>
+                        )}
+                      </Fragment>
+                    ))}
+                    {profileUrl ? (
+                      <Link
+                        href={profileUrl}
+                        className={compactSheetItemClass}
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        <UserRound className="craft-icon text-muted-foreground" />
+                        <span className="flex-1">{t('viewProfile')}</span>
+                        <ChevronRight
+                          className="ml-auto craft-icon text-muted-foreground"
+                          aria-hidden
+                        />
+                      </Link>
+                    ) : null}
+                    {onboardingUrl ? (
+                      <Link
+                        href={onboardingUrl}
+                        className={compactSheetItemClass}
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        <Compass className="craft-icon text-muted-foreground" />
+                        <span className="flex-1">{t('continueAdventure')}</span>
+                        <ChevronRight
+                          className="ml-auto craft-icon text-muted-foreground"
+                          aria-hidden
+                        />
+                      </Link>
+                    ) : null}
+                    {notificationCentrePath ? (
+                      <Link
+                        href={notificationCentrePath}
+                        className={compactSheetItemClass}
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        <Bell className="craft-icon text-muted-foreground" />
+                        <span className="flex-1">
+                          {t('notificationCentre')}
+                        </span>
+                        <ChevronRight
+                          className="ml-auto craft-icon text-muted-foreground"
+                          aria-hidden
+                        />
+                      </Link>
                     ) : null}
                   </div>
-                </div>
-                {address ? (
-                  <div className={profileMenuWalletClass}>
-                    <EthAddress address={address} onClick={handleAddressCopy} />
-                  </div>
-                ) : null}
-              </div>
 
-              <div className="flex-1 overflow-y-auto">
-                {!memberExperience && trailingBeforeProfile ? (
-                  <>
-                    <div className="px-3 py-2">{trailingBeforeProfile}</div>
-                    <div className="border-t border-border" />
-                  </>
-                ) : null}
+                  <div className="border-t border-border" />
 
-                <div>
-                  {showNetworkFeedback ? (
-                    <HyphaNetworkFeedbackMenuItem
-                      variant="sheet"
-                      onOpen={openNetworkFeedbackFromProfileMenu}
-                    />
-                  ) : null}
-                  {sheetNavItems.map((item) => (
-                    <Fragment key={item.href ?? item.label}>
-                      {item.href ? (
-                        <Link
-                          href={item.href}
-                          className={compactSheetItemClass}
-                          onClick={() => setProfileMenuOpen(false)}
-                        >
-                          {resolveNavItemIcon(item.href)}
-                          <span className="flex-1">{item.label}</span>
-                          <ChevronRight
-                            className="ml-auto craft-icon text-muted-foreground"
-                            aria-hidden
-                          />
-                        </Link>
-                      ) : (
-                        <button
-                          type="button"
-                          className={compactSheetItemClass}
-                          onClick={(event) => {
-                            setProfileMenuOpen(false);
-                            item.onClick?.(event);
-                          }}
-                        >
-                          <span className="flex-1">{item.label}</span>
-                        </button>
-                      )}
-                    </Fragment>
-                  ))}
-                  {profileUrl ? (
-                    <Link
-                      href={profileUrl}
-                      className={compactSheetItemClass}
-                      onClick={() => setProfileMenuOpen(false)}
-                    >
-                      <UserRound className="craft-icon text-muted-foreground" />
-                      <span className="flex-1">{t('viewProfile')}</span>
-                      <ChevronRight
-                        className="ml-auto craft-icon text-muted-foreground"
-                        aria-hidden
-                      />
-                    </Link>
-                  ) : null}
-                  {onboardingUrl ? (
-                    <Link
-                      href={onboardingUrl}
-                      className={compactSheetItemClass}
-                      onClick={() => setProfileMenuOpen(false)}
-                    >
-                      <Compass className="craft-icon text-muted-foreground" />
-                      <span className="flex-1">{t('continueAdventure')}</span>
-                      <ChevronRight
-                        className="ml-auto craft-icon text-muted-foreground"
-                        aria-hidden
-                      />
-                    </Link>
-                  ) : null}
-                  {notificationCentrePath ? (
-                    <Link
-                      href={notificationCentrePath}
-                      className={compactSheetItemClass}
-                      onClick={() => setProfileMenuOpen(false)}
-                    >
-                      <Bell className="craft-icon text-muted-foreground" />
-                      <span className="flex-1">{t('notificationCentre')}</span>
-                      <ChevronRight
-                        className="ml-auto craft-icon text-muted-foreground"
-                        aria-hidden
-                      />
-                    </Link>
-                  ) : null}
-                </div>
+                  <div>
+                    {onChangeThemeMode ? (
+                      <button
+                        type="button"
+                        className={compactSheetItemClass}
+                        onClick={() => {
+                          setProfileMenuOpen(false);
+                          onChangeThemeMode();
+                        }}
+                      >
+                        <span className="flex-1">
+                          {resolvedTheme === 'dark'
+                            ? t('switchToLightMode')
+                            : t('switchToDarkMode')}
+                        </span>
+                        <Repeat className="craft-icon text-muted-foreground" />
+                      </button>
+                    ) : null}
 
-                <div className="border-t border-border" />
-
-                <div>
-                  {onChangeThemeMode ? (
                     <button
                       type="button"
                       className={compactSheetItemClass}
                       onClick={() => {
                         setProfileMenuOpen(false);
-                        onChangeThemeMode();
+                        showMfaEnrollmentModal();
                       }}
                     >
                       <span className="flex-1">
-                        {resolvedTheme === 'dark'
-                          ? t('switchToLightMode')
-                          : t('switchToDarkMode')}
+                        {hasMfaMethods ? t('updateMfa') : t('protectMfa')}
                       </span>
-                      <Repeat className="craft-icon text-muted-foreground" />
+                      <Shield className="craft-icon text-muted-foreground" />
                     </button>
-                  ) : null}
+                  </div>
 
-                  <button
-                    type="button"
-                    className={compactSheetItemClass}
-                    onClick={() => {
-                      setProfileMenuOpen(false);
-                      showMfaEnrollmentModal();
-                    }}
-                  >
-                    <span className="flex-1">
-                      {hasMfaMethods ? t('updateMfa') : t('protectMfa')}
-                    </span>
-                    <Shield className="craft-icon text-muted-foreground" />
-                  </button>
-                </div>
+                  <div className="border-t border-border" />
 
-                <div className="border-t border-border" />
+                  <div>
+                    {onDelete ? (
+                      <button
+                        type="button"
+                        className={cn(
+                          compactSheetItemClass,
+                          'text-error-11 hover:bg-error-3/40',
+                        )}
+                        onClick={() => {
+                          setProfileMenuOpen(false);
+                          onDelete();
+                        }}
+                        disabled
+                      >
+                        <span className="flex-1">{t('delete')}</span>
+                        <TrashIcon className="craft-icon text-error-11" />
+                      </button>
+                    ) : null}
 
-                <div>
-                  {onDelete ? (
                     <button
                       type="button"
                       className={cn(
@@ -676,37 +727,21 @@ export const ButtonProfile = ({
                       )}
                       onClick={() => {
                         setProfileMenuOpen(false);
-                        onDelete();
+                        onLogout();
                       }}
-                      disabled
+                      disabled={loggingOut}
                     >
-                      <span className="flex-1">{t('delete')}</span>
-                      <TrashIcon className="craft-icon text-error-11" />
+                      <span className="flex-1">{t('logout')}</span>
+                      {loggingOut ? (
+                        <Loader2 className="craft-icon animate-spin text-error-11" />
+                      ) : (
+                        <LogOutIcon className="craft-icon text-error-11" />
+                      )}
                     </button>
-                  ) : null}
-
-                  <button
-                    type="button"
-                    className={cn(
-                      compactSheetItemClass,
-                      'text-error-11 hover:bg-error-3/40',
-                    )}
-                    onClick={() => {
-                      setProfileMenuOpen(false);
-                      onLogout();
-                    }}
-                    disabled={loggingOut}
-                  >
-                    <span className="flex-1">{t('logout')}</span>
-                    {loggingOut ? (
-                      <Loader2 className="craft-icon animate-spin text-error-11" />
-                    ) : (
-                      <LogOutIcon className="craft-icon text-error-11" />
-                    )}
-                  </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </SheetContent>
         </Sheet>
         <HyphaNetworkFeedbackDialog
@@ -877,160 +912,178 @@ export const ButtonProfile = ({
                 collisionPadding={12}
                 className={profileMenuPanelClass}
               >
-                <DropdownMenuLabel className={profileMenuLabelClass}>
-                  <div className="flex items-center gap-2.5">
-                    <PersonAvatar
-                      size="md"
-                      avatarSrc={person?.avatarUrl}
-                      userName={person?.nickname}
-                      shape="square"
-                      className="border-0 shadow-none ring-0"
+                {memberProfileMenu('dropdown') ?? (
+                  <>
+                    <DropdownMenuLabel className={profileMenuLabelClass}>
+                      <div className="flex items-center gap-2.5">
+                        <PersonAvatar
+                          size="md"
+                          avatarSrc={person?.avatarUrl}
+                          userName={person?.nickname}
+                          shape="square"
+                          className="border-0 shadow-none ring-0"
+                        />
+                        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <span className={profileMenuNameClass}>
+                            {primaryLine}
+                          </span>
+                          {displayName.trim() && person?.nickname ? (
+                            <span className={profileMenuSlugClass}>
+                              {person.nickname}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    </DropdownMenuLabel>
+                    {address ? (
+                      <div className={profileMenuWalletClass}>
+                        <EthAddress
+                          address={address}
+                          onClick={handleAddressCopy}
+                        />
+                      </div>
+                    ) : null}
+
+                    {showNetworkFeedback ? (
+                      <>
+                        <DropdownMenuSeparator
+                          className={profileMenuSeparatorClass}
+                        />
+                        <DropdownMenuGroup>
+                          <HyphaNetworkFeedbackMenuItem
+                            variant="menu"
+                            onOpen={openNetworkFeedbackFromProfileMenu}
+                          />
+                        </DropdownMenuGroup>
+                      </>
+                    ) : null}
+
+                    {(profileUrl ||
+                      onboardingUrl ||
+                      notificationCentrePath) && (
+                      <>
+                        <DropdownMenuSeparator
+                          className={profileMenuSeparatorClass}
+                        />
+                        <DropdownMenuGroup>
+                          {profileUrl ? (
+                            <DropdownMenuItem className={menuItemClass} asChild>
+                              <Link href={profileUrl}>
+                                <UserRound className="craft-icon" aria-hidden />
+                                <span className="flex-1">
+                                  {t('viewProfile')}
+                                </span>
+                                <ChevronRight
+                                  className="ml-auto craft-icon opacity-60"
+                                  aria-hidden
+                                />
+                              </Link>
+                            </DropdownMenuItem>
+                          ) : null}
+                          {onboardingUrl ? (
+                            <DropdownMenuItem className={menuItemClass} asChild>
+                              <Link href={onboardingUrl}>
+                                <Compass className="craft-icon" aria-hidden />
+                                <span className="flex-1">
+                                  {t('continueAdventure')}
+                                </span>
+                                <ChevronRight
+                                  className="ml-auto craft-icon opacity-60"
+                                  aria-hidden
+                                />
+                              </Link>
+                            </DropdownMenuItem>
+                          ) : null}
+                          {notificationCentrePath ? (
+                            <DropdownMenuItem className={menuItemClass} asChild>
+                              <Link href={notificationCentrePath}>
+                                <Bell className="craft-icon" aria-hidden />
+                                <span className="flex-1">
+                                  {t('notificationCentre')}
+                                </span>
+                                <ChevronRight
+                                  className="ml-auto craft-icon opacity-60"
+                                  aria-hidden
+                                />
+                              </Link>
+                            </DropdownMenuItem>
+                          ) : null}
+                        </DropdownMenuGroup>
+                      </>
+                    )}
+
+                    <DropdownMenuSeparator
+                      className={profileMenuSeparatorClass}
                     />
-                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span className={profileMenuNameClass}>
-                        {primaryLine}
-                      </span>
-                      {displayName.trim() && person?.nickname ? (
-                        <span className={profileMenuSlugClass}>
-                          {person.nickname}
+
+                    <DropdownMenuGroup>
+                      {onChangeThemeMode ? (
+                        <DropdownMenuItem
+                          className={menuItemClass}
+                          onClick={onChangeThemeMode}
+                        >
+                          <span className="flex-1">
+                            {resolvedTheme === 'dark'
+                              ? t('switchToLightMode')
+                              : t('switchToDarkMode')}
+                          </span>
+                          <Repeat className="craft-icon" aria-hidden />
+                        </DropdownMenuItem>
+                      ) : null}
+                      <DropdownMenuItem
+                        className={menuItemClass}
+                        onClick={showMfaEnrollmentModal}
+                      >
+                        <span className="flex-1">
+                          {hasMfaMethods ? t('updateMfa') : t('protectMfa')}
                         </span>
-                      ) : null}
-                    </div>
-                  </div>
-                </DropdownMenuLabel>
-                {address ? (
-                  <div className={profileMenuWalletClass}>
-                    <EthAddress address={address} onClick={handleAddressCopy} />
-                  </div>
-                ) : null}
-
-                {showNetworkFeedback ? (
-                  <>
-                    <DropdownMenuSeparator
-                      className={profileMenuSeparatorClass}
-                    />
-                    <DropdownMenuGroup>
-                      <HyphaNetworkFeedbackMenuItem
-                        variant="menu"
-                        onOpen={openNetworkFeedbackFromProfileMenu}
-                      />
+                        <Shield className="craft-icon" aria-hidden />
+                      </DropdownMenuItem>
                     </DropdownMenuGroup>
-                  </>
-                ) : null}
 
-                {(profileUrl || onboardingUrl || notificationCentrePath) && (
-                  <>
+                    {onDelete ? (
+                      <>
+                        <DropdownMenuSeparator
+                          className={profileMenuSeparatorClass}
+                        />
+                        <DropdownMenuItem
+                          onClick={onDelete}
+                          className={cn(
+                            menuItemClass,
+                            'text-error-11 focus:text-error-11',
+                          )}
+                          disabled
+                        >
+                          <span className="flex-1">{t('delete')}</span>
+                          <TrashIcon className="craft-icon" aria-hidden />
+                        </DropdownMenuItem>
+                      </>
+                    ) : null}
+
                     <DropdownMenuSeparator
                       className={profileMenuSeparatorClass}
                     />
-                    <DropdownMenuGroup>
-                      {profileUrl ? (
-                        <DropdownMenuItem className={menuItemClass} asChild>
-                          <Link href={profileUrl}>
-                            <UserRound className="craft-icon" aria-hidden />
-                            <span className="flex-1">{t('viewProfile')}</span>
-                            <ChevronRight
-                              className="ml-auto craft-icon opacity-60"
-                              aria-hidden
-                            />
-                          </Link>
-                        </DropdownMenuItem>
-                      ) : null}
-                      {onboardingUrl ? (
-                        <DropdownMenuItem className={menuItemClass} asChild>
-                          <Link href={onboardingUrl}>
-                            <Compass className="craft-icon" aria-hidden />
-                            <span className="flex-1">
-                              {t('continueAdventure')}
-                            </span>
-                            <ChevronRight
-                              className="ml-auto craft-icon opacity-60"
-                              aria-hidden
-                            />
-                          </Link>
-                        </DropdownMenuItem>
-                      ) : null}
-                      {notificationCentrePath ? (
-                        <DropdownMenuItem className={menuItemClass} asChild>
-                          <Link href={notificationCentrePath}>
-                            <Bell className="craft-icon" aria-hidden />
-                            <span className="flex-1">
-                              {t('notificationCentre')}
-                            </span>
-                            <ChevronRight
-                              className="ml-auto craft-icon opacity-60"
-                              aria-hidden
-                            />
-                          </Link>
-                        </DropdownMenuItem>
-                      ) : null}
-                    </DropdownMenuGroup>
-                  </>
-                )}
 
-                <DropdownMenuSeparator className={profileMenuSeparatorClass} />
-
-                <DropdownMenuGroup>
-                  {onChangeThemeMode ? (
                     <DropdownMenuItem
-                      className={menuItemClass}
-                      onClick={onChangeThemeMode}
-                    >
-                      <span className="flex-1">
-                        {resolvedTheme === 'dark'
-                          ? t('switchToLightMode')
-                          : t('switchToDarkMode')}
-                      </span>
-                      <Repeat className="craft-icon" aria-hidden />
-                    </DropdownMenuItem>
-                  ) : null}
-                  <DropdownMenuItem
-                    className={menuItemClass}
-                    onClick={showMfaEnrollmentModal}
-                  >
-                    <span className="flex-1">
-                      {hasMfaMethods ? t('updateMfa') : t('protectMfa')}
-                    </span>
-                    <Shield className="craft-icon" aria-hidden />
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-
-                {onDelete ? (
-                  <>
-                    <DropdownMenuSeparator
-                      className={profileMenuSeparatorClass}
-                    />
-                    <DropdownMenuItem
-                      onClick={onDelete}
+                      onClick={onLogout}
+                      disabled={loggingOut}
                       className={cn(
                         menuItemClass,
-                        'text-error-11 focus:text-error-11',
+                        'text-error-11 focus:bg-error-3 focus:text-error-12 data-[highlighted]:bg-error-3',
                       )}
-                      disabled
                     >
-                      <span className="flex-1">{t('delete')}</span>
-                      <TrashIcon className="craft-icon" aria-hidden />
+                      <span className="flex-1">{t('logout')}</span>
+                      {loggingOut ? (
+                        <Loader2
+                          className="craft-icon animate-spin"
+                          aria-hidden
+                        />
+                      ) : (
+                        <LogOutIcon className="craft-icon" aria-hidden />
+                      )}
                     </DropdownMenuItem>
                   </>
-                ) : null}
-
-                <DropdownMenuSeparator className={profileMenuSeparatorClass} />
-
-                <DropdownMenuItem
-                  onClick={onLogout}
-                  disabled={loggingOut}
-                  className={cn(
-                    menuItemClass,
-                    'text-error-11 focus:bg-error-3 focus:text-error-12 data-[highlighted]:bg-error-3',
-                  )}
-                >
-                  <span className="flex-1">{t('logout')}</span>
-                  {loggingOut ? (
-                    <Loader2 className="craft-icon animate-spin" aria-hidden />
-                  ) : (
-                    <LogOutIcon className="craft-icon" aria-hidden />
-                  )}
-                </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
