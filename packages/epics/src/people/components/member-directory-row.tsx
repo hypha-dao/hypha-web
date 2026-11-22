@@ -6,20 +6,9 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { MemberConnectActions } from './member-card';
 import { PersonAvatar } from './person-avatar';
-import { usePersonMemberSpaces } from './member-space-icons';
+import { MemberSpaceIcons, usePersonMemberSpaces } from './member-space-icons';
 
 const NEW_MEMBER_MS = 30 * 24 * 60 * 60 * 1000;
-
-function spaceCode(title: string) {
-  const words = title
-    .split(/[^A-Za-z0-9]+/)
-    .map((word) => word.trim())
-    .filter(Boolean);
-  if (words.length >= 2) {
-    return `${words[0]!.charAt(0)}${words[1]!.charAt(0)}`.toUpperCase();
-  }
-  return (words[0] ?? title).slice(0, 2).toUpperCase();
-}
 
 export function MemberDirectoryRow({
   name,
@@ -75,10 +64,11 @@ export function MemberDirectoryRow({
       isNew: Date.now() - date.getTime() <= NEW_MEMBER_MS,
     };
   }, [format, joinedAt, space?.slug, space?.title, t]);
-  const codes = spaces
-    .map((item) => spaceCode(item.title))
-    .filter(Boolean)
-    .slice(0, 3);
+  const spaceIcons = spaces.map((item) => ({
+    slug: item.slug,
+    title: item.title,
+    logoUrl: item.logoUrl,
+  }));
 
   if (isLoading) {
     return <div className="h-20 border-b border-border" aria-hidden />;
@@ -138,16 +128,17 @@ export function MemberDirectoryRow({
             />
           ) : null}
         </div>
-        {joined || codes.length > 0 ? (
-          <div className="mt-2 flex items-start justify-between gap-3">
+        {joined || spaceIcons.length > 0 ? (
+          <div className="mt-2 flex items-center justify-between gap-3">
             <p className="min-w-0 text-1 text-muted-foreground">
               {joined?.label}
             </p>
-            {codes.length > 0 ? (
-              <p className="shrink-0 text-[11px] tracking-[0.08em] text-muted-foreground uppercase">
-                {codes.join(' ')}
-              </p>
-            ) : null}
+            <MemberSpaceIcons
+              spaces={spaceIcons}
+              size={20}
+              max={3}
+              className="shrink-0"
+            />
           </div>
         ) : null}
       </div>
