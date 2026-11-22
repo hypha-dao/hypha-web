@@ -140,6 +140,28 @@ describe('messages inbox filters', () => {
         'rue-verte',
       ),
     ).toBe(false);
+    expect(
+      memberConversationInSpace(
+        { kind: 'signal', spaceSlug: 'live-earth', ecosystemSlug: 'hypha' },
+        'hypha',
+      ),
+    ).toBe(false);
+    expect(
+      memberConversationInSpace(
+        {
+          kind: 'signal',
+          spaceSlug: 'hypha-platform',
+          ecosystemSlug: 'hypha',
+        },
+        'hypha-platform',
+      ),
+    ).toBe(true);
+    expect(
+      memberConversationInSpace(
+        { kind: 'ecosystem', spaceSlug: null, ecosystemSlug: 'hypha' },
+        'hypha',
+      ),
+    ).toBe(false);
   });
 
   it('treats proposal rooms as their own messages channel', () => {

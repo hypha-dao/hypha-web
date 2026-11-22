@@ -311,9 +311,10 @@ export const MEMBER_INBOX_TABS = [
 export type MemberInboxTab = (typeof MEMBER_INBOX_TABS)[number];
 
 /**
- * A member's space inbox. Channels stay in the space they belong to.
- * Direct chats and groups are not tagged with a space, so they stay in
- * the space the member is viewing unless a tag says they belong elsewhere.
+ * A member's space inbox. A channel counts only when its own space is the
+ * one open now. A parent ecosystem tag does not pull in sibling spaces, and
+ * network and ecosystem rooms stay out. Direct chats and groups are not
+ * tagged with a space, so they stay unless a tag says they belong elsewhere.
  */
 export function memberConversationInSpace(
   place: {
@@ -323,12 +324,15 @@ export function memberConversationInSpace(
   },
   spaceSlug: string,
 ): boolean {
+  if (place.kind === 'network' || place.kind === 'ecosystem') return false;
   if (place.kind === 'dm' || place.kind === 'group') {
     const tagged = place.spaceSlug?.trim() || place.ecosystemSlug?.trim();
     if (!tagged) return true;
     return conversationInSpace(place, spaceSlug);
   }
-  return conversationInSpace(place, spaceSlug);
+  const wanted = spaceSlug.trim().toLowerCase();
+  if (!wanted) return false;
+  return (place.spaceSlug?.trim().toLowerCase() ?? '') === wanted;
 }
 
 export function rowMatchesMemberInboxTab(
