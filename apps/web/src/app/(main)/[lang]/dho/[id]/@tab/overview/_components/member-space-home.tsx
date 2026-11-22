@@ -162,7 +162,9 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
             {space?.title ? (
-              <MemberHomeSpaceSwitcher title={space.title} />
+              <div className="hidden xl:block">
+                <MemberHomeSpaceSwitcher title={space.title} />
+              </div>
             ) : null}
             <h1
               id="member-space-home-title"
