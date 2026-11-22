@@ -107,7 +107,10 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const stripRef = useRef<HTMLDivElement>(null);
   const { getAccessToken, isLoading: authLoading } = useAuthentication();
-  const { space } = useSpaceBySlug(spaceSlug);
+  const { space, isLoading: spaceLoading } = useSpaceBySlug(spaceSlug);
+  const spaceHeader =
+    safeImage(space?.leadImage ?? null) ??
+    (spaceLoading ? null : DEFAULT_SPACE_LEAD_IMAGE);
   const {
     votingMode,
     status: votingModeStatus,
@@ -231,8 +234,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
             className="mt-6 flex snap-x items-stretch gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {signals.map((signal) => {
-              const image =
-                safeImage(signal.leadImage) ?? DEFAULT_SPACE_LEAD_IMAGE;
+              const image = safeImage(signal.leadImage) ?? spaceHeader;
               const href = signal.slug
                 ? `${signalDetailPath(
                     lang,
@@ -250,12 +252,16 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                   key={signal.id}
                   className={`flex ${HOME_CARD_WIDTH} shrink-0 snap-start flex-col border border-border bg-background`}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={image}
-                    alt=""
-                    className="aspect-[3/2] w-full object-cover"
-                  />
+                  {image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={image}
+                      alt=""
+                      className="aspect-[3/2] w-full object-cover"
+                    />
+                  ) : (
+                    <div className="aspect-[3/2] w-full bg-accent-3" />
+                  )}
                   <div className="flex flex-1 flex-col gap-2 p-4">
                     <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
                       {typeLabel}
