@@ -1,8 +1,9 @@
 import { Locale } from '@hypha-platform/i18n';
-import { Container, Heading } from '@hypha-platform/ui';
+import { Heading } from '@hypha-platform/ui';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
+import { MemberPageShell } from '../../_components/member-page-shell';
 import { MemberScreenTitle } from '../../_components/member-screen-title';
 
 export type WalletPageTitleKey =
@@ -28,7 +29,7 @@ export async function WalletPageFrame({
 
   return (
     <div className="w-full min-w-0 overflow-x-hidden overflow-y-auto">
-      <Container className="flex min-w-0 flex-col gap-4 py-4 xl:gap-4 xl:pt-4 xl:pb-9">
+      <MemberPageShell>
         <MemberScreenTitle memberTitle={memberTitle}>
           <header className="xl:hidden">
             <p className="mb-2 text-1 font-bold uppercase text-foreground">
@@ -53,7 +54,7 @@ export async function WalletPageFrame({
           </Heading>
         </MemberScreenTitle>
         {children}
-      </Container>
+      </MemberPageShell>
     </div>
   );
 }

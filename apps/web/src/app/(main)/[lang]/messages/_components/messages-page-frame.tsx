@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { Container, Heading } from '@hypha-platform/ui';
+import { Heading } from '@hypha-platform/ui';
 import { getTranslations } from 'next-intl/server';
 
+import { MemberPageShell } from '../../_components/member-page-shell';
 import { MemberScreenTitle } from '../../_components/member-screen-title';
 
 export async function MessagesPageFrame({
@@ -34,7 +35,7 @@ export async function MessagesPageFrame({
 
   return (
     <div className="w-full min-w-0 overflow-x-clip">
-      <Container className="flex min-w-0 flex-col gap-4 py-4 xl:gap-4 xl:pt-4 xl:pb-9">
+      <MemberPageShell>
         <MemberScreenTitle memberTitle={memberTitle}>
           <header className="shrink-0 xl:hidden">
             <p className="mb-2 text-1 font-bold uppercase text-foreground">
@@ -59,7 +60,7 @@ export async function MessagesPageFrame({
           </Heading>
         </MemberScreenTitle>
         <div>{children}</div>
-      </Container>
+      </MemberPageShell>
     </div>
   );
 }
