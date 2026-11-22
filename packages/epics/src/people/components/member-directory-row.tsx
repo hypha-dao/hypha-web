@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
+import { SewingPinFilledIcon } from '@radix-ui/react-icons';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { MemberConnectActions } from './member-card';
 import { PersonAvatar } from './person-avatar';
@@ -18,6 +19,7 @@ export function MemberDirectoryRow({
   avatarUrl,
   address,
   id,
+  location,
   joinedAt,
   isLoading,
   onChat,
@@ -31,6 +33,7 @@ export function MemberDirectoryRow({
   avatarUrl?: string;
   address?: string;
   id?: number;
+  location?: string;
   joinedAt?: string | null;
   isLoading?: boolean;
   onChat?: () => void;
@@ -48,6 +51,7 @@ export function MemberDirectoryRow({
     personAddress: address,
     personSlug: slug,
   });
+  const place = location?.trim() || '';
   const displayName =
     [name, surname].filter(Boolean).join(' ').trim() ||
     nickname ||
@@ -114,6 +118,15 @@ export function MemberDirectoryRow({
             {nickname ? (
               <p className="truncate text-1 text-muted-foreground">
                 @{nickname}
+              </p>
+            ) : null}
+            {place ? (
+              <p className="mt-1 flex min-w-0 items-center gap-1 text-1 text-muted-foreground">
+                <SewingPinFilledIcon
+                  className="size-3.5 shrink-0"
+                  aria-hidden
+                />
+                <span className="truncate">{place}</span>
               </p>
             ) : null}
           </div>
