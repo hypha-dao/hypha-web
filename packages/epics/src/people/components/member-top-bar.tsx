@@ -13,6 +13,7 @@ import {
 
 import { APP_CHROME_ICON_TRIGGER } from '../../common/chrome-radius';
 import { getDhoSpaceSlugFromPathname } from '../../common/get-dho-space-slug-from-pathname';
+import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import {
   readRecentSpaceSlugs,
   subscribeRecentSpaceSlugs,
@@ -87,6 +88,11 @@ export function MemberTopBar({ personSlug }: MemberTopBarProps) {
     refreshInterval: 0,
   });
   const unread = useMessagesScreenCount();
+  const {
+    open: chatOpen,
+    toggle: toggleChat,
+    openHumanChatPanel,
+  } = useHumanChatPanel();
 
   const minted = useMemo(() => {
     const catalogue: MemberMintedToken[] = getEnergyCommunityTokensForSpace(
@@ -128,12 +134,19 @@ export function MemberTopBar({ personSlug }: MemberTopBarProps) {
         })
       : null;
   const amount = pill ? formatMemberTokenAmount(pill.amount, lang) : '';
-  const messagesHref = memberMenuHref(lang, slug ?? '', 'messages');
   const walletHref = slug ? memberMenuHref(lang, slug, 'wallet') : '';
   const messageLabel =
     unread > 0
       ? `${tMember('messages')}, ${tConnections('unread', { count: unread })}`
       : tMember('messages');
+
+  const openConversations = () => {
+    if (chatOpen) {
+      toggleChat();
+      return;
+    }
+    openHumanChatPanel();
+  };
 
   return (
     <div className="flex items-center gap-1.5 sm:gap-2" data-member-top-bar>
@@ -154,17 +167,19 @@ export function MemberTopBar({ personSlug }: MemberTopBarProps) {
         </Link>
       ) : null}
       <span className="relative inline-flex">
-        <Link
-          href={messagesHref}
+        <button
+          type="button"
           className={APP_CHROME_ICON_TRIGGER}
           aria-label={messageLabel}
+          aria-expanded={chatOpen}
+          onClick={openConversations}
         >
           <MessagesSquare
             className="craft-icon"
             strokeWidth={1.25}
             aria-hidden
           />
-        </Link>
+        </button>
         {unread > 0 ? (
           <span
             className="pointer-events-none absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center bg-accent-9 px-1 text-[10px] font-medium leading-none text-accent-contrast"
