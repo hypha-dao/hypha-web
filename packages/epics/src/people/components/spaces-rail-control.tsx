@@ -137,7 +137,7 @@ function MemberMobileSpaceSwitcher() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex min-w-0 max-w-[min(12rem,46vw)] items-center gap-1.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase xl:hidden"
+          className="flex min-w-0 max-w-[min(12rem,46vw)] items-center gap-1.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase"
           aria-label={tNavigation('mySpaces')}
         >
           <SpaceSwitcherMark iconUrl={iconUrl} alt="" />

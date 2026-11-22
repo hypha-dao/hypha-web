@@ -149,7 +149,7 @@
     "open": "Open",
     "previousSignals": "Previous signals",
     "nextSignals": "Next signals",
-    "noSignals": "Nothing new from the neighbourhood yet.",
+    "noSignals": "Nothing new from the community yet.",
     "signalsFailed": "Signals didn't load.",
     "retry": "Try again",
     "spaceMessages": "Messages in {space}"
@@ -5245,7 +5245,7 @@
       "total": "Total"
     },
     "memberDiagram": {
-      "eyebrow": "Your energy · Your home and the street",
+      "eyebrow": "Your energy · Your home and the community",
       "title7d": "What your home made and used this week.",
       "title30d": "What your home made and used this month.",
       "title90d": "What your home made and used these three months.",
@@ -5271,7 +5271,7 @@
       "communityMakes": "Community makes",
       "communityUses": "Community uses",
       "battery": "Battery",
-      "neighbourhoodBattery": "Neighbourhood battery",
+      "neighbourhoodBattery": "Community battery",
       "sharedOnward": "Shared with nearby homes",
       "youAdded": "You added {value} kWh",
       "overThisPeriod": "Over this period",

@@ -749,7 +749,7 @@
     "open": "Åpne",
     "previousSignals": "Forrige signaler",
     "nextSignals": "Neste signaler",
-    "noSignals": "Ingenting nytt fra nabolaget ennå.",
+    "noSignals": "Ingenting nytt fra fellesskapet ennå.",
     "signalsFailed": "Signalene ble ikke lastet.",
     "retry": "Prøv igjen",
     "spaceMessages": "Meldinger i {space}"
@@ -5214,7 +5214,7 @@
       "total": "Totalt"
     },
     "memberDiagram": {
-      "eyebrow": "Din energi · Hjemmet ditt og gaten",
+      "eyebrow": "Din energi · Hjemmet ditt og fellesskapet",
       "title7d": "Det hjemmet ditt produserte og brukte denne uken.",
       "title30d": "Det hjemmet ditt produserte og brukte denne måneden.",
       "title90d": "Det hjemmet ditt produserte og brukte disse tre månedene.",
@@ -5240,7 +5240,7 @@
       "communityMakes": "Fellesskapet produserer",
       "communityUses": "Fellesskapet bruker",
       "battery": "Batteri",
-      "neighbourhoodBattery": "Nabolagsbatteri",
+      "neighbourhoodBattery": "Fellesskapsbatteri",
       "sharedOnward": "Delt med hus i nærheten",
       "youAdded": "Du la til {value} kWh",
       "overThisPeriod": "I denne perioden",

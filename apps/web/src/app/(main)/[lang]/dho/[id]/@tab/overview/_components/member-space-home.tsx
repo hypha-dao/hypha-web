@@ -1,37 +1,27 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
-import { ChevronLeft, ChevronRight, ChevronsUpDown } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   DEFAULT_SPACE_LEAD_IMAGE,
   useSpaceBySlug,
   type CoherenceUpvoteSummary,
-  type Space,
 } from '@hypha-platform/core/client';
 import {
   ActionGate,
   AiLeftPanel,
-  MySpacesSwitcherMenu,
   SignalUpvoteButton,
-  SpaceSwitcherMark,
-  resolveSpaceDisplayLogoUrl,
   signalDetailPath,
   signalVotingSpaceId,
   useSignalSpaceMembership,
   useSignalVotingMode,
 } from '@hypha-platform/epics';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-  SidebarProvider,
-} from '@hypha-platform/ui';
+import { SidebarProvider } from '@hypha-platform/ui';
 import { cn, stripDescription } from '@hypha-platform/ui-utils';
 import type { Locale } from '@hypha-platform/i18n';
 
@@ -45,42 +35,6 @@ type HomeSignal = {
   archived?: boolean;
   upvotes?: CoherenceUpvoteSummary;
 };
-
-function MemberHomeSpaceSwitcher({ space }: { space: Space }) {
-  const tNavigation = useTranslations('Navigation');
-  const { resolvedTheme } = useTheme();
-  const [open, setOpen] = useState(false);
-  const title = space.title?.trim() || space.slug || '';
-  const iconUrl = resolveSpaceDisplayLogoUrl(
-    space,
-    resolvedTheme === 'dark' ? 'dark' : 'light',
-  );
-
-  return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className="flex min-w-0 max-w-full items-center gap-1.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase"
-          aria-label={tNavigation('mySpaces')}
-        >
-          <SpaceSwitcherMark iconUrl={iconUrl} alt="" />
-          <span className="min-w-0 truncate">{title}</span>
-          <ChevronsUpDown className="h-3 w-3 shrink-0" aria-hidden />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        sideOffset={6}
-        className="z-[70] w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden p-0"
-      >
-        <div className="h-72">
-          <MySpacesSwitcherMenu open={open} onSelect={() => setOpen(false)} />
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
 
 function plainText(value: string) {
   return stripDescription(value)
@@ -172,11 +126,9 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
       <section aria-labelledby="member-space-home-title">
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
-            {space?.title ? (
-              <div className="hidden xl:block">
-                <MemberHomeSpaceSwitcher space={space} />
-              </div>
-            ) : null}
+            <p className="mb-1 text-1 font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              {t('community')}
+            </p>
             <h1
               id="member-space-home-title"
               className="craft-page-title text-6 font-medium"

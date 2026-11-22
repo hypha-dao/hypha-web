@@ -1530,7 +1530,7 @@
     "open": "Abrir",
     "previousSignals": "Señales anteriores",
     "nextSignals": "Siguientes señales",
-    "noSignals": "Todavía no hay novedades del barrio.",
+    "noSignals": "Todavía no hay novedades de la comunidad.",
     "signalsFailed": "No se pudieron cargar las señales.",
     "retry": "Reintentar",
     "spaceMessages": "Mensajes en {space}"
@@ -5223,7 +5223,7 @@
       "total": "Total"
     },
     "memberDiagram": {
-      "eyebrow": "Tu energía · Tu casa y la calle",
+      "eyebrow": "Tu energía · Tu casa y la comunidad",
       "title7d": "Lo que tu casa produjo y usó esta semana.",
       "title30d": "Lo que tu casa produjo y usó este mes.",
       "title90d": "Lo que tu casa produjo y usó en estos tres meses.",
@@ -5249,7 +5249,7 @@
       "communityMakes": "La comunidad produce",
       "communityUses": "La comunidad usa",
       "battery": "Batería",
-      "neighbourhoodBattery": "Batería del barrio",
+      "neighbourhoodBattery": "Batería de la comunidad",
       "sharedOnward": "Compartida con las casas cercanas",
       "youAdded": "Aportaste {value} kWh",
       "overThisPeriod": "En este periodo",

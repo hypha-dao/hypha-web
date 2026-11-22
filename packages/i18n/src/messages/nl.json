@@ -750,7 +750,7 @@
     "open": "Open",
     "previousSignals": "Vorige signalen",
     "nextSignals": "Volgende signalen",
-    "noSignals": "Nog niets nieuws uit de buurt.",
+    "noSignals": "Nog niets nieuws uit de community.",
     "signalsFailed": "Signalen konden niet worden geladen.",
     "retry": "Opnieuw proberen",
     "spaceMessages": "Berichten in {space}"
@@ -5215,7 +5215,7 @@
       "total": "Totaal"
     },
     "memberDiagram": {
-      "eyebrow": "Jouw energie · Je huis en de straat",
+      "eyebrow": "Jouw energie · Je huis en de community",
       "title7d": "Wat je huis deze week opwekte en verbruikte.",
       "title30d": "Wat je huis deze maand opwekte en verbruikte.",
       "title90d": "Wat je huis in deze drie maanden opwekte en verbruikte.",
@@ -5241,7 +5241,7 @@
       "communityMakes": "Gemeenschap wekt op",
       "communityUses": "Gemeenschap verbruikt",
       "battery": "Batterij",
-      "neighbourhoodBattery": "Buurtbatterij",
+      "neighbourhoodBattery": "Communitybatterij",
       "sharedOnward": "Gedeeld met huizen in de buurt",
       "youAdded": "Je voegde {value} kWh toe",
       "overThisPeriod": "In deze periode",

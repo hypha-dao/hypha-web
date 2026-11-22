@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import {
   DEFAULT_SIGNAL_SORT,
   DEFAULT_SIGNAL_TIME_FRAME,
@@ -34,6 +34,7 @@ import { SignalFeedFilters } from './signal-feed-filters';
 import { SignalFeedRow } from './signal-feed-row';
 import { useDebouncedFeedTitle } from '../lib/use-debounced-feed-title';
 import { useMemberExperience } from '../../people/components/member-experience';
+import { MemberSpacePageTitle } from '../../people/components/member-space-page-title';
 import type { UseMembers } from '../../spaces/hooks/types';
 
 export const SIGNAL_SORT_QUERY_KEY = 'sort';
@@ -55,7 +56,6 @@ export type CoherenceBlockProps = {
 
 export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
-  const format = useFormatter();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -188,16 +188,15 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="craft-page-title text-6 font-medium">
-          {t('signals')}
-          {typeof signals?.length === 'number' && !loadFailed && !isLoading ? (
-            <span className="ml-2 text-4 font-normal text-muted-foreground">
-              | {format.number(ranked.length)}
-            </span>
-          ) : null}
-        </h1>
-      </header>
+      <MemberSpacePageTitle
+        title={t('signals')}
+        count={
+          typeof signals?.length === 'number' && !loadFailed && !isLoading
+            ? ranked.length
+            : null
+        }
+        lang={lang}
+      />
 
       <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
 
