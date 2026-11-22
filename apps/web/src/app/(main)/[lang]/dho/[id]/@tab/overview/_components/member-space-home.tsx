@@ -157,7 +157,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
   };
 
   return (
-    <div className="flex flex-col gap-10 px-4 py-2 sm:px-5">
+    <div className="flex flex-col gap-10 py-2">
       <section aria-labelledby="member-space-home-title">
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
@@ -168,8 +168,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
             ) : null}
             <h1
               id="member-space-home-title"
-              className="text-7 text-foreground sm:text-8"
-              style={{ fontFamily: 'var(--font-family-heading)' }}
+              className="craft-page-title text-6 font-medium"
             >
               {t('around')}
             </h1>
