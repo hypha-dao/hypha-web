@@ -161,7 +161,8 @@ function MemberMobileSpaceSwitcher() {
 /**
  * Top-bar control for the mobile spaces list.
  * Builders/funders: circle that opens the rail.
- * Members: the Spaces name dropdown (desktop home already has this on the page).
+ * Members: Spaces name dropdown on small screens only — desktop already has
+ * the switcher in the AI panel header, so showing both is a duplicate.
  */
 export function SpacesRailTopToggle() {
   const { active, open, toggle } = useSpacesRailControl();
@@ -171,7 +172,11 @@ export function SpacesRailTopToggle() {
   if (!active) return null;
 
   if (isMember) {
-    return <MemberMobileSpaceSwitcher />;
+    return (
+      <div className="xl:hidden">
+        <MemberMobileSpaceSwitcher />
+      </div>
+    );
   }
 
   return (
