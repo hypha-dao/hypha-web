@@ -155,15 +155,19 @@ export function MemberTopBar({ personSlug }: MemberTopBarProps) {
         <Link
           href={walletHref}
           data-member-token-pill
-          className="inline-flex h-[36px] shrink-0 items-center gap-1.5 rounded-full border border-border/70 px-3 text-accent-11 transition-colors hover:bg-accent-2"
+          aria-label={`${amount} ${pill.symbol}, ${tMember('wallet')}`}
+          className="inline-flex h-[36px] shrink-0 items-center gap-1.5 border border-border bg-transparent px-3 text-foreground transition-colors hover:bg-foreground/5"
         >
           <Wallet
             className="size-3.5 shrink-0"
             strokeWidth={1.25}
             aria-hidden
           />
-          <span className="text-[12px] font-medium tabular-nums leading-none">
-            {amount} {pill.symbol}
+          <span className="text-[13px] font-medium tabular-nums leading-none">
+            {amount}
+          </span>
+          <span className="text-[10px] font-bold tracking-[0.12em] text-muted-foreground uppercase leading-none">
+            {pill.symbol}
           </span>
         </Link>
       ) : null}

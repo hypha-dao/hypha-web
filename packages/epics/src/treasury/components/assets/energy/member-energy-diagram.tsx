@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMe } from '@hypha-platform/core/client';
-import type { SpaceEnergyResponse } from '../../../hooks/use-space-energy';
 import { useSpaceEnergy } from '../../../hooks/use-space-energy';
 import { useSpaceEnergyTelemetry } from '../../../hooks/use-space-energy-telemetry';
 import { MemberSpacePageTitle } from '../../../../people/components/member-space-page-title';
@@ -20,6 +19,7 @@ import {
   EnergyChartSkeleton,
   EnergySectionSkeleton,
 } from './loading-skeletons';
+import { homeTotals } from './member-energy-home-totals';
 
 const SOLAR = '#3cae4a';
 const SHARED = '#8a918c';
@@ -41,83 +41,46 @@ const bucketSum = (series: { values: number[] }[]) => {
   );
 };
 
-function homeTotals(
-  data: SpaceEnergyResponse,
-  address: string | undefined,
-  production: { values: number[] }[],
-  consumptionByMeter: { meterId: number; valuesKwh: number[] }[],
-  communityUse: number[],
-) {
-  const member = address
-    ? data.memberDetails?.find(
-        (detail) => detail.address.toLowerCase() === address.toLowerCase(),
-      )
-    : undefined;
-  const ownership = new Map(
-    (member?.ownerships ?? []).map((item) => [
-      item.sourceId,
-      item.ownershipBps,
-    ]),
-  );
-  const make = production.map((source, index) => {
-    const registered = data.sources?.[index];
-    const bps = registered ? ownership.get(registered.sourceId) ?? 0 : 0;
-    return (source.values ?? []).map((value) => (value * bps) / 10000);
-  });
-  const made = bucketSum(make.map((values) => ({ values })));
-  const meterIds = new Set(member?.deviceIds ?? []);
-  const usedBuckets = consumptionByMeter.filter((meter) =>
-    meterIds.has(meter.meterId),
-  );
-  const used = bucketSum(
-    usedBuckets.map((meter) => ({ values: meter.valuesKwh })),
-  );
-  const hasMake = made.some((value) => value > 0);
-  const hasUse = used.some((value) => value > 0);
-  return {
-    makeIsHome: hasMake,
-    useIsHome: hasUse,
-    paired: hasMake && hasUse,
-    make: hasMake ? made : bucketSum(production),
-    use: hasUse ? used : communityUse,
-  };
-}
-
 function EnergyFigure({
   label,
   value,
   unit,
   caption,
   size = 'large',
+  accent = false,
 }: {
   label: string;
   value: string;
   unit?: string;
   caption?: string;
   size?: 'large' | 'small';
+  accent?: boolean;
 }) {
   return (
     <div className="min-w-0">
-      <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
+      <p className="m-0 text-[11px] font-bold tracking-[0.12em] text-muted-foreground uppercase">
         {label}
       </p>
       <p
         className={
           size === 'small'
-            ? 'mt-1 text-5 leading-none'
-            : 'mt-1 text-7 leading-none sm:text-8'
+            ? 'mt-1 text-[22px] font-light leading-none'
+            : 'mt-1.5 text-[34px] font-light leading-none sm:text-[40px]'
         }
-        style={{ color: SOLAR, fontFamily: 'var(--font-family-heading)' }}
+        style={{
+          color: accent || size === 'large' ? SOLAR : undefined,
+          fontFamily: 'var(--font-family-heading)',
+        }}
       >
         {value}
         {unit ? (
-          <span className="ml-1 text-2 font-normal text-muted-foreground">
+          <span className="ml-1.5 text-[13px] font-normal text-muted-foreground">
             {unit}
           </span>
         ) : null}
       </p>
       {caption ? (
-        <p className="mt-2 text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+        <p className="mt-2 m-0 text-[12px] leading-snug text-muted-foreground">
           {caption}
         </p>
       ) : null}
@@ -177,18 +140,17 @@ export function MemberEnergyDiagram({ spaceSlug }: { spaceSlug: string }) {
   const gridImport = live ? telemetry!.gridImportKwh : dummyGrid.gridImport;
   const gridExport = live ? telemetry!.gridExportKwh : dummyGrid.gridExport;
   const communityMake = bucketSum(production);
+
+  // Always resolve against the signed-in wallet — never gate on live telemetry.
   const home = homeTotals(
     data ?? { enabled: false },
-    live ? person?.address : undefined,
+    person?.address,
     production,
     live ? telemetry!.consumptionByMeter : [],
-    communityUse,
   );
   const youMake = sum(home.make);
   const youUse = sum(home.use);
-  const youShare = home.paired
-    ? Math.max(0, youMake - youUse)
-    : sum(gridExport);
+  const youShare = home.paired ? Math.max(0, youMake - youUse) : 0;
   const communityMade = live
     ? telemetry!.totals.producedKwh
     : sum(communityMake);
@@ -211,19 +173,27 @@ export function MemberEnergyDiagram({ spaceSlug }: { spaceSlug: string }) {
   if (!isLoading && (!data?.enabled || !data.overview)) return null;
   if (isLoading || !data?.overview) return <EnergySectionSkeleton />;
 
+  // "Your solar" must plot the member series. Community production stays in
+  // the lower stats — connecting those points to "You make" was the bug.
+  const yourSolar = home.makeIsHome ? home.make : communityMake.map(() => 0);
+
   const series: ChartSeries[] = [
     {
       key: 'solar',
       label: t('yourSolar'),
       color: SOLAR,
-      values: communityMake,
+      values: yourSolar,
       dots: true,
     },
     {
       key: 'shared',
       label: t('shared'),
       color: SHARED,
-      values: gridExport,
+      values: home.paired
+        ? yourSolar.map((made, index) =>
+            Math.max(0, made - (home.use[index] ?? 0)),
+          )
+        : gridExport.map(() => 0),
       dash: '1.5 3',
     },
     {
@@ -251,7 +221,7 @@ export function MemberEnergyDiagram({ spaceSlug }: { spaceSlug: string }) {
       : 'title7d';
 
   return (
-    <section className="flex flex-col gap-4">
+    <section className="flex flex-col gap-4" data-member-energy="">
       <MemberSpacePageTitle
         title={t(titleKey)}
         screen="energy"
@@ -259,20 +229,25 @@ export function MemberEnergyDiagram({ spaceSlug }: { spaceSlug: string }) {
         actions={<TimeframeToggle value={timeframe} onChange={setTimeframe} />}
       />
 
-      <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
+      <div className="border border-border bg-transparent p-4 sm:p-5">
         <div className="mb-5 flex items-center justify-between gap-3">
-          <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
+          <p className="m-0 text-[11px] font-bold tracking-[0.12em] text-muted-foreground uppercase">
             {t('balance')}
           </p>
           {live ? (
             <p
-              className="text-[11px] tracking-[0.14em] uppercase"
+              className="m-0 inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.12em] uppercase"
               style={{ color: SOLAR }}
             >
+              <span
+                className="inline-block size-1.5 rounded-full"
+                style={{ backgroundColor: SOLAR }}
+                aria-hidden
+              />
               {t('live')}
             </p>
           ) : (
-            <p className="text-1 text-muted-foreground">
+            <p className="m-0 text-1 text-muted-foreground">
               {telemetryLoading
                 ? tProduction('loadingTelemetry')
                 : telemetryError
@@ -285,12 +260,14 @@ export function MemberEnergyDiagram({ spaceSlug }: { spaceSlug: string }) {
             </p>
           )}
         </div>
+
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
           <EnergyFigure
             label={t('youMake')}
             value={formatEnergy(youMake, locale)}
             unit={t('kwhUnit')}
             caption={home.makeIsHome ? t('fromYourShare') : t('madeHere')}
+            accent
           />
           <EnergyFigure
             label={t('youUse')}
@@ -303,6 +280,7 @@ export function MemberEnergyDiagram({ spaceSlug }: { spaceSlug: string }) {
             value={formatEnergy(youShare, locale)}
             unit={t('kwhUnit')}
             caption={home.paired ? t('passedOn') : t('passedOnCommunity')}
+            accent
           />
         </div>
 
@@ -344,31 +322,31 @@ export function MemberEnergyDiagram({ spaceSlug }: { spaceSlug: string }) {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
+      <div className="border border-border bg-transparent p-4 sm:p-5">
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <p
-              className="text-3 text-foreground"
+              className="m-0 text-[17px] font-normal text-foreground"
               style={{ fontFamily: 'var(--font-family-heading)' }}
             >
               {batteryKwh > 0 ? t('neighbourhoodBattery') : t('sharedOnward')}
             </p>
-            <p className="mt-1 text-1 text-muted-foreground">
+            <p className="mt-1 m-0 text-[13px] text-muted-foreground">
               {t('youAdded', {
                 value: formatEnergy(youShare, locale),
               })}
             </p>
           </div>
           <p
-            className="text-5"
+            className="m-0 text-[28px] font-light leading-none"
             style={{ color: SOLAR, fontFamily: 'var(--font-family-heading)' }}
           >
             {meterPercent}%
           </p>
         </div>
-        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-foreground/10">
+        <div className="mt-4 h-1.5 overflow-hidden bg-foreground/10">
           <div
-            className="h-full rounded-full"
+            className="h-full"
             style={{
               width: `${Math.max(0, Math.min(100, meterPercent))}%`,
               backgroundColor: SOLAR,
