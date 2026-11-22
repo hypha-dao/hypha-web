@@ -1,6 +1,5 @@
 import { FC, useMemo } from 'react';
 import { MemberCard } from './member-card';
-import { MemberDirectoryRow } from './member-directory-row';
 import Link from 'next/link';
 import { type UseMembers, SpaceMemberCard } from '@hypha-platform/epics';
 import { getDhoSpaceContextPath } from '@hypha-platform/epics';
@@ -21,8 +20,6 @@ type MembersListProps = {
   refreshInterval?: number;
   energySharingOnly?: boolean;
   entityFilter?: 'member' | 'space';
-  /** Full-width rows for the member experience. */
-  rows?: boolean;
 };
 
 export const MembersList: FC<MembersListProps> = ({
@@ -35,7 +32,6 @@ export const MembersList: FC<MembersListProps> = ({
   refreshInterval,
   energySharingOnly,
   entityFilter = 'member',
-  rows = false,
 }) => {
   const { lang } = useParams<{ lang: Locale }>();
   const pathname = usePathname();
@@ -64,24 +60,6 @@ export const MembersList: FC<MembersListProps> = ({
       {entityFilter !== 'space' &&
         people.map((member) => {
           const connectable = member.id !== me?.id;
-          const joinedAt =
-            'joinedAt' in member &&
-            (typeof member.joinedAt === 'string' || member.joinedAt == null)
-              ? member.joinedAt
-              : null;
-          if (rows) {
-            return (
-              <MemberDirectoryRow
-                key={member.slug}
-                {...member}
-                joinedAt={joinedAt}
-                isLoading={isLoading}
-                onChat={connectable ? () => void openChat(member) : undefined}
-                onCall={connectable ? () => void openCall(member) : undefined}
-                onVideo={connectable ? () => void openVideo(member) : undefined}
-              />
-            );
-          }
           return (
             <div
               key={member.slug}
@@ -139,21 +117,14 @@ export const MembersList: FC<MembersListProps> = ({
           );
         })}
 
-      {isLoading &&
-        (rows ? (
-          <>
-            <MemberDirectoryRow isLoading />
-            <MemberDirectoryRow isLoading />
-            <MemberDirectoryRow isLoading />
-          </>
-        ) : (
-          <>
-            <MemberCard isLoading={isLoading} />
-            <MemberCard isLoading={isLoading} />
-            <MemberCard isLoading={isLoading} />
-            <MemberCard isLoading={isLoading} />
-          </>
-        ))}
+      {isLoading && (
+        <>
+          <MemberCard isLoading={isLoading} />
+          <MemberCard isLoading={isLoading} />
+          <MemberCard isLoading={isLoading} />
+          <MemberCard isLoading={isLoading} />
+        </>
+      )}
     </>
   );
 };

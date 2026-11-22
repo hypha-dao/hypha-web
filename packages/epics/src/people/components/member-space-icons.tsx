@@ -31,8 +31,6 @@ export type MemberSpaceIconsProps = {
   /** Opens the member profile aside with the full space list. */
   overflowHref?: string | null;
   size?: number;
-  /** How many logos to show before +N. */
-  max?: number;
   isLoading?: boolean;
   className?: string;
 };
@@ -42,13 +40,12 @@ export function MemberSpaceIcons({
   spaces,
   overflowHref,
   size = 28,
-  max = MAX_VISIBLE_SPACES,
   isLoading = false,
   className,
 }: MemberSpaceIconsProps) {
   const tCommon = useTranslations('Common');
   const { lang } = useParams<{ lang: Locale }>();
-  const visible = spaces.slice(0, max);
+  const visible = spaces.slice(0, MAX_VISIBLE_SPACES);
   const overflow = Math.max(0, spaces.length - visible.length);
 
   if (isLoading) {

@@ -117,7 +117,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
             <p>{tMembers('listIsEmpty')}</p>
           </Empty>
         ) : (
-          <div className="w-full">
+          <div className="flex w-full flex-col gap-3">
             {Array.from({ length: pages }).map((_, index) => (
               <MembersList
                 basePath={basePath}
@@ -130,7 +130,6 @@ export const MembersSection: FC<MemberSectionProps> = ({
                 refreshInterval={refreshInterval}
                 energySharingOnly={energySharingOnly}
                 entityFilter="member"
-                rows
               />
             ))}
           </div>
