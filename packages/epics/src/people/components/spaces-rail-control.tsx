@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Circle, ChevronsUpDown } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 import {
@@ -28,6 +29,8 @@ import {
 } from '../../common/recent-space-history';
 import { useMemberNamedSpaces } from '../../network-exchange/use-member-named-spaces';
 import { MySpacesSwitcherMenu } from '../../spaces/components/my-spaces-switcher-menu';
+import { SpaceSwitcherMark } from '../../spaces/components/space-switcher-option';
+import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { memberSurfaceSpaceQuery, resolveMemberSpaceSlug } from './member-menu';
 import { useMemberExperience } from './member-experience';
 
@@ -118,12 +121,14 @@ function MemberMobileSpaceSwitcher() {
       }),
     [named, pathname, recent, searchParams],
   );
+  const { resolvedTheme } = useTheme();
   const { space } = useSpaceBySlug(slug ?? '');
-  const title =
-    space?.title?.trim() ||
-    named.find((entry) => entry.slug === slug)?.title?.trim() ||
-    slug ||
-    '';
+  const namedSpace = named.find((entry) => entry.slug === slug) ?? null;
+  const title = space?.title?.trim() || namedSpace?.title?.trim() || slug || '';
+  const iconUrl = resolveSpaceDisplayLogoUrl(
+    space ?? namedSpace,
+    resolvedTheme === 'dark' ? 'dark' : 'light',
+  );
 
   if (!title) return null;
 
@@ -132,9 +137,10 @@ function MemberMobileSpaceSwitcher() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex min-w-0 max-w-[min(12rem,46vw)] items-center gap-1 text-[11px] tracking-[0.14em] text-muted-foreground uppercase xl:hidden"
+          className="flex min-w-0 max-w-[min(12rem,46vw)] items-center gap-1.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase xl:hidden"
           aria-label={tNavigation('mySpaces')}
         >
+          <SpaceSwitcherMark iconUrl={iconUrl} alt="" />
           <span className="min-w-0 truncate">{title}</span>
           <ChevronsUpDown className="h-3 w-3 shrink-0" aria-hidden />
         </button>

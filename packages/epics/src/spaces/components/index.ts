@@ -48,3 +48,7 @@ export * from './space-member-aside-guard';
 export * from './space-loading-backdrop';
 export * from './space-attention';
 export * from './my-spaces-switcher-menu';
+export {
+  SpaceSwitcherMark,
+  SpaceSwitcherOption,
+} from './space-switcher-option';

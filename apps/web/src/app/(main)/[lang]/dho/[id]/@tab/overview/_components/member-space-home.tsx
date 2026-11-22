@@ -5,18 +5,22 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { ChevronLeft, ChevronRight, ChevronsUpDown } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   DEFAULT_SPACE_LEAD_IMAGE,
   useSpaceBySlug,
   type CoherenceUpvoteSummary,
+  type Space,
 } from '@hypha-platform/core/client';
 import {
   ActionGate,
   AiLeftPanel,
   MySpacesSwitcherMenu,
   SignalUpvoteButton,
+  SpaceSwitcherMark,
+  resolveSpaceDisplayLogoUrl,
   signalDetailPath,
   signalVotingSpaceId,
   useSignalSpaceMembership,
@@ -42,18 +46,25 @@ type HomeSignal = {
   upvotes?: CoherenceUpvoteSummary;
 };
 
-function MemberHomeSpaceSwitcher({ title }: { title: string }) {
+function MemberHomeSpaceSwitcher({ space }: { space: Space }) {
   const tNavigation = useTranslations('Navigation');
+  const { resolvedTheme } = useTheme();
   const [open, setOpen] = useState(false);
+  const title = space.title?.trim() || space.slug || '';
+  const iconUrl = resolveSpaceDisplayLogoUrl(
+    space,
+    resolvedTheme === 'dark' ? 'dark' : 'light',
+  );
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex min-w-0 max-w-full items-center gap-1 text-[11px] tracking-[0.14em] text-muted-foreground uppercase"
+          className="flex min-w-0 max-w-full items-center gap-1.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase"
           aria-label={tNavigation('mySpaces')}
         >
+          <SpaceSwitcherMark iconUrl={iconUrl} alt="" />
           <span className="min-w-0 truncate">{title}</span>
           <ChevronsUpDown className="h-3 w-3 shrink-0" aria-hidden />
         </button>
@@ -163,7 +174,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
           <div className="min-w-0">
             {space?.title ? (
               <div className="hidden xl:block">
-                <MemberHomeSpaceSwitcher title={space.title} />
+                <MemberHomeSpaceSwitcher space={space} />
               </div>
             ) : null}
             <h1
