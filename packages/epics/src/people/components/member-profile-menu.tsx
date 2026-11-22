@@ -45,6 +45,9 @@ const nameClass =
   'truncate text-2 font-medium leading-tight tracking-[-0.02em] text-foreground [font-family:var(--font-family-heading)]';
 const metaClass =
   'truncate font-sans text-1 font-normal leading-tight text-muted-foreground';
+/** Compact track — default Switch (w-9) reads too long in this menu. */
+const darkModeSwitchClass =
+  'h-4 w-7 [&>span]:size-3 [&>span]:data-[state=checked]:translate-x-3';
 
 function useMemberProfileSpaceLabel() {
   const pathname = usePathname() ?? '';
@@ -113,6 +116,7 @@ export function MemberProfileMenu({
   const dark = resolvedTheme === 'dark';
   const languageLabel =
     localeMetadata[locale as keyof typeof localeMetadata]?.label ?? locale;
+  const showAppearance = Boolean(onChangeThemeMode || language);
 
   const openAsk = () => {
     onClose();
@@ -186,34 +190,39 @@ export function MemberProfileMenu({
               />
             </Link>
           ) : null}
-          <div className="border-t border-border" />
-          {onChangeThemeMode ? (
-            <div className={sheetItemClass}>
-              <Moon className="craft-icon" aria-hidden />
-              <span className="flex-1 font-medium">{t('darkMode')}</span>
-              <Switch
-                checked={dark}
-                onCheckedChange={() => onChangeThemeMode()}
-                aria-label={t('darkMode')}
-              />
-            </div>
-          ) : null}
-          {language ? (
-            <div
-              className={cn(
-                sheetItemClass,
-                'relative',
-                '[&_button[data-language-select-trigger]]:absolute [&_button[data-language-select-trigger]]:inset-0 [&_button[data-language-select-trigger]]:z-10 [&_button[data-language-select-trigger]]:h-full [&_button[data-language-select-trigger]]:w-full [&_button[data-language-select-trigger]]:opacity-0',
-              )}
-            >
-              <Globe2 className="craft-icon" aria-hidden />
-              <span className="flex-1 font-medium">{t('language')}</span>
-              <span className="text-1 text-muted-foreground">
-                {languageLabel}
-              </span>
-              <ChevronRight className="craft-icon opacity-60" aria-hidden />
-              {language}
-            </div>
+          {showAppearance ? (
+            <>
+              <div className="border-t border-border" />
+              {onChangeThemeMode ? (
+                <div className={sheetItemClass}>
+                  <Moon className="craft-icon" aria-hidden />
+                  <span className="flex-1 font-medium">{t('darkMode')}</span>
+                  <Switch
+                    checked={dark}
+                    onCheckedChange={() => onChangeThemeMode()}
+                    aria-label={t('darkMode')}
+                    className={darkModeSwitchClass}
+                  />
+                </div>
+              ) : null}
+              {language ? (
+                <div
+                  className={cn(
+                    sheetItemClass,
+                    'relative',
+                    '[&_button[data-language-select-trigger]]:absolute [&_button[data-language-select-trigger]]:inset-0 [&_button[data-language-select-trigger]]:z-10 [&_button[data-language-select-trigger]]:h-full [&_button[data-language-select-trigger]]:w-full [&_button[data-language-select-trigger]]:opacity-0',
+                  )}
+                >
+                  <Globe2 className="craft-icon" aria-hidden />
+                  <span className="flex-1 font-medium">{t('language')}</span>
+                  <span className="text-1 text-muted-foreground">
+                    {languageLabel}
+                  </span>
+                  <ChevronRight className="craft-icon opacity-60" aria-hidden />
+                  {language}
+                </div>
+              ) : null}
+            </>
           ) : null}
           <div className="border-t border-border" />
           <button
@@ -284,52 +293,57 @@ export function MemberProfileMenu({
           </DropdownMenuItem>
         ) : null}
       </DropdownMenuGroup>
-      <DropdownMenuSeparator className={separatorClass} />
-      <DropdownMenuGroup>
-        {onChangeThemeMode ? (
-          <DropdownMenuItem
-            className={menuItemClass}
-            onSelect={(event) => {
-              event.preventDefault();
-            }}
-            onClick={(event) => {
-              // Keep the menu open; the switch owns the toggle.
-              event.preventDefault();
-            }}
-          >
-            <Moon className="craft-icon" aria-hidden />
-            <span className="flex-1 font-medium">{t('darkMode')}</span>
-            <Switch
-              checked={dark}
-              onCheckedChange={() => onChangeThemeMode()}
-              onClick={(event) => event.stopPropagation()}
-              aria-label={t('darkMode')}
-            />
-          </DropdownMenuItem>
-        ) : null}
-        {language ? (
-          <div
-            className={cn(
-              menuItemClass,
-              'relative flex cursor-default items-center',
-              '[&_button[data-language-select-trigger]]:absolute [&_button[data-language-select-trigger]]:inset-0 [&_button[data-language-select-trigger]]:z-10 [&_button[data-language-select-trigger]]:h-full [&_button[data-language-select-trigger]]:w-full [&_button[data-language-select-trigger]]:opacity-0',
-            )}
-          >
-            <Globe2 className="craft-icon" aria-hidden />
-            <span className="pointer-events-none flex-1 font-medium">
-              {t('language')}
-            </span>
-            <span className="pointer-events-none text-1 text-muted-foreground">
-              {languageLabel}
-            </span>
-            <ChevronRight
-              className="pointer-events-none ml-auto craft-icon opacity-60"
-              aria-hidden
-            />
-            {language}
-          </div>
-        ) : null}
-      </DropdownMenuGroup>
+      {showAppearance ? (
+        <>
+          <DropdownMenuSeparator className={separatorClass} />
+          <DropdownMenuGroup>
+            {onChangeThemeMode ? (
+              <DropdownMenuItem
+                className={menuItemClass}
+                onSelect={(event) => {
+                  event.preventDefault();
+                }}
+                onClick={(event) => {
+                  // Keep the menu open; the switch owns the toggle.
+                  event.preventDefault();
+                }}
+              >
+                <Moon className="craft-icon" aria-hidden />
+                <span className="flex-1 font-medium">{t('darkMode')}</span>
+                <Switch
+                  checked={dark}
+                  onCheckedChange={() => onChangeThemeMode()}
+                  onClick={(event) => event.stopPropagation()}
+                  aria-label={t('darkMode')}
+                  className={darkModeSwitchClass}
+                />
+              </DropdownMenuItem>
+            ) : null}
+            {language ? (
+              <div
+                className={cn(
+                  menuItemClass,
+                  'relative flex cursor-default items-center',
+                  '[&_button[data-language-select-trigger]]:absolute [&_button[data-language-select-trigger]]:inset-0 [&_button[data-language-select-trigger]]:z-10 [&_button[data-language-select-trigger]]:h-full [&_button[data-language-select-trigger]]:w-full [&_button[data-language-select-trigger]]:opacity-0',
+                )}
+              >
+                <Globe2 className="craft-icon" aria-hidden />
+                <span className="pointer-events-none flex-1 font-medium">
+                  {t('language')}
+                </span>
+                <span className="pointer-events-none text-1 text-muted-foreground">
+                  {languageLabel}
+                </span>
+                <ChevronRight
+                  className="pointer-events-none ml-auto craft-icon opacity-60"
+                  aria-hidden
+                />
+                {language}
+              </div>
+            ) : null}
+          </DropdownMenuGroup>
+        </>
+      ) : null}
       <DropdownMenuSeparator className={separatorClass} />
       <DropdownMenuItem
         className={menuItemClass}

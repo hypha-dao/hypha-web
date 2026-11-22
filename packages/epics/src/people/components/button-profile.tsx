@@ -27,8 +27,10 @@ import {
   MessagesSquare,
   Globe2,
   LogOutIcon,
+  Moon,
   Repeat,
   Shield,
+  Sun,
   TrashIcon,
   UserRound,
   Wallet,
@@ -42,7 +44,10 @@ import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
-import { APP_CHROME_AVATAR_TRIGGER } from '../../common/chrome-radius';
+import {
+  APP_CHROME_AVATAR_TRIGGER,
+  APP_CHROME_ICON_TRIGGER,
+} from '../../common/chrome-radius';
 import { useMemberExperience } from './member-experience';
 import { MemberProfileMenu } from './member-profile-menu';
 import { MemberTopBar } from './member-top-bar';
@@ -226,9 +231,36 @@ export const ButtonProfile = ({
     ? navItems.filter((item) => !isMobileTabBarNavHref(item.href))
     : navItems;
   const { isMember: memberExperience } = useMemberExperience();
+  /**
+   * Member chrome states (matches energy-community):
+   * 1. Desktop web — language + light/dark icons in the top bar; profile menu omits them.
+   * 2. Responsive (compact dropdown) — icons leave the bar; menu carries those rows.
+   * 3. Mobile sheet — same as (2), inside the sheet.
+   */
+  const memberMenuAppearance = Boolean(memberExperience && compact);
+  const memberChromeAppearance = Boolean(memberExperience && !compact);
   const memberTopBar = memberExperience ? (
     <MemberTopBar personSlug={person?.slug} />
   ) : null;
+  const memberThemeTrigger =
+    memberChromeAppearance && onChangeThemeMode ? (
+      <button
+        type="button"
+        className={APP_CHROME_ICON_TRIGGER}
+        onClick={onChangeThemeMode}
+        aria-label={
+          resolvedTheme === 'dark'
+            ? t('switchToLightMode')
+            : t('switchToDarkMode')
+        }
+      >
+        {resolvedTheme === 'dark' ? (
+          <Sun className="craft-icon" aria-hidden />
+        ) : (
+          <Moon className="craft-icon" aria-hidden />
+        )}
+      </button>
+    ) : null;
   const memberProfileMenu = (variant: 'dropdown' | 'sheet') =>
     memberExperience ? (
       <MemberProfileMenu
@@ -236,9 +268,9 @@ export const ButtonProfile = ({
         person={person}
         profileUrl={profileUrl}
         notificationCentrePath={notificationCentrePath}
-        language={trailingBeforeProfile}
+        language={memberMenuAppearance ? trailingBeforeProfile : undefined}
         resolvedTheme={resolvedTheme}
-        onChangeThemeMode={onChangeThemeMode}
+        onChangeThemeMode={memberMenuAppearance ? onChangeThemeMode : undefined}
         onLogout={onLogout}
         loggingOut={loggingOut}
         onClose={() => setProfileMenuOpen(false)}
@@ -867,7 +899,11 @@ export const ButtonProfile = ({
           {/* Desktop */}
           <div className="hidden items-center gap-2 md:flex">
             {memberExperience ? (
-              memberTopBar
+              <>
+                {memberTopBar}
+                {trailingBeforeProfile}
+                {memberThemeTrigger}
+              </>
             ) : (
               <>
                 <div className="flex items-center gap-2">
