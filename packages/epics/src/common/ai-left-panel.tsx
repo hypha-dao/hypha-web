@@ -115,6 +115,7 @@ import {
   type MemberMenuKey,
 } from '../people/components/member-menu';
 import { useMemberExperience } from '../people/components/member-experience';
+import { MemberHomeMark } from '../people/components/member-home-mark';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
 import {
@@ -477,12 +478,13 @@ function MemberCollapsedSpaceIcon() {
     recentSlugs: recent,
   });
   const { space } = useSpaceBySlug(slug ?? '');
+  const namedSpace = named.find((entry) => entry.slug === slug) ?? null;
   const logo = resolveSpaceDisplayLogoUrl(
-    space,
+    space ?? namedSpace,
     resolvedTheme === 'dark' ? 'dark' : 'light',
   );
   if (!logo) {
-    return <Menu className="craft-icon pointer-events-none" />;
+    return <MemberHomeMark className="pointer-events-none h-[22px] w-[22px]" />;
   }
   return (
     // eslint-disable-next-line @next/next/no-img-element
@@ -3433,7 +3435,8 @@ export function AiLeftPanel({
     showAiOverlay,
   ]);
   const shouldCloseFromTrigger = isAiOpen || overlayVisible;
-  const showSpaceMark = memberExperience && !shouldCloseFromTrigger;
+  // Members keep the space mark in place — never swap it for a hamburger.
+  const showSpaceMark = Boolean(memberExperience);
 
   const triggerButton = (
     <button
@@ -3455,6 +3458,9 @@ export function AiLeftPanel({
       )}
     </button>
   );
+  // Conversation header already has space identity + close. A leading slot
+  // would shift the logo (and for members would reintroduce a hamburger).
+  const headerLeftSlot = memberExperience ? undefined : triggerButton;
   const closeButton = shouldCloseFromTrigger ? (
     <button
       type="button"
@@ -3601,7 +3607,7 @@ export function AiLeftPanel({
             <AiPanelHeader
               className={NAV_CHROME_SURFACE_CLASS}
               showCloseButton={false}
-              leftSlot={triggerButton}
+              leftSlot={headerLeftSlot}
               rightSlot={closeButton}
             />
           </SidebarHeader>
@@ -3657,7 +3663,7 @@ export function AiLeftPanel({
           <AiPanelHeader
             showCloseButton={false}
             collapseLeftSlotAtMd={!isOnboardingPath}
-            leftSlot={triggerButton}
+            leftSlot={headerLeftSlot}
             rightSlot={closeButton}
             askTitle={embedOnPage && memberExperience}
           />
@@ -3676,7 +3682,7 @@ export function AiLeftPanel({
           <AiPanelHeader
             showCloseButton={false}
             collapseLeftSlotAtMd={!isOnboardingPath}
-            leftSlot={triggerButton}
+            leftSlot={headerLeftSlot}
             rightSlot={closeButton}
             askTitle={embedOnPage && memberExperience}
           />
@@ -3699,7 +3705,7 @@ export function AiLeftPanel({
           <AiPanelHeader
             showCloseButton={false}
             collapseLeftSlotAtMd={!isOnboardingPath}
-            leftSlot={triggerButton}
+            leftSlot={headerLeftSlot}
             rightSlot={closeButton}
             askTitle={embedOnPage && memberExperience}
           />
@@ -3721,7 +3727,7 @@ export function AiLeftPanel({
         <AiPanelHeader
           showCloseButton={false}
           collapseLeftSlotAtMd={!isOnboardingPath}
-          leftSlot={triggerButton}
+          leftSlot={headerLeftSlot}
           rightSlot={closeButton}
           askTitle={embedOnPage && memberExperience}
         />
