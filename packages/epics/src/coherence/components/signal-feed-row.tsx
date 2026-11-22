@@ -178,9 +178,9 @@ export function SignalFeedRow({
       data-testid="signal-card"
       data-signal-slug={signal.slug ?? undefined}
       data-member-signal-row=""
-      className="@container craft-card-interactive relative flex flex-col gap-1.5 p-4"
+      className="@container craft-card-interactive relative flex flex-col gap-3 p-3 sm:p-4"
     >
-      <div className="flex min-w-0 items-start gap-3">
+      <div className="flex min-w-0 items-start gap-3 sm:gap-4">
         <div className="relative z-10 shrink-0">
           <ActionGate kind="upvote" fullAppPath="" label={null}>
             <SignalUpvoteButton
@@ -201,9 +201,12 @@ export function SignalFeedRow({
             />
           </ActionGate>
         </div>
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
           <SignalTypeBadge type={signal.type} />
-          <h3 className="m-0 truncate text-3 font-medium leading-snug text-foreground">
+          <h3
+            className="m-0 text-[20px] font-light leading-[1.15] text-foreground"
+            style={{ fontFamily: 'var(--font-family-heading)' }}
+          >
             <Link
               href={href}
               className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
@@ -212,7 +215,7 @@ export function SignalFeedRow({
             </Link>
           </h3>
           {about ? (
-            <p className="mb-0 line-clamp-2 text-1 text-muted-foreground">
+            <p className="mb-0 line-clamp-2 text-[13px] leading-[1.5] text-muted-foreground">
               {about}
             </p>
           ) : null}
@@ -241,7 +244,7 @@ export function SignalFeedRow({
             src={image}
             alt=""
             data-testid="signal-card-image"
-            className="h-24 w-36 shrink-0 self-center object-cover sm:h-32 sm:w-48"
+            className="aspect-video h-auto w-36 shrink-0 self-start object-cover sm:w-48"
           />
         ) : null}
       </div>

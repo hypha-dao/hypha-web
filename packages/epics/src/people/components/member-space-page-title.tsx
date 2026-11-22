@@ -114,16 +114,16 @@ export function MemberSpacePageTitle({
           Fixed min-height keeps the title block from jumping when navigating
           between screens (eyebrow + one title line). Extra title wrap grows down.
         */}
-        <header className="craft-page-header flex min-h-[3.75rem] w-full flex-col items-start justify-center gap-1 text-left">
+        <header className="craft-page-header flex min-h-[4.25rem] w-full flex-col items-start justify-center gap-1.5 text-left">
           {small ? (
-            <p className="m-0 text-1 font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            <p className="m-0 text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
               {small}
             </p>
           ) : (
             <span className="block h-[1.125rem]" aria-hidden />
           )}
           <div className="flex w-full items-start justify-between gap-3">
-            <h1 className="craft-page-title m-0 min-h-[2.25rem] text-6 font-medium leading-tight">
+            <h1 className="craft-page-title m-0 min-h-[2.5rem] text-[34px] font-light leading-[1.08] tracking-[-0.02em] sm:text-[42px]">
               {large}
             </h1>
             {actions ? (

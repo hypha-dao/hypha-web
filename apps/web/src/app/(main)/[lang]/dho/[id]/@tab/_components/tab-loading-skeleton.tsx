@@ -124,7 +124,11 @@ function MemberHomeCardSkeleton({
 /** Same shape as MemberSpaceHome: title row, signal strip, ask panel. */
 function MemberHomeSkeleton() {
   return (
-    <div className="flex w-full min-w-0 flex-col gap-4 py-4" aria-hidden>
+    <div
+      className="flex w-full min-w-0 flex-col gap-4 py-4"
+      aria-hidden
+      data-member-home-skeleton=""
+    >
       <section>
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">

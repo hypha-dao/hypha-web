@@ -15,7 +15,6 @@ import {
 import {
   ActionGate,
   AiLeftPanel,
-  MemberSpacePageTitle,
   SignalUpvoteButton,
   signalDetailPath,
   signalVotingSpaceId,
@@ -51,10 +50,12 @@ function signalKind(type: string) {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-/** One card + peek on a phone. About two and a half across on a wide column. */
+/**
+ * Energy-community home strip:
+ * ~2.2 cards on desktop with a peek; ~82% width on phone.
+ */
 const HOME_CARD_WIDTH =
-  'w-[calc(100%-2.75rem)] md:w-[min(20rem,calc((100%-1rem)/2.15))] lg:w-[min(22rem,calc((100%-2rem)/2.55))]';
-const HOME_CARD_IMAGE = 'aspect-[16/10] w-full object-cover';
+  'w-[min(100%,calc((100%-1.5rem)/2.2))] max-md:w-[82%] min-w-[15rem]';
 
 function safeImage(url: string | null) {
   if (!url) return null;
@@ -76,6 +77,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
   const stripRef = useRef<HTMLDivElement>(null);
   const { getAccessToken, isLoading: authLoading } = useAuthentication();
   const { space, isLoading: spaceLoading } = useSpaceBySlug(spaceSlug);
+  const spaceTitle = space?.title?.trim() || t('yourSpace');
   const spaceHeader =
     safeImage(space?.leadImage ?? null) ??
     (spaceLoading ? null : DEFAULT_SPACE_LEAD_IMAGE);
@@ -116,81 +118,91 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
     const gap = Number.parseFloat(styles.columnGap || styles.gap) || 0;
     const distance = card
       ? card.getBoundingClientRect().width + gap
-      : strip.clientWidth * 0.85;
+      : strip.clientWidth * 0.9;
     strip.scrollBy({
       left: direction * distance,
       behavior: 'smooth',
     });
   };
 
+  const arrowClass =
+    'grid size-9 shrink-0 place-items-center border border-border bg-transparent text-foreground transition-colors hover:bg-foreground/5';
+
   return (
-    <div className={MEMBER_SCREEN_STACK}>
-      <MemberSpacePageTitle
-        title={t('around')}
-        eyebrow={space?.title?.trim() || t('yourSpace')}
-        memberTitle={t('around')}
-      />
-      <section aria-labelledby="member-space-home-signals">
+    <div className={MEMBER_SCREEN_STACK} data-member-home="">
+      <section
+        className="flex min-w-0 flex-col"
+        aria-labelledby="member-space-home-title"
+        data-member-home-news=""
+      >
+        {/* Eyebrow row — space left, section right (energy-community). */}
         <div className="flex items-center justify-between gap-4">
-          <p
-            id="member-space-home-signals"
-            className="m-0 text-1 font-medium uppercase tracking-[0.14em] text-muted-foreground"
-          >
+          <p className="m-0 text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            {spaceTitle}
+          </p>
+          <p className="m-0 text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
             {t('communitySignals')}
           </p>
-          <div className="flex items-center gap-0.5">
+        </div>
+
+        {/* Title + 36px arrows on one row. */}
+        <div className="mt-2.5 mb-[18px] flex items-center justify-between gap-4">
+          <h1
+            id="member-space-home-title"
+            className="craft-page-title m-0 text-[34px] font-light leading-[1.08] tracking-[-0.02em] text-foreground sm:text-[42px]"
+          >
+            {t('around')}
+          </h1>
+          <div className="hidden shrink-0 items-center gap-1.5 md:flex">
             <button
               type="button"
-              className="grid size-6 place-items-center border border-border text-muted-foreground hover:text-foreground"
+              className={arrowClass}
               aria-label={t('previousSignals')}
               onClick={() => scrollStrip(-1)}
             >
-              <ChevronLeft className="size-3.5" strokeWidth={1.5} aria-hidden />
+              <ChevronLeft className="size-4" strokeWidth={1.5} aria-hidden />
             </button>
             <button
               type="button"
-              className="grid size-6 place-items-center border border-border text-muted-foreground hover:text-foreground"
+              className={arrowClass}
               aria-label={t('nextSignals')}
               onClick={() => scrollStrip(1)}
             >
-              <ChevronRight
-                className="size-3.5"
-                strokeWidth={1.5}
-                aria-hidden
-              />
+              <ChevronRight className="size-4" strokeWidth={1.5} aria-hidden />
             </button>
           </div>
         </div>
+
         {authLoading || isLoading || (!data && !error) ? (
           <div
-            className="mt-4 flex snap-x items-stretch gap-4 overflow-hidden pb-2"
+            className="flex snap-x items-stretch gap-6 overflow-hidden"
             aria-hidden
           >
             {[0, 1, 2].map((index) => (
               <div
                 key={index}
                 className={cn(
-                  `flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 flex-col overflow-hidden border border-border bg-background`,
+                  `flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 flex-col border border-border p-3`,
                   index === 1 && 'hidden md:flex',
                   index === 2 && 'hidden lg:flex',
                 )}
               >
-                <div className="aspect-[16/10] w-full bg-accent-3" />
-                <div className="flex flex-1 flex-col gap-2 p-4">
+                <div className="aspect-video w-full bg-accent-3" />
+                <div className="mt-2.5 flex flex-1 flex-col gap-2">
                   <div className="h-2.5 w-16 bg-accent-3/60" />
-                  <div className="h-4 w-4/5 bg-accent-3/60" />
+                  <div className="h-5 w-4/5 bg-accent-3/60" />
                   <div className="h-3 w-full bg-accent-3/50" />
                   <div className="h-3 w-5/6 bg-accent-3/50" />
-                  <div className="mt-auto flex items-center gap-2 border-t border-border pt-3">
-                    <div className="h-7 w-24 bg-accent-3/60" />
-                    <div className="ml-auto h-7 w-16 bg-accent-3/60" />
+                  <div className="mt-auto flex items-center gap-2.5 border-t border-border pt-4">
+                    <div className="h-9 w-24 bg-accent-3/60" />
+                    <div className="h-[34px] w-16 bg-accent-3/60" />
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : error ? (
-          <div className="mt-4 flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <p className="text-2 text-muted-foreground">{t('signalsFailed')}</p>
             <button
               type="button"
@@ -201,13 +213,13 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
             </button>
           </div>
         ) : signals.length === 0 ? (
-          <p className="mt-4 max-w-md text-2 text-muted-foreground">
+          <p className="max-w-md text-2 text-muted-foreground">
             {t('noSignals')}
           </p>
         ) : (
           <div
             ref={stripRef}
-            className="mt-4 flex snap-x items-stretch gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex snap-x items-stretch gap-6 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {signals.map((signal) => {
               const image = safeImage(signal.leadImage) ?? spaceHeader;
@@ -226,29 +238,35 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
               return (
                 <article
                   key={signal.id}
-                  className={`flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 snap-start flex-col overflow-hidden border border-border bg-background`}
+                  className={cn(
+                    `flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 snap-start cursor-pointer flex-col border border-border bg-transparent p-3`,
+                  )}
                 >
                   {image ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={image} alt="" className={HOME_CARD_IMAGE} />
+                    <img
+                      src={image}
+                      alt=""
+                      className="aspect-video w-full object-cover"
+                    />
                   ) : (
-                    <div className="aspect-[16/10] w-full bg-accent-3" />
+                    <div className="aspect-video w-full bg-accent-3" />
                   )}
-                  <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
-                    <p className="text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
+                  <div className="mt-2.5 flex min-h-0 min-w-0 flex-1 flex-col">
+                    <p className="m-0 text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase">
                       {typeLabel}
                     </p>
                     <h2
-                      className="min-w-0 break-words text-3 leading-snug text-foreground"
+                      className="mt-2 m-0 min-w-0 break-words text-[20px] font-light leading-[1.15] text-foreground"
                       style={{ fontFamily: 'var(--font-family-heading)' }}
                     >
                       {signal.title}
                     </h2>
-                    <p className="line-clamp-3 min-w-0 text-1 text-muted-foreground">
+                    <p className="mt-2 mb-2.5 line-clamp-2 min-w-0 text-[13px] leading-[1.5] text-muted-foreground">
                       {plainText(signal.description)}
                     </p>
-                    <div className="mt-auto flex w-full min-w-0 flex-wrap items-center gap-2 border-t border-border pt-3">
-                      <div className="min-w-0 max-w-full">
+                    <div className="mt-auto flex w-full min-w-0 flex-nowrap items-center gap-2.5 border-t border-border pt-4">
+                      <div className="min-w-0 shrink-0">
                         <ActionGate kind="upvote" fullAppPath="" label={null}>
                           <SignalUpvoteButton
                             slug={signal.slug}
@@ -262,15 +280,20 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                             refresh={() => mutate()}
                             archived={signal.archived}
                             summaryState="ready"
+                            className="h-9 [&_[data-testid='signal-upvote-cell']]:h-9"
                           />
                         </ActionGate>
                       </div>
                       <Link
                         href={href}
-                        className="ml-auto inline-flex h-7 shrink-0 items-center gap-1 border border-border px-2.5 text-1 text-foreground hover:bg-foreground/5"
+                        className="inline-flex h-[34px] shrink-0 items-center gap-2 border border-border bg-transparent px-3.5 text-[13px] text-foreground hover:bg-foreground/5"
                       >
                         {t('open')}
-                        <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                        <ChevronRight
+                          className="size-3.5"
+                          strokeWidth={1.5}
+                          aria-hidden
+                        />
                       </Link>
                     </div>
                   </div>
@@ -280,7 +303,8 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
           </div>
         )}
       </section>
-      <section aria-label={t('askThisSpace')} className="min-w-0">
+
+      <section aria-label={t('askThisSpace')} className="mt-2 min-w-0 sm:mt-4">
         <SidebarProvider
           open
           className="h-auto min-h-[28rem] border border-border"
