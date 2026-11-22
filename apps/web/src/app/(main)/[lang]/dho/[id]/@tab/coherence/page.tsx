@@ -10,7 +10,7 @@ import {
 } from '@hypha-platform/feature-flags';
 import { Locale } from '@hypha-platform/i18n';
 import { redirect } from 'next/navigation';
-import { MEMBER_SCREEN_STACK } from '../../../_components/member-page-shell';
+import { MEMBER_SCREEN_STACK } from '../../../../_components/member-page-shell';
 import { getDhoPathOverview } from '../overview/constants';
 
 type PageProps = {

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 
-import { MEMBER_SCREEN_STACK } from '../../../../_components/member-page-shell';
+import { MEMBER_SCREEN_STACK } from '../../../../../_components/member-page-shell';
 import { TabScreenTitle } from '../../_components/tab-screen-title';
 
 /** Same page title chrome for every persona; members get the double title. */

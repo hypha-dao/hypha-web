@@ -21,7 +21,7 @@ import {
   useSignalSpaceMembership,
   useSignalVotingMode,
 } from '@hypha-platform/epics';
-import { MEMBER_SCREEN_STACK } from '../../../../_components/member-page-shell';
+import { MEMBER_SCREEN_STACK } from '../../../../../_components/member-page-shell';
 import { SidebarProvider } from '@hypha-platform/ui';
 import { cn, stripDescription } from '@hypha-platform/ui-utils';
 import type { Locale } from '@hypha-platform/i18n';
