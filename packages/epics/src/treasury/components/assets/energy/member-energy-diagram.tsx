@@ -6,6 +6,7 @@ import { useMe } from '@hypha-platform/core/client';
 import type { SpaceEnergyResponse } from '../../../hooks/use-space-energy';
 import { useSpaceEnergy } from '../../../hooks/use-space-energy';
 import { useSpaceEnergyTelemetry } from '../../../hooks/use-space-energy-telemetry';
+import { MemberSpacePageTitle } from '../../../../people/components/member-space-page-title';
 import { LineChart, type ChartSeries } from './charts';
 import { PRODUCTION_DEFAULT_TIMEFRAME } from './energy-constants';
 import {
@@ -250,21 +251,13 @@ export function MemberEnergyDiagram({ spaceSlug }: { spaceSlug: string }) {
       : 'title7d';
 
   return (
-    <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
-            {t('eyebrow')}
-          </p>
-          <h1
-            className="mt-2 text-6 text-foreground sm:text-7"
-            style={{ fontFamily: 'var(--font-family-heading)' }}
-          >
-            {t(titleKey)}
-          </h1>
-        </div>
-        <TimeframeToggle value={timeframe} onChange={setTimeframe} />
-      </div>
+    <section className="flex flex-col gap-4">
+      <MemberSpacePageTitle
+        title={t(titleKey)}
+        screen="energy"
+        memberTitle={t(titleKey)}
+        actions={<TimeframeToggle value={timeframe} onChange={setTimeframe} />}
+      />
 
       <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
         <div className="mb-5 flex items-center justify-between gap-3">

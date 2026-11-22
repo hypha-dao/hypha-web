@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 
+import { MEMBER_SCREEN_STACK } from '../../../../_components/member-page-shell';
 import { TabScreenTitle } from '../../_components/tab-screen-title';
 
 /** Same page title chrome for every persona; members get the double title. */
@@ -17,7 +18,7 @@ export function MembersChrome({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-4 py-4">
+    <div className={MEMBER_SCREEN_STACK}>
       <TabScreenTitle
         title={title}
         screen="members"

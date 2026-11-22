@@ -109,15 +109,23 @@ export function MemberSpacePageTitle({
     const large = memberTitle ?? copy?.title ?? title;
 
     return (
-      <div className="flex flex-col gap-3">
-        <header className="craft-page-header flex w-full flex-col items-start gap-1 text-left">
+      <div className="flex flex-col gap-3" data-member-page-title="">
+        {/*
+          Fixed min-height keeps the title block from jumping when navigating
+          between screens (eyebrow + one title line). Extra title wrap grows down.
+        */}
+        <header className="craft-page-header flex min-h-[3.75rem] w-full flex-col items-start justify-center gap-1 text-left">
           {small ? (
-            <p className="text-1 font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            <p className="m-0 text-1 font-medium uppercase tracking-[0.14em] text-muted-foreground">
               {small}
             </p>
-          ) : null}
+          ) : (
+            <span className="block h-[1.125rem]" aria-hidden />
+          )}
           <div className="flex w-full items-start justify-between gap-3">
-            <h1 className="craft-page-title m-0 text-6 font-medium">{large}</h1>
+            <h1 className="craft-page-title m-0 min-h-[2.25rem] text-6 font-medium leading-tight">
+              {large}
+            </h1>
             {actions ? (
               <div className="flex shrink-0 items-center gap-2 pt-0.5">
                 {actions}

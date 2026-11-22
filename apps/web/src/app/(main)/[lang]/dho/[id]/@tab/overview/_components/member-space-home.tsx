@@ -15,12 +15,14 @@ import {
 import {
   ActionGate,
   AiLeftPanel,
+  MemberSpacePageTitle,
   SignalUpvoteButton,
   signalDetailPath,
   signalVotingSpaceId,
   useSignalSpaceMembership,
   useSignalVotingMode,
 } from '@hypha-platform/epics';
+import { MEMBER_SCREEN_STACK } from '../../../../_components/member-page-shell';
 import { SidebarProvider } from '@hypha-platform/ui';
 import { cn, stripDescription } from '@hypha-platform/ui-utils';
 import type { Locale } from '@hypha-platform/i18n';
@@ -122,55 +124,46 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
   };
 
   return (
-    <div className="flex flex-col gap-10 py-2">
-      <section aria-labelledby="member-space-home-title">
-        <div className="flex items-end justify-between gap-4">
-          <div className="min-w-0">
-            <p className="mb-1 text-1 font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              {space?.title?.trim() || t('yourSpace')}
-            </p>
-            <h1
-              id="member-space-home-title"
-              className="craft-page-title text-6 font-medium"
+    <div className={MEMBER_SCREEN_STACK}>
+      <MemberSpacePageTitle
+        title={t('around')}
+        eyebrow={space?.title?.trim() || t('yourSpace')}
+        memberTitle={t('around')}
+      />
+      <section aria-labelledby="member-space-home-signals">
+        <div className="flex items-center justify-between gap-4">
+          <p
+            id="member-space-home-signals"
+            className="m-0 text-1 font-medium uppercase tracking-[0.14em] text-muted-foreground"
+          >
+            {t('communitySignals')}
+          </p>
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              className="grid size-6 place-items-center border border-border text-muted-foreground hover:text-foreground"
+              aria-label={t('previousSignals')}
+              onClick={() => scrollStrip(-1)}
             >
-              {t('around')}
-            </h1>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <p className="text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
-              {t('communitySignals')}
-            </p>
-            <div className="flex items-center gap-0.5">
-              <button
-                type="button"
-                className="grid size-6 place-items-center border border-border text-muted-foreground hover:text-foreground"
-                aria-label={t('previousSignals')}
-                onClick={() => scrollStrip(-1)}
-              >
-                <ChevronLeft
-                  className="size-3.5"
-                  strokeWidth={1.5}
-                  aria-hidden
-                />
-              </button>
-              <button
-                type="button"
-                className="grid size-6 place-items-center border border-border text-muted-foreground hover:text-foreground"
-                aria-label={t('nextSignals')}
-                onClick={() => scrollStrip(1)}
-              >
-                <ChevronRight
-                  className="size-3.5"
-                  strokeWidth={1.5}
-                  aria-hidden
-                />
-              </button>
-            </div>
+              <ChevronLeft className="size-3.5" strokeWidth={1.5} aria-hidden />
+            </button>
+            <button
+              type="button"
+              className="grid size-6 place-items-center border border-border text-muted-foreground hover:text-foreground"
+              aria-label={t('nextSignals')}
+              onClick={() => scrollStrip(1)}
+            >
+              <ChevronRight
+                className="size-3.5"
+                strokeWidth={1.5}
+                aria-hidden
+              />
+            </button>
           </div>
         </div>
         {authLoading || isLoading || (!data && !error) ? (
           <div
-            className="mt-6 flex snap-x items-stretch gap-4 overflow-hidden pb-2"
+            className="mt-4 flex snap-x items-stretch gap-4 overflow-hidden pb-2"
             aria-hidden
           >
             {[0, 1, 2].map((index) => (
@@ -197,7 +190,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
             ))}
           </div>
         ) : error ? (
-          <div className="mt-6 flex items-center gap-3">
+          <div className="mt-4 flex items-center gap-3">
             <p className="text-2 text-muted-foreground">{t('signalsFailed')}</p>
             <button
               type="button"
@@ -208,13 +201,13 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
             </button>
           </div>
         ) : signals.length === 0 ? (
-          <p className="mt-6 max-w-md text-2 text-muted-foreground">
+          <p className="mt-4 max-w-md text-2 text-muted-foreground">
             {t('noSignals')}
           </p>
         ) : (
           <div
             ref={stripRef}
-            className="mt-6 flex snap-x items-stretch gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="mt-4 flex snap-x items-stretch gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {signals.map((signal) => {
               const image = safeImage(signal.leadImage) ?? spaceHeader;
