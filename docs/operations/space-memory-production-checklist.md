@@ -33,9 +33,9 @@ Optional but useful:
 
   - **Historical:** this token was read by the stdio package `packages/mcp-server` (removed in #2610) for
     org-memory reads. The hosted server `packages/mcp` has no org-memory tool and does not use this
-    variable, so setting it does not enable MCP org-memory reads. Hosted-server authentication is
-    documented with `packages/mcp`, not here. The only remaining reader is the
-    `GET /api/v1/ops/space-memory/health` check, which reports when it is missing. Not required for the
+    variable, so setting it does not enable MCP org-memory reads. The only remaining reader is the
+    `GET /api/v1/ops/space-memory/health` check, which reports when it is missing; that check and the
+    other legacy `HYPHA_MCP_*` settings are tracked for cleanup in #2721. Not required for the
     cron/orchestrator path (`signals-orchestrate` authenticates via `system: true`).
 
 - `NEXT_PUBLIC_ENABLE_SPACE_MEMORY=true`
