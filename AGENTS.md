@@ -131,7 +131,7 @@ packages/
   feature-flags/    — Vercel Flags SDK wrappers
   notifications/    — OneSignal push + email notification helpers
   chat-server/      — AI chat server logic (OpenRouter via Vercel AI SDK)
-  mcp-server/       — Model Context Protocol server
+  mcp/              — Hosted Model Context Protocol server (mcp.hypha.earth)
   cookie/           — Cookie utilities
 ```
 
@@ -197,7 +197,7 @@ Never reverse this direction. Circular deps are a build failure.
 ### AI / Coherence Features
 
 - `packages/chat-server` — AI chat using Vercel AI SDK with OpenRouter provider.
-- `packages/mcp-server` — MCP server exposing Hypha platform data as AI context tools.
+- `packages/mcp` — hosted MCP server (`mcp.hypha.earth`) exposing Hypha platform data as AI context tools; tool list in `packages/mcp/src/descriptions/`.
 - Coherence (under `packages/epics/src/coherence/`) — Matrix-based human chat rooms per space. Uses `matrix-js-sdk` pinned version (checked by `scripts/check-matrix-js-sdk-version.mjs`).
 
 ### Authentication Pattern (Server-Side)

@@ -1,5 +1,7 @@
 # Documents and media — plain overview
 
+> **Superseded:** the stdio package `packages/mcp-server` was removed in #2610 (PR 0); the hosted server is `packages/mcp` (`mcp.hypha.earth`). This document is kept as the historical record of the removed package.
+
 Hypha handles **files and images** in two main places. The **bytes** and **metadata** live in different systems depending on whether you are in **space chat** or **proposals (agreements)**.
 
 ---

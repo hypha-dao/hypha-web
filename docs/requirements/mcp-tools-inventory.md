@@ -1,5 +1,7 @@
 # MCP Tools Inventory — Hypha
 
+> **Superseded:** this inventory listed the tools of the stdio package `packages/mcp-server`, removed in #2610 (PR 0), which was its source of truth. The hosted server is `packages/mcp` (`mcp.hypha.earth`); its current tool list is in `packages/mcp/src/descriptions/`. The list below is kept as the record of the removed package.
+
 ## Document control
 
 | Field | Value |

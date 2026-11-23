@@ -31,7 +31,7 @@ Optional but useful:
 
 - `HYPHA_MCP_AUTH_TOKEN`
 
-  - Auth token for the separate `packages/mcp-server` process (AI/Claude tool integrations), read
+  - Auth token that the stdio package `packages/mcp-server` (AI/Claude tool integrations) read; that package was removed in #2610 and the hosted server is `packages/mcp`. Historical note, read
     from that service's own environment — not `apps/web`. Not required for the cron/orchestrator
     path: `signals-orchestrate` authenticates via `system: true`, which bypasses the auth-token
     branch entirely. Only needed if you're also running the MCP server and want its org-memory

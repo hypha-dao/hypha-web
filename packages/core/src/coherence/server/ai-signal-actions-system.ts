@@ -21,7 +21,7 @@ import {
  * `apps/web/src/app/api/cron/signals-orchestrate/route.ts` (CRON_SECRET, Vercel Cron only)
  * `apps/web/src/app/api/v1/ops/signals/orchestrate/route.ts` (HYPHA_SPACE_MEMORY_OPS_SECRET)
  *
- * Do not import this from chat-server/mcp-server tool handlers or any other user-facing
+ * Do not import this from chat-server or MCP (`packages/mcp`) tool handlers or any other user-facing
  * entrypoint — those must keep going through `createAiSignalForSpaceBySlug` /
  * `relayAiSignalToEcosystemSpace` in `./ai-signal-actions`, which always require a real
  * `authToken` and always run the access gate.
