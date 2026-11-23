@@ -1,5 +1,7 @@
 # Technical Specification — MCP tool `get_documents_by_space_slug`
 
+> **Superseded:** the stdio package `packages/mcp-server` was removed in #2610 (PR 0); the hosted server is `packages/mcp` (`mcp.hypha.earth`). This document is kept as the historical record of the removed package.
+
 ## Document control
 
 | Field | Value |

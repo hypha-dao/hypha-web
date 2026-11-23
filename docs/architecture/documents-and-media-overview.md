@@ -112,6 +112,8 @@ When a proposal (or other entity) is saved with attachments:
 
 ### 4.7 MCP and Hypha Chat AI
 
+> **Superseded (MCP references only):** the stdio package `packages/mcp-server` mentioned in this section was removed in #2610 (PR 0); the hosted server is `packages/mcp` (`mcp.hypha.earth`). The rest of this overview is current.
+
 Hypha exposes **read tools** so assistants can reason about a space without scraping the UI. **`get_documents_by_space_slug`** (MCP + Chat server; [PR #2141](https://github.com/hypha-dao/hypha-web/pull/2141), `docs/requirements/mcp-get-documents-by-space-slug-tech-spec.md`) lists **PostgreSQL `documents` rows** for the slug, including **`attachments`** and **`leadImage`**.
 
 | Consumer | What it can access **today** | What requires **§4 catalogue** (or a new tool) |
