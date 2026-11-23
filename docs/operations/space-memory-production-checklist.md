@@ -29,13 +29,14 @@ Set these on the web deployment:
 
 Optional but useful:
 
-- `HYPHA_MCP_AUTH_TOKEN`
+- `HYPHA_MCP_AUTH_TOKEN` (historical)
 
-  - Auth token that the stdio package `packages/mcp-server` (AI/Claude tool integrations) read; that package was removed in #2610 and the hosted server is `packages/mcp`. Historical note, read
-    from that service's own environment — not `apps/web`. Not required for the cron/orchestrator
-    path: `signals-orchestrate` authenticates via `system: true`, which bypasses the auth-token
-    branch entirely. Only needed if you're also running the MCP server and want its org-memory
-    reads to carry real auth.
+  - **Historical:** this token was read by the stdio package `packages/mcp-server` (removed in #2610) for
+    org-memory reads. The hosted server `packages/mcp` has no org-memory tool and does not use this
+    variable, so setting it does not enable MCP org-memory reads. Hosted-server authentication is
+    documented with `packages/mcp`, not here. The only remaining reader is the
+    `GET /api/v1/ops/space-memory/health` check, which reports when it is missing. Not required for the
+    cron/orchestrator path (`signals-orchestrate` authenticates via `system: true`).
 
 - `NEXT_PUBLIC_ENABLE_SPACE_MEMORY=true`
   - Explicitly pins Space Memory to enabled (even though default now enables it).

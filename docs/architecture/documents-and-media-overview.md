@@ -1,7 +1,5 @@
 # Documents and media — plain overview
 
-> **Superseded:** the stdio package `packages/mcp-server` was removed in #2610 (PR 0); the hosted server is `packages/mcp` (`mcp.hypha.earth`). This document is kept as the historical record of the removed package.
-
 Hypha handles **files and images** in two main places. The **bytes** and **metadata** live in different systems depending on whether you are in **space chat** or **proposals (agreements)**.
 
 ---
@@ -113,6 +111,8 @@ When a proposal (or other entity) is saved with attachments:
 - **Deduplication** — Same file re-uploaded in chat vs proposal: optional `sha256` match to link rows.
 
 ### 4.7 MCP and Hypha Chat AI
+
+> **Superseded (MCP references only):** the stdio package `packages/mcp-server` mentioned in this section was removed in #2610 (PR 0); the hosted server is `packages/mcp` (`mcp.hypha.earth`). The rest of this overview is current.
 
 Hypha exposes **read tools** so assistants can reason about a space without scraping the UI. **`get_documents_by_space_slug`** (MCP + Chat server; [PR #2141](https://github.com/hypha-dao/hypha-web/pull/2141), `docs/requirements/mcp-get-documents-by-space-slug-tech-spec.md`) lists **PostgreSQL `documents` rows** for the slug, including **`attachments`** and **`leadImage`**.
 

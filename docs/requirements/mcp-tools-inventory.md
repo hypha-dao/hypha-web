@@ -2,6 +2,8 @@
 
 > **Superseded:** this inventory listed the tools of the stdio package `packages/mcp-server`, removed in #2610 (PR 0), which was its source of truth. The hosted server is `packages/mcp` (`mcp.hypha.earth`); its current tool list is in `packages/mcp/src/descriptions/`. The list below is kept as the record of the removed package.
 
+> **Migration:** existing MCP calls to the tools below need changes. The hosted server exposes five `hypha_*` tools (`hypha_list_spaces`, `hypha_get_space`, `hypha_list_proposals`, `hypha_get_my_vote`, `hypha_get_my_membership`) and none of the names listed here. Only partial overlaps exist: `hypha_get_space` for space reads and `hypha_list_proposals` for proposal listing. The other removed tools (org memory, roster, token holdings, signals, ecosystem, call artifacts, proposal preparation, member tools) have no hosted equivalent.
+
 ## Document control
 
 | Field | Value |
