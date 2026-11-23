@@ -32,7 +32,6 @@ Derived automatically:
 - `packages/chat-server/src/tools/ai-proposal-types.ts` — prompt catalog lines
 - `packages/chat-server/src/tools/proposal-guidance.ts` — playbooks
 - `packages/chat-server/src/tools/prepare-governance-proposal.ts` — form pre-fill
-- `packages/mcp-server` — stdio MCP tools
 
 ## Checklist when adding/updating a proposal
 
@@ -60,7 +59,6 @@ Derived automatically:
 6. **Verify** — Type-check:
    ```bash
    pnpm --filter @hypha-platform/chat-server check-types
-   pnpm --filter @hypha-platform/mcp-server check-types
    ```
 
 ## AI flow (standard)
@@ -83,7 +81,6 @@ proposal_guidance(proposal_type, collected_fields)
 | Runtime | File |
 |---|---|
 | Chat AI panel | `packages/chat-server/src/tools/prepare-governance-proposal.ts` |
-| Standalone MCP | `packages/mcp-server/src/main.ts` |
 | Client navigation | `packages/epics/src/common/ai-left-panel.tsx` |
 | Resubmit hydration | `packages/epics/src/hooks/use-resubmit-proposal-data.ts` |
 
@@ -91,5 +88,5 @@ proposal_guidance(proposal_type, collected_fields)
 
 - Using `collective_agreement` for voting/entry/transparency — blocked; use typed prepare flow
 - Mismatched `documentLabel` vs DB label — resubmit won't hydrate the right form
-- Forgetting MCP catalog update — external agents lose discovery for new types
+- Forgetting the catalog entry — `proposal_guidance` / `prepare_governance_proposal` lose discovery for new types
 - Space configuration in catalog — keep out; use `update_space_settings` instead
