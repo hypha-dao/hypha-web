@@ -85,6 +85,8 @@ export function registerListSpaces(server: McpServer, deps: McpDeps): void {
             omitFlagArchived: !(args.includeArchived ?? false),
             omitEmpty: !(args.includeEmpty ?? false),
             mine: args.mine ?? false,
+            // "Which spaces are mine" is a completeness question: never a shorter list.
+            authoritative: args.mine ?? false,
             titleOrder: args.order?.[0]?.direction ?? 'asc',
             paging: { offset, limit: pageSize },
             with: { governance: true, visibility: withVisibility },

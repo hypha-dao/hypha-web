@@ -382,7 +382,7 @@ describe('visibility: list spaces', () => {
       );
     });
 
-    it('fails instead of under-reporting when a delegate space cannot be read', async () => {
+    it('with authoritative, fails instead of under-reporting when a delegate space cannot be read', async () => {
       memberOf(1);
       chain.readDelegateSpaceIds.mockResolvedValue([2]);
       // the batch reads drop the failed space: no entry at all (not an empty list)
@@ -390,9 +390,17 @@ describe('visibility: list spaces', () => {
         new Map([[1, { members: [ADDR], executor: '0xe' }]]),
       );
       chain.readDelegatorsBatch.mockResolvedValue(new Map());
-      expect(await listSpaces({ mine: true }, mcpUser(), { db })).toMatchObject(
-        { ok: false, code: 'access_check_failed' },
-      );
+      const strict = { mine: true, authoritative: true };
+      expect(await listSpaces(strict, mcpUser(), { db })).toMatchObject({
+        ok: false,
+        code: 'access_check_failed',
+      });
+      // authoritative is its own switch: it fails the plain list too
+      expect(
+        await listSpaces({ authoritative: true }, mcpUser(), { db }),
+      ).toMatchObject({ ok: false, code: 'access_check_failed' });
+      // without it, mine filters what could be read (the filter and the guarantee are separate)
+      expect(await slugsOf(mcpUser(), { mine: true })).toEqual(['s1']);
       // the plain list is not affected by the incomplete delegate read
       expect(await slugsOf(mcpUser())).toEqual(['s1', 's2']);
     });
@@ -407,7 +415,9 @@ describe('visibility: list spaces', () => {
         ]),
       );
       chain.readDelegatorsBatch.mockResolvedValue(new Map([[2, []]]));
-      expect(await slugsOf(mcpUser(), { mine: true })).toEqual(['s1']);
+      expect(
+        await slugsOf(mcpUser(), { mine: true, authoritative: true }),
+      ).toEqual(['s1']);
     });
 
     it('needs a verified user with a wallet address', async () => {

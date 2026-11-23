@@ -132,14 +132,20 @@ async function getViewerFacts(
  * The DB-independent set of web3 space ids the address belongs to directly: a member, or a
  * listed delegate with at least one member delegator (the rule `readMemberAndDelegate` applies
  * per space). Same cached facts as the access rule, so a list that was just filtered adds no
- * chain read. `null` = the facts could not be read, or a listed delegate space could not; a caller that needs the answer itself
- * (not just a hiding rule) must fail on it.
+ * chain read. `null` = the facts could not be read. `complete` is false when a listed
+ * delegate space could not be read, so `ids` may miss it; a caller that needs the full answer
+ * (not just a hiding rule) must fail on that.
  */
 export async function getViewerSpaceIds(
   address: `0x${string}`,
-): Promise<Set<number> | null> {
+): Promise<{ ids: Set<number>; complete: boolean } | null> {
   const facts = await getViewerFacts(address);
-  return facts?.delegateReadsComplete ? new Set(facts.directSpaceIds) : null;
+  return facts
+    ? {
+        ids: new Set(facts.directSpaceIds),
+        complete: facts.delegateReadsComplete,
+      }
+    : null;
 }
 
 /**
