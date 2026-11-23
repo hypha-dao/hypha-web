@@ -18,6 +18,7 @@ export const listSpacesInput = z.object({
   omitSandbox: z.boolean().optional().describe(P.omitSandbox),
   includeArchived: z.boolean().optional().describe(P.includeArchived),
   includeEmpty: z.boolean().optional().describe(P.includeEmpty),
+  mine: z.boolean().optional().describe(P.mine),
   include: z
     .array(z.enum(['visibility']))
     .max(1)
@@ -83,6 +84,7 @@ export function registerListSpaces(server: McpServer, deps: McpDeps): void {
             // Archived is the flag only; empty spaces have their own switch (includeEmpty).
             omitFlagArchived: !(args.includeArchived ?? false),
             omitEmpty: !(args.includeEmpty ?? false),
+            mine: args.mine ?? false,
             titleOrder: args.order?.[0]?.direction ?? 'asc',
             paging: { offset, limit: pageSize },
             with: { governance: true, visibility: withVisibility },

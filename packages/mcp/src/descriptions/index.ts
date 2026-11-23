@@ -5,7 +5,7 @@
  * through a reviewed PR with a snapshot update (`__tests__/descriptions.snapshot.test.ts`),
  * a `DESCRIPTIONS_VERSION` bump and a line in `CHANGELOG.md`.
  */
-export const DESCRIPTIONS_VERSION = '1.3.0';
+export const DESCRIPTIONS_VERSION = '1.4.0';
 
 export const SERVER_NAME = 'hypha';
 export const SERVER_TITLE = 'Hypha';
@@ -40,7 +40,8 @@ export const TOOLS = {
     description: [
       'List the Hypha spaces the signed-in user can see, or search them by keyword.',
       'To find a space by name, pass `query` (it searches titles and descriptions). If several spaces match, show them and ask the user which one they mean. The `slug` in each result is what the other tools need.',
-      'Results are personalised to the user’s permissions. `total` counts the spaces visible to the user, without archived and empty ones unless asked for.',
+      'To answer which spaces the user belongs to, pass `mine: true` instead of checking spaces one by one: it returns only the spaces where the user is a member or a delegate.',
+      'Results are personalised to the user’s permissions. `total` counts the spaces visible to the user, without archived and empty ones unless asked for; with `mine: true` it counts only the user’s own spaces among them.',
       'Returns all levels (sub-spaces too) unless `parentOnly` is set. The `visibility` block is hidden unless asked for.',
       'Default order is by title.',
       'Read-only.',
@@ -54,6 +55,7 @@ export const TOOLS = {
         'Leave out sandbox spaces. Default false (sandbox spaces are shown).',
       includeArchived: 'Also return archived spaces. Default false.',
       includeEmpty: 'Also return spaces with no members. Default false.',
+      mine: 'Only the spaces where the signed-in user is a member or a delegate (a delegate votes for members who delegated to them). Still limited to spaces the user can see. Default false.',
       include:
         'Extra blocks per space. `visibility` adds the space’s discoverability and access levels, for reference only. Governance is always included.',
       order: 'Sort order. Only `title` is supported. Default title ascending.',
