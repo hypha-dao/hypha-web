@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AudioLines,
   Check,
+  ChevronLeft,
   ChevronUp,
   Circle,
   Disc,
@@ -167,6 +168,12 @@ export function HumanChatPanelInCallControls({
   const [isCaptureMenuOpen, setIsCaptureMenuOpen] = useState(false);
   const captureMenuRef = useRef<HTMLDivElement | null>(null);
   const [isReactMenuOpen, setIsReactMenuOpen] = useState(false);
+  /** Share toolbar overflow: record, mic setup and leave (they would not fit the narrow share dock / PiP). */
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [moreMenuView, setMoreMenuView] = useState<
+    'root' | 'capture' | 'audio'
+  >('root');
+  const moreMenuRef = useRef<HTMLDivElement | null>(null);
   const reactMenuContentRef = useRef<HTMLDivElement | null>(null);
   const reactMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [stopConfirmStep, setStopConfirmStep] = useState<
@@ -408,7 +415,8 @@ export function HumanChatPanelInCallControls({
   );
 
   const closeOtherToolbarMenus = useCallback(
-    (except?: 'audio' | 'capture' | 'react') => {
+    (except?: 'audio' | 'capture' | 'react' | 'more') => {
+      if (except !== 'more') setIsMoreMenuOpen(false);
       if (except !== 'audio') setIsAudioMenuOpen(false);
       if (except !== 'capture') setIsCaptureMenuOpen(false);
       if (except !== 'react') setIsReactMenuOpen(false);
@@ -454,6 +462,9 @@ export function HumanChatPanelInCallControls({
       if (!captureMenuRef.current?.contains(target)) {
         setIsCaptureMenuOpen(false);
       }
+      if (!moreMenuRef.current?.contains(target)) {
+        setIsMoreMenuOpen(false);
+      }
       if (
         !reactMenuContentRef.current?.contains(target) &&
         !reactMenuTriggerRef.current?.contains(target)
@@ -466,9 +477,16 @@ export function HumanChatPanelInCallControls({
   }, []);
 
   useEffect(() => {
-    if (!isAudioMenuOpen && !isCaptureMenuOpen && !isReactMenuOpen) return;
+    if (
+      !isAudioMenuOpen &&
+      !isCaptureMenuOpen &&
+      !isReactMenuOpen &&
+      !isMoreMenuOpen
+    )
+      return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        setIsMoreMenuOpen(false);
         setIsAudioMenuOpen(false);
         setIsCaptureMenuOpen(false);
         setIsReactMenuOpen(false);
@@ -476,7 +494,7 @@ export function HumanChatPanelInCallControls({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isAudioMenuOpen, isCaptureMenuOpen, isReactMenuOpen]);
+  }, [isAudioMenuOpen, isCaptureMenuOpen, isReactMenuOpen, isMoreMenuOpen]);
 
   /**
    * In PiP, stop-capture confirmation renders inline inside this same menu
@@ -487,14 +505,21 @@ export function HumanChatPanelInCallControls({
    * discard an in-progress confirm instead of leaving it stale for next open.
    */
   useEffect(() => {
-    if (isPipDensity && !isCaptureMenuOpen) setStopConfirmStep('none');
-  }, [isCaptureMenuOpen, isPipDensity]);
+    if (isPipDensity && !isCaptureMenuOpen && !isMoreMenuOpen) {
+      setStopConfirmStep('none');
+    }
+  }, [isCaptureMenuOpen, isMoreMenuOpen, isPipDensity]);
+
+  useEffect(() => {
+    if (!isMoreMenuOpen) setMoreMenuView('root');
+  }, [isMoreMenuOpen]);
 
   const selectVoicePreset = (
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => {
     onVoiceProcessingPresetChange(preset);
     setIsAudioMenuOpen(false);
+    setIsMoreMenuOpen(false);
   };
   const isVoiceIsolationUnsupported = Boolean(
     unsupportedVoiceProcessingConstraints?.noiseSuppression,
@@ -510,6 +535,7 @@ export function HumanChatPanelInCallControls({
       onStartCapture(mode);
     }
     setIsCaptureMenuOpen(false);
+    setIsMoreMenuOpen(false);
   };
   const captureStopLabel = t('callCaptureStop');
   const recordingWarningMessage = (() => {
@@ -543,6 +569,7 @@ export function HumanChatPanelInCallControls({
     /** PiP shows the confirmation inline in this menu, so keep it open. */
     if (!isPipDensity) {
       setIsCaptureMenuOpen(false);
+      setIsMoreMenuOpen(false);
     }
     if (captureMode === 'recording_with_transcript') {
       setStopConfirmStep('recording');
@@ -553,6 +580,7 @@ export function HumanChatPanelInCallControls({
   const confirmStopCapture = () => {
     setStopConfirmStep('none');
     setIsCaptureMenuOpen(false);
+    setIsMoreMenuOpen(false);
     onStopCapture();
   };
   const captureModeLabel = !captureActive
@@ -562,6 +590,253 @@ export function HumanChatPanelInCallControls({
     : captureMode === 'transcript_only'
     ? t('callCaptureModeTranscriptOnly')
     : t('callCaptureModeRecordingWithTranscript');
+
+  /** Overflow menu sub-views show their back arrow inline with the section heading. */
+  const moreMenuBackButton =
+    isMoreMenuOpen && moreMenuView !== 'root' ? (
+      <button
+        type="button"
+        onClick={() => setMoreMenuView('root')}
+        aria-label={t('callControlsMoreBack')}
+        title={t('callControlsMoreBack')}
+        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md hover:bg-muted/80"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+    ) : null;
+  const audioMenuBody = (
+    <>
+      <div className="flex items-center gap-1">
+        {moreMenuBackButton}
+        <p
+          className={cn(
+            'py-1.5 text-sm font-semibold',
+            moreMenuBackButton ? 'pr-2' : 'px-2',
+          )}
+        >
+          {t('callVoiceProcessingLabel')}
+        </p>
+      </div>
+      <div className="-mx-0 my-1 h-px bg-neutral-6" />
+      <button
+        type="button"
+        role="menuitemradio"
+        aria-checked={voiceProcessingPreset === 'standard'}
+        onClick={() => selectVoicePreset('standard')}
+        className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+      >
+        <span className="inline-flex items-center gap-2">
+          <AudioLines className="h-4 w-4" />
+          {t('callVoiceProcessingStandard')}
+        </span>
+        {voiceProcessingPreset === 'standard' ? (
+          <Check className={menuCheckIcon} />
+        ) : null}
+      </button>
+      <button
+        type="button"
+        role="menuitemradio"
+        aria-checked={voiceProcessingPreset === 'voice_isolation'}
+        disabled={isVoiceIsolationUnsupported}
+        onClick={() => selectVoicePreset('voice_isolation')}
+        className="flex w-full flex-col items-stretch gap-0.5 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+      >
+        <span className="flex w-full items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-2">
+            <MicVocal className="h-4 w-4" />
+            {t('callVoiceProcessingIsolation')}
+          </span>
+          {voiceProcessingPreset === 'voice_isolation' ? (
+            <Check className={menuCheckIcon} />
+          ) : null}
+        </span>
+        {isVoiceIsolationUnsupported ? (
+          <span
+            className={cn(
+              'text-[11px] leading-snug',
+              isFull ? 'text-zinc-400' : 'text-muted-foreground',
+            )}
+          >
+            {t('callVoiceProcessingNoiseSuppressionUnsupported')}
+          </span>
+        ) : null}
+      </button>
+      <button
+        type="button"
+        role="menuitemradio"
+        aria-checked={voiceProcessingPreset === 'music'}
+        disabled={isMusicPresetUnsupported}
+        onClick={() => selectVoicePreset('music')}
+        className="flex w-full flex-col items-stretch gap-0.5 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+      >
+        <span className="flex w-full items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-2">
+            <Music2 className="h-4 w-4" />
+            {t('callVoiceProcessingMusic')}
+          </span>
+          {voiceProcessingPreset === 'music' ? (
+            <Check className={menuCheckIcon} />
+          ) : null}
+        </span>
+        {isMusicPresetUnsupported ? (
+          <span
+            className={cn(
+              'text-[11px] leading-snug',
+              isFull ? 'text-zinc-400' : 'text-muted-foreground',
+            )}
+          >
+            {t('callVoiceProcessingAutoGainUnsupported')}
+          </span>
+        ) : null}
+      </button>
+    </>
+  );
+  const captureMenuBody = (
+    <>
+      <div className="flex items-center gap-1">
+        {moreMenuBackButton}
+        <p
+          className={cn(
+            'py-1.5 text-sm font-semibold',
+            moreMenuBackButton ? 'pr-2' : 'px-2',
+          )}
+        >
+          {t('callCaptureLabel')}
+        </p>
+      </div>
+      <div className="-mx-0 my-1 h-px bg-neutral-6" />
+      {isPipDensity && stopConfirmStep !== 'none' ? (
+        <div
+          role="alertdialog"
+          aria-labelledby="call-pip-stop-confirm-title"
+          aria-describedby="call-pip-stop-confirm-desc"
+          className="space-y-2 px-2 py-1.5"
+        >
+          <p
+            id="call-pip-stop-confirm-title"
+            className="text-xs font-medium leading-snug"
+          >
+            {stopConfirmStep === 'recording'
+              ? t('callCaptureConfirmStopRecordingTitle')
+              : t('callCaptureConfirmStopTranscriptTitle')}
+          </p>
+          <p
+            id="call-pip-stop-confirm-desc"
+            className="text-[11px] leading-snug text-muted-foreground"
+          >
+            {stopConfirmStep === 'recording'
+              ? t('callCaptureConfirmStopRecording')
+              : t('callCaptureConfirmStopTranscript')}
+          </p>
+          <div className="flex gap-1.5 pt-1">
+            <button
+              ref={stopConfirmCancelRef}
+              type="button"
+              onClick={() => setStopConfirmStep('none')}
+              className="flex-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors hover:bg-muted/80"
+            >
+              {t('callCaptureConfirmCancel')}
+            </button>
+            <button
+              type="button"
+              onClick={confirmStopCapture}
+              className="flex-1 rounded-lg bg-rose-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-rose-700"
+            >
+              {stopConfirmStep === 'recording'
+                ? t('callCaptureConfirmStopRecordingAction')
+                : t('callCaptureConfirmStopTranscriptAction')}
+            </button>
+          </div>
+        </div>
+      ) : captureMenuActive ? (
+        <>
+          <button
+            type="button"
+            role="menuitem"
+            disabled={!capturePauseReady}
+            onClick={() => {
+              if (!capturePauseReady) return;
+              if (recordingStatus === 'paused') {
+                onResumeCapture();
+              } else {
+                onPauseCapture();
+              }
+              setIsCaptureMenuOpen(false);
+              setIsMoreMenuOpen(false);
+            }}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <span className="inline-flex items-center gap-2">
+              {recordingStatus === 'paused' ? (
+                <Play className="h-4 w-4" />
+              ) : (
+                <Pause className="h-4 w-4" />
+              )}
+              {recordingStatus === 'paused'
+                ? t('callCaptureResume')
+                : t('callCapturePause')}
+            </span>
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            disabled={!captureStopReady}
+            onClick={requestStopCapture}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <span className="inline-flex items-center gap-2 text-rose-500">
+              <Square className="h-4 w-4 fill-current" />
+              {captureStopLabel}
+            </span>
+          </button>
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            role="menuitemradio"
+            aria-checked={
+              capturePreferenceSelected &&
+              capturePreference === 'transcript_only'
+            }
+            onClick={() => selectCapturePreference('transcript_only')}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+          >
+            <span className="inline-flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              {t('callCaptureModeTranscriptOnly')}
+            </span>
+            {capturePreferenceSelected &&
+            capturePreference === 'transcript_only' ? (
+              <Check className={menuCheckIcon} />
+            ) : null}
+          </button>
+          <button
+            type="button"
+            role="menuitemradio"
+            aria-checked={
+              capturePreferenceSelected &&
+              capturePreference === 'recording_with_transcript'
+            }
+            onMouseDown={(event) => {
+              event.preventDefault();
+              selectCapturePreference('recording_with_transcript');
+            }}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+          >
+            <span className="inline-flex items-center gap-2">
+              <Disc className="h-4 w-4 text-rose-600 fill-rose-600 stroke-rose-600" />
+              {t('callCaptureModeRecordingWithTranscript')}
+            </span>
+            {capturePreferenceSelected &&
+            capturePreference === 'recording_with_transcript' ? (
+              <Check className={menuCheckIcon} />
+            ) : null}
+          </button>
+        </>
+      )}
+    </>
+  );
 
   const renderAudioSettingsMenu = (
     <div className="relative" ref={audioMenuRef}>
@@ -598,81 +873,7 @@ export function HumanChatPanelInCallControls({
             isFull && 'border-zinc-700 bg-zinc-900 text-white',
           )}
         >
-          <p className="px-2 py-1.5 text-sm font-semibold">
-            {t('callVoiceProcessingLabel')}
-          </p>
-          <div className="-mx-0 my-1 h-px bg-neutral-6" />
-          <button
-            type="button"
-            role="menuitemradio"
-            aria-checked={voiceProcessingPreset === 'standard'}
-            onClick={() => selectVoicePreset('standard')}
-            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
-          >
-            <span className="inline-flex items-center gap-2">
-              <AudioLines className="h-4 w-4" />
-              {t('callVoiceProcessingStandard')}
-            </span>
-            {voiceProcessingPreset === 'standard' ? (
-              <Check className={menuCheckIcon} />
-            ) : null}
-          </button>
-          <button
-            type="button"
-            role="menuitemradio"
-            aria-checked={voiceProcessingPreset === 'voice_isolation'}
-            disabled={isVoiceIsolationUnsupported}
-            onClick={() => selectVoicePreset('voice_isolation')}
-            className="flex w-full flex-col items-stretch gap-0.5 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
-          >
-            <span className="flex w-full items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-2">
-                <MicVocal className="h-4 w-4" />
-                {t('callVoiceProcessingIsolation')}
-              </span>
-              {voiceProcessingPreset === 'voice_isolation' ? (
-                <Check className={menuCheckIcon} />
-              ) : null}
-            </span>
-            {isVoiceIsolationUnsupported ? (
-              <span
-                className={cn(
-                  'text-[11px] leading-snug',
-                  isFull ? 'text-zinc-400' : 'text-muted-foreground',
-                )}
-              >
-                {t('callVoiceProcessingNoiseSuppressionUnsupported')}
-              </span>
-            ) : null}
-          </button>
-          <button
-            type="button"
-            role="menuitemradio"
-            aria-checked={voiceProcessingPreset === 'music'}
-            disabled={isMusicPresetUnsupported}
-            onClick={() => selectVoicePreset('music')}
-            className="flex w-full flex-col items-stretch gap-0.5 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
-          >
-            <span className="flex w-full items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-2">
-                <Music2 className="h-4 w-4" />
-                {t('callVoiceProcessingMusic')}
-              </span>
-              {voiceProcessingPreset === 'music' ? (
-                <Check className={menuCheckIcon} />
-              ) : null}
-            </span>
-            {isMusicPresetUnsupported ? (
-              <span
-                className={cn(
-                  'text-[11px] leading-snug',
-                  isFull ? 'text-zinc-400' : 'text-muted-foreground',
-                )}
-              >
-                {t('callVoiceProcessingAutoGainUnsupported')}
-              </span>
-            ) : null}
-          </button>
+          {audioMenuBody}
         </div>
       ) : null}
     </div>
@@ -727,138 +928,114 @@ export function HumanChatPanelInCallControls({
             isFull && 'border-zinc-700 bg-zinc-900 text-white',
           )}
         >
-          <p className="px-2 py-1.5 text-sm font-semibold">
-            {t('callCaptureLabel')}
-          </p>
-          <div className="-mx-0 my-1 h-px bg-neutral-6" />
-          {isPipDensity && stopConfirmStep !== 'none' ? (
-            <div
-              role="alertdialog"
-              aria-labelledby="call-pip-stop-confirm-title"
-              aria-describedby="call-pip-stop-confirm-desc"
-              className="space-y-2 px-2 py-1.5"
-            >
-              <p
-                id="call-pip-stop-confirm-title"
-                className="text-xs font-medium leading-snug"
-              >
-                {stopConfirmStep === 'recording'
-                  ? t('callCaptureConfirmStopRecordingTitle')
-                  : t('callCaptureConfirmStopTranscriptTitle')}
-              </p>
-              <p
-                id="call-pip-stop-confirm-desc"
-                className="text-[11px] leading-snug text-muted-foreground"
-              >
-                {stopConfirmStep === 'recording'
-                  ? t('callCaptureConfirmStopRecording')
-                  : t('callCaptureConfirmStopTranscript')}
-              </p>
-              <div className="flex gap-1.5 pt-1">
-                <button
-                  ref={stopConfirmCancelRef}
-                  type="button"
-                  onClick={() => setStopConfirmStep('none')}
-                  className="flex-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors hover:bg-muted/80"
-                >
-                  {t('callCaptureConfirmCancel')}
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmStopCapture}
-                  className="flex-1 rounded-lg bg-rose-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-rose-700"
-                >
-                  {stopConfirmStep === 'recording'
-                    ? t('callCaptureConfirmStopRecordingAction')
-                    : t('callCaptureConfirmStopTranscriptAction')}
-                </button>
-              </div>
-            </div>
-          ) : captureMenuActive ? (
-            <>
-              <button
-                type="button"
-                role="menuitem"
-                disabled={!capturePauseReady}
-                onClick={() => {
-                  if (!capturePauseReady) return;
-                  if (recordingStatus === 'paused') {
-                    onResumeCapture();
-                  } else {
-                    onPauseCapture();
-                  }
-                  setIsCaptureMenuOpen(false);
-                }}
-                className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <span className="inline-flex items-center gap-2">
-                  {recordingStatus === 'paused' ? (
-                    <Play className="h-4 w-4" />
-                  ) : (
-                    <Pause className="h-4 w-4" />
-                  )}
-                  {recordingStatus === 'paused'
-                    ? t('callCaptureResume')
-                    : t('callCapturePause')}
-                </span>
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                disabled={!captureStopReady}
-                onClick={requestStopCapture}
-                className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <span className="inline-flex items-center gap-2 text-rose-500">
-                  <Square className="h-4 w-4 fill-current" />
-                  {captureStopLabel}
-                </span>
-              </button>
-            </>
+          {captureMenuBody}
+        </div>
+      ) : null}
+    </div>
+  );
+  const moreMenuItemClass =
+    'flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50';
+  /**
+   * Share toolbar only: record, mic setup and leave collapse into one
+   * overflow trigger so the narrow share dock / Document PiP stays small
+   * but these actions stay reachable while presenting (#2707).
+   */
+  const renderMoreMenu = (
+    <div className="relative" ref={moreMenuRef}>
+      <button
+        type="button"
+        className={captureSettingsBtn}
+        title={t('callControlsMore')}
+        aria-label={t('callControlsMore')}
+        aria-haspopup="menu"
+        aria-expanded={isMoreMenuOpen}
+        onClick={() => {
+          closeOtherToolbarMenus('more');
+          setIsMoreMenuOpen((open) => !open);
+        }}
+      >
+        {captureLive ? (
+          capturePaused ? (
+            <Pause
+              className={cn(
+                captureIconClass,
+                isFull ? 'text-rose-400' : 'text-rose-600 dark:text-rose-400',
+              )}
+              strokeWidth={lucideStroke}
+              aria-hidden
+            />
           ) : (
+            renderCaptureOnAirIcon
+          )
+        ) : null}
+        <ChevronUp className={menuChevronClass(isMoreMenuOpen)} aria-hidden />
+      </button>
+      {isMoreMenuOpen ? (
+        <div
+          role="menu"
+          onPointerDown={(event) => event.stopPropagation()}
+          className={cn(
+            'z-[70] max-h-[min(70vh,calc(100dvh-8rem),var(--hypha-call-dock-popover-max-h,9999px))] overflow-y-auto rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
+            isPipDensity
+              ? 'fixed bottom-14 left-1/2 w-[calc(100dvw-1rem)] max-w-52 -translate-x-1/2'
+              : 'absolute bottom-full mb-2 right-0 min-w-52',
+            isFull && 'border-zinc-700 bg-zinc-900 text-white',
+          )}
+        >
+          {moreMenuView === 'root' ? (
             <>
+              {showAdvancedCallControls ? (
+                <>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={controlsDisabled}
+                    onClick={() => setMoreMenuView('capture')}
+                    className={moreMenuItemClass}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      {captureLive ? (
+                        renderCaptureOnAirIcon
+                      ) : (
+                        <Disc className="h-4 w-4" />
+                      )}
+                      {t('callCaptureLabel')}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => setMoreMenuView('audio')}
+                    className={moreMenuItemClass}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <SlidersHorizontal className="h-4 w-4" />
+                      {t('callVoiceProcessingLabel')}
+                    </span>
+                  </button>
+                  <div className="-mx-0 my-1 h-px bg-neutral-6" />
+                </>
+              ) : null}
               <button
                 type="button"
-                role="menuitemradio"
-                aria-checked={
-                  capturePreferenceSelected &&
-                  capturePreference === 'transcript_only'
-                }
-                onClick={() => selectCapturePreference('transcript_only')}
-                className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  {t('callCaptureModeTranscriptOnly')}
-                </span>
-                {capturePreferenceSelected &&
-                capturePreference === 'transcript_only' ? (
-                  <Check className={menuCheckIcon} />
-                ) : null}
-              </button>
-              <button
-                type="button"
-                role="menuitemradio"
-                aria-checked={
-                  capturePreferenceSelected &&
-                  capturePreference === 'recording_with_transcript'
-                }
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  selectCapturePreference('recording_with_transcript');
+                role="menuitem"
+                disabled={callState === 'disconnecting'}
+                onClick={() => {
+                  setIsMoreMenuOpen(false);
+                  onLeave();
                 }}
-                className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+                className={moreMenuItemClass}
               >
-                <span className="inline-flex items-center gap-2">
-                  <Disc className="h-4 w-4 text-rose-600 fill-rose-600 stroke-rose-600" />
-                  {t('callCaptureModeRecordingWithTranscript')}
+                <span className="inline-flex items-center gap-2 text-red-600">
+                  <CallHangUpIcon className="h-4 w-4" strokeWidth={1.75} />
+                  {t('callLeave')}
                 </span>
-                {capturePreferenceSelected &&
-                capturePreference === 'recording_with_transcript' ? (
-                  <Check className={menuCheckIcon} />
-                ) : null}
               </button>
             </>
+          ) : moreMenuView === 'capture' ? (
+            captureMenuBody
+          ) : (
+            audioMenuBody
           )}
         </div>
       ) : null}
@@ -1021,6 +1198,7 @@ export function HumanChatPanelInCallControls({
                 iconClassName={icon}
                 iconStrokeWidth={lucideStroke}
               />
+              {renderMoreMenu}
             </div>
           ) : useSymmetricalDockToolbar ? (
             <>

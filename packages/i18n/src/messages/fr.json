@@ -3533,6 +3533,8 @@
     "callControlsCameraOnAria": "Caméra, activée",
     "callControlsScreenshare": "Partage d’écran",
     "callControlsScreenshareActiveAria": "Partage d’écran, actif",
+    "callControlsMore": "Plus de commandes d'appel",
+    "callControlsMoreBack": "Retour",
     "callControlsScreenshareInactiveAria": "Partage d’écran, inactif",
     "callVoiceProcessingLabel": "Traitement vocal",
     "callVoiceProcessingStandard": "Voix",

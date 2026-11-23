@@ -3547,6 +3547,8 @@
     "callControlsCameraOnAria": "Cámara, encendida",
     "callControlsScreenshare": "Compartir pantalla",
     "callControlsScreenshareActiveAria": "Compartir pantalla, activa",
+    "callControlsMore": "Más controles de llamada",
+    "callControlsMoreBack": "Atrás",
     "callControlsScreenshareInactiveAria": "Compartir pantalla, inactiva",
     "callVoiceProcessingLabel": "Procesamiento de voz",
     "callVoiceProcessingStandard": "Voz",
