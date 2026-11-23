@@ -1,6 +1,10 @@
 'use client';
 
-import { determineEnvironment, useJwt } from '@hypha-platform/core/client';
+import {
+  determineEnvironment,
+  staleDeployment,
+  useJwt,
+} from '@hypha-platform/core/client';
 import React from 'react';
 import useSWR from 'swr';
 import { getLinkByMatrixUserIdAction } from '../../server/actions';
@@ -63,11 +67,14 @@ export const useUserPrivyIdByMatrixId = ({
         const data = response.privyUserId;
         return data;
       } catch (err) {
+        // The error is swallowed here, so SWR would never report it.
+        staleDeployment.handleError(err);
         console.warn('Cannot get Privy user ID:', err);
         setError(err instanceof Error ? err.message : `${err}`);
         return undefined;
       }
     },
+    { revalidateOnFocus: false },
   );
 
   React.useEffect(() => {

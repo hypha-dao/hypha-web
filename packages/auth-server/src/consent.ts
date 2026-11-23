@@ -2,6 +2,7 @@ import { verifyOAuthQueryParams } from '@better-auth/oauth-provider';
 import type { AuthServer } from './auth';
 import { AUTH_SERVER_WRITE_SCOPES } from './config';
 import { describeScope, type ScopeCopyKey } from './scope-copy';
+import { describeRedirect } from './redirect-display';
 
 /**
  * How the app was identified, which decides the defaults on the consent page. The kind comes
@@ -23,7 +24,10 @@ export type ConsentRequest = {
     name: string;
     /** Host the app identifies itself from (its metadata document or client URI). */
     host: string;
-    /** Host the person is sent back to after approving. */
+    /**
+     * Where the person is sent back to after approving: the host for a website or a local
+     * address, the scheme and host (or path) for an app on their computer (never empty for a URL).
+     */
     redirectHost: string;
     /** Every app that connects without being registered with Hypha is unverified. */
     verified: false;
@@ -166,7 +170,7 @@ export async function loadConsentRequest(
           : kind === 'dcr'
           ? ''
           : hostOf(row.uri) || hostOf(clientId),
-      redirectHost: hostOf(redirectUri),
+      redirectHost: describeRedirect(redirectUri).display,
       verified: false,
       kind,
     },

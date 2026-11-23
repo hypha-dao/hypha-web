@@ -10,6 +10,7 @@ import {
 import type { Caller } from '../../access/caller';
 import { failure, type Failure } from '../../access/failure';
 import { filterSpacesForCaller } from '../../access/policy';
+import { getViewerSpaceIds } from '../../access/viewer-access';
 import { getAllSpaces } from '../../space/server/web3/get-all-spaces';
 import { getSpacesBySlugs } from '../../space/server/web3/get-spaces-by-slugs';
 import { getSpacesByWeb3Ids } from '../../space/server/web3/get-spaces-by-web3-ids';
@@ -37,6 +38,19 @@ export type ListSpacesInput = {
   omitSandbox?: boolean;
   /** Hide spaces with a zero member count. */
   omitEmpty?: boolean;
+  /**
+   * Keep only the spaces where the caller is a member, or a delegate with a member delegator.
+   * Applied AFTER the access policy (it narrows what the caller may see, never widens it) and
+   * before ordering and paging, so `total` counts the narrowed set. Needs a verified user with
+   * a wallet address; unreadable membership fails the call.
+   */
+  mine?: boolean;
+  /**
+   * Fail instead of returning a list that may be missing spaces because a fact about the
+   * caller's spaces could not be read. Independent of `mine` (a filter): the channel decides
+   * whether to ask for it. Without it the list hides what it cannot read.
+   */
+  authoritative?: boolean;
   /** Sort by title after the filters; unset keeps the source order. */
   titleOrder?: 'asc' | 'desc';
   /** Both absent = the full list. The channel normalises and caps these. */
@@ -123,13 +137,45 @@ export async function listSpaces(
       );
     }
     spaces = visible;
+    // `slugById` stays the whole visible set: a visible parent can be named even when only a
+    // child is "mine".
+    const slugById = new Map(spaces.map((s) => [s.id, s.slug] as const));
+    if (input.mine) {
+      if (caller.kind !== 'user') {
+        return failure('unauthenticated', 'A verified user is required.');
+      }
+      if (!caller.address) {
+        return failure('invalid_identity', 'Could not verify your identity.');
+      }
+    }
+    if (
+      (input.mine || input.authoritative) &&
+      caller.kind === 'user' &&
+      caller.address
+    ) {
+      // One bulk read of the person's spaces (not one read per listed space). `null` means it
+      // could not be read: an error, never an empty list that looks like "no memberships".
+      const viewer = await getViewerSpaceIds(caller.address);
+      if (!viewer || (input.authoritative && !viewer.complete)) {
+        return failure(
+          'access_check_failed',
+          'Spaces could not be listed right now.',
+        );
+      }
+      if (input.mine) {
+        spaces = spaces.filter(
+          (space) =>
+            typeof space.web3SpaceId === 'number' &&
+            viewer.ids.has(space.web3SpaceId),
+        );
+      }
+    }
     if (input.titleOrder) {
       const sign = input.titleOrder === 'desc' ? -1 : 1;
       spaces = [...spaces].sort(
         (a, b) => sign * (a.title ?? '').localeCompare(b.title ?? ''),
       );
     }
-    const slugById = new Map(spaces.map((s) => [s.id, s.slug] as const));
     const total = spaces.length;
     if (input.paging) {
       const { offset, limit } = input.paging;

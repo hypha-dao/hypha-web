@@ -7,7 +7,10 @@ import {
 import {
   getAbsoluteAppUrl,
   getMyMembership,
+  getMyVote,
+  getSpace,
   getSpaceDhoPath,
+  listProposals,
   listSpaces,
   resolveCaller,
 } from '@hypha-platform/core/server';
@@ -44,9 +47,20 @@ export const mcpHandlers = createMcpRequestHandlers({
   resolve: (claims) => resolveCaller(claims, { db }),
   features: {
     listSpaces: (input, caller) => listSpaces(input, caller, { db }),
+    getSpace: (input, caller) => getSpace(input, caller, { db }),
+    listProposals: (input, caller) => listProposals(input, caller, { db }),
+    getMyVote: ({ spaceSlug, documentSlug }, caller) =>
+      getMyVote({ spaceSlug, documentSlug, caller }, { db }),
     getMyMembership: ({ spaceSlug }, caller) =>
       getMyMembership({ spaceSlug, caller }, { db }),
   },
   spaceUrl: (slug) => getAbsoluteAppUrl(getSpaceDhoPath(slug, 'overview')),
+  proposalUrl: (spaceSlug, proposalSlug) =>
+    getAbsoluteAppUrl(
+      getSpaceDhoPath(
+        spaceSlug,
+        `agreements/proposal/${encodeURIComponent(proposalSlug)}`,
+      ),
+    ),
   slot,
 });

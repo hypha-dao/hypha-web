@@ -1,4 +1,12 @@
 {
+  "StaleDeployment": {
+    "reloadingTitle": "We’ve been working here!",
+    "reloading": "Just a moment while we freshen up the page…",
+    "title": "Oops, we’ve been working here!",
+    "description": "We just made changes to the page. Refresh whenever you can.",
+    "refresh": "Refresh",
+    "dismiss": "Dismiss"
+  },
   "Common": {
     "openInFullApp": "Open in the full app",
     "Assignments": "Assignments",
@@ -5981,7 +5989,7 @@
       "scopes": {
         "spacesRead": {
           "title": "Read Hypha spaces",
-          "detail": "View the spaces you can see on Hypha: their details, members and public activity."
+          "detail": "Read-only: this app can read everything you can see in your spaces on Hypha: the spaces, who is a member, proposals and votes (signals and quests are coming). It cannot change anything. What it reads is sent to the provider of the AI app, who will receive it."
         },
         "agreementsVote": {
           "title": "Prepare votes for you to approve",

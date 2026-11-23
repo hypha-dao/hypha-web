@@ -11,17 +11,20 @@ export type UserTextGroup<K extends string> = Record<K, string | null> & {
 export const USER_TEXT_CAPS = { title: 200, description: 1500 } as const;
 
 export function userText<K extends string>(
-  fields: Record<K, { value: string | null | undefined; max: number }>,
+  fields: Record<
+    K,
+    { value: string | null | undefined; max: number; atWordBoundary?: boolean }
+  >,
 ): UserTextGroup<K> {
   const out = {} as Record<K, string | null>;
   const truncated: K[] = [];
   for (const key of Object.keys(fields) as K[]) {
-    const { value, max } = fields[key];
+    const { value, max, atWordBoundary } = fields[key];
     if (value === null || value === undefined) {
       out[key] = null;
       continue;
     }
-    const clean = sanitiseUserText(value, max);
+    const clean = sanitiseUserText(value, max, { atWordBoundary });
     out[key] = clean.text;
     if (clean.truncated) truncated.push(key);
   }

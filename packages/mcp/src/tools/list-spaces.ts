@@ -3,7 +3,10 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import { ERRORS, TOOLS } from '../descriptions';
 import type { McpDeps } from '../deps';
 import { presentSpace, spaceItemSchema } from '../presentation/spaces';
+import { decodeCursor, encodeCursor } from './cursor';
 import { failureText, runTool } from './run-tool';
+
+export { decodeCursor, encodeCursor };
 
 const P = TOOLS.hypha_list_spaces.params;
 const MAX_PAGE_SIZE = 50;
@@ -15,6 +18,7 @@ export const listSpacesInput = z.object({
   omitSandbox: z.boolean().optional().describe(P.omitSandbox),
   includeArchived: z.boolean().optional().describe(P.includeArchived),
   includeEmpty: z.boolean().optional().describe(P.includeEmpty),
+  mine: z.boolean().optional().describe(P.mine),
   include: z
     .array(z.enum(['visibility']))
     .max(1)
@@ -49,28 +53,6 @@ export const listSpacesOutput = z.object({
   asOf: z.string(),
 });
 
-/**
- * The cursor is the offset of the next unseen item, so it keeps its meaning when `pageSize`
- * changes between calls (a page number would repeat or skip items).
- */
-export function encodeCursor(offset: number): string {
-  return Buffer.from(JSON.stringify({ o: offset })).toString('base64url');
-}
-
-export function decodeCursor(cursor: string | undefined): number | null {
-  if (cursor === undefined) return 0;
-  try {
-    const parsed = JSON.parse(
-      Buffer.from(cursor, 'base64url').toString('utf8'),
-    );
-    return Number.isInteger(parsed?.o) && parsed.o >= 0 && parsed.o <= 1_000_000
-      ? parsed.o
-      : null;
-  } catch {
-    return null;
-  }
-}
-
 export function registerListSpaces(server: McpServer, deps: McpDeps): void {
   server.registerTool(
     'hypha_list_spaces',
@@ -102,6 +84,9 @@ export function registerListSpaces(server: McpServer, deps: McpDeps): void {
             // Archived is the flag only; empty spaces have their own switch (includeEmpty).
             omitFlagArchived: !(args.includeArchived ?? false),
             omitEmpty: !(args.includeEmpty ?? false),
+            mine: args.mine ?? false,
+            // "Which spaces are mine" is a completeness question: never a shorter list.
+            authoritative: args.mine ?? false,
             titleOrder: args.order?.[0]?.direction ?? 'asc',
             paging: { offset, limit: pageSize },
             with: { governance: true, visibility: withVisibility },

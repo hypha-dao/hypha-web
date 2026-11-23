@@ -4,6 +4,11 @@ import type {
   ListSpacesData,
   ListSpacesInput,
   MyMembership,
+  SpaceDetail,
+  ListProposalsData,
+  MyVote,
+  ListProposalsInput,
+  GetSpaceInput,
 } from '@hypha-platform/core/server';
 
 /**
@@ -28,6 +33,18 @@ export type McpFeatures = {
     input: ListSpacesInput,
     caller: UserCaller,
   ): Promise<{ ok: true; data: ListSpacesData } | Failure>;
+  getSpace(
+    input: GetSpaceInput,
+    caller: UserCaller,
+  ): Promise<{ ok: true; data: SpaceDetail } | Failure>;
+  listProposals(
+    input: ListProposalsInput,
+    caller: UserCaller,
+  ): Promise<{ ok: true; data: ListProposalsData } | Failure>;
+  getMyVote(
+    input: { spaceSlug: string; documentSlug: string },
+    caller: UserCaller,
+  ): Promise<{ ok: true; data: MyVote } | Failure>;
   getMyMembership(
     input: { spaceSlug: string },
     caller: UserCaller,
@@ -48,6 +65,8 @@ export type McpDeps = {
   features: McpFeatures;
   /** Link to a space page, built from the slug and the app base URL, never from content. */
   spaceUrl(slug: string): string;
+  /** Link to a proposal page, built from the two slugs and the app base URL, never from content. */
+  proposalUrl(spaceSlug: string, proposalSlug: string): string;
   log(entry: ToolCallLog): void;
   /** Per-tool deadline in milliseconds. */
   deadlineMs?: number;

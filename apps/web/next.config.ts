@@ -132,6 +132,21 @@ const nextConfig: NextConfig = {
         source: `/:path((?:${MIDDLEWARE_SKIPPED_PREFIXES}).*)`,
         headers: [{ key: 'X-Frame-Options', value: 'DENY' }],
       },
+      // Sign-in and approval pages of the authorization server (hardening): no page may frame
+      // them. Only `frame-ancestors` is set, so frames the pages themselves open (the sign-in
+      // provider) are not affected. Keep with the `auth/` and `api/auth/` prefixes above.
+      {
+        source: '/auth/:path*',
+        headers: [
+          { key: 'Content-Security-Policy', value: "frame-ancestors 'none'" },
+        ],
+      },
+      {
+        source: '/api/auth/:path*',
+        headers: [
+          { key: 'Content-Security-Policy', value: "frame-ancestors 'none'" },
+        ],
+      },
       // Safety net for framework-built responses of the hosted MCP server (a 404 or a 405 the
       // framework answers itself); the route wrapper sets the same values on its own responses.
       {

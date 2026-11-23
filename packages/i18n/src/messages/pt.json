@@ -1,4 +1,12 @@
 {
+  "StaleDeployment": {
+    "reloadingTitle": "Estivemos a trabalhar por aqui!",
+    "reloading": "Só um momento, enquanto atualizamos a página…",
+    "title": "Ops, estivemos a trabalhar por aqui!",
+    "description": "Acabámos de fazer alterações na página. Atualize quando puder.",
+    "refresh": "Atualizar",
+    "dismiss": "Fechar"
+  },
   "MemberHome": {
     "panelSpaces": "Espaços e pessoas",
     "spacesRail": "Os teus espaços",
@@ -5958,7 +5966,7 @@
       "scopes": {
         "spacesRead": {
           "title": "Ler os spaces do Hypha",
-          "detail": "Ver os spaces que pode ver no Hypha: os seus detalhes, membros e atividade pública."
+          "detail": "Só leitura: esta app pode ler tudo o que você vê nos seus spaces no Hypha: os spaces, quem é membro, propostas e votos (sinais e quests estão a chegar). Não pode alterar nada. O que lê é enviado ao fornecedor da app de IA, que o receberá."
         },
         "agreementsVote": {
           "title": "Preparar votos para aprovar",

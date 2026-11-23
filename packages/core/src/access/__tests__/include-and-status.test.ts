@@ -109,7 +109,7 @@ describe('buildProposalTally', () => {
     ).toBe(false);
   });
 
-  it('handles zero snapshot and no votes without dividing by zero', () => {
+  it('zero snapshot: follows the contract (quorum and unity reached), no division by zero', () => {
     const t = buildProposalTally(
       {
         ...core,
@@ -121,8 +121,18 @@ describe('buildProposalTally', () => {
       150,
     );
     expect(t.quorum.progressPercent).toBe(0);
-    expect(t.quorum.reached).toBe(false);
+    expect(t.quorum.reached).toBe(true);
     expect(t.unity.progressPercent).toBe(0);
+    expect(t.unity.reached).toBe(true);
+  });
+
+  it('a positive snapshot with no votes is still not reached', () => {
+    const t = buildProposalTally(
+      { ...core, yesVotes: 0n, noVotes: 0n, totalVotingPowerAtSnapshot: 20n },
+      space,
+      150,
+    );
+    expect(t.quorum.reached).toBe(false);
     expect(t.unity.reached).toBe(false);
   });
 

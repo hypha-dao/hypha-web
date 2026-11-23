@@ -1,4 +1,12 @@
 {
+  "StaleDeployment": {
+    "reloadingTitle": "Her har vi jobbet!",
+    "reloading": "Et øyeblikk, vi friskner opp siden…",
+    "title": "Oops, her har vi jobbet!",
+    "description": "Vi har nettopp gjort endringer på siden. Oppdater når det passer.",
+    "refresh": "Oppdater",
+    "dismiss": "Lukk"
+  },
   "MemberHome": {
     "panelSpaces": "Rom og mennesker",
     "spacesRail": "Dine rom",
@@ -5964,7 +5972,7 @@
       "scopes": {
         "spacesRead": {
           "title": "Lese Hypha-spaces",
-          "detail": "Se spacene du kan se på Hypha: detaljer, medlemmer og offentlig aktivitet."
+          "detail": "Bare lesing: denne appen kan lese alt du kan se i spacene dine på Hypha: spacene, hvem som er medlem, forslag og stemmer (signaler og quests kommer). Den kan ikke endre noe. Det den leser, sendes til leverandøren av AI-appen, som mottar det."
         },
         "agreementsVote": {
           "title": "Forberede stemmer du kan godkjenne",

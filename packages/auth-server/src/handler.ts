@@ -10,6 +10,7 @@ import { redactingLog } from './redact';
 import { corsPreflight, withCors } from './cors';
 import { authServerErrorPage } from './error-page';
 import { guardRegistration, narrowRegisteredClient } from './registration';
+import { logOnboardingStep, onboardingStepOf } from './onboarding-log';
 
 /**
  * The only HTTP surface the server exposes. Everything else Better Auth ships (client
@@ -76,8 +77,13 @@ export function createAuthServerHandler(
       )
     )
       return notFound();
+    // One allow-listed log line per authorize / consent / token step (see onboarding-log.ts),
+    // also when the step fails with a server error.
+    const step = onboardingStepOf(url.pathname, method);
+    const requestCopy = step ? request.clone() : null;
+    let server: AuthServer | undefined;
     try {
-      const server = getServer(config);
+      server = getServer(config);
       const response =
         url.pathname === WELL_KNOWN
           ? await metadataWithoutDisabledEndpoints(
@@ -90,22 +96,34 @@ export function createAuthServerHandler(
           : url.pathname === `${AUTH_SERVER_API_BASE_PATH}/oauth2/consent`
           ? await handleConsent(server, request)
           : await server.auth.handler(request);
+      if (step && requestCopy)
+        await logOnboardingStep({
+          step,
+          requestCopy,
+          response,
+          pool: server.pool,
+        });
       return withCors(request, response, config);
     } catch (error) {
       // Never echo the error: it can carry request data.
       redactingLog('error', 'request failed', error);
+      const failure = new Response(JSON.stringify({ error: 'server_error' }), {
+        status: 500,
+        headers: {
+          'content-type': 'application/json',
+          'cache-control': 'no-store',
+        },
+      });
+      // Only the step and the error code are logged, never the exception or the request.
+      if (step && requestCopy)
+        await logOnboardingStep({
+          step,
+          requestCopy,
+          response: failure.clone(),
+          pool: server?.pool,
+        });
       // Through withCors like every other answer, so a browser client can read the error.
-      return withCors(
-        request,
-        new Response(JSON.stringify({ error: 'server_error' }), {
-          status: 500,
-          headers: {
-            'content-type': 'application/json',
-            'cache-control': 'no-store',
-          },
-        }),
-        config,
-      );
+      return withCors(request, failure, config);
     }
   };
 }

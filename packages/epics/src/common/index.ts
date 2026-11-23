@@ -245,6 +245,7 @@ export {
   useGlobalCallDock,
 } from './global-call-dock-context';
 export { GlobalCallDockOverlay } from './global-call-dock-overlay';
+export { isProposalCreateFormPath } from './proposal-form-navigation';
 export {
   FormattedLocalDateTime,
   SpaceCreatedOnText,
