@@ -112,6 +112,20 @@ async function getViewerFacts(
 }
 
 /**
+ * The DB-independent set of web3 space ids the address belongs to directly: a member, or a
+ * listed delegate with at least one member delegator (the rule `readMemberAndDelegate` applies
+ * per space). Same cached facts as the access rule, so a list that was just filtered adds no
+ * chain read. `null` = the facts could not be read; a caller that needs the answer itself
+ * (not just a hiding rule) must fail on it.
+ */
+export async function getViewerSpaceIds(
+  address: `0x${string}`,
+): Promise<Set<number> | null> {
+  const facts = await getViewerFacts(address);
+  return facts ? new Set(facts.directSpaceIds) : null;
+}
+
+/**
  * DB organisation grouping, read once: an organisation is the whole tree of
  * the node (same definition as `findAllOrganizationSpacesForNodeById`: climb to
  * the root, take every descendant). Returns web3 space id -> organisation root.
