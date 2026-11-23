@@ -382,6 +382,34 @@ describe('visibility: list spaces', () => {
       );
     });
 
+    it('fails instead of under-reporting when a delegate space cannot be read', async () => {
+      memberOf(1);
+      chain.readDelegateSpaceIds.mockResolvedValue([2]);
+      // the batch reads drop the failed space: no entry at all (not an empty list)
+      chain.readSpaceMembersBatch.mockResolvedValue(
+        new Map([[1, { members: [ADDR], executor: '0xe' }]]),
+      );
+      chain.readDelegatorsBatch.mockResolvedValue(new Map());
+      expect(await listSpaces({ mine: true }, mcpUser(), { db })).toMatchObject(
+        { ok: false, code: 'access_check_failed' },
+      );
+      // the plain list is not affected by the incomplete delegate read
+      expect(await slugsOf(mcpUser())).toEqual(['s1', 's2']);
+    });
+
+    it('an explicit empty delegator list is a valid non-membership, not a failure', async () => {
+      memberOf(1);
+      chain.readDelegateSpaceIds.mockResolvedValue([2]);
+      chain.readSpaceMembersBatch.mockResolvedValue(
+        new Map([
+          [1, { members: [ADDR], executor: '0xe' }],
+          [2, { members: ['0xother'], executor: '0xe2' }],
+        ]),
+      );
+      chain.readDelegatorsBatch.mockResolvedValue(new Map([[2, []]]));
+      expect(await slugsOf(mcpUser(), { mine: true })).toEqual(['s1']);
+    });
+
     it('needs a verified user with a wallet address', async () => {
       expect(
         await listSpaces({ mine: true }, { kind: 'guest' } as never, { db }),
