@@ -72,6 +72,12 @@ type ViewerFacts = {
   directSpaceIds: Set<number>;
   /** Lowercase executor addresses of the spaces the viewer is a member of. */
   memberSpaceExecutors: Set<string>;
+  /**
+   * False when a listed delegate space could not be read, so `directSpaceIds` may miss it.
+   * The access rule ignores this (it only ever hides); a caller that needs the full answer
+   * (`getViewerSpaceIds`) must not.
+   */
+  delegateReadsComplete: boolean;
 };
 
 async function getViewerFacts(
@@ -93,7 +99,11 @@ async function getViewerFacts(
     ]);
 
     const direct = new Set(memberIds);
+    let delegateReadsComplete = true;
     for (const id of delegateIds) {
+      if (!delegateDetails.has(id) || !delegators.has(id)) {
+        delegateReadsComplete = false;
+      }
       const members = new Set(delegateDetails.get(id)?.members ?? []);
       if ((delegators.get(id) ?? []).some((d) => members.has(d))) {
         direct.add(id);
@@ -105,10 +115,37 @@ async function getViewerFacts(
       if (executor) executors.add(executor);
     }
     return new Map([
-      [key, { directSpaceIds: direct, memberSpaceExecutors: executors }],
+      [
+        key,
+        {
+          directSpaceIds: direct,
+          memberSpaceExecutors: executors,
+          delegateReadsComplete,
+        },
+      ],
     ]);
   });
   return got.get(key) ?? null;
+}
+
+/**
+ * The DB-independent set of web3 space ids the address belongs to directly: a member, or a
+ * listed delegate with at least one member delegator (the rule `readMemberAndDelegate` applies
+ * per space). Same cached facts as the access rule, so a list that was just filtered adds no
+ * chain read. `null` = the facts could not be read. `complete` is false when a listed
+ * delegate space could not be read, so `ids` may miss it; a caller that needs the full answer
+ * (not just a hiding rule) must fail on that.
+ */
+export async function getViewerSpaceIds(
+  address: `0x${string}`,
+): Promise<{ ids: Set<number>; complete: boolean } | null> {
+  const facts = await getViewerFacts(address);
+  return facts
+    ? {
+        ids: new Set(facts.directSpaceIds),
+        complete: facts.delegateReadsComplete,
+      }
+    : null;
 }
 
 /**

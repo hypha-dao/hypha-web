@@ -3,6 +3,10 @@
 Every change to `index.ts` in this folder needs a `DESCRIPTIONS_VERSION` bump, a snapshot
 update and a line here (K31).
 
+## 1.4.0
+
+- `hypha_list_spaces`: new `mine` input (default false). With `mine: true` only the spaces where the user is a member or a delegate are returned, still limited to what the user can see; `total` counts that set. The tool text says when to use it (to answer which spaces the user belongs to) instead of checking spaces one by one.
+
 ## 1.3.0
 
 - Text that stands alone for an assistant outside any Hypha repo: the server instructions now say what a sub-space is, that `slug` is the identifier and `title` the display name, how members and delegates differ, and what "visible to you" means; every tool that takes a slug says never to guess it and to find it with `hypha_list_spaces` and `query` first; `hypha_list_spaces` says how to find a space by name, to ask the user when several match, and what `total` counts; `hypha_get_my_membership` says `isMember` and `isDelegate` are independent. The word "quest" now appears only where the `label` is explained.

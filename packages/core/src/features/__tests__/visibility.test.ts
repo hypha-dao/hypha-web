@@ -277,6 +277,179 @@ describe('visibility: list spaces', () => {
     const data = await listed(mcpUser());
     expect(JSON.stringify(data)).not.toContain('0x');
   });
+
+  describe('mine', () => {
+    const memberOf = (...ids: number[]) => {
+      chain.readMemberSpaceIds.mockResolvedValue(ids);
+      chain.readSpaceMembersBatch.mockResolvedValue(
+        new Map(ids.map((id) => [id, { members: [ADDR], executor: '0xe' }])),
+      );
+    };
+
+    it('returns the spaces the person is a member of, and only those', async () => {
+      memberOf(1, 4);
+      expect(await slugsOf(mcpUser(), { mine: true })).toEqual(['s1', 's4']);
+      // without the switch the list is unchanged (public, network, plus their space-level space)
+      expect(await slugsOf(mcpUser())).toEqual(['s1', 's2', 's4']);
+    });
+
+    it('includes a space where the person is a delegate with a member delegator', async () => {
+      memberOf(1);
+      chain.readDelegateSpaceIds.mockResolvedValue([2]);
+      chain.readSpaceMembersBatch.mockResolvedValue(
+        new Map([
+          [1, { members: [ADDR], executor: '0xe' }],
+          [2, { members: ['0xdelegator'], executor: '0xe2' }],
+        ]),
+      );
+      chain.readDelegatorsBatch.mockResolvedValue(
+        new Map([[2, ['0xdelegator']]]),
+      );
+      expect(await slugsOf(mcpUser(), { mine: true })).toEqual(['s1', 's2']);
+    });
+
+    it('excludes a delegate whose delegator is not a member, and spaces where only another person is a member', async () => {
+      chain.readDelegateSpaceIds.mockResolvedValue([2]);
+      chain.readSpaceMembersBatch.mockResolvedValue(
+        new Map([[2, { members: ['0xother'], executor: '0xe2' }]]),
+      );
+      chain.readDelegatorsBatch.mockResolvedValue(
+        new Map([[2, ['0xstranger']]]),
+      );
+      // s1 and s2 are visible to the person; another person is a member of s2
+      expect(await slugsOf(mcpUser(), { mine: true })).toEqual([]);
+      expect(await slugsOf(mcpUser())).toEqual(['s1', 's2']);
+    });
+
+    it('never lists a space the policy hides, even when the person is a member', async () => {
+      memberOf(1, 4);
+      // a grant to s1 only: s4 stays hidden although it is theirs
+      expect(await slugsOf(mcpUser([1]), { mine: true })).toEqual(['s1']);
+      // an unreadable level hides the space as well
+      clearChainFactsCaches();
+      chain.readSpaceVisibilityBatch.mockResolvedValue(
+        levelsOf({ 1: 0, 2: 1, 3: 2, 5: 2 }),
+      );
+      expect(await slugsOf(mcpUser(), { mine: true })).toEqual(['s1']);
+      // a member id the list does not contain adds nothing
+      clearChainFactsCaches();
+      memberOf(1, 99);
+      expect(await slugsOf(mcpUser(), { mine: true })).toEqual(['s1']);
+    });
+
+    it('combines with the archived and empty switches and with ordering', async () => {
+      all.spaces = [
+        spaceRow(1, 1),
+        { ...spaceRow(2, 2), flags: ['archived'] },
+        { ...spaceRow(4, 4), memberCount: 0 },
+      ];
+      memberOf(1, 2, 4);
+      const shown = (input: object) =>
+        slugsOf(mcpUser(), { mine: true, ...input });
+      expect(await shown({})).toEqual(['s1', 's2', 's4']);
+      expect(await shown({ omitFlagArchived: true })).toEqual(['s1', 's4']);
+      expect(await shown({ omitFlagArchived: true, omitEmpty: true })).toEqual([
+        's1',
+      ]);
+      expect(await shown({ titleOrder: 'desc' })).toEqual(['s4', 's2', 's1']);
+    });
+
+    it('total and the offset cursor describe the narrowed set across pages', async () => {
+      memberOf(1, 2, 4);
+      const page = (offset: number) =>
+        listed(mcpUser(), { mine: true, paging: { offset, limit: 2 } });
+      const first = await page(0);
+      expect(first.total).toBe(3);
+      expect(first.items.map((s) => s.slug)).toEqual(['s1', 's2']);
+      const second = await page(2);
+      expect(second.total).toBe(3);
+      expect(second.items.map((s) => s.slug)).toEqual(['s4']);
+    });
+
+    it('reads the membership once for the whole list, not once per space', async () => {
+      memberOf(1, 4);
+      await listed(mcpUser(), { mine: true });
+      expect(chain.readMemberSpaceIds).toHaveBeenCalledTimes(1);
+      expect(chain.readDelegateSpaceIds).toHaveBeenCalledTimes(1);
+      expect(chain.readMemberAndDelegate).not.toHaveBeenCalled();
+    });
+
+    it('fails the call when the membership cannot be read (never an empty list)', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      chain.readMemberSpaceIds.mockRejectedValue(new Error('rpc'));
+      expect(await listSpaces({ mine: true }, mcpUser(), { db })).toMatchObject(
+        { ok: false, code: 'access_check_failed' },
+      );
+    });
+
+    it('with authoritative, fails instead of under-reporting when a delegate space cannot be read', async () => {
+      memberOf(1);
+      chain.readDelegateSpaceIds.mockResolvedValue([2]);
+      // the batch reads drop the failed space: no entry at all (not an empty list)
+      chain.readSpaceMembersBatch.mockResolvedValue(
+        new Map([[1, { members: [ADDR], executor: '0xe' }]]),
+      );
+      chain.readDelegatorsBatch.mockResolvedValue(new Map());
+      const strict = { mine: true, authoritative: true };
+      expect(await listSpaces(strict, mcpUser(), { db })).toMatchObject({
+        ok: false,
+        code: 'access_check_failed',
+      });
+      // authoritative is its own switch: it fails the plain list too
+      expect(
+        await listSpaces({ authoritative: true }, mcpUser(), { db }),
+      ).toMatchObject({ ok: false, code: 'access_check_failed' });
+      // without it, mine filters what could be read (the filter and the guarantee are separate)
+      expect(await slugsOf(mcpUser(), { mine: true })).toEqual(['s1']);
+      // the plain list is not affected by the incomplete delegate read
+      expect(await slugsOf(mcpUser())).toEqual(['s1', 's2']);
+    });
+
+    it('an explicit empty delegator list is a valid non-membership, not a failure', async () => {
+      memberOf(1);
+      chain.readDelegateSpaceIds.mockResolvedValue([2]);
+      chain.readSpaceMembersBatch.mockResolvedValue(
+        new Map([
+          [1, { members: [ADDR], executor: '0xe' }],
+          [2, { members: ['0xother'], executor: '0xe2' }],
+        ]),
+      );
+      chain.readDelegatorsBatch.mockResolvedValue(new Map([[2, []]]));
+      expect(
+        await slugsOf(mcpUser(), { mine: true, authoritative: true }),
+      ).toEqual(['s1']);
+    });
+
+    it('needs a verified user with a wallet address', async () => {
+      expect(
+        await listSpaces({ mine: true }, { kind: 'guest' } as never, { db }),
+      ).toMatchObject({ ok: false, code: 'unauthenticated' });
+      const noAddress = {
+        kind: 'user',
+        person: { id: 1 },
+        address: null,
+        via: via(),
+      } as never;
+      expect(await listSpaces({ mine: true }, noAddress, { db })).toMatchObject(
+        { ok: false, code: 'invalid_identity' },
+      );
+    });
+
+    it('keeps the visible spaces for resolving a parent slug', async () => {
+      memberOf(4);
+      const data = await listed(mcpUser(), { mine: true });
+      expect(data.items.map((s) => s.slug)).toEqual(['s4']);
+      expect([...data.slugById.values()].sort()).toEqual(['s1', 's2', 's4']);
+    });
+
+    it('output contains no wallet address', async () => {
+      all.spaces = [{ ...spaceRow(1, 1), memberAddresses: [ADDR] }];
+      memberOf(1);
+      const data = await listed(mcpUser(), { mine: true });
+      expect(data.items).toHaveLength(1);
+      expect(JSON.stringify(data.items)).not.toContain('0x');
+    });
+  });
 });
 
 describe('visibility: get my membership', () => {

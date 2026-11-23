@@ -167,6 +167,8 @@ describe('hypha_list_spaces', () => {
         omitSandbox: false,
         omitFlagArchived: true,
         omitEmpty: true,
+        mine: false,
+        authoritative: false,
         titleOrder: 'asc',
         paging: { offset: 0, limit: 20 },
         with: { governance: true, visibility: false },
@@ -178,6 +180,7 @@ describe('hypha_list_spaces', () => {
       parentOnly: true,
       includeArchived: true,
       includeEmpty: true,
+      mine: true,
       include: ['visibility'],
       order: [{ field: 'title', direction: 'desc' }],
       pageSize: 5,
@@ -188,6 +191,8 @@ describe('hypha_list_spaces', () => {
         parentOnly: true,
         omitFlagArchived: false,
         omitEmpty: false,
+        mine: true,
+        authoritative: true,
         titleOrder: 'desc',
         paging: { offset: 0, limit: 5 },
         with: { governance: true, visibility: true },
@@ -249,6 +254,19 @@ describe('hypha_list_spaces', () => {
     const { deps } = makeDeps();
     const r = await call(deps, 'hypha_list_spaces', { cursor: 'not-a-cursor' });
     expect(r.isError).toBe(true);
+  });
+
+  it('mine accepts only a boolean', async () => {
+    const listSpaces = vi.fn(async () => ({
+      ok: true as const,
+      data: emptyData,
+    }));
+    const { deps } = makeDeps({}, { listSpaces } as never);
+    const bad = await call(deps, 'hypha_list_spaces', { mine: 'yes' }).catch(
+      (e) => ({ thrown: e }),
+    );
+    expect('thrown' in bad || (bad as ToolResponse).isError).toBeTruthy();
+    expect(listSpaces).not.toHaveBeenCalled();
   });
 
   it('rejects out-of-range input at the schema', async () => {
