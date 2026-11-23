@@ -178,10 +178,10 @@ export function SignalFeedRow({
       data-testid="signal-card"
       data-signal-slug={signal.slug ?? undefined}
       data-member-signal-row=""
-      className="@container craft-card-interactive relative flex flex-col gap-3 border-b border-border px-0 py-[18px]"
+      className="@container craft-row-interactive relative flex flex-col border-b border-border px-0 py-[18px]"
     >
-      <div className="flex min-w-0 items-start gap-3.5">
-        <div className="relative z-10 w-[56px] shrink-0">
+      <div className="flex min-w-0 items-start gap-[14px]">
+        <div className="relative z-10 w-[56px] shrink-0 pt-0.5">
           <ActionGate kind="upvote" fullAppPath="" label={null}>
             <SignalUpvoteButton
               slug={signal.slug}

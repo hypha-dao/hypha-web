@@ -34,7 +34,10 @@ type VoteArrowProps = {
   onClick: () => void;
 };
 
-/** Plain arrows for the member stack. Keep the outlined cell — no filled block. */
+/**
+ * Member stack arrows — one outlined cell, quiet ink.
+ * Active state is colour only (no filled slab, no heavier stroke).
+ */
 const StackVoteArrow = React.forwardRef<HTMLButtonElement, VoteArrowProps>(
   function StackVoteArrow(
     { direction, selected, label, disabled, allocates, expanded, onClick },
@@ -53,10 +56,8 @@ const StackVoteArrow = React.forwardRef<HTMLButtonElement, VoteArrowProps>(
         aria-expanded={allocates ? expanded : undefined}
         disabled={disabled}
         className={cn(
-          'flex h-5 w-full items-center justify-center rounded-none border-0 bg-transparent p-0',
-          active
-            ? 'text-foreground'
-            : 'text-muted-foreground hover:text-foreground',
+          'grid h-[22px] w-full place-items-center rounded-none border-0 bg-transparent p-0 opacity-70 transition-opacity hover:opacity-100',
+          active ? 'text-foreground opacity-100' : 'text-foreground',
           'disabled:opacity-40',
         )}
         onClick={(event) => {
@@ -64,11 +65,7 @@ const StackVoteArrow = React.forwardRef<HTMLButtonElement, VoteArrowProps>(
           onClick();
         }}
       >
-        <Icon
-          className="size-3"
-          strokeWidth={active ? 2.25 : 1.5}
-          aria-hidden
-        />
+        <Icon className="size-4" strokeWidth={1.5} aria-hidden />
       </button>
     );
   },
@@ -192,7 +189,7 @@ export function SignalUpvoteCellChrome({
       className={cn(
         'rounded-none bg-transparent tabular-nums leading-none',
         layout === 'stack'
-          ? 'flex h-5 w-full items-center justify-center border-y border-border px-1 text-center text-[11px] font-semibold leading-none text-foreground'
+          ? 'grid h-[22px] w-full place-items-center px-1 text-center text-[13px] font-bold leading-none text-foreground'
           : 'min-w-4 px-1.5 text-1 font-medium',
         layout === 'stack'
           ? null
@@ -238,16 +235,13 @@ export function SignalUpvoteCellChrome({
       data-vote-direction={selected ?? 'none'}
       {...groupProps}
       className={cn(
-        'inline-flex rounded-none border bg-transparent',
+        'inline-flex rounded-none border border-border bg-transparent',
         layout === 'stack'
-          ? 'w-[56px] min-w-[56px] flex-col items-stretch overflow-hidden border-border/80 bg-background py-0.5'
+          ? // Energy-community signals stack: one outline, 56px column, no fill.
+            'w-[56px] min-w-[56px] flex-col items-stretch overflow-hidden py-0.5'
           : // Theme spacing-9 is 64px — lock the row control to the 36px reference.
             'h-[36px] items-center px-0.5',
-        layout === 'stack'
-          ? null
-          : selected
-          ? 'border-accent-8'
-          : 'border-border',
+        layout === 'stack' ? null : selected ? 'border-accent-8' : null,
         className,
       )}
     >
