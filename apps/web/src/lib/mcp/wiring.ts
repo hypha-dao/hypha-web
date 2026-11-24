@@ -11,6 +11,7 @@ import {
   getSpace,
   getSpaceDhoPath,
   listProposals,
+  listQuests,
   listSignals,
   listSpaces,
   resolveCaller,
@@ -51,6 +52,7 @@ export const mcpHandlers = createMcpRequestHandlers({
     getSpace: (input, caller) => getSpace(input, caller, { db }),
     listProposals: (input, caller) => listProposals(input, caller, { db }),
     listSignals: (input, caller) => listSignals(input, caller, { db }),
+    listQuests: (input, caller) => listQuests(input, caller, { db }),
     getMyVote: ({ spaceSlug, documentSlug }, caller) =>
       getMyVote({ spaceSlug, documentSlug, caller }, { db }),
     getMyMembership: ({ spaceSlug }, caller) =>
@@ -69,6 +71,10 @@ export const mcpHandlers = createMcpRequestHandlers({
       `${getSpaceDhoPath(spaceSlug, 'coherence')}?signal=${encodeURIComponent(
         signalSlug,
       )}`,
+    ),
+  questUrl: (spaceSlug, questSlug) =>
+    getAbsoluteAppUrl(
+      getSpaceDhoPath(spaceSlug, `quests/${encodeURIComponent(questSlug)}`),
     ),
   slot,
 });

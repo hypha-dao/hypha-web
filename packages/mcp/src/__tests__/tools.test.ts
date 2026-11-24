@@ -1042,12 +1042,14 @@ describe('every tool: refusals, deadline, errors', () => {
       ['hypha_get_my_vote', { spaceSlug: 'alpha', documentSlug: 'p1' }],
       ['hypha_get_my_membership', { spaceSlug: 'alpha' }],
       ['hypha_list_signals', { spaceSlug: 'alpha' }],
+      ['hypha_list_quests', { spaceSlug: 'alpha' }],
     ] as const) {
       const r = await call(deps, name, args);
       expect(r.isError).toBe(true);
       expect(r.content[0]!.text).toContain('No Hypha profile');
     }
     expect(logs.map((l) => l.outcome)).toEqual([
+      'no_profile',
       'no_profile',
       'no_profile',
       'no_profile',
