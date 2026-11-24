@@ -78,6 +78,10 @@ function setup(
     spaceUrl: (slug) => `https://app.example/en/dho/${slug}/overview`,
     proposalUrl: (space, slug) =>
       `https://app.example/en/dho/${space}/agreements/proposal/${slug}`,
+    signalUrl: (space, slug) =>
+      `https://app.example/en/dho/${space}/coherence?signal=${slug}`,
+    questUrl: (space, slug) =>
+      `https://app.example/en/dho/${space}/quests/${slug}`,
     keys: issuer.keys as never,
     log: (e) => logs.push(e),
     ...over,
@@ -255,6 +259,8 @@ describe('the real SDK client against the handler', () => {
       'hypha_list_proposals',
       'hypha_get_my_membership',
       'hypha_get_my_vote',
+      'hypha_list_signals',
+      'hypha_list_quests',
     ]);
 
     const list = await client.callTool({

@@ -3,6 +3,14 @@
 Every change to `index.ts` in this folder needs a `DESCRIPTIONS_VERSION` bump, a snapshot
 update and a line here (K31).
 
+## 1.6.0
+
+- New tool `hypha_list_quests`: the quests of one space (commitments, with goal, scope, milestones, deliverables, members, health and the linked proposal). The text explains that `status` is as stored and a read never changes it, the `mine` and `text` inputs, and `includeProposalStatus`. The server instructions now say that quests carry a `url` too.
+
+## 1.5.0
+
+- New tool `hypha_list_signals`: the signals of one space, with filters, a summary of the whole filtered set and a legacy `taskFields` group. The text says a signal commits nobody and points to quests for commitments. The server instructions now say that signals carry a `url` too.
+
 ## 1.4.0
 
 - `hypha_list_spaces`: new `mine` input (default false). With `mine: true` only the spaces where the user is a member or a delegate are returned, still limited to what the user can see; `total` counts that set. The tool text says when to use it (to answer which spaces the user belongs to) instead of checking spaces one by one.

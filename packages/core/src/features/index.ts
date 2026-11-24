@@ -3,3 +3,5 @@ export * from './get-my-membership';
 export * from './get-space';
 export * from './list-proposals';
 export * from './get-my-vote';
+export * from './list-signals';
+export * from './list-quests';

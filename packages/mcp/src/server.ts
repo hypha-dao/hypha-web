@@ -12,6 +12,8 @@ import { registerGetSpace } from './tools/get-space';
 import { registerGetMyMembership } from './tools/get-my-membership';
 import { registerGetMyVote } from './tools/get-my-vote';
 import { registerListProposals } from './tools/list-proposals';
+import { registerListQuests } from './tools/list-quests';
+import { registerListSignals } from './tools/list-signals';
 import { registerListSpaces } from './tools/list-spaces';
 
 const REGISTRARS: Record<ToolName, (server: McpServer, deps: McpDeps) => void> =
@@ -21,6 +23,8 @@ const REGISTRARS: Record<ToolName, (server: McpServer, deps: McpDeps) => void> =
     hypha_list_proposals: registerListProposals,
     hypha_get_my_vote: registerGetMyVote,
     hypha_get_my_membership: registerGetMyMembership,
+    hypha_list_signals: registerListSignals,
+    hypha_list_quests: registerListQuests,
   };
 
 /**

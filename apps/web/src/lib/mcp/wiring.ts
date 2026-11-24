@@ -11,6 +11,8 @@ import {
   getSpace,
   getSpaceDhoPath,
   listProposals,
+  listQuests,
+  listSignals,
   listSpaces,
   resolveCaller,
 } from '@hypha-platform/core/server';
@@ -49,6 +51,8 @@ export const mcpHandlers = createMcpRequestHandlers({
     listSpaces: (input, caller) => listSpaces(input, caller, { db }),
     getSpace: (input, caller) => getSpace(input, caller, { db }),
     listProposals: (input, caller) => listProposals(input, caller, { db }),
+    listSignals: (input, caller) => listSignals(input, caller, { db }),
+    listQuests: (input, caller) => listQuests(input, caller, { db }),
     getMyVote: ({ spaceSlug, documentSlug }, caller) =>
       getMyVote({ spaceSlug, documentSlug, caller }, { db }),
     getMyMembership: ({ spaceSlug }, caller) =>
@@ -61,6 +65,16 @@ export const mcpHandlers = createMcpRequestHandlers({
         spaceSlug,
         `agreements/proposal/${encodeURIComponent(proposalSlug)}`,
       ),
+    ),
+  signalUrl: (spaceSlug, signalSlug) =>
+    getAbsoluteAppUrl(
+      `${getSpaceDhoPath(spaceSlug, 'coherence')}?signal=${encodeURIComponent(
+        signalSlug,
+      )}`,
+    ),
+  questUrl: (spaceSlug, questSlug) =>
+    getAbsoluteAppUrl(
+      getSpaceDhoPath(spaceSlug, `quests/${encodeURIComponent(questSlug)}`),
     ),
   slot,
 });

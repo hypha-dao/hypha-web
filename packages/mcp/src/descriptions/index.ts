@@ -5,7 +5,7 @@
  * through a reviewed PR with a snapshot update (`__tests__/descriptions.snapshot.test.ts`),
  * a `DESCRIPTIONS_VERSION` bump and a line in `CHANGELOG.md`.
  */
-export const DESCRIPTIONS_VERSION = '1.4.0';
+export const DESCRIPTIONS_VERSION = '1.6.0';
 
 export const SERVER_NAME = 'hypha';
 export const SERVER_TITLE = 'Hypha';
@@ -20,7 +20,7 @@ export const SERVER_INSTRUCTIONS = [
   'Each space has a `slug`, its identifier, which the other tools need, and a `title`, its display name. Proposals and agreements inside a space have slugs too. Never guess a slug: find it with `hypha_list_spaces` and its `query` first.',
   'Members and delegates differ: a member belongs to the space, and a delegate can vote for members who delegated to them. A person can be one, both or neither.',
   'Everything here is read-only and personalised: "visible to you" means what the signed-in person may see in Hypha and has allowed this app to see, so another person gets different results.',
-  'Every space and proposal carries a `url` to its Hypha page; share that link with the user.',
+  'Every space, proposal, signal and quest carries a `url` to its Hypha page; share that link with the user.',
   UNTRUSTED_LINE,
 ].join(' ');
 
@@ -31,6 +31,8 @@ export const TOOL_ORDER = [
   'hypha_list_proposals',
   'hypha_get_my_membership',
   'hypha_get_my_vote',
+  'hypha_list_signals',
+  'hypha_list_quests',
 ] as const;
 export type ToolName = (typeof TOOL_ORDER)[number];
 
@@ -138,6 +140,84 @@ export const TOOLS = {
     ].join(' '),
     params: {
       spaceSlug: 'The space slug, as returned by `hypha_list_spaces`.',
+    },
+  },
+  hypha_list_signals: {
+    title: 'List the signals of a space',
+    description: [
+      'List the signals of one Hypha space: what people raised in it, such as a need, a risk, an opportunity or a tension.',
+      'A signal enters a space and signifies something; it commits nobody. It is input that the space discusses and processes. Commitments are quests, which are listed by `hypha_list_quests`, not here.',
+      'Each item has a type, a priority, tags, the number of messages in its discussion, the votes of support it received (`upvotes`; `totalVotingPower` is the net raw voting power) and the user’s own relation to it (`viewer`).',
+      'The `summary` counts the whole filtered set, not only the page: the total, counts by type and priority, and the most used tags. Leave it out with `omitSummary` when only the items matter.',
+      '`total` counts the signals the user may see that match the filters, before paging. Archived signals are left out unless asked for. The default order is by creation date, newest first.',
+      'The `description` of each item defaults to a short excerpt (about 500 characters); use `full` only when you need the whole text, which lowers the page size to 10, and `none` when titles are enough.',
+      'Never guess a slug: find the space with `hypha_list_spaces` and `query` first.',
+      'Results depend on the user’s permissions; a space the user may not see is reported as not found.',
+      'Each item also carries a legacy `taskFields` group, and the inputs `status`, `board`, `assignedToMe` and `overdue` filter on it; ignore both unless the user asks about task-like fields.',
+      'Read-only.',
+      UNTRUSTED_LINE,
+    ].join(' '),
+    fields: {
+      taskFields:
+        'Legacy, from when signals doubled as tasks; kept for the migration period. The task status (and its category), the board, the assignees’ display names, the due date and whether it has passed. Not part of what a signal is.',
+      legacySummary:
+        'Legacy, from when signals doubled as tasks; kept for the migration period: counts by task status and board, overdue and unassigned signals, and the names of the statuses and boards.',
+    },
+    params: {
+      spaceSlug: 'The space slug, as returned by `hypha_list_spaces`.',
+      query:
+        'Keyword to search in titles and descriptions. Omit to list every signal.',
+      type: 'Only signals of this type.',
+      priority: 'Only signals of this priority.',
+      tags: 'Only signals that carry at least one of these tags. Up to 10.',
+      createdByMe: 'Only signals the signed-in user created. Default false.',
+      includeArchived: 'Also return archived signals. Default false.',
+      updatedSince:
+        'Only signals created or changed at or after this moment, as an ISO 8601 date and time, for example `2026-11-01T00:00:00Z`.',
+      order:
+        'Sort order: `mostrecent` (by creation date, the default), `mostupvoted` or `mostmessages`.',
+      description:
+        'How much of each item’s description to return: `none`, `excerpt` (about 500 characters, the default) or `full` (the whole text, up to 4,000 characters). A cut text is flagged in `truncated`. `full` lowers the page size to 10.',
+      omitSummary:
+        'Leave out the `summary` block. Default false (the summary is included).',
+      status:
+        'Legacy, from when signals doubled as tasks: only signals with this task status (a status `slug` as shown in `taskFields`).',
+      board:
+        'Legacy, from when signals doubled as tasks: only signals on this board (a board `slug` as shown in `taskFields`).',
+      assignedToMe:
+        'Legacy, from when signals doubled as tasks: only signals assigned to the signed-in user. Default false.',
+      overdue:
+        'Legacy, from when signals doubled as tasks: only signals whose due date has passed (the due moment is before now). Default false.',
+      cursor: 'Paging cursor: the `nextCursor` of the previous result.',
+      pageSize:
+        'Signals per page, 1 to 50. Default 20. At most 10 when `description` is `full`.',
+    },
+  },
+  hypha_list_quests: {
+    title: 'List the quests of a space',
+    description: [
+      'List the quests of one Hypha space. A quest is a commitment that someone is accountable for, made through the space’s agreement process; it has a goal, a scope, success criteria, milestones, a lead and members. Signals, which commit nobody, are listed by `hypha_list_signals`.',
+      'Each quest carries its `status` as stored (`proposed` while the proposal that commits it is being voted on, then `active`, `paused`, `completed` or `archived`), its health, and the `proposal` that commits it. A read never changes anything, so a quest whose proposal has just passed can still say `proposed` for a short while. For quests that are still `proposed`, set `includeProposalStatus` to see how their vote is going; it costs one extra chain read.',
+      'To answer which quests the user is part of, pass `mine: true`: it returns the quests where the user is the lead or a member.',
+      'The long texts (goal, scope, success criteria and the milestone descriptions) default to a short excerpt of about 500 characters; use `full` only when you need the whole text, which lowers the page size to 5, and `none` when names and structure are enough. Milestones, deliverables and members always come in full. A cut text is flagged in `truncated`.',
+      '`total` counts the quests the user may see that match the filters, before paging; `counts` gives the stored statuses over all the quests of the space (or all of the user’s own with `mine`). Archived quests are left out unless asked for. Drafts that people have not committed yet are never included.',
+      'Never guess a slug: find the space with `hypha_list_spaces` and `query` first. Results depend on the user’s permissions; a space the user may not see is reported as not found.',
+      'Read-only.',
+      UNTRUSTED_LINE,
+    ].join(' '),
+    params: {
+      spaceSlug: 'The space slug, as returned by `hypha_list_spaces`.',
+      status:
+        'Only quests with this stored status: `active`, `proposed`, `paused`, `completed` or `archived`. A quest whose vote failed still has the status `proposed`; see `includeProposalStatus`.',
+      mine: 'Only the quests where the signed-in user is the lead or a member. Quests whose lead or members are listed by name only, without a Hypha profile, are not matched. Default false.',
+      includeArchived:
+        'Also return archived quests. Default false (`status: archived` returns them too).',
+      includeProposalStatus:
+        'For quests with status `proposed`, add the live state of the vote on their proposal: `onVoting`, `accepted`, `rejected` or `withdrawn`. Costs one extra chain read per call. Default false.',
+      text: 'How much of the long texts to return: `none`, `excerpt` (about 500 characters each, the default) or `full` (up to the stored limit, 20,000 characters). `full` lowers the page size to 5.',
+      cursor: 'Paging cursor: the `nextCursor` of the previous result.',
+      pageSize:
+        'Quests per page, 1 to 20. Default 10. At most 5 when `text` is `full`.',
     },
   },
 } as const;

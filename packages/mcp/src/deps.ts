@@ -9,6 +9,10 @@ import type {
   MyVote,
   ListProposalsInput,
   GetSpaceInput,
+  ListSignalsData,
+  ListSignalsInput,
+  ListQuestsData,
+  ListQuestsInput,
 } from '@hypha-platform/core/server';
 
 /**
@@ -45,6 +49,14 @@ export type McpFeatures = {
     input: { spaceSlug: string; documentSlug: string },
     caller: UserCaller,
   ): Promise<{ ok: true; data: MyVote } | Failure>;
+  listSignals(
+    input: ListSignalsInput,
+    caller: UserCaller,
+  ): Promise<{ ok: true; data: ListSignalsData } | Failure>;
+  listQuests(
+    input: ListQuestsInput,
+    caller: UserCaller,
+  ): Promise<{ ok: true; data: ListQuestsData } | Failure>;
   getMyMembership(
     input: { spaceSlug: string },
     caller: UserCaller,
@@ -67,6 +79,10 @@ export type McpDeps = {
   spaceUrl(slug: string): string;
   /** Link to a proposal page, built from the two slugs and the app base URL, never from content. */
   proposalUrl(spaceSlug: string, proposalSlug: string): string;
+  /** Link to a signal on the space's signals page, built from the two slugs and the app base URL, never from content. */
+  signalUrl(spaceSlug: string, signalSlug: string): string;
+  /** Link to a quest page, built from the two slugs and the app base URL, never from content. */
+  questUrl(spaceSlug: string, questSlug: string): string;
   log(entry: ToolCallLog): void;
   /** Per-tool deadline in milliseconds. */
   deadlineMs?: number;
