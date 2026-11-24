@@ -17,13 +17,16 @@ function Pulse({
   className,
   delayMs = 0,
   style,
+  text,
 }: {
   className?: string;
   delayMs?: number;
   style?: React.CSSProperties;
+  text?: boolean;
 }) {
   return (
     <Wave
+      text={text}
       className={cn('rounded-md', className)}
       delayMs={delayMs}
       style={style}
@@ -119,6 +122,186 @@ export function EnergyChartSkeleton({
           style={{ height: `${pct}%` }}
         />
       ))}
+    </div>
+  );
+}
+
+/**
+ * Member energy diagram uses {@link LineChart}, not bars. The mask must
+ * echo the flow plot + legend or the board looks like the old bar chart.
+ */
+export function EnergyLineChartSkeleton({
+  height = 340,
+  className,
+}: {
+  height?: number;
+  className?: string;
+}) {
+  return (
+    <div className={cn('w-full', className)} role="status" aria-busy="true">
+      <div
+        className="relative mx-auto w-full overflow-hidden"
+        style={{ aspectRatio: '720 / 260', maxHeight: height }}
+      >
+        <Wave className="absolute inset-0 rounded-none" />
+        <svg
+          viewBox="0 0 720 260"
+          className="relative h-full w-full"
+          preserveAspectRatio="xMidYMid meet"
+          aria-hidden
+        >
+          {[0, 1, 2, 3, 4].map((row) => {
+            const y = 16 + (214 * row) / 4;
+            return (
+              <line
+                key={row}
+                x1={44}
+                y1={y}
+                x2={704}
+                y2={y}
+                stroke="currentColor"
+                strokeOpacity={0.1}
+                strokeWidth={1}
+              />
+            );
+          })}
+          {[1, 2].map((part) => (
+            <line
+              key={part}
+              x1={44 + (660 * part) / 3}
+              y1={16}
+              x2={44 + (660 * part) / 3}
+              y2={230}
+              stroke="currentColor"
+              strokeOpacity={0.1}
+              strokeWidth={1}
+            />
+          ))}
+          <path
+            d="M60 180 C180 40 280 60 380 120 S560 40 680 80"
+            fill="none"
+            stroke="currentColor"
+            strokeOpacity={0.22}
+            strokeWidth={2.4}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+          <path
+            d="M60 200 C200 120 300 180 380 150 S540 130 680 160"
+            fill="none"
+            stroke="currentColor"
+            strokeOpacity={0.16}
+            strokeWidth={1.6}
+            strokeDasharray="7 4"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+          <path
+            d="M60 140 C200 200 280 40 380 100 S560 210 680 130"
+            fill="none"
+            stroke="currentColor"
+            strokeOpacity={0.12}
+            strokeWidth={1.6}
+            strokeDasharray="1.5 3"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+          <path
+            d="M60 160 C200 100 300 160 380 140 S540 100 680 150"
+            fill="none"
+            stroke="currentColor"
+            strokeOpacity={0.1}
+            strokeWidth={1.5}
+            strokeDasharray="1 2.5"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+          {[80, 380, 680].map((x, index) => (
+            <circle
+              key={x}
+              cx={x}
+              cy={[180, 120, 80][index]}
+              r={3.5}
+              fill="currentColor"
+              fillOpacity={0.2}
+            />
+          ))}
+        </svg>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+        {[0, 1, 2, 3].map((index) => (
+          <div key={index} className="flex items-center gap-2">
+            <Pulse className="h-2 w-7 rounded-none" delayMs={index * 60} />
+            <Pulse text className="h-2.5 w-16" delayMs={index * 60 + 30} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Full member energy board — title metrics, line plot, community row. */
+export function MemberEnergyBoardSkeleton() {
+  return (
+    <div
+      className="flex flex-col gap-4"
+      data-member-energy-skeleton=""
+      role="status"
+      aria-busy="true"
+    >
+      <div className="flex items-end justify-between gap-4">
+        <Pulse text className="h-8 w-56 max-w-[70%]" />
+        <Pulse className="h-9 w-40 shrink-0" delayMs={40} />
+      </div>
+      <div className="border border-border bg-transparent p-4 sm:p-5">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <Pulse text className="h-3 w-28" />
+          <Pulse text className="h-3 w-14" delayMs={40} />
+        </div>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+          {[0, 1, 2].map((index) => (
+            <div key={index} className="min-w-0">
+              <Pulse text className="h-3 w-20" delayMs={index * 50} />
+              <Pulse text className="mt-2 h-9 w-28" delayMs={index * 50 + 30} />
+              <Pulse
+                text
+                className="mt-2 h-3 w-36 max-w-full"
+                delayMs={index * 50 + 60}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="mt-6">
+          <EnergyLineChartSkeleton height={340} />
+        </div>
+        <div className="mt-6 grid grid-cols-1 gap-4 border-t border-border pt-4 sm:grid-cols-3">
+          {[0, 1, 2].map((index) => (
+            <div key={index} className="min-w-0">
+              <Pulse text className="h-3 w-24" delayMs={200 + index * 40} />
+              <Pulse
+                text
+                className="mt-2 h-6 w-20"
+                delayMs={220 + index * 40}
+              />
+              <Pulse
+                text
+                className="mt-2 h-3 w-28"
+                delayMs={240 + index * 40}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="border border-border bg-transparent p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <Pulse text className="h-4 w-48 max-w-full" delayMs={280} />
+            <Pulse text className="mt-2 h-3 w-40 max-w-full" delayMs={300} />
+          </div>
+          <Pulse text className="h-7 w-12 shrink-0" delayMs={290} />
+        </div>
+        <Pulse className="mt-4 h-1.5 w-full rounded-none" delayMs={320} />
+      </div>
     </div>
   );
 }

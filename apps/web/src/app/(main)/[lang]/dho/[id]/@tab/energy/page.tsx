@@ -1,7 +1,7 @@
 import { Locale } from '@hypha-platform/i18n';
 import {
   EnergyScreen,
-  EnergySectionSkeleton,
+  EnergyScreenSkeleton,
   SpaceTabAccessWrapper,
 } from '@hypha-platform/epics';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
@@ -24,7 +24,7 @@ export default async function EnergyPage(props: PageProps) {
       spaceSlug={id}
       pendingFallback={
         <div className="flex w-full min-w-0 flex-col gap-4 py-4">
-          <EnergySectionSkeleton />
+          <EnergyScreenSkeleton />
         </div>
       }
     >

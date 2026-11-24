@@ -16,8 +16,8 @@ import {
 } from './dummy-data';
 import { TimeframeToggle } from './timeframe-toggle';
 import {
-  EnergyChartSkeleton,
-  EnergySectionSkeleton,
+  EnergyLineChartSkeleton,
+  MemberEnergyBoardSkeleton,
 } from './loading-skeletons';
 import { homeTotals } from './member-energy-home-totals';
 
@@ -171,7 +171,7 @@ export function MemberEnergyDiagram({ spaceSlug }: { spaceSlug: string }) {
   const meterPercent = batteryKwh > 0 ? batteryShare : exportedShare;
 
   if (!isLoading && (!data?.enabled || !data.overview)) return null;
-  if (isLoading || !data?.overview) return <EnergySectionSkeleton />;
+  if (isLoading || !data?.overview) return <MemberEnergyBoardSkeleton />;
 
   // "Your solar" must plot the member series. Community production stays in
   // the lower stats — connecting those points to "You make" was the bug.
@@ -286,7 +286,7 @@ export function MemberEnergyDiagram({ spaceSlug }: { spaceSlug: string }) {
 
         <div className="mt-6">
           {telemetryLoading ? (
-            <EnergyChartSkeleton height={280} bars={12} />
+            <EnergyLineChartSkeleton height={340} />
           ) : (
             <LineChart
               series={series}
