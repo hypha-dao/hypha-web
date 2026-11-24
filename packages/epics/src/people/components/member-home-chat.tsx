@@ -29,6 +29,7 @@ import {
   mergeMemberHomeMemory,
   isMemberHomeItemDecline,
   isMemberHomeItemDeferral,
+  isMemberHomeItemLook,
   memberHomeCardForSpeech,
   memberHomeSpeechConflictsWithItem,
   memberHomeThreadItemForMessage,
@@ -614,6 +615,52 @@ function messageExpectsHomeCard(message: HomeMessage): boolean {
     return true;
   }
   return messageHasHomeCardTool(message);
+}
+
+/**
+ * Asks that walk the attention queue (chips, continue, look, set-aside).
+ * Free-flow questions must not show a card skeleton while the reply loads.
+ */
+function homeUserAskExpectsCard(asked: string): boolean {
+  const text = asked.trim();
+  if (!text) return false;
+  if (isMemberHomeItemLook(text)) return true;
+  if (isMemberHomeItemDeferral(text) || isMemberHomeItemDecline(text)) {
+    return true;
+  }
+  if (/carried out the recommended action/i.test(text)) return true;
+  if (/continue with what still needs me/i.test(text)) return true;
+  if (
+    /\b(?:what else is waiting|what(?:'s| is) (?:still )?waiting|what still needs(?: me)?|anything else waiting)\b/i.test(
+      text,
+    )
+  ) {
+    return true;
+  }
+  let chip = text
+    .toLowerCase()
+    .replace(/[’‘]/g, "'")
+    .replace(/\s+/g, ' ');
+  while (chip.startsWith('¿') || chip.startsWith('¡')) chip = chip.slice(1);
+  while (chip.endsWith('.') || chip.endsWith('!') || chip.endsWith('?')) {
+    chip = chip.slice(0, -1);
+  }
+  chip = chip.trim();
+  if (
+    /^(?:where can i be useful|i am on my home|i'm back on my home)\b/.test(
+      chip,
+    )
+  ) {
+    return true;
+  }
+  if (
+    chip === 'what needs a decision' ||
+    chip === 'where is my voice needed' ||
+    /\b(?:what needs a decision|needs a decision)\b/.test(text)
+  ) {
+    return true;
+  }
+  return false;
 }
 
 function scrollerTopForTarget(node: HTMLElement, target: Element) {
@@ -1645,6 +1692,16 @@ export function MemberHomeChat({
     hasError: Boolean(error),
     liveReplyPending,
   });
+  const arrivalExpectsCard = (() => {
+    for (let i = homeMessages.length - 1; i >= 0; i -= 1) {
+      const message = homeMessages[i];
+      if (!message || message.role !== 'user') continue;
+      // Hidden arrival greet walks the queue — card skeleton fits.
+      if (message.metadata?.homeArrival) return true;
+      return homeUserAskExpectsCard(messageText(message));
+    }
+    return false;
+  })();
 
   for (const message of homeMessages) {
     if (seenMotionIds.current.has(message.id)) continue;
@@ -1939,14 +1996,15 @@ export function MemberHomeChat({
             const streamingThis =
               isStreaming &&
               message.id === homeMessages[homeMessages.length - 1]?.id;
-            const listAsk = widgetKindFor(userTextBefore(homeMessages, index));
+            const priorAsk = userTextBefore(homeMessages, index);
+            const listAsk = widgetKindFor(priorAsk);
             const expectsCard =
               message.role === 'assistant' &&
               listAsk !== 'people' &&
               listAsk !== 'spaces' &&
               listAsk !== 'tokens' &&
               (messageExpectsHomeCard(message) ||
-                (streamingThis && cardItems.length > 0));
+                (streamingThis && homeUserAskExpectsCard(priorAsk)));
             // Stream words immediately. A pending card must not blank the bubble.
             const visibleText = text;
             const awaitingCard =
@@ -2223,20 +2281,22 @@ export function MemberHomeChat({
               aria-live="polite"
               aria-busy="true"
             >
-              {/* Card first — then mark + words underneath, same as a live reply. */}
-              <div className="border border-border bg-background p-3 pl-11">
-                <HomeWave
-                  className="w-full"
-                  delayMs={80}
-                  style={{ height: 56 }}
-                />
-                <HomeWave className="mt-3 h-4 w-1/2" delayMs={150} />
-                <HomeWave className="mt-2 h-3 w-2/5" delayMs={200} />
-                <div className="mt-4 flex gap-2">
-                  <HomeWave className="h-10 w-28" delayMs={240} />
-                  <HomeWave className="h-10 w-24" delayMs={290} />
+              {/* Queue walks: card skeleton then mark + words. Free-flow: words only. */}
+              {arrivalExpectsCard ? (
+                <div className="border border-border bg-background p-3 pl-11">
+                  <HomeWave
+                    className="w-full"
+                    delayMs={80}
+                    style={{ height: 56 }}
+                  />
+                  <HomeWave className="mt-3 h-4 w-1/2" delayMs={150} />
+                  <HomeWave className="mt-2 h-3 w-2/5" delayMs={200} />
+                  <div className="mt-4 flex gap-2">
+                    <HomeWave className="h-10 w-28" delayMs={240} />
+                    <HomeWave className="h-10 w-24" delayMs={290} />
+                  </div>
                 </div>
-              </div>
+              ) : null}
               <div className="flex items-start gap-3">
                 <MemberHomeMark className="mt-0.5 h-8 w-8 shrink-0" />
                 <div className="grid min-w-0 flex-1 gap-2">

@@ -571,15 +571,28 @@ describe('formatMemberHomeFacts', () => {
     expect(brief.text).not.toMatch(/Card for this reply:[\s\S]*slug=path/);
   });
 
-  it('still attaches the waiting card when every item was already placed', () => {
+  it('does not attach a waiting card on a free-flow follow-up', () => {
     const brief = formatMemberHomeFacts(home, {
       alreadyShown: ['proposal:path'],
       asked: 'ok',
     });
-    expect(brief.card).toEqual({ kind: 'proposal', slug: 'path' });
-    expect(brief.text).toMatch(/Card for this reply:[\s\S]*slug=path/);
-    expect(brief.text).toMatch(/Do not pretend an item in this list is new/);
-    expect(brief.text).toMatch(/Call show_member_home_item once for that card/);
+    expect(brief.card).toBeNull();
+    expect(brief.text).toMatch(/free conversation/i);
+    expect(brief.text).toMatch(/This turn is not a card/);
+    expect(brief.text).toMatch(/This turn has no card/);
+    expect(brief.text).not.toMatch(/Card for this reply:/);
+  });
+
+  it('answers a free-flow question without an off-context card', () => {
+    const brief = formatMemberHomeFacts(home, {
+      asked: 'I have a question.',
+      prior: 'Earlier we looked at Open the path.',
+    });
+    expect(brief.card).toBeNull();
+    expect(brief.text).toMatch(/free conversation/i);
+    expect(brief.text).toMatch(/Do not call show_member_home_item/);
+    expect(brief.text).toMatch(/answer what they just asked/i);
+    expect(brief.text).not.toMatch(/Card for this reply:/);
   });
 
   it('does not re-brief the same card on a continue when every item was already placed', () => {
