@@ -190,10 +190,10 @@ export function SignalFeedRow({
       data-testid="signal-card"
       data-signal-slug={signal.slug ?? undefined}
       data-member-signal-row=""
-      className="@container craft-row-interactive relative flex flex-col border-b border-border px-0 py-[18px]"
+      className="@container craft-card-interactive relative flex flex-col px-3.5 py-3.5"
     >
-      <div className="flex min-w-0 items-start gap-5 md:gap-6">
-        <div className="relative z-10 w-[56px] shrink-0 pt-0.5">
+      <div className="flex min-w-0 items-center gap-4 md:gap-5">
+        <div className="relative z-10 w-[56px] shrink-0">
           <ActionGate kind="upvote" fullAppPath="" label={null}>
             <SignalUpvoteButton
               slug={signal.slug}
@@ -213,7 +213,7 @@ export function SignalFeedRow({
             />
           </ActionGate>
         </div>
-        <div className="flex min-w-0 flex-1 flex-col gap-1 pr-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
           {/*
             Member list hierarchy (energy-community):
             1 type · name · created  2 title  3 description  4 last reply · comments
@@ -272,7 +272,7 @@ export function SignalFeedRow({
             src={image}
             alt=""
             data-testid="signal-card-image"
-            className="ml-1 h-[96px] w-[96px] shrink-0 self-start object-cover max-md:h-[72px] max-md:w-[72px]"
+            className="h-[120px] w-[120px] shrink-0 object-cover max-md:h-[88px] max-md:w-[88px]"
           />
         ) : null}
       </div>
