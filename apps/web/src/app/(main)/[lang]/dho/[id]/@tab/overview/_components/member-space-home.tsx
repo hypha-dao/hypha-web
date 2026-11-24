@@ -343,13 +343,13 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                             refresh={() => mutate()}
                             archived={signal.archived}
                             summaryState="ready"
-                            className="h-[36px] [&_[data-testid='signal-upvote-cell']]:h-[36px]"
+                            className="shrink-0"
                           />
                         </ActionGate>
                       </div>
                       <button
                         type="button"
-                        className="inline-flex h-[34px] min-h-[34px] shrink-0 items-center gap-1.5 border border-border bg-transparent px-3 text-[12px] text-foreground hover:bg-foreground/5 disabled:opacity-50"
+                        className="box-border inline-flex h-[36px] min-h-[36px] shrink-0 items-center gap-1.5 border border-border bg-transparent px-3 text-[12px] leading-none text-foreground hover:bg-foreground/5 disabled:opacity-50"
                         onClick={openSignalChat}
                         disabled={!slug}
                       >

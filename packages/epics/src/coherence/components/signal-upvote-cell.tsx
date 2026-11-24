@@ -240,8 +240,9 @@ export function SignalUpvoteCellChrome({
         layout === 'stack'
           ? // Energy-community signals stack: one outline, 56px column, no fill.
             'w-[56px] min-w-[56px] flex-col items-stretch overflow-hidden py-0.5'
-          : // Row control: pad the shell so a filled arrow never kisses the border.
-            'h-9 items-center gap-0.5 p-1',
+          : // Row control: 36px shell (matches Open discussion / chrome icons).
+            // Pad so a filled arrow never kisses the border.
+            'box-border h-[36px] min-h-[36px] items-center gap-0.5 p-1',
         layout === 'stack' ? null : selected ? 'border-accent-8' : null,
         className,
       )}

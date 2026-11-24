@@ -693,7 +693,7 @@ export function SignalPage({
                   archived={signal.archived}
                   summaryState={upvoteSummary}
                   layout="row"
-                  className="h-9 shrink-0 [&_[data-testid='signal-upvote-cell']]:h-9"
+                  className="shrink-0"
                 />
               )}
               {humanChatEnabled ? (
@@ -701,7 +701,7 @@ export function SignalPage({
                   type="button"
                   data-testid="signal-open-discussion"
                   onClick={openChat}
-                  className="inline-flex h-9 shrink-0 items-center gap-1.5 border border-border bg-transparent px-3 text-1 font-medium text-foreground hover:bg-foreground/5"
+                  className="box-border inline-flex h-[36px] min-h-[36px] shrink-0 items-center gap-1.5 border border-border bg-transparent px-3 text-1 font-medium leading-none text-foreground hover:bg-foreground/5"
                 >
                   {t('openDiscussion')}
                   <span aria-hidden>→</span>
