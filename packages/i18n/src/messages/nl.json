@@ -5973,7 +5973,7 @@
       "scopes": {
         "spacesRead": {
           "title": "Hypha-spaces lezen",
-          "detail": "Alleen lezen: deze app kan alles lezen wat je in je spaces op Hypha kunt zien: de spaces, wie lid is, voorstellen en stemmen (signalen en quests komen eraan). Ze kan niets wijzigen. Wat ze leest, wordt verstuurd naar de aanbieder van de AI-app, die het ontvangt."
+          "detail": "Alleen lezen: deze app kan de spaces lezen die je hieronder toestaat: hun details, je lidmaatschap, voorstellen, je stemmen, signalen en quests. Ze kan niets wijzigen. Wat ze leest, wordt verstuurd naar de aanbieder van de AI-app, die het ontvangt."
         },
         "agreementsVote": {
           "title": "Stemmen voorbereiden die je goedkeurt",
@@ -5987,6 +5987,25 @@
         "unknown": {
           "detail": "Een onbekende toestemming."
         }
+      },
+      "spaces": {
+        "title": "Welke spaces mag deze app lezen?",
+        "explicit": {
+          "title": "Alleen de spaces die ik kies",
+          "detail": "Spaces waar je later lid van wordt, zijn niet inbegrepen."
+        },
+        "all": {
+          "title": "Al mijn spaces",
+          "detail": "Alles wat je op Hypha kunt zien, inclusief spaces waar je later lid van wordt."
+        },
+        "note": "De app kan nooit meer zien dan jij. Wat ze leest, wordt verstuurd naar de aanbieder van de AI-app.",
+        "filter": "Filter je spaces",
+        "selectAll": "Alles selecteren",
+        "selectNone": "Niets selecteren",
+        "limit": "Je zit in meer dan {max} spaces, dus alleen de eerste {max} zijn geselecteerd. Kies „Al mijn spaces” om elke space mee te nemen.",
+        "none": "Je bent nog van geen enkele space lid. Kies in plaats daarvan „Al mijn spaces” of word eerst lid van een space.",
+        "unavailable": "Je spaces konden nu niet worden geladen. Je kunt nog steeds „Al mijn spaces” kiezen.",
+        "subOf": "(in {parent})"
       }
     }
   }

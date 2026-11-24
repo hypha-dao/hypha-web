@@ -10,6 +10,7 @@ import { cimd } from '@better-auth/cimd';
 import { fetchClientMetadataResource } from '@better-auth/cimd/node';
 import type { ClientMetadataResourceFetch } from '@better-auth/oauth-provider';
 import {
+  allowedScopesForResource,
   ACCESS_TOKEN_TTL_SECONDS,
   AUTH_CODE_TTL_SECONDS,
   AUTH_QUERY_TTL_SECONDS,
@@ -28,6 +29,7 @@ import {
   type AuthDbPool,
 } from './db';
 import { isPersonAllowed } from './gate';
+import { SPACE_GRANTS_CLAIM, grantClaimFor } from './grants';
 import { redactingLog } from './redact';
 import { createIdentityBridge } from './identity-bridge';
 import { createPrivyProvider, type ProviderRegistry } from './providers';
@@ -165,7 +167,35 @@ export function createAuthServer(
         // expiry. It carries the (longer) query lifetime; the code is cut back to
         // AUTH_CODE_TTL_SECONDS at the token endpoint by the `hypha-code-ttl` hook below.
         codeExpiresIn: AUTH_QUERY_TTL_SECONDS,
-        resources: [...config.resources],
+        // Declared with their allowed scopes (E52). `merge` so a resource row that already exists
+        // picks the declaration up (the default only inserts missing rows).
+        resources: config.resources.map((identifier) => {
+          const allowedScopes = allowedScopesForResource(identifier);
+          return allowedScopes ? { identifier, allowedScopes } : { identifier };
+        }),
+        resourceSeedMode: 'merge',
+        extensions: [
+          {
+            // The per-space grant the person gave this client, minted at the code exchange and
+            // on every refresh (read live, so an edit applies at the next refresh). Fail
+            // closed: no row means an empty list, never "all"; a person outside the allowlist
+            // gets no token. The library hands this hook the client; the plugin hook below does not.
+            claims: {
+              accessToken: async ({ user, client }) => {
+                if (!user || !gate(user.id)) {
+                  throw new APIError('FORBIDDEN', FORBIDDEN);
+                }
+                return {
+                  [SPACE_GRANTS_CLAIM]: await grantClaimFor(
+                    pool,
+                    user.id,
+                    client.clientId,
+                  ),
+                };
+              },
+            },
+          },
+        ],
         // CIMD clients are unregistered, so they cannot be linked to resources one by one.
         enforcePerClientResources: false,
         // Consent is shown by our page and remembered per client and scope (the library's standard

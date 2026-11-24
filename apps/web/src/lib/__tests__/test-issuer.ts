@@ -20,6 +20,9 @@ export async function createTestIssuer() {
     new SignJWT({
       client_id: TEST_CLIENT,
       scope: over.scope ?? 'spaces:read',
+      // What the authorization server mints (G2a). `extra` can replace it, or drop it with
+      // `space_grants: undefined`, to test the resource side.
+      space_grants: 'all',
       ...over.extra,
     })
       .setProtectedHeader({ alg: 'ES256', kid: 'k1' })

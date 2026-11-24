@@ -19,6 +19,28 @@ export const AUTH_SERVER_WRITE_SCOPES: readonly AuthServerScope[] = [
   'agreements:vote',
 ];
 
+/**
+ * Scopes the hosted MCP resource accepts (E52, P5): reads only. The library intersects a request
+ * with them at authorize and token time and answers `invalid_scope` when nothing is left. The MCP
+ * resource is the configured resource whose path is `/mcp`, the same rule the app uses to find
+ * its host; every other resource keeps no restriction.
+ */
+export const MCP_RESOURCE_ALLOWED_SCOPES: readonly AuthServerScope[] = [
+  'spaces:read',
+  'offline_access',
+];
+
+/** Allowed scopes declared for a resource identifier, or null when it has no restriction. */
+export function allowedScopesForResource(identifier: string): string[] | null {
+  try {
+    return new URL(identifier).pathname === '/mcp'
+      ? [...MCP_RESOURCE_ALLOWED_SCOPES]
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Product defaults (reported for confirmation). Seconds. */
 export const ACCESS_TOKEN_TTL_SECONDS = 10 * 60;
 /** Sliding: each refresh issues a new token valid for this long, so 90 days of inactivity ends the connection. */

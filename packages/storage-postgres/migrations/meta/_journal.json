@@ -729,6 +729,13 @@
       "when": 1784000000034,
       "tag": "0103_auth_server",
       "breakpoints": true
+    },
+    {
+      "idx": 104,
+      "version": "7",
+      "when": 1784000000035,
+      "tag": "0104_as_space_grants",
+      "breakpoints": true
     }
   ]
 }

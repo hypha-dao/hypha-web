@@ -10,6 +10,7 @@ import { requireAuthServerHost } from '../_lib/host-gate';
 import { getAuthServer } from '../_lib/server';
 import { AuthIntlProvider, authTranslator, loadAuthIntl } from '../_lib/intl';
 import { ConsentForm } from './consent-form';
+import { loadPickerSpaces } from './own-spaces';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Hypha - Approve app' };
@@ -84,6 +85,11 @@ export default async function AuthServerConsentPage({
       </AuthIntlProvider>
     );
   }
+  // Only for an app that asks to read spaces; the read can fail, then only "all" is offered.
+  const asksToRead = request.scopes.some((s) => s.scope === 'spaces:read');
+  const pickerSpaces = asksToRead
+    ? await loadPickerSpaces(request.person.id)
+    : null;
   return (
     <AuthIntlProvider intl={intl}>
       <ConsentForm
@@ -98,6 +104,7 @@ export default async function AuthServerConsentPage({
           redirectHost: request.client.redirectHost,
         }}
         scopes={request.scopes}
+        pickerSpaces={pickerSpaces}
       />
     </AuthIntlProvider>
   );

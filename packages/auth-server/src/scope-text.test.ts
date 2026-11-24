@@ -12,11 +12,11 @@ const read = (locale: string) =>
   ).AuthServer.consent.scopes.spacesRead as { title: string; detail: string };
 
 describe('consent text of spaces:read', () => {
-  it('English says what release 1 gives: everything the person can see, read-only, shared with the AI provider', () => {
+  it('English says what release 1 gives: the spaces the person allows, read-only, shared with the AI provider', () => {
     const { detail } = read('en');
     expect(detail).toMatch(/read-only/i);
-    expect(detail).toMatch(/everything you can see/i);
-    for (const word of ['member', 'proposals', 'votes'])
+    expect(detail).toMatch(/spaces you allow/i);
+    for (const word of ['membership', 'proposals', 'votes'])
       expect(detail).toContain(word);
     expect(detail).toMatch(/provider of the AI app/i);
     expect(detail).toMatch(/cannot change anything/i);
