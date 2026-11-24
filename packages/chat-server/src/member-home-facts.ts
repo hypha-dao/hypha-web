@@ -464,9 +464,10 @@ export function formatMemberHomeFacts(
     (item) => !shownKeys.has(memberHomeThreadItemKey(item)),
   );
   // Queue walk only — free-flow questions must not steal a waiting card.
-  const waitingAsk = /\b(?:what else is waiting|what(?:'s| is) (?:still )?waiting|what still needs(?: me)?|anything else waiting)\b/i.test(
-    options?.asked ?? '',
-  );
+  const waitingAsk =
+    /\b(?:what else is waiting|what(?:'s| is) (?:still )?waiting|what still needs(?: me)?|anything else waiting)\b/i.test(
+      options?.asked ?? '',
+    );
   const guidedWalk =
     usefulAsk ||
     decisionAsk ||
@@ -480,10 +481,7 @@ export function formatMemberHomeFacts(
   // Open chat: they asked something that is not a chip, a look, a named item,
   // or a continue/resume. Answer in words only — no off-context card.
   const freeFlowAsk =
-    Boolean(options?.asked?.trim()) &&
-    !listAsk &&
-    !shareTurn &&
-    !guidedWalk;
+    Boolean(options?.asked?.trim()) && !listAsk && !shareTurn && !guidedWalk;
   // Guided walks pick the next waiting item. When every one was already
   // placed, a useful/decision/continue ask must not re-brief the same item
   // in a loop. A decision chip never re-opens an already-placed vote and
@@ -768,9 +766,7 @@ export function formatMemberHomeFacts(
       ? null
       : alreadyShown.length > 0
       ? freeFlowAsk ||
-        (!spoken &&
-          !(lookAsk && (looked || recalledItems[0])) &&
-          !recall)
+        (!spoken && !(lookAsk && (looked || recalledItems[0])) && !recall)
         ? `Already placed in earlier replies: ${alreadyShown.join(
             ', ',
           )}. Do not pretend an item in this list is new. This turn has no card. Do not call show_member_home_item.`

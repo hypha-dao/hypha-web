@@ -598,10 +598,7 @@ export function MemberHomeThreadCard({
               </Button>
             ) : null;
             const primaryButton = ownDeadline ? (
-              <Button
-                asChild
-                {...choiceProps('update', true, primaryClass)}
-              >
+              <Button asChild {...choiceProps('update', true, primaryClass)}>
                 <Link
                   href={signalHref}
                   onClick={() => {

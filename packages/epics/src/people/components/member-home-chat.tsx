@@ -642,10 +642,7 @@ function homeUserAskExpectsCard(asked: string): boolean {
   ) {
     return true;
   }
-  let chip = text
-    .toLowerCase()
-    .replace(/[’‘]/g, "'")
-    .replace(/\s+/g, ' ');
+  let chip = text.toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, ' ');
   while (chip.startsWith('¿') || chip.startsWith('¡')) chip = chip.slice(1);
   while (chip.endsWith('.') || chip.endsWith('!') || chip.endsWith('?')) {
     chip = chip.slice(0, -1);
@@ -1932,7 +1929,9 @@ export function MemberHomeChat({
         className="narrow-scrollbar min-h-0 w-full min-w-0 flex-1 overflow-y-auto [overflow-anchor:none]"
         aria-label={t('conversation')}
       >
-        <div className={cn(HOME_CHAT_COLUMN, HOME_CHAT_INSET, 'grid gap-4 py-4')}>
+        <div
+          className={cn(HOME_CHAT_COLUMN, HOME_CHAT_INSET, 'grid gap-4 py-4')}
+        >
           <MemberHomeActivationCard
             lang={lang}
             spaces={intelligence.expiringSpaces ?? []}
@@ -2315,7 +2314,9 @@ export function MemberHomeChat({
         </div>
       </div>
 
-      <div className={cn(HOME_CHAT_COLUMN, HOME_CHAT_INSET, 'shrink-0 pt-2 pb-3')}>
+      <div
+        className={cn(HOME_CHAT_COLUMN, HOME_CHAT_INSET, 'shrink-0 pt-2 pb-3')}
+      >
         {dialogue && micNeedsGrant ? (
           <button
             type="button"
@@ -2327,9 +2328,7 @@ export function MemberHomeChat({
             {t('soundNeedsMic')}
           </button>
         ) : null}
-        <div className="pb-2">
-          {renderSuggestionChips('composer')}
-        </div>
+        <div className="pb-2">{renderSuggestionChips('composer')}</div>
         <div className="border border-border bg-background">
           <AiPanelChatBar
             value={input}

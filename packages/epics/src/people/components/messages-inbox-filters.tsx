@@ -118,9 +118,7 @@ function FilterRow({
           aria-controls="inbox-space-filters"
           data-testid="inbox-filter-spaces-toggle"
           aria-label={
-            spacesExpanded
-              ? t('inbox.collapseSpaces')
-              : t('inbox.expandSpaces')
+            spacesExpanded ? t('inbox.collapseSpaces') : t('inbox.expandSpaces')
           }
           onClick={onToggleSpaces}
           className="flex shrink-0 items-start self-stretch px-2 pt-4 text-muted-foreground hover:bg-accent-2 hover:text-foreground"
@@ -173,7 +171,9 @@ function FilterRow({
               ) : null}
             </span>
           </span>
-          <span className="mt-1 block text-2 text-muted-foreground">{body}</span>
+          <span className="mt-1 block text-2 text-muted-foreground">
+            {body}
+          </span>
         </span>
       </button>
     </div>

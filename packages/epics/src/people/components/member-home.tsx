@@ -936,7 +936,9 @@ function ChatSkeleton() {
           <ArrivalShape />
         </div>
       </div>
-      <div className={cn(HOME_CHAT_COLUMN, HOME_CHAT_INSET, 'shrink-0 pt-2 pb-3')}>
+      <div
+        className={cn(HOME_CHAT_COLUMN, HOME_CHAT_INSET, 'shrink-0 pt-2 pb-3')}
+      >
         {/* Same place as live chips: above the composer, not in the scroll. */}
         <div className="pb-2">
           <div className="narrow-scrollbar flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto">
