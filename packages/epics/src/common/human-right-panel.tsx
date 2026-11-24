@@ -6838,16 +6838,6 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                 coherenceTitle?.trim() ? (
                   <MemberSignalDockPreview
                     title={coherenceTitle.trim()}
-                    description={
-                      coherenceDescription ??
-                      openSignalForCreator?.description ??
-                      null
-                    }
-                    leadImage={
-                      coherenceSignalLeadImage ??
-                      openSignalForCreator?.leadImage ??
-                      null
-                    }
                     typeLabel={
                       coherenceSignalTypeLabel ??
                       (openSignalForCreator?.type
