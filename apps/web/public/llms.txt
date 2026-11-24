@@ -1,0 +1,8 @@
+# Hypha
+
+> Hypha is a toolkit for decentralized organizations (DAOs): Spaces where members govern together with proposals, voting, agreements, treasury and tokens, on the Base network.
+
+## Docs
+
+- [Hypha network](https://app.hypha.earth/en/network): public overview of Spaces on the platform
+- [Hosted MCP server](https://mcp.hypha.earth/mcp): Model Context Protocol endpoint exposing Hypha platform data to AI tools (OAuth; discovery at /.well-known/oauth-protected-resource/mcp)

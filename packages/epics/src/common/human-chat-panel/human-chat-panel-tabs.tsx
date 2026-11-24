@@ -121,7 +121,13 @@ export function HumanChatPanelTabs({
       ref={tabRailScrollRef}
       className={cn(
         'relative box-border flex h-[var(--secondary-chrome-actions-row-height,66px)] w-full min-w-0 items-center border-b border-border/70 bg-transparent px-3',
-        'overflow-x-auto overflow-y-hidden overscroll-x-contain touch-pan-x [scrollbar-width:thin]',
+        'overflow-x-auto overflow-y-hidden overscroll-x-contain touch-pan-x',
+        /*
+         * Hide the scrollbar (still scrollable) so the pulsing active-call
+         * badge, which overflows the row as it animates, can't make a
+         * scrollbar flicker in and out.
+         */
+        '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
         /*
          * One row across the panel content box. `display: contents` on the
          * tablist and the end cluster lets each control (labels, phone, video)
