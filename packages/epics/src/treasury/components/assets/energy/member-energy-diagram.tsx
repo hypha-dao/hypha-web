@@ -232,7 +232,7 @@ export function MemberEnergyDiagram({ spaceSlug }: { spaceSlug: string }) {
         actions={<TimeframeToggle value={timeframe} onChange={setTimeframe} />}
       />
 
-      <div className="border border-border bg-transparent p-4 sm:p-5">
+      <div>
         <div className="mb-5 flex items-center justify-between gap-3">
           <p className={MEMBER_EYEBROW}>{t('balance')}</p>
           {live ? (
@@ -262,27 +262,33 @@ export function MemberEnergyDiagram({ spaceSlug }: { spaceSlug: string }) {
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-          <EnergyFigure
-            label={t('youMake')}
-            value={formatEnergy(youMake, locale)}
-            unit={t('kwhUnit')}
-            caption={home.makeIsHome ? t('fromYourShare') : t('madeHere')}
-            accent
-          />
-          <EnergyFigure
-            label={t('youUse')}
-            value={formatEnergy(youUse, locale)}
-            unit={t('kwhUnit')}
-            caption={home.useIsHome ? t('usedAtHome') : t('usedHere')}
-          />
-          <EnergyFigure
-            label={t('youShare')}
-            value={formatEnergy(youShare, locale)}
-            unit={t('kwhUnit')}
-            caption={home.paired ? t('passedOn') : t('passedOnCommunity')}
-            accent
-          />
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-border">
+          <div className="min-w-0 sm:pr-6">
+            <EnergyFigure
+              label={t('youMake')}
+              value={formatEnergy(youMake, locale)}
+              unit={t('kwhUnit')}
+              caption={home.makeIsHome ? t('fromYourShare') : t('madeHere')}
+              accent
+            />
+          </div>
+          <div className="min-w-0 sm:px-6">
+            <EnergyFigure
+              label={t('youUse')}
+              value={formatEnergy(youUse, locale)}
+              unit={t('kwhUnit')}
+              caption={home.useIsHome ? t('usedAtHome') : t('usedHere')}
+            />
+          </div>
+          <div className="min-w-0 sm:pl-6">
+            <EnergyFigure
+              label={t('youShare')}
+              value={formatEnergy(youShare, locale)}
+              unit={t('kwhUnit')}
+              caption={home.paired ? t('passedOn') : t('passedOnCommunity')}
+              accent
+            />
+          </div>
         </div>
 
         <div className="mt-6">
@@ -299,31 +305,37 @@ export function MemberEnergyDiagram({ spaceSlug }: { spaceSlug: string }) {
           )}
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-4 border-t border-border pt-4 sm:grid-cols-3">
-          <EnergyFigure
-            label={t('communityMakes')}
-            value={formatEnergy(communityMade, locale)}
-            unit={t('kwhUnit')}
-            caption={t('overThisPeriod')}
-            size="small"
-          />
-          <EnergyFigure
-            label={t('communityUses')}
-            value={formatEnergy(communityUsed, locale)}
-            unit={t('kwhUnit')}
-            caption={t('overThisPeriod')}
-            size="small"
-          />
-          <EnergyFigure
-            label={batteryKwh > 0 ? t('battery') : t('shared')}
-            value={`${meterPercent}%`}
-            caption={t('overThisPeriod')}
-            size="small"
-          />
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-border">
+          <div className="min-w-0 sm:pr-6">
+            <EnergyFigure
+              label={t('communityMakes')}
+              value={formatEnergy(communityMade, locale)}
+              unit={t('kwhUnit')}
+              caption={t('overThisPeriod')}
+              size="small"
+            />
+          </div>
+          <div className="min-w-0 sm:px-6">
+            <EnergyFigure
+              label={t('communityUses')}
+              value={formatEnergy(communityUsed, locale)}
+              unit={t('kwhUnit')}
+              caption={t('overThisPeriod')}
+              size="small"
+            />
+          </div>
+          <div className="min-w-0 sm:pl-6">
+            <EnergyFigure
+              label={batteryKwh > 0 ? t('battery') : t('shared')}
+              value={`${meterPercent}%`}
+              caption={t('overThisPeriod')}
+              size="small"
+            />
+          </div>
         </div>
       </div>
 
-      <div className="border border-border bg-transparent p-4 sm:p-5">
+      <div>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className={MEMBER_SECTION_TITLE}>

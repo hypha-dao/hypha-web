@@ -253,14 +253,22 @@ export function MemberEnergyBoardSkeleton() {
         <Pulse text className="h-8 w-56 max-w-[70%]" />
         <Pulse className="h-9 w-40 shrink-0" delayMs={40} />
       </div>
-      <div className="border border-border bg-transparent p-4 sm:p-5">
+      <div>
         <div className="mb-5 flex items-center justify-between gap-3">
           <Pulse text className="h-3 w-28" />
           <Pulse text className="h-3 w-14" delayMs={40} />
         </div>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-border">
           {[0, 1, 2].map((index) => (
-            <div key={index} className="min-w-0">
+            <div
+              key={index}
+              className={cn(
+                'min-w-0',
+                index === 0 && 'sm:pr-6',
+                index === 1 && 'sm:px-6',
+                index === 2 && 'sm:pl-6',
+              )}
+            >
               <Pulse text className="h-3 w-20" delayMs={index * 50} />
               <Pulse text className="mt-2 h-9 w-28" delayMs={index * 50 + 30} />
               <Pulse
@@ -274,9 +282,17 @@ export function MemberEnergyBoardSkeleton() {
         <div className="mt-6">
           <EnergyLineChartSkeleton height={340} />
         </div>
-        <div className="mt-6 grid grid-cols-1 gap-4 border-t border-border pt-4 sm:grid-cols-3">
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-border">
           {[0, 1, 2].map((index) => (
-            <div key={index} className="min-w-0">
+            <div
+              key={index}
+              className={cn(
+                'min-w-0',
+                index === 0 && 'sm:pr-6',
+                index === 1 && 'sm:px-6',
+                index === 2 && 'sm:pl-6',
+              )}
+            >
               <Pulse text className="h-3 w-24" delayMs={200 + index * 40} />
               <Pulse
                 text
@@ -292,7 +308,7 @@ export function MemberEnergyBoardSkeleton() {
           ))}
         </div>
       </div>
-      <div className="border border-border bg-transparent p-4 sm:p-5">
+      <div>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <Pulse text className="h-4 w-48 max-w-full" delayMs={280} />
