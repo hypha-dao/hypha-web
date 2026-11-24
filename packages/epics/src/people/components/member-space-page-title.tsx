@@ -16,8 +16,7 @@ import {
 
 import { useMemberExperience } from './member-experience';
 import { MemberEyebrow } from './member-eyebrow';
-import { MEMBER_PAGE_TITLE } from './member-type';
-import { cn } from '@hypha-platform/ui-utils';
+import { MEMBER_PAGE_TITLE, MEMBER_TITLE_STACK } from './member-type';
 
 export type MemberTitleScreen =
   | 'signals'
@@ -147,21 +146,16 @@ export function MemberSpacePageTitle({
         : eyebrowIcon ?? (screen ? SCREEN_ICONS[screen] : null);
 
     return (
-      <div className="flex flex-col gap-3" data-member-page-title="">
+      <div className="w-full min-w-0" data-member-page-title="">
         {/*
-          Fixed min-height keeps the title block from jumping when navigating
-          between screens (eyebrow + one title line). Extra title wrap grows down.
+          Natural height + shared MEMBER_TITLE_STACK — no min-height /
+          justify-center (those made top/bottom padding jump per screen).
+          Space below comes from MEMBER_SCREEN_STACK gap-4.
         */}
-        <header className="craft-page-header flex min-h-[3.25rem] w-full flex-col items-start justify-center gap-1.5 text-left">
-          {small ? (
-            <MemberEyebrow icon={Icon}>{small}</MemberEyebrow>
-          ) : (
-            <span className="block h-[1.125rem]" aria-hidden />
-          )}
+        <header className={MEMBER_TITLE_STACK}>
+          {small ? <MemberEyebrow icon={Icon}>{small}</MemberEyebrow> : null}
           <div className="flex w-full items-start justify-between gap-3">
-            <h1 className={cn(MEMBER_PAGE_TITLE, 'min-h-[1.75rem]')}>
-              {large}
-            </h1>
+            <h1 className={MEMBER_PAGE_TITLE}>{large}</h1>
             {actions ? (
               <div className="flex shrink-0 items-center gap-2 pt-0.5">
                 {actions}
@@ -169,7 +163,7 @@ export function MemberSpacePageTitle({
             ) : null}
           </div>
         </header>
-        {filters ? <div>{filters}</div> : null}
+        {filters ? <div className="mt-4">{filters}</div> : null}
       </div>
     );
   }

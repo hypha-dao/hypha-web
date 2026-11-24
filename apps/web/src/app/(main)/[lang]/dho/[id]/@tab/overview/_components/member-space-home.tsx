@@ -20,6 +20,7 @@ import {
   MEMBER_EYEBROW,
   MEMBER_PAGE_TITLE,
   MEMBER_ROW_TITLE,
+  MEMBER_TITLE_STACK,
   MemberEyebrow,
   SignalUpvoteButton,
   signalVotingSpaceId,
@@ -159,40 +160,44 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
   return (
     <div className={MEMBER_SCREEN_STACK} data-member-home="">
       <section
-        className="flex min-w-0 flex-col"
+        className="flex min-w-0 flex-col gap-4"
         aria-labelledby="member-space-home-title"
         data-member-home-news=""
       >
-        {/* Eyebrow row — space left, section right (energy-community). */}
-        <div className="flex items-center justify-between gap-4">
-          <MemberEyebrow>{spaceTitle}</MemberEyebrow>
-          <MemberEyebrow icon={Radio}>{t('communitySignals')}</MemberEyebrow>
-        </div>
-
-        {/* Title + 36px arrows on one row (lovable compact 32px). */}
-        <div className="mt-2.5 mb-[18px] flex items-center justify-between gap-4">
-          <h1 id="member-space-home-title" className={MEMBER_PAGE_TITLE}>
-            {t('around')}
-          </h1>
-          <div className="hidden shrink-0 items-center gap-1.5 md:flex">
-            <button
-              type="button"
-              className={HOME_ARROW_CLASS}
-              aria-label={t('previousSignals')}
-              onClick={() => scrollStrip(-1)}
-            >
-              <ChevronLeft className="size-4" strokeWidth={1.5} aria-hidden />
-            </button>
-            <button
-              type="button"
-              className={HOME_ARROW_CLASS}
-              aria-label={t('nextSignals')}
-              onClick={() => scrollStrip(1)}
-            >
-              <ChevronRight className="size-4" strokeWidth={1.5} aria-hidden />
-            </button>
+        {/* Same eyebrow → title rhythm as MemberSpacePageTitle. */}
+        <header className={MEMBER_TITLE_STACK}>
+          <div className="flex w-full items-center justify-between gap-4">
+            <MemberEyebrow>{spaceTitle}</MemberEyebrow>
+            <MemberEyebrow icon={Radio}>{t('communitySignals')}</MemberEyebrow>
           </div>
-        </div>
+          <div className="flex w-full items-center justify-between gap-4">
+            <h1 id="member-space-home-title" className={MEMBER_PAGE_TITLE}>
+              {t('around')}
+            </h1>
+            <div className="hidden shrink-0 items-center gap-1.5 md:flex">
+              <button
+                type="button"
+                className={HOME_ARROW_CLASS}
+                aria-label={t('previousSignals')}
+                onClick={() => scrollStrip(-1)}
+              >
+                <ChevronLeft className="size-4" strokeWidth={1.5} aria-hidden />
+              </button>
+              <button
+                type="button"
+                className={HOME_ARROW_CLASS}
+                aria-label={t('nextSignals')}
+                onClick={() => scrollStrip(1)}
+              >
+                <ChevronRight
+                  className="size-4"
+                  strokeWidth={1.5}
+                  aria-hidden
+                />
+              </button>
+            </div>
+          </div>
+        </header>
 
         {authLoading || isLoading || (!data && !error) ? (
           <div
@@ -370,15 +375,14 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
         data-member-home-ask=""
       >
         <div className="mb-4 border-b border-border pb-4">
-          <MemberEyebrow icon={Sparkles}>
-            {t('askSpaceEyebrow', { name: askName })}
-          </MemberEyebrow>
-          <h2
-            id="member-space-home-ask-title"
-            className={cn(MEMBER_PAGE_TITLE, 'mt-2.5')}
-          >
-            {t('askSpace', { name: askName })}
-          </h2>
+          <header className={MEMBER_TITLE_STACK}>
+            <MemberEyebrow icon={Sparkles}>
+              {t('askSpaceEyebrow', { name: askName })}
+            </MemberEyebrow>
+            <h2 id="member-space-home-ask-title" className={MEMBER_PAGE_TITLE}>
+              {t('askSpace', { name: askName })}
+            </h2>
+          </header>
         </div>
         <SidebarProvider open className="h-auto min-h-[24rem]">
           <AiLeftPanel embed="page" />
