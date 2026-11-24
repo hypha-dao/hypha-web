@@ -3629,6 +3629,12 @@
     "callRaiseHandBadgeOrder": "Main levée (#{order})",
     "callRaisedHandsTitle": "Mains levées",
     "callParticipantMuted": "Muet",
+
+    "callShareQualityImproving": "Amélioration de la qualité…",
+
+    "callShareQualityShow": "Afficher la résolution",
+
+    "callShareQualityHide": "Masquer la résolution",
     "callParticipantMicOff": "Micro coupé",
     "callLeftAudio": "Vous avez quitté l'appel vocal.",
     "callLeftVideo": "Vous avez quitté l'appel vidéo.",

@@ -41,6 +41,8 @@ import {
   resolveCallFeedVideoParticipantLabelLayout,
 } from './call-feed-tile-chrome';
 import { CallAudioVoiceWaves } from './call-audio-voice-waves';
+import { CallShareQualityOverlay } from './call-share-quality-overlay';
+import { useRemoteShareQuality } from './use-remote-share-quality';
 import {
   CALL_PARTICIPANT_PROFILE_TIMEOUT_MS,
   resolveCallParticipantDisplayText,
@@ -99,6 +101,7 @@ import {
   buildCallFeedsFromLiveKitRoom,
   feedKeyForActive,
   liveKitTrackFromCallFeed,
+  publishedDimensionsFromCallFeed,
 } from './call-livekit-feed-adapter';
 import type { CallFloatingReaction } from './use-call-reactions';
 
@@ -2707,6 +2710,12 @@ const FeedContent = ({
   }, [liveVideoTrack?.id, streamBindVersion, remoteShareLiveKitTrack]);
 
   const showVideoElement = hasVideo && !warmingVideoTrack;
+  const remoteShareQuality = useRemoteShareQuality({
+    videoRef: ref,
+    enabled: Boolean(remoteShareLiveKitTrack) && showVideoElement,
+    trackKey: `${liveVideoTrack?.id ?? ''}:${streamBindVersion}`,
+    getPublishedWidth: () => publishedDimensionsFromCallFeed(feed)?.width,
+  });
   /** Avatar until video paints — avoids black tiles while remote/local tracks warm up. */
   const showAudioScrim = !showVideoElement || !videoSurfaceReady;
   const showParticipantVideoLabel = showVideoElement && !isPip;
@@ -2894,6 +2903,15 @@ const FeedContent = ({
             controlsList="nodownload noremoteplayback"
             muted
             aria-label={ariaLabel}
+          />
+        ) : null}
+        {remoteShareLiveKitTrack && showVideoElement && videoSurfaceReady ? (
+          <CallShareQualityOverlay
+            phase={remoteShareQuality.phase}
+            receivedWidth={remoteShareQuality.receivedWidth}
+            receivedHeight={remoteShareQuality.receivedHeight}
+            compact={compactTileLayout}
+            t={t}
           />
         ) : null}
         {showAudioScrim ? (

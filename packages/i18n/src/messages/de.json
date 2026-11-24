@@ -4201,6 +4201,12 @@
     "callRaiseHandBadgeOrder": "Hand erhoben (#{order})",
     "callRaisedHandsTitle": "Erhobene Hände",
     "callParticipantMuted": "Stumm",
+
+    "callShareQualityImproving": "Qualität wird verbessert…",
+
+    "callShareQualityShow": "Auflösung anzeigen",
+
+    "callShareQualityHide": "Auflösung ausblenden",
     "callParticipantMicOff": "Mikrofon aus",
     "callLeftAudio": "Du hast den Sprachanruf verlassen.",
     "callLeftVideo": "Du hast den Videoanruf verlassen.",
