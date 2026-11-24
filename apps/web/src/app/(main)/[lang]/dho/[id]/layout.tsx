@@ -28,6 +28,7 @@ import { SpaceMainNav } from './_components/space-main-nav';
 import { SpaceActivityGatedBanners } from './_components/space-activity-gated-banners';
 import { SpaceMembershipCtaUnderHero } from './_components/space-membership-cta-under-hero';
 import { HideForMembers } from './_components/hide-for-members';
+import { SpaceContentGutter } from '../../_components/member-page-shell';
 
 function sizedHeroBannerPreload(href: string) {
   if (!href || href === DEFAULT_SPACE_LEAD_IMAGE || isLikelyGifSrc(href)) {
@@ -109,9 +110,7 @@ export default async function DhoLayout({
           cover while the tab slot is a short loading skeleton. Padding on the
           flex scrollport does not extend scrollHeight.
         */}
-        <div
-          data-space-scroll-hold=""
-          className="mt-[2px] min-w-0 flex-1 px-4 md:mt-[6px] sm:px-5"
+        <SpaceContentGutter
           style={{ minHeight: 'var(--hypha-space-scroll-hold, 0px)' }}
         >
           {/* Overview portals the mycelium into this host. It stays behind the column:
@@ -254,7 +253,7 @@ export default async function DhoLayout({
             {tab}
             {children}
           </div>
-        </div>
+        </SpaceContentGutter>
         {aside}
       </div>
     </SpaceAccentPortalBridge>
