@@ -8,8 +8,11 @@ if (!PRIVY_APP_ID) {
 
 const PRIVY_JWKS_BASE = 'https://auth.privy.io/api/v1/apps';
 
-function getPrivyJwksUrls(): string[] {
-  const urls = [`${PRIVY_JWKS_BASE}/${PRIVY_APP_ID}/jwks.json`];
+// Never empty: the primary app's URL always comes first.
+function getPrivyJwksUrls(): [string, ...string[]] {
+  const urls: [string, ...string[]] = [
+    `${PRIVY_JWKS_BASE}/${PRIVY_APP_ID}/jwks.json`,
+  ];
   const extraIds = process.env.PRIVY_EXTRA_JWKS_APP_IDS;
   if (extraIds) {
     for (const id of extraIds.split(',')) {
