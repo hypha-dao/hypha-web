@@ -11,9 +11,17 @@ export const MEMBER_KPI = 'member-kpi';
 export const MEMBER_KPI_SM = 'member-kpi-sm';
 
 /**
- * Eyebrow → large title stack. 10px gap matches energy-community page-intro
- * (`margin-top: 10px`). Use this everywhere so home, Ask, and tab screens
- * share the same vertical rhythm — no craft-page-header (its gap-1 fights).
+ * One gap for the whole title rhythm: eyebrow → large title, and large title →
+ * first content. 10px matches energy-community page-intro. Keep screen stacks
+ * and filters on this same token so home / wallet / members don't drift.
  */
-export const MEMBER_TITLE_STACK =
-  'flex w-full flex-col items-start gap-2.5 text-left';
+export const MEMBER_TITLE_GAP = 'gap-2.5';
+
+/** Space below the title block when margin is easier than a flex gap. */
+export const MEMBER_TITLE_AFTER = 'mt-2.5';
+
+/**
+ * Eyebrow → large title. Use with a parent that also uses MEMBER_TITLE_GAP /
+ * MEMBER_TITLE_AFTER so the gap under the title matches.
+ */
+export const MEMBER_TITLE_STACK = `flex w-full flex-col items-start ${MEMBER_TITLE_GAP} text-left`;

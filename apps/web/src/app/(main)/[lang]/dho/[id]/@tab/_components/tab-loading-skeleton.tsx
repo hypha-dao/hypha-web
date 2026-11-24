@@ -127,20 +127,22 @@ function MemberHomeCardSkeleton({
 function MemberHomeSkeleton() {
   return (
     <div
-      className="flex w-full min-w-0 flex-col gap-4 py-4"
+      className="flex w-full min-w-0 flex-col gap-2.5 py-4"
       aria-hidden
       data-member-home-skeleton=""
     >
-      <section>
-        <div className="flex items-center justify-between gap-4">
-          <Pulse text className="h-3 w-28" />
-          <Pulse className="h-3 w-28" delayMs={40} />
-        </div>
-        <div className="mt-2.5 mb-[18px] flex items-center justify-between gap-4">
-          <Pulse text className="h-8 w-56 max-w-full sm:h-9 sm:w-72" />
-          <div className="hidden items-center gap-1.5 md:flex">
-            <Pulse className="h-[36px] w-[36px]" delayMs={60} />
-            <Pulse className="h-[36px] w-[36px]" delayMs={80} />
+      <section className="flex min-w-0 flex-col gap-2.5">
+        <div className="flex flex-col gap-2.5">
+          <div className="flex items-center justify-between gap-4">
+            <Pulse text className="h-3 w-28" />
+            <Pulse className="h-3 w-28" delayMs={40} />
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <Pulse text className="h-8 w-56 max-w-full sm:h-9 sm:w-72" />
+            <div className="hidden items-center gap-1.5 md:flex">
+              <Pulse className="h-[36px] w-[36px]" delayMs={60} />
+              <Pulse className="h-[36px] w-[36px]" delayMs={80} />
+            </div>
           </div>
         </div>
         <div className="flex snap-x items-stretch gap-5 overflow-hidden">

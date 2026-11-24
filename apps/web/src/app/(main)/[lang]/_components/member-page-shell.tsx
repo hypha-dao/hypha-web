@@ -1,15 +1,15 @@
 'use client';
 
 import type { CSSProperties, ReactNode } from 'react';
-import { useMemberExperience } from '@hypha-platform/epics';
+import { MEMBER_TITLE_GAP, useMemberExperience } from '@hypha-platform/epics';
 import { Container } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 /**
- * Shared member screen stack — same vertical rhythm on home, signals,
- * decisions, members, treasury, energy, wallet, and messages.
+ * Shared member screen stack — title → first content uses the same gap as
+ * eyebrow → title (MEMBER_TITLE_GAP). Content blocks keep their own gaps.
  */
-export const MEMBER_SCREEN_STACK = 'flex w-full min-w-0 flex-col gap-4 py-4';
+export const MEMBER_SCREEN_STACK = `flex w-full min-w-0 flex-col ${MEMBER_TITLE_GAP} py-4`;
 
 /**
  * Member content gutters (image 2 / Rue Verte): ~7–8% each side on wide

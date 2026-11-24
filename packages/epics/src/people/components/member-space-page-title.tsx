@@ -16,7 +16,11 @@ import {
 
 import { useMemberExperience } from './member-experience';
 import { MemberEyebrow } from './member-eyebrow';
-import { MEMBER_PAGE_TITLE, MEMBER_TITLE_STACK } from './member-type';
+import {
+  MEMBER_PAGE_TITLE,
+  MEMBER_TITLE_AFTER,
+  MEMBER_TITLE_STACK,
+} from './member-type';
 
 export type MemberTitleScreen =
   | 'signals'
@@ -148,9 +152,8 @@ export function MemberSpacePageTitle({
     return (
       <div className="w-full min-w-0" data-member-page-title="">
         {/*
-          Natural height + shared MEMBER_TITLE_STACK — no min-height /
-          justify-center (those made top/bottom padding jump per screen).
-          Space below comes from MEMBER_SCREEN_STACK gap-4.
+          Natural height + shared MEMBER_TITLE_STACK. Space under the title
+          matches eyebrow→title via MEMBER_SCREEN_STACK / MEMBER_TITLE_AFTER.
         */}
         <header className={MEMBER_TITLE_STACK}>
           {small ? <MemberEyebrow icon={Icon}>{small}</MemberEyebrow> : null}
@@ -163,7 +166,7 @@ export function MemberSpacePageTitle({
             ) : null}
           </div>
         </header>
-        {filters ? <div className="mt-4">{filters}</div> : null}
+        {filters ? <div className={MEMBER_TITLE_AFTER}>{filters}</div> : null}
       </div>
     );
   }
