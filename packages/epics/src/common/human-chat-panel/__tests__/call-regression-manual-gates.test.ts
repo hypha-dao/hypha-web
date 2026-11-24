@@ -657,13 +657,19 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(controls).toMatch(/capturePaused\s*\?[\s\S]*<Pause/);
   });
 
-  it('screenshare dock toolbar exposes only mic camera and share', () => {
+  it('screenshare dock toolbar exposes mic, camera, share and an overflow menu', () => {
     const controls = readCommonSource(
       'human-chat-panel/human-chat-panel-in-call-controls.tsx',
     );
     const dock = readCommonSource('global-call-dock-overlay.tsx');
     expect(controls).toContain('screenshare_essential');
     expect(controls).toContain('screenshareEssentialToolbar');
+    /** #2707: record, mic setup and leave stay reachable via the overflow menu. */
+    expect(controls).toContain('renderMoreMenu');
+    expect(controls).toMatch(
+      /screenshareEssentialToolbar \?[\s\S]*\{renderMoreMenu\}/,
+    );
+    expect(controls).toContain("t('callControlsMore')");
     expect(dock).toContain(
       "isScreensharing ? 'screenshare_essential' : 'full'",
     );
