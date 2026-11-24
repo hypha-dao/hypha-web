@@ -874,13 +874,14 @@ export function AiPanelMessageBubble({
   });
 
   const showMobilizedAgents = !isUser && mobilizedAgents.length > 0;
+  const isWelcome = message.id === 'welcome';
 
   return (
     <div
       className={cn(
-        // Centre the mark with the bubble — welcome copy wraps short of full
-        // width, so top-align left the avatar floating at the first line.
-        'flex items-center gap-2',
+        // Mark centres on the whole bubble. Narrower wrap → more lines →
+        // the H mark sits mid-copy instead of against the first line.
+        'flex items-center gap-2.5',
         isUser && 'flex-row-reverse',
       )}
     >
@@ -916,9 +917,13 @@ export function AiPanelMessageBubble({
       <div
         className={cn(
           // Mentions-dense stack: expertise header → bubble (gap-0.5).
-          // Assistant copy wraps at ~2/3 so long welcome lines read cleaner.
+          // Cap width in ch so welcome/assistant lines wrap early on wide pages.
           'group flex min-w-0 flex-col gap-0.5',
-          isUser ? 'max-w-[85%] items-end' : 'max-w-[66%]',
+          isUser
+            ? 'max-w-[85%] items-end'
+            : isWelcome
+            ? 'w-full max-w-[42ch]'
+            : 'max-w-[min(100%,42ch)]',
         )}
       >
         {showMobilizedAgents ? (
