@@ -19,6 +19,7 @@ import { countSignalMedia, signalListImage } from '../utils/signal-media';
 import type { SignalRoomActivity } from '../hooks/use-signal-room-activity';
 import { signalDiscussionCount } from '../utils/signal-room-replies';
 import type { SignalVotingModeStatus } from '../hooks/use-signal-voting-mode';
+import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import {
   MEMBER_BODY,
   MEMBER_ROW_TITLE,
@@ -103,6 +104,13 @@ export function SignalFeedRow({
   const created = shortDate(signal.createdAt);
   const comments = signalDiscussionCount(signal.messages, activity);
   const image = memberLayout ? signalListImage(signal) : null;
+  const { creatorDisplayName } = useSignalCreatorMeta({
+    creatorId: signal.creatorId,
+    createdAt: signal.createdAt,
+    description: signal.description,
+    title: signal.title,
+    tags: signal.tags,
+  });
   const lastReply =
     activity?.lastReplyAt != null
       ? t('signalLastReply', {
@@ -206,7 +214,27 @@ export function SignalFeedRow({
           </ActionGate>
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1 pr-1">
-          <SignalTypeBadge type={signal.type} />
+          {/*
+            Member list hierarchy (energy-community):
+            1 type · name · created  2 title  3 description  4 last reply · comments
+          */}
+          <div
+            data-testid="signal-card-member-meta"
+            className="mb-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"
+          >
+            <SignalTypeBadge type={signal.type} />
+            {creatorDisplayName || created ? (
+              <span className="inline-flex min-w-0 flex-wrap items-center gap-x-1.5 text-[12px] text-muted-foreground">
+                {creatorDisplayName ? (
+                  <span className="truncate">{creatorDisplayName}</span>
+                ) : null}
+                {creatorDisplayName && created ? (
+                  <span aria-hidden>·</span>
+                ) : null}
+                {created ? <span className="shrink-0">{created}</span> : null}
+              </span>
+            ) : null}
+          </div>
           <h3 className={MEMBER_ROW_TITLE}>
             <Link
               href={href}
@@ -226,12 +254,6 @@ export function SignalFeedRow({
             </p>
           ) : null}
           <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-1 text-muted-foreground">
-            {created ? (
-              <span className="inline-flex items-center gap-1.5">
-                <Clock className="craft-icon-sm" aria-hidden />
-                {t('signalCreated', { date: created })}
-              </span>
-            ) : null}
             {lastReply ? (
               <span className="inline-flex items-center gap-1.5">
                 <MessageSquare className="craft-icon-sm" aria-hidden />

@@ -162,20 +162,6 @@ export function SignalFeedFilters({
 
   return (
     <div className={cn('flex flex-col gap-3', className)}>
-      <div className="flex w-full items-center gap-3">
-        <Input
-          type="search"
-          value={titleQuery}
-          placeholder={t('searchSignals')}
-          aria-label={t('searchSignals')}
-          data-testid="signal-title-search"
-          onChange={(event) => onTitleQueryChange(event.target.value)}
-          leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
-          rootClassName="min-w-0 flex-1"
-          className="min-w-0"
-        />
-        {action}
-      </div>
       <div className="flex flex-wrap items-center gap-2">
         <FilterPill
           label={t(SORT_LABEL_KEY[sort])}
@@ -195,6 +181,20 @@ export function SignalFeedFilters({
             testId="signal-time-frame-pill"
           />
         ) : null}
+      </div>
+      <div className="flex w-full items-center gap-3 border-b border-border pb-3">
+        <Input
+          type="search"
+          value={titleQuery}
+          placeholder={t('searchSignals')}
+          aria-label={t('searchSignals')}
+          data-testid="signal-title-search"
+          onChange={(event) => onTitleQueryChange(event.target.value)}
+          leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+          rootClassName="min-w-0 flex-1"
+          className="min-w-0"
+        />
+        {action}
       </div>
     </div>
   );
