@@ -44,7 +44,7 @@ type MemberSpacePageTitleProps = {
   title: string;
   /**
    * Member screen key — uses small `SCREEN · tagline` + large sentence titles.
-   * Street/neighbourhood copy is already community in those strings.
+   * Space-facing copy lives in MemberMenu.titles.
    */
   screen?: MemberTitleScreen;
   count?: number | null;
