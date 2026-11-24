@@ -1,8 +1,15 @@
 'use client';
 
-import type { ElementType, KeyboardEvent } from 'react';
+import {
+  useEffect,
+  useState,
+  type ElementType,
+  type KeyboardEvent,
+} from 'react';
 import {
   BookOpen,
+  ChevronDown,
+  ChevronRight,
   Circle,
   FileText,
   Globe2,
@@ -36,6 +43,14 @@ const NESTED = new Set<InboxFilter>([
   'context',
 ]);
 
+const NESTED_FILTERS = [
+  'rooms',
+  'proposals',
+  'signals',
+  'quests',
+  'context',
+] as const satisfies readonly InboxFilter[];
+
 /** Same marks the rest of the app already uses for these places. */
 const FILTER_ICONS: Record<InboxFilter, ElementType> = {
   all: MessagesSquare,
@@ -50,71 +65,118 @@ const FILTER_ICONS: Record<InboxFilter, ElementType> = {
   network: Globe2,
 };
 
+function nestedUnreadCount(counts: FilterCounts) {
+  let unread = 0;
+  for (const filter of NESTED_FILTERS) unread += counts[filter].unread;
+  return unread;
+}
+
 function FilterRow({
   filter,
   selected,
   counts,
   onSelect,
+  spacesExpanded,
+  onToggleSpaces,
+  collapsedNestedUnread,
 }: {
   filter: InboxFilter;
   selected: boolean;
   counts: FilterCounts;
   onSelect: (filter: InboxFilter) => void;
+  spacesExpanded?: boolean;
+  onToggleSpaces?: () => void;
+  collapsedNestedUnread?: number;
 }) {
   const t = useTranslations('Connections');
   const Icon = FILTER_ICONS[filter];
   const nested = NESTED.has(filter);
+  const isSpaces = filter === 'spaces';
   const { total, unread } = counts[filter];
+  const shownUnread =
+    isSpaces && !spacesExpanded && (collapsedNestedUnread ?? 0) > 0
+      ? unread + (collapsedNestedUnread ?? 0)
+      : unread;
   const title = t(`inbox.${filter}Title`);
   const body = t(`inbox.${filter}Body`);
   const unreadLabel =
-    unread > 0 ? t('unread', { count: unread > 99 ? 99 : unread }) : null;
+    shownUnread > 0
+      ? t('unread', { count: shownUnread > 99 ? 99 : shownUnread })
+      : null;
 
   return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      data-testid={`inbox-filter-${filter}`}
-      onClick={() => onSelect(filter)}
+    <div
       className={cn(
-        'flex w-full min-w-0 items-start gap-3 border-b border-border px-4 py-4 text-left hover:bg-accent-2',
-        nested && 'py-3 pl-8',
+        'flex w-full min-w-0 items-start border-b border-border',
         selected && 'bg-accent-2',
       )}
     >
-      <Icon
-        className="mt-0.5 size-4 shrink-0 text-foreground"
-        strokeWidth={1.5}
-        aria-hidden
-      />
-      <span className="min-w-0 flex-1">
-        <span className="flex items-baseline gap-3">
-          <span
-            className={cn(
-              'min-w-0 truncate text-3 text-foreground',
-              selected && 'font-medium',
-            )}
-          >
-            {title}
+      {isSpaces && onToggleSpaces ? (
+        <button
+          type="button"
+          aria-expanded={spacesExpanded}
+          aria-controls="inbox-space-filters"
+          data-testid="inbox-filter-spaces-toggle"
+          aria-label={
+            spacesExpanded
+              ? t('inbox.collapseSpaces')
+              : t('inbox.expandSpaces')
+          }
+          onClick={onToggleSpaces}
+          className="flex shrink-0 items-start self-stretch px-2 pt-4 text-muted-foreground hover:bg-accent-2 hover:text-foreground"
+        >
+          {spacesExpanded ? (
+            <ChevronDown className="size-4" strokeWidth={1.5} aria-hidden />
+          ) : (
+            <ChevronRight className="size-4" strokeWidth={1.5} aria-hidden />
+          )}
+        </button>
+      ) : null}
+      <button
+        type="button"
+        aria-pressed={selected}
+        data-testid={`inbox-filter-${filter}`}
+        onClick={() => onSelect(filter)}
+        className={cn(
+          'flex min-w-0 flex-1 items-start gap-3 py-4 pr-4 text-left hover:bg-accent-2',
+          isSpaces && onToggleSpaces ? 'pl-1' : 'pl-4',
+          nested && 'py-3 pl-8',
+        )}
+      >
+        <Icon
+          className="mt-0.5 size-4 shrink-0 text-foreground"
+          strokeWidth={1.5}
+          aria-hidden
+        />
+        <span className="min-w-0 flex-1">
+          <span className="flex items-baseline gap-3">
+            <span
+              className={cn(
+                'min-w-0 truncate text-3 text-foreground',
+                selected && 'font-medium',
+              )}
+            >
+              {title}
+            </span>
+            <span className="ml-auto flex shrink-0 items-center gap-2">
+              {/* Hide 0 while Matrix is still catching up and for empty filters. */}
+              {total > 0 ? (
+                <span className="text-1 text-muted-foreground">{total}</span>
+              ) : null}
+              {shownUnread > 0 ? (
+                <span
+                  className="grid h-5 min-w-5 place-items-center rounded-full bg-foreground px-1.5 text-[10px] leading-none text-background"
+                  aria-label={unreadLabel ?? undefined}
+                >
+                  {shownUnread > 99 ? '99+' : shownUnread}
+                </span>
+              ) : null}
+            </span>
           </span>
-          <span className="ml-auto flex shrink-0 items-center gap-2">
-            {/* Hide 0 while Matrix is still catching up and for empty filters. */}
-            {total > 0 ? (
-              <span className="text-1 text-muted-foreground">{total}</span>
-            ) : null}
-            {unread > 0 ? (
-              <span
-                className="grid h-5 min-w-5 place-items-center rounded-full bg-foreground px-1.5 text-[10px] leading-none text-background"
-                aria-label={unreadLabel ?? undefined}
-              >
-                {unread > 99 ? '99+' : unread}
-              </span>
-            ) : null}
-          </span>
+          <span className="mt-1 block text-2 text-muted-foreground">{body}</span>
         </span>
-        <span className="mt-1 block text-2 text-muted-foreground">{body}</span>
-      </span>
-    </button>
+      </button>
+    </div>
   );
 }
 
@@ -226,18 +288,56 @@ export function MessagesInboxFilters({
   onChange: (filter: InboxFilter) => void;
 }) {
   const t = useTranslations('Connections');
+  const nestedSelected = NESTED.has(value);
+  // Nested space filters stay tucked away until someone opens them — or
+  // until the current filter is one of those children.
+  const [spacesOpen, setSpacesOpen] = useState(nestedSelected);
+  useEffect(() => {
+    if (nestedSelected) setSpacesOpen(true);
+  }, [nestedSelected]);
+
+  const toggleSpaces = () => {
+    setSpacesOpen((open) => {
+      if (open && nestedSelected) onChange('spaces');
+      return !open;
+    });
+  };
+  const collapsedNestedUnread = spacesOpen ? 0 : nestedUnreadCount(counts);
+
   return (
     <nav aria-label={t('inbox.filterLabel')} className="min-w-0 lg:w-full">
       <div className="border border-border bg-background">
-        {INBOX_FILTERS.map((filter) => (
-          <FilterRow
-            key={filter}
-            filter={filter}
-            selected={value === filter}
-            counts={counts}
-            onSelect={onChange}
-          />
-        ))}
+        {INBOX_FILTERS.map((filter) => {
+          if (NESTED.has(filter)) return null;
+          return (
+            <div key={filter}>
+              <FilterRow
+                filter={filter}
+                selected={value === filter}
+                counts={counts}
+                onSelect={onChange}
+                spacesExpanded={filter === 'spaces' ? spacesOpen : undefined}
+                onToggleSpaces={filter === 'spaces' ? toggleSpaces : undefined}
+                collapsedNestedUnread={
+                  filter === 'spaces' ? collapsedNestedUnread : undefined
+                }
+              />
+              {filter === 'spaces' && spacesOpen ? (
+                <div id="inbox-space-filters">
+                  {NESTED_FILTERS.map((nested) => (
+                    <FilterRow
+                      key={nested}
+                      filter={nested}
+                      selected={value === nested}
+                      counts={counts}
+                      onSelect={onChange}
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
       </div>
     </nav>
   );

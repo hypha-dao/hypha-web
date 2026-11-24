@@ -1604,6 +1604,8 @@
       "directBody": "Conversaciones individuales y chats de grupo",
       "spacesTitle": "Espacios",
       "spacesBody": "Colaboración dentro de un espacio",
+      "expandSpaces": "Mostrar filtros de espacio",
+      "collapseSpaces": "Ocultar filtros de espacio",
       "roomsTitle": "Canales",
       "roomsBody": "Conversaciones privadas y públicas",
       "proposalsTitle": "Propuestas",

@@ -823,6 +823,8 @@
       "directBody": "Én-til-én-samtaler og gruppechatter",
       "spacesTitle": "Områder",
       "spacesBody": "Samarbeid i et bestemt område",
+      "expandSpaces": "Vis områdefiltre",
+      "collapseSpaces": "Skjul områdefiltre",
       "roomsTitle": "Kanaler",
       "roomsBody": "Private og offentlige samtaler",
       "proposalsTitle": "Forslag",

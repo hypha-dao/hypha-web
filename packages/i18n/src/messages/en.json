@@ -223,6 +223,8 @@
       "directBody": "One-to-one conversations and group chats",
       "spacesTitle": "Spaces",
       "spacesBody": "Collaboration within a specific Space",
+      "expandSpaces": "Show space filters",
+      "collapseSpaces": "Hide space filters",
       "roomsTitle": "Channels",
       "roomsBody": "Private and public conversations",
       "proposalsTitle": "Proposals",

@@ -824,6 +824,8 @@
       "directBody": "Einzelgespräche und Gruppenchats",
       "spacesTitle": "Spaces",
       "spacesBody": "Zusammenarbeit in einem bestimmten Space",
+      "expandSpaces": "Space-Filter anzeigen",
+      "collapseSpaces": "Space-Filter ausblenden",
       "roomsTitle": "Kanäle",
       "roomsBody": "Private und öffentliche Gespräche",
       "proposalsTitle": "Vorschläge",

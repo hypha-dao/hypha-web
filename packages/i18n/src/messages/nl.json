@@ -824,6 +824,8 @@
       "directBody": "Een-op-een-gesprekken en groepschats",
       "spacesTitle": "Spaces",
       "spacesBody": "Samenwerking binnen een space",
+      "expandSpaces": "Space-filters tonen",
+      "collapseSpaces": "Space-filters verbergen",
       "roomsTitle": "Kanalen",
       "roomsBody": "Privé- en openbare gesprekken",
       "proposalsTitle": "Voorstellen",
