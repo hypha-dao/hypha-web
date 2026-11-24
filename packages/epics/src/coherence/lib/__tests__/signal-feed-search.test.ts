@@ -184,9 +184,7 @@ describe('feed title search', () => {
     expect(filtersSource.indexOf('signal-sort-pill')).toBeLessThan(
       filtersSource.indexOf('signal-title-search'),
     );
-    expect(filtersSource).toContain(
-      'border-b border-border pb-3',
-    );
+    expect(filtersSource).toContain('border-b border-border pb-3');
     expect(feedRowSource).toContain('signal-card-member-meta');
     expect(feedSource).toContain("t('newSignal')");
     expect(feedSource).toContain('coherence/new-signal');

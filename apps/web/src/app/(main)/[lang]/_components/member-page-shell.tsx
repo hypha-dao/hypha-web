@@ -37,7 +37,9 @@ export function MemberPageShell({
 
   if (isMember) {
     return (
-      <div className={cn(MEMBER_SCREEN_STACK, MEMBER_CONTENT_GUTTER, className)}>
+      <div
+        className={cn(MEMBER_SCREEN_STACK, MEMBER_CONTENT_GUTTER, className)}
+      >
         {children}
       </div>
     );

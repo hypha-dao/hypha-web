@@ -159,7 +159,9 @@ export function MemberSpacePageTitle({
             <span className="block h-[1.125rem]" aria-hidden />
           )}
           <div className="flex w-full items-start justify-between gap-3">
-            <h1 className={cn(MEMBER_PAGE_TITLE, 'min-h-[1.75rem]')}>{large}</h1>
+            <h1 className={cn(MEMBER_PAGE_TITLE, 'min-h-[1.75rem]')}>
+              {large}
+            </h1>
             {actions ? (
               <div className="flex shrink-0 items-center gap-2 pt-0.5">
                 {actions}
