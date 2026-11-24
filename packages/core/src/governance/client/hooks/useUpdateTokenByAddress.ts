@@ -1,5 +1,6 @@
 'use client';
 
+import { POLL } from '../../../common/poll-intervals';
 import useSWR from 'swr';
 import { getTokenUpdateByAddressAction } from '../../server/actions';
 
@@ -15,7 +16,8 @@ export const useUpdateTokenByAddress = ({
     async ([address, authToken]) =>
       getTokenUpdateByAddressAction(address, { authToken }),
     {
-      refreshInterval: 10000,
+      refreshInterval: POLL.BACKGROUND,
+      revalidateOnFocus: false,
     },
   );
 

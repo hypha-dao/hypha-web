@@ -153,6 +153,8 @@ export const useMembers: UseMembers = ({
     },
     {
       refreshInterval: interval,
+      // A polling roster is refreshed by the poll; a focus refetch would double it.
+      ...(interval ? { revalidateOnFocus: false } : {}),
       keepPreviousData,
     },
   );

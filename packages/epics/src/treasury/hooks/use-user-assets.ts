@@ -2,7 +2,7 @@
 
 import React from 'react';
 import useSWR from 'swr';
-import { useJwt } from '@hypha-platform/core/client';
+import { useJwt, POLL } from '@hypha-platform/core/client';
 
 type OneChartPoint = {
   month: string;
@@ -114,9 +114,9 @@ const completeWalletBySlug = new Map<string, AssetsPayload>();
 
 export const useUserAssets = ({
   filter,
-  // 30s: the assets route hits Alchemy + several RPCs; polling every 10s was
-  // frequent enough to surface transient upstream gaps as balance flicker.
-  refreshInterval = 30000,
+  // The assets route hits Alchemy + several RPCs; frequent polling surfaced
+  // transient upstream gaps as balance flicker.
+  refreshInterval = POLL.BACKGROUND,
   personSlug,
 }: {
   filter?: { type: string };

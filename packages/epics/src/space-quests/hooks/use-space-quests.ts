@@ -10,6 +10,7 @@ import {
   type schemaPatchSpaceQuest,
   type schemaPostQuestUpdate,
   type schemaQuestCreateDraftPayload,
+  POLL,
 } from '@hypha-platform/core/client';
 import useSWR, { mutate } from 'swr';
 import type { z } from 'zod';
@@ -88,7 +89,7 @@ export function useSpaceQuests(spaceSlug: string | undefined) {
     {
       revalidateOnFocus: true,
       refreshInterval: (latest) =>
-        latest?.quests.some((q) => q.status === 'proposed') ? 5_000 : 0,
+        latest?.quests.some((q) => q.status === 'proposed') ? POLL.LIVE : 0,
     },
   );
 
@@ -128,7 +129,7 @@ export function useSpaceQuestDetail(
       }
       return (await response.json()) as QuestRecord;
     },
-    { refreshInterval: 15_000, revalidateOnFocus: true },
+    { refreshInterval: POLL.BACKGROUND, revalidateOnFocus: false },
   );
 
   return {

@@ -1,5 +1,6 @@
 'use client';
 
+import { POLL } from '@hypha-platform/core/client';
 import React from 'react';
 import useSWR from 'swr';
 import { useParams } from 'next/navigation';
@@ -69,7 +70,7 @@ type UseAssetsReturn = {
 
 export const useAssets = ({
   filter,
-  refreshInterval = 10000,
+  refreshInterval = POLL.BACKGROUND,
   bestEffort = false,
 }: {
   filter?: { type: string };

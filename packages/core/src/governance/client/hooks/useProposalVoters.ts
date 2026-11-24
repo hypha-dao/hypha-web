@@ -1,5 +1,6 @@
 'use client';
 
+import { POLL } from '../../../common/poll-intervals';
 import useSWR from 'swr';
 import { fetchJson } from '../../../common/fetch-json';
 
@@ -26,7 +27,7 @@ export const useProposalVoters = (documentSlug?: string) => {
       // votes, so a slightly slower cadence is fine.
       // While the last result is an error (e.g. a 404) SWR skips this poll and
       // its error retry takes over; polling resumes after the next success.
-      refreshInterval: 15000,
+      refreshInterval: POLL.ACTIVE,
     },
   );
 

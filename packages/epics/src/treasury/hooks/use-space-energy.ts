@@ -1,5 +1,6 @@
 'use client';
 
+import { POLL } from '@hypha-platform/core/client';
 import React from 'react';
 import useSWR from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -127,7 +128,8 @@ export const useSpaceEnergy = (spaceSlug: string | undefined) => {
       return (await response.json()) as SpaceEnergyResponse;
     },
     {
-      refreshInterval: 15000,
+      refreshInterval: POLL.BACKGROUND,
+      revalidateOnFocus: false,
       shouldRetryOnError: false,
     },
   );

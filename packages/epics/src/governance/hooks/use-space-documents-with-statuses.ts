@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import {
   useSpaceProposalsWeb3Rpc,
   useWithdrawnProposalsWeb3Rpc,
+  POLL,
 } from '@hypha-platform/core/client';
 import { Document } from '@hypha-platform/core/client';
 import { DirectionType, Order, OrderField } from '@hypha-platform/core/client';
@@ -160,7 +161,7 @@ export const useSpaceDocumentsWithStatuses = ({
       // set, so polling it every 10s is expensive. New documents are rare and
       // user-driven changes (create/vote/withdraw) call `update()` for instant
       // reflection, so a slower background poll is enough.
-      refreshInterval: 30000,
+      refreshInterval: POLL.BACKGROUND,
       refreshWhenHidden: false,
       refreshWhenOffline: false,
     },

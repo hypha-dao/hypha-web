@@ -2,14 +2,14 @@
 import React from 'react';
 import useSWR from 'swr';
 import { TransferWithEntity } from './types';
-import { useJwt } from '@hypha-platform/core/client';
+import { useJwt, POLL } from '@hypha-platform/core/client';
 import { buildUserTransfersEndpoint } from './build-user-transfers-endpoint';
 
 export { buildUserTransfersEndpoint } from './build-user-transfers-endpoint';
 
 export const useUserTransfers = ({
   sort,
-  refreshInterval = 10000,
+  refreshInterval = POLL.BACKGROUND,
   personSlug,
   token,
 }: {

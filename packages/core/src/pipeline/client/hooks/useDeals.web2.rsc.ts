@@ -1,5 +1,6 @@
 'use client';
 
+import { POLL } from '../../../common/poll-intervals';
 import useSWR, { mutate } from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -106,9 +107,9 @@ export function useDeals({
     async ([, resolvedSlug]) =>
       fetchDeals(resolvedSlug, filters, getAccessToken),
     {
-      revalidateOnFocus: true,
+      revalidateOnFocus: false,
       keepPreviousData: true,
-      refreshInterval: 15_000,
+      refreshInterval: POLL.BACKGROUND,
       dedupingInterval: 5_000,
     },
   );

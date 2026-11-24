@@ -12,6 +12,7 @@ import {
   fetchJson,
   getOrder,
   Order,
+  POLL,
 } from '@hypha-platform/core/client';
 import { UseDocuments, UseDocumentsReturn } from '@hypha-platform/epics';
 
@@ -51,8 +52,8 @@ export const useSpaceDocuments: UseDocuments = ({
     [endpoint],
     ([endpoint]) => fetchJson(endpoint, undefined, 'space documents'),
     {
-      revalidateOnFocus: true,
-      refreshInterval: 10000,
+      revalidateOnFocus: false,
+      refreshInterval: POLL.BACKGROUND,
       refreshWhenHidden: false,
       refreshWhenOffline: false,
     },

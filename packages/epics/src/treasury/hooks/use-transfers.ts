@@ -1,5 +1,6 @@
 'use client';
 
+import { POLL } from '@hypha-platform/core/client';
 import React from 'react';
 import useSWR from 'swr';
 import { TransferWithEntity } from './types';
@@ -7,7 +8,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 
 export const useTransfers = ({
   sort,
-  refreshInterval = 10000,
+  refreshInterval = POLL.BACKGROUND,
   spaceSlug,
 }: {
   sort?: { sort: string };
