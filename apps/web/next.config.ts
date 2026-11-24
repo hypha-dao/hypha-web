@@ -65,6 +65,10 @@ const MIDDLEWARE_SKIPPED_PREFIXES = [
   '_next/static',
   '_next/image',
   'favicon.ico',
+  // Crawler files (#2696): static files in public/, no function run.
+  'robots.txt',
+  'sitemap.xml',
+  'llms.txt',
 ].join('|');
 
 // Keep in step with MCP_RESPONSE_HEADERS in src/lib/mcp/headers.ts
