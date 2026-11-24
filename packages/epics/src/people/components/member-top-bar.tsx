@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
-import { MessagesSquare, Sparkles, Wallet } from 'lucide-react';
+import { MessagesSquare, Wallet } from 'lucide-react';
 import {
   getEnergyCommunityTokensForSpace,
   useSpaceBySlug,
@@ -24,7 +24,6 @@ import {
   memberMenuHref,
   memberSurfaceSpaceQuery,
   resolveMemberSpaceSlug,
-  spaceAskShortName,
 } from './member-menu';
 import { useMessagesScreenCount } from './my-connections';
 import {
@@ -93,10 +92,7 @@ export function MemberTopBar({ personSlug }: MemberTopBarProps) {
     open: chatOpen,
     toggle: toggleChat,
     requestMemberInbox,
-    requestMemberSpaceAi,
   } = useHumanChatPanel();
-  const askName = spaceAskShortName(space?.title) || tMember('yourSpace');
-  const askLabel = tMember('askSpace', { name: askName });
 
   const minted = useMemo(() => {
     const catalogue: MemberMintedToken[] = getEnergyCommunityTokensForSpace(
@@ -175,14 +171,6 @@ export function MemberTopBar({ personSlug }: MemberTopBarProps) {
           </span>
         </Link>
       ) : null}
-      <button
-        type="button"
-        className={APP_CHROME_ICON_TRIGGER}
-        aria-label={askLabel}
-        onClick={() => requestMemberSpaceAi()}
-      >
-        <Sparkles className="craft-icon" strokeWidth={1.25} aria-hidden />
-      </button>
       <span className="relative inline-flex">
         <button
           type="button"

@@ -145,11 +145,13 @@ export function ConnectedMenuTop({
   const secondaryLeading = aiChatEnabled ? <AiPanelTrigger /> : leadingAction;
   const { active: spacesRailActive } = useSpacesRailControl();
   const onHome = /\/(?:home|my-dashboard)\/?$/.test(pathname ?? '');
+  // Members always need the leading cluster — Hypha mark is hidden, so the
+  // Spaces switcher is the only place-identity in the top bar.
   const resolvedLeadingAction =
-    spacesRailActive || secondaryLeading ? (
+    hideHyphaMark || spacesRailActive || secondaryLeading ? (
       <div
         className={`flex items-center gap-1.5 sm:gap-2${
-          secondaryLeading || onHome ? '' : ' xl:hidden'
+          hideHyphaMark || secondaryLeading || onHome ? '' : ' xl:hidden'
         }`}
       >
         <SpacesRailTopToggle />

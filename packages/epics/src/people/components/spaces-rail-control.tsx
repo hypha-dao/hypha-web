@@ -130,7 +130,7 @@ function MemberMobileSpaceSwitcher() {
     resolvedTheme === 'dark' ? 'dark' : 'light',
   );
 
-  if (!title) return null;
+  const label = title || tNavigation('mySpaces');
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -139,9 +139,10 @@ function MemberMobileSpaceSwitcher() {
           type="button"
           className="flex min-w-0 max-w-[min(12rem,46vw)] items-center gap-1.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase"
           aria-label={tNavigation('mySpaces')}
+          data-testid="member-spaces-switcher"
         >
           <SpaceSwitcherMark iconUrl={iconUrl} alt="" />
-          <span className="min-w-0 truncate">{title}</span>
+          <span className="min-w-0 truncate">{label}</span>
           <ChevronsUpDown className="h-3 w-3 shrink-0" aria-hidden />
         </button>
       </DropdownMenuTrigger>
@@ -159,25 +160,21 @@ function MemberMobileSpaceSwitcher() {
 }
 
 /**
- * Top-bar control for the mobile spaces list.
- * Builders/funders: circle that opens the rail.
- * Members: Spaces name dropdown on small screens only — desktop already has
- * the switcher in the AI panel header, so showing both is a duplicate.
+ * Top-bar control for the spaces list.
+ * Builders/funders: circle that opens the rail (small screens).
+ * Members: always show the Spaces name dropdown. The left AI rail stays
+ * closed for members, so this is how they see and switch spaces.
  */
 export function SpacesRailTopToggle() {
   const { active, open, toggle } = useSpacesRailControl();
   const t = useTranslations('MemberHome');
   const { isMember } = useMemberExperience();
 
-  if (!active) return null;
-
   if (isMember) {
-    return (
-      <div className="xl:hidden">
-        <MemberMobileSpaceSwitcher />
-      </div>
-    );
+    return <MemberMobileSpaceSwitcher />;
   }
+
+  if (!active) return null;
 
   return (
     <button
