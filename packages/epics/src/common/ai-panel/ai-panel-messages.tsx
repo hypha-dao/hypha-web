@@ -189,7 +189,7 @@ export function AiPanelMessages({
   return (
     <div
       ref={containerRef}
-      className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-4 py-2"
+      className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-4 py-2 sm:px-5"
     >
       <div className="flex flex-col gap-2">
         {displayMessages.map((msg, index) => (

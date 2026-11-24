@@ -366,7 +366,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
 
       <section
         aria-label={t('askSpace', { name: askName })}
-        className="mx-auto mt-2 w-full min-w-0 max-w-[40rem] sm:mt-4"
+        className="mx-auto mt-2 box-border w-full min-w-0 max-w-[36rem] px-3 sm:mt-4 sm:px-5"
         data-member-home-ask=""
       >
         <div className="mb-4 border-b border-border pb-4">
