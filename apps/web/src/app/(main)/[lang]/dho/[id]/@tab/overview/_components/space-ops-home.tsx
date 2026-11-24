@@ -4,6 +4,8 @@ import { useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MemberHomeBanner, useMemberExperience } from '@hypha-platform/epics';
 import { useTranslations } from 'next-intl';
+import { cn } from '@hypha-platform/ui-utils';
+import { MEMBER_CONTENT_GUTTER_BREAKOUT } from '../../../../../_components/member-page-shell';
 import { TabScreenTitle } from '../../_components/tab-screen-title';
 import { HomeTokenHoldingsDashboardLazy } from './home-token-holdings-dashboard-lazy';
 import { MemberSpaceHome } from './member-space-home';
@@ -11,10 +13,12 @@ import { SpaceDashboard } from './space-dashboard';
 
 /**
  * Full viewport from the top of the space column, so the ground continues
- * under the banner. It breaks out of the column padding to the column edges.
+ * under the banner. Breaks out of the shared space gutters to the column edges.
  */
-const GROUND_FRAME_CLASS =
-  'relative isolate -mx-4 h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] w-[calc(100%+2rem)] sm:-mx-5 sm:w-[calc(100%+3rem)] xl:h-[calc(100svh-var(--menu-top-height,4.5rem))]';
+const GROUND_FRAME_CLASS = cn(
+  'relative isolate h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] xl:h-[calc(100svh-var(--menu-top-height,4.5rem))]',
+  MEMBER_CONTENT_GUTTER_BREAKOUT,
+);
 
 export function SpaceOpsHome({ spaceSlug }: { spaceSlug: string }) {
   const { isMember } = useMemberExperience();
@@ -34,7 +38,7 @@ function SpaceOpsDashboard({ spaceSlug }: { spaceSlug: string }) {
   }, []);
 
   return (
-    <div className="relative isolate -mx-4 sm:-mx-5">
+    <>
       {groundHost
         ? createPortal(
             <div aria-hidden className={GROUND_FRAME_CLASS}>
@@ -43,13 +47,13 @@ function SpaceOpsDashboard({ spaceSlug }: { spaceSlug: string }) {
             groundHost,
           )
         : null}
-      <div className="relative z-[1] flex flex-col gap-8 px-4 py-4 sm:px-5">
+      <div className="relative z-[1] flex flex-col gap-8 py-4">
         <div className="flex flex-col gap-3">
           <TabScreenTitle title={tCommon('overview')} />
           <SpaceDashboard spaceSlug={spaceSlug} />
         </div>
         <HomeTokenHoldingsDashboardLazy spaceSlug={spaceSlug} />
       </div>
-    </div>
+    </>
   );
 }

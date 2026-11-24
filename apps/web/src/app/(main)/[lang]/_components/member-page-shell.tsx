@@ -12,19 +12,26 @@ import { cn } from '@hypha-platform/ui-utils';
 export const MEMBER_SCREEN_STACK = `flex w-full min-w-0 flex-col ${MEMBER_TITLE_GAP} py-4`;
 
 /**
- * Member content gutters (image 2 / Rue Verte): ~7–8% each side on wide
+ * Space content gutters (image 2 / Rue Verte): ~7–8% each side on wide
  * screens so the column sits around 80–85% of the pane. Phone keeps a
- * usable inset without eating the strip.
+ * usable inset without eating the strip. Same for members and builders.
  */
 export const MEMBER_CONTENT_GUTTER =
   'px-6 sm:px-10 md:px-12 lg:px-[max(4rem,7vw)] xl:px-[max(5rem,8vw)]';
 
-/** Builder / funder space column — tight padding next to side panels. */
-export const SPACE_CONTENT_GUTTER = 'px-4 sm:px-5';
+/**
+ * Cancel {@link MEMBER_CONTENT_GUTTER} so a layer can bleed to the column
+ * edges (builder overview mycelium / banner ground).
+ */
+export const MEMBER_CONTENT_GUTTER_BREAKOUT =
+  '-mx-6 w-[calc(100%+3rem)] sm:-mx-10 sm:w-[calc(100%+5rem)] md:-mx-12 md:w-[calc(100%+6rem)] lg:-mx-[max(4rem,7vw)] lg:w-[calc(100%+2*max(4rem,7vw))] xl:-mx-[max(5rem,8vw)] xl:w-[calc(100%+2*max(5rem,8vw))]';
+
+/** @deprecated Use MEMBER_CONTENT_GUTTER — kept for older call sites. */
+export const SPACE_CONTENT_GUTTER = MEMBER_CONTENT_GUTTER;
 
 /**
- * Members get the wide Rue Verte gutters. Builders and funders keep the
- * centered Container.
+ * Members get the wide Rue Verte stack. Builders and funders keep the
+ * centered Container on non-space surfaces (wallet, profile).
  */
 export function MemberPageShell({
   children,
@@ -58,8 +65,7 @@ export function MemberPageShell({
 }
 
 /**
- * Space scrollport padding: members get the wide gutters; everyone else
- * keeps the compact space padding.
+ * Space scrollport padding — same left/right gutters for every persona.
  */
 export function SpaceContentGutter({
   children,
@@ -70,13 +76,12 @@ export function SpaceContentGutter({
   className?: string;
   style?: CSSProperties;
 }) {
-  const { isMember } = useMemberExperience();
   return (
     <div
       data-space-scroll-hold=""
       className={cn(
         'mt-[2px] min-w-0 flex-1 md:mt-[6px]',
-        isMember ? MEMBER_CONTENT_GUTTER : SPACE_CONTENT_GUTTER,
+        MEMBER_CONTENT_GUTTER,
         className,
       )}
       style={style}
