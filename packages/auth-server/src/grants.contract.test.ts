@@ -239,13 +239,13 @@ run(
         AUTH_SERVER_RESOURCES: `${h.RESOURCE},${MCP}`,
       });
       try {
-        const pkce = h.makePkce();
-        const u = h.authorizeUrl(pkce, {
+        // The library applies a resource's allowed scopes when it issues the token: a request for
+        // a write scope alone never ends in an access token.
+        const f = await h.fullFlow(fresh, {
           scope: 'agreements:vote',
           resource: MCP,
         });
-        const a = await fresh.handler(h.req(u.pathname + u.search));
-        expect(a.headers.get('location') ?? '').toContain('invalid_scope');
+        expect(f.token?.body?.access_token).toBeUndefined();
         const { rows } = await fresh.pool.query(
           'select "allowedScopes" from as_oauth_resource where identifier = $1',
           [MCP],

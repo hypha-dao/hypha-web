@@ -3,6 +3,7 @@ import type { ClientMetadataResourceFetch } from '@better-auth/oauth-provider';
 import { createAuthServer } from '../auth';
 import { loadAuthServerConfig, type AuthServerConfig } from '../config';
 import { createAuthDbPool } from '../db';
+import { createAuthServerHandler } from '../handler';
 
 export const TEST_DB_URL = process.env.AUTH_SERVER_TEST_DATABASE_URL;
 export const ISSUER = 'http://auth.localhost:3000';
@@ -84,6 +85,11 @@ export async function makeServer(
     ...server,
     pool,
     handler: (req: Request) => server.auth.handler(req),
+    /** The app's own request handler (consent and registration wrappers included). */
+    appHandler: createAuthServerHandler(
+      () => config,
+      () => server,
+    ),
   };
 }
 export type Harness = Awaited<ReturnType<typeof makeServer>>;
@@ -198,7 +204,7 @@ export async function consent(
   /** The space choice of the page: 'all' or space ids. */
   spaceGrants: unknown = 'all',
 ) {
-  const res = await s.handler(
+  const res = await s.appHandler(
     req('/api/auth/oauth2/consent', {
       method: 'POST',
       jar,
