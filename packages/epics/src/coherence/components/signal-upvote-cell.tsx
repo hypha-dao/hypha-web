@@ -22,7 +22,8 @@ export function SignalUpvoteTriangle({ className }: { className?: string }) {
 }
 
 const arrowButtonClass =
-  'h-6 min-h-0 w-6 rounded-none border-0 px-0 normal-case tracking-normal shadow-none ring-0 hover:shadow-none focus-visible:ring-1 focus-visible:ring-offset-0';
+  // Keep the filled active state inset from the outer border (Button sm is min-h-8).
+  'box-border h-6 max-h-6 min-h-6 w-6 max-w-6 min-w-6 shrink-0 self-center rounded-none border-0 p-0 normal-case tracking-normal shadow-none ring-0 hover:shadow-none focus-visible:ring-1 focus-visible:ring-offset-0';
 
 type VoteArrowProps = {
   direction: 'up' | 'down';
@@ -239,8 +240,8 @@ export function SignalUpvoteCellChrome({
         layout === 'stack'
           ? // Energy-community signals stack: one outline, 56px column, no fill.
             'w-[56px] min-w-[56px] flex-col items-stretch overflow-hidden py-0.5'
-          : // Theme spacing-9 is 64px — lock the row control to the 36px reference.
-            'h-[36px] items-center px-0.5',
+          : // Row control: pad the shell so a filled arrow never kisses the border.
+            'h-9 items-center gap-0.5 p-1',
         layout === 'stack' ? null : selected ? 'border-accent-8' : null,
         className,
       )}
