@@ -73,8 +73,9 @@ const SPACE_ASK_ARTICLES = new Set([
  */
 export function spaceAskShortName(title: string | null | undefined): string {
   const words = (title ?? '').trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return '';
-  const [first, second] = words;
+  const first = words[0];
+  if (!first) return '';
+  const second = words[1];
   if (second && SPACE_ASK_ARTICLES.has(first.toLowerCase())) {
     return second;
   }

@@ -243,14 +243,14 @@ export function AiPanelHeader({
       member && !pathSlug && /^\/[^/]+\/my-wallet(?:\/|$)/.test(pathname ?? '')
         ? memberMenuHref(lang, space.slug, 'wallet')
         : member &&
-            !pathSlug &&
-            /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(pathname ?? '')
-          ? memberMenuHref(lang, space.slug, 'messages')
-          : (getDhoSpaceContextPath({
-              pathname,
-              lang,
-              spaceSlug: space.slug,
-            }) ?? `/${lang}/dho/${space.slug}/agreements`);
+          !pathSlug &&
+          /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(pathname ?? '')
+        ? memberMenuHref(lang, space.slug, 'messages')
+        : getDhoSpaceContextPath({
+            pathname,
+            lang,
+            spaceSlug: space.slug,
+          }) ?? `/${lang}/dho/${space.slug}/agreements`;
     return (
       <DropdownMenuItem
         key={space.id}
@@ -283,8 +283,8 @@ export function AiPanelHeader({
         memberAsk
           ? 'grid-cols-1 px-4'
           : reserveDesktopLeftColumn
-            ? 'grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] ps-4 pe-4'
-            : 'grid-cols-[minmax(0,1fr)_2.25rem] ps-4 pe-4',
+          ? 'grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] ps-4 pe-4'
+          : 'grid-cols-[minmax(0,1fr)_2.25rem] ps-4 pe-4',
         showLeftSlot &&
           collapseLeftSlotAtMd &&
           'max-md:grid-cols-[2.25rem_minmax(0,1fr)_2.25rem]',

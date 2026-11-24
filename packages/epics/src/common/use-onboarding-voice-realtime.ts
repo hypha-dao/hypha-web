@@ -1088,8 +1088,8 @@ export function useOnboardingVoiceRealtime({
           typeof event.delta === 'string'
             ? event.delta
             : typeof event.transcript === 'string'
-              ? event.transcript
-              : '';
+            ? event.transcript
+            : '';
         if (!delta) return;
         interimDictationRef.current = `${interimDictationRef.current}${delta}`;
         const preview = interimDictationRef.current.trim();
