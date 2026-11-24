@@ -204,7 +204,7 @@ export function SignalFeedRow({
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <SignalTypeBadge type={signal.type} />
           <h3
-            className="m-0 text-[17px] font-semibold leading-[1.3] text-foreground max-md:text-[18px] max-md:font-normal"
+            className="m-0 text-[18px] font-normal leading-[1.3] tracking-[-0.01em] text-foreground"
             style={{ fontFamily: 'var(--font-family-heading)' }}
           >
             <Link

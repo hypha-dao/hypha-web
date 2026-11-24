@@ -256,7 +256,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                       {typeLabel}
                     </p>
                     <h2
-                      className="mt-1.5 m-0 min-w-0 break-words text-[17px] font-light leading-[1.2] text-foreground"
+                      className="mt-1.5 m-0 min-w-0 break-words text-[18px] font-normal leading-[1.3] tracking-[-0.01em] text-foreground"
                       style={{ fontFamily: 'var(--font-family-heading)' }}
                     >
                       {signal.title}
