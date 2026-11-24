@@ -112,23 +112,22 @@ const counts = {
 const listing = (
   items: unknown[],
   extra: Record<string, unknown> = {},
-  seen?: (input: unknown) => void,
-) =>
-  ({
-    listQuests: async (input: unknown) => {
-      seen?.(input);
-      return {
-        ok: true,
-        data: {
-          items,
-          total: items.length,
-          counts,
-          asOf: '2026-11-19T00:00:00.000Z',
-          ...extra,
-        },
-      };
-    },
-  } as never);
+  seen?: (input: Input) => void,
+): Partial<McpFeatures> => ({
+  listQuests: async (input: Input) => {
+    seen?.(input);
+    return {
+      ok: true as const,
+      data: {
+        items,
+        total: items.length,
+        counts,
+        asOf: '2026-11-19T00:00:00.000Z',
+        ...extra,
+      } as never,
+    };
+  },
+});
 
 describe('hypha_list_quests', () => {
   it('returns the presentation model: urls, the linked proposal, milestones, deliverables, members', async () => {
@@ -195,7 +194,9 @@ describe('hypha_list_quests', () => {
     let seen = {} as Input;
     const { deps } = makeDeps(
       {},
-      listing([], {}, (input) => (seen = input as Input)),
+      listing([], {}, (input) => {
+        seen = input;
+      }),
     );
     await call(deps, { spaceSlug: 'alpha', text: 'full', pageSize: 20 });
     expect(seen.paging.limit).toBe(5);
@@ -211,15 +212,45 @@ describe('hypha_list_quests', () => {
     expect(bad.content[0]!.text).toMatch(/cursor/i);
   });
 
-  it('pages with an offset cursor', async () => {
-    const { deps } = makeDeps({}, listing([quest()], { total: 25 }));
-    const r = await call(deps, { spaceSlug: 'alpha', pageSize: 10 });
-    expect(r.structuredContent).toMatchObject({
+  it('pages with an offset cursor; the next page continues where this one stopped', async () => {
+    const seen: Input[] = [];
+    const { deps } = makeDeps(
+      {},
+      {
+        listQuests: async (input: Input) => {
+          seen.push(input);
+          return {
+            ok: true as const,
+            data: {
+              items: [quest({ slug: `at-${input.paging.offset}` })],
+              total: 15,
+              counts,
+              asOf: '2026-11-19T00:00:00.000Z',
+            } as never,
+          };
+        },
+      },
+    );
+    const first = await call(deps, { spaceSlug: 'alpha', pageSize: 10 });
+    expect(first.structuredContent).toMatchObject({
       hasMore: true,
       showing: 1,
-      total: 25,
+      total: 15,
     });
-    expect(r.structuredContent!.nextCursor).toBeTruthy();
+    expect(first.structuredContent!.items[0]!.slug).toBe('at-0');
+    const cursor = first.structuredContent!.nextCursor;
+    expect(cursor).toBeTruthy();
+    const second = await call(deps, {
+      spaceSlug: 'alpha',
+      pageSize: 10,
+      cursor: cursor!,
+    });
+    expect(seen.map((input) => input.paging.offset)).toEqual([0, 10]);
+    expect(second.structuredContent!.items[0]!.slug).toBe('at-10');
+    expect(second.structuredContent).toMatchObject({
+      hasMore: false,
+      nextCursor: null,
+    });
   });
 
   it('the text mode: excerpt cuts long texts and flags them, none leaves them out, full keeps more', async () => {

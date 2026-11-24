@@ -295,14 +295,17 @@ export async function readQuestsListing(
             ? m.responsibilities
             : [],
           order: m.order,
+          // Person ids decide when both exist; the role label and the name are only a
+          // fallback for legacy rows that carry no id.
           isLead:
-            (row.leadPersonId != null && m.personId === row.leadPersonId) ||
-            m.roleLabel?.toLowerCase() === 'lead' ||
-            Boolean(
-              cleanLead &&
-                stripViewerYouMarker(m.memberName).trim().toLowerCase() ===
-                  cleanLead,
-            ),
+            row.leadPersonId != null && m.personId != null
+              ? m.personId === row.leadPersonId
+              : m.roleLabel?.toLowerCase() === 'lead' ||
+                Boolean(
+                  cleanLead &&
+                    stripViewerYouMarker(m.memberName).trim().toLowerCase() ===
+                      cleanLead,
+                ),
         }),
       ),
     );

@@ -96,23 +96,22 @@ const item = (over: Record<string, unknown> = {}) => ({
 const listing = (
   items: unknown[],
   extra: Record<string, unknown> = {},
-  seen?: (input: unknown) => void,
-) =>
-  ({
-    listSignals: async (input: unknown) => {
-      seen?.(input);
-      return {
-        ok: true,
-        data: {
-          items,
-          total: items.length,
-          summary: null,
-          asOf: '2026-11-19T00:00:00.000Z',
-          ...extra,
-        },
-      };
-    },
-  } as never);
+  seen?: (input: Input) => void,
+): Partial<McpFeatures> => ({
+  listSignals: async (input: Input) => {
+    seen?.(input);
+    return {
+      ok: true as const,
+      data: {
+        items,
+        total: items.length,
+        summary: null,
+        asOf: '2026-11-19T00:00:00.000Z',
+        ...extra,
+      } as never,
+    };
+  },
+});
 
 describe('hypha_list_signals', () => {
   it('returns the presentation model: url, userText and the legacy group', async () => {
@@ -159,7 +158,9 @@ describe('hypha_list_signals', () => {
     let seen = {} as Input;
     const { deps } = makeDeps(
       {},
-      listing([], {}, (input) => (seen = input as Input)),
+      listing([], {}, (input) => {
+        seen = input;
+      }),
     );
     await call(deps, {
       spaceSlug: 'alpha',
@@ -208,14 +209,44 @@ describe('hypha_list_signals', () => {
   });
 
   it('pages with an offset cursor; the next page continues where this one stopped', async () => {
-    const { deps } = makeDeps({}, listing([item()], { total: 45 }));
+    const seen: Input[] = [];
+    const { deps } = makeDeps(
+      {},
+      {
+        listSignals: async (input: Input) => {
+          seen.push(input);
+          return {
+            ok: true as const,
+            data: {
+              items: [item({ slug: `at-${input.paging.offset}` })],
+              total: 25,
+              summary: null,
+              asOf: '2026-11-19T00:00:00.000Z',
+            } as never,
+          };
+        },
+      },
+    );
     const first = await call(deps, { spaceSlug: 'alpha', pageSize: 20 });
     expect(first.structuredContent).toMatchObject({
       hasMore: true,
       showing: 1,
-      total: 45,
+      total: 25,
     });
-    expect(first.structuredContent!.nextCursor).toBeTruthy();
+    expect(first.structuredContent!.items[0]!.slug).toBe('at-0');
+    const cursor = first.structuredContent!.nextCursor;
+    expect(cursor).toBeTruthy();
+    const second = await call(deps, {
+      spaceSlug: 'alpha',
+      pageSize: 20,
+      cursor: cursor!,
+    });
+    expect(seen.map((input) => input.paging.offset)).toEqual([0, 20]);
+    expect(second.structuredContent!.items[0]!.slug).toBe('at-20');
+    expect(second.structuredContent).toMatchObject({
+      hasMore: false,
+      nextCursor: null,
+    });
     const bad = await call(deps, { spaceSlug: 'alpha', cursor: '!!' });
     expect(bad.isError).toBe(true);
     expect(bad.content[0]!.text).toMatch(/cursor/i);
@@ -225,7 +256,9 @@ describe('hypha_list_signals', () => {
     let seen = {} as Input;
     const { deps } = makeDeps(
       {},
-      listing([], {}, (input) => (seen = input as Input)),
+      listing([], {}, (input) => {
+        seen = input;
+      }),
     );
     await call(deps, {
       spaceSlug: 'alpha',

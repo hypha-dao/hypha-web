@@ -159,6 +159,14 @@ describe.skipIf(!HAS_DB)('quests queries (database)', () => {
         order: 1,
       },
       {
+        // same display name as the lead, but another person: never the lead
+        questId: activeId,
+        personId: grace,
+        memberName: 'Ada Tester',
+        responsibilities: [],
+        order: 2,
+      },
+      {
         questId: memberOnlyId,
         personId: ada,
         memberName: 'Ada Tester',
@@ -252,7 +260,9 @@ describe.skipIf(!HAS_DB)('quests queries (database)', () => {
       completed: 1,
       archived: 0,
     });
+    // lead of the paused and completed ones, plain member of the active one
     expect(slugs((await list({ mineOfPersonId: grace })).items)).toEqual([
+      'active',
       'member',
       'paused',
     ]);
@@ -275,8 +285,12 @@ describe.skipIf(!HAS_DB)('quests queries (database)', () => {
     const onlyActive = await list({ status: 'active' });
     const active = onlyActive.items[0]!;
     expect(active.milestones.map((m) => m.name)).toEqual(['Dig', 'Plant']);
-    expect(active.members.map((m) => m.memberName)).toEqual(['Ada Tester']);
-    expect(active.members[0]!.isLead).toBe(true);
+    expect(active.members.map((m) => m.memberName)).toEqual([
+      'Ada Tester',
+      'Ada Tester',
+    ]);
+    // person ids decide: the same name with another person id is not the lead
+    expect(active.members.map((m) => m.isLead)).toEqual([true, false]);
     expect(active.deliverables.map((d) => d.name)).toEqual(['Plan']);
     expect(active.rewards).toEqual([{ amount: '10', token: 'USDC' }]);
     expect(active.scopeInMarkdown).toBe('- beds\n- soil');
