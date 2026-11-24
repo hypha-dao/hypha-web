@@ -22,6 +22,8 @@ export type McpRequestDeps = {
   features: McpFeatures;
   spaceUrl(slug: string): string;
   proposalUrl(spaceSlug: string, proposalSlug: string): string;
+  signalUrl(spaceSlug: string, signalSlug: string): string;
+  questUrl(spaceSlug: string, questSlug: string): string;
   slot?: RateSlot;
   /** Test seam: the issuer's key set. */
   keys?: AuthorizeDeps['keys'];
@@ -115,6 +117,8 @@ export function createMcpRequestHandlers(deps: McpRequestDeps) {
           features: deps.features,
           spaceUrl: deps.spaceUrl,
           proposalUrl: deps.proposalUrl,
+          signalUrl: deps.signalUrl,
+          questUrl: deps.questUrl,
           log: deps.log ?? consoleLogger,
           deadlineMs: deps.deadlineMs,
           clientId: authorized.clientId,
