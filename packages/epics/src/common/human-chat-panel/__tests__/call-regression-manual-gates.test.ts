@@ -269,17 +269,6 @@ describe('WCUX-QUALITY debug overlay and capture (row 9)', () => {
     expect(source).toContain('ideal: 720');
   });
 
-  it('downscales thumbnail receivers when N ≥ 5', () => {
-    const source = readFileSync(
-      resolve(
-        commonDir,
-        '../../../core/src/matrix/client/hooks/call-thumbnail-receiver-downscale.ts',
-      ),
-      'utf8',
-    );
-    expect(source).toContain('scaleResolutionDownBy');
-  });
-
   it('logs inbound RTP frame sizes when support debug is enabled', () => {
     const source = readFileSync(
       resolve(

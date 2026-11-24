@@ -12,7 +12,6 @@ import {
   type ReactNode,
   type CSSProperties,
 } from 'react';
-import { createPortal } from 'react-dom';
 import type { MatrixClient, Room as MatrixRoom } from 'matrix-js-sdk';
 import type { Room as LiveKitRoom } from 'livekit-client';
 import {
@@ -81,8 +80,7 @@ import {
 import {
   feedReportsAudioMutedForTile,
   formatCallShareTileLabel,
-  resolveCallAudioPortalTarget,
-  shouldMountRemoteCallAudioSink,
+  buildRemoteCallAudioSinkEntries,
 } from './call-feed-tile-audio';
 import {
   createCallFeedVideoStream,
@@ -92,6 +90,8 @@ import {
   resolveCallFeedVideoSurfaceClassName,
 } from './call-feed-tile-video';
 import { registerCallPlaybackElement } from './call-playback-registry';
+import { feedKey } from './call-feed-key';
+import { CallRemoteAudioSinks } from './call-remote-audio-sinks';
 import { callAccentAlertOnDarkText } from './call-accent-alert-styles';
 import { CallFloatingReactionOverlay } from './call-floating-reaction-overlay';
 import { CallRaiseHandBadge } from './call-raise-hand-badge';
@@ -133,7 +133,10 @@ type HumanChatPanelCallStageBaseProps = {
   ) => CallFloatingReaction[];
   isHandRaised?: (userId: string | null | undefined) => boolean;
   getRaiseHandOrder?: (userId: string | null | undefined) => number | null;
-  /** Bumps when floating reaction overlays change. */
+  /**
+   * Bumps when floating reaction overlays change. Only forces a stage re-render so tiles
+   * receive fresh reaction props; it must never be part of a tile `key` (remounts media).
+   */
   floatingReactionsVersion?: number;
 };
 
@@ -177,12 +180,6 @@ type HumanChatPanelCallStageProps = HumanChatPanelCallStageBaseProps & {
    */
   panelMobileLayout?: boolean;
 };
-
-function feedKey(feed: CallFeed, index: number): string {
-  return `${feed.userId}:${String(feed.deviceId)}:${String(
-    feed.purpose,
-  )}:${index}`;
-}
 
 type RemoteTileItem =
   | { kind: 'feed'; feed: CallFeed }
@@ -775,7 +772,6 @@ function HumanChatPanelCallStageMain({
   getFloatingReactions,
   isHandRaised,
   getRaiseHandOrder,
-  floatingReactionsVersion = 0,
 }: HumanChatPanelCallStageMainProps) {
   const t = useTranslations('HumanChatPanel');
   const labelId = useId();
@@ -787,6 +783,13 @@ function HumanChatPanelCallStageMain({
   const handleExpand = useCallback(() => {
     onRequestFullView?.();
   }, [onRequestFullView]);
+
+  /** Flat, layout-independent audio sinks; never re-parented on speaker/layout change. */
+  const remoteAudioSinkEntries = buildRemoteCallAudioSinkEntries(
+    model.userMediaFeeds,
+    model.shareFeeds,
+    currentUserId,
+  );
 
   const remoteUserTiles = useMemo(
     () =>
@@ -1066,7 +1069,7 @@ function HumanChatPanelCallStageMain({
 
   const renderUserTile = (feed: CallFeed, keyIdx: number) => (
     <CallFeedTile
-      key={`${feedKey(feed, keyIdx)}:${floatingReactionsVersion}`}
+      key={feedKey(feed, keyIdx)}
       client={client}
       roomId={roomId}
       currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
@@ -1300,6 +1303,10 @@ function HumanChatPanelCallStageMain({
       <h2 id={labelId} className="sr-only">
         {isFull ? t('callFullView') : t('callStageLabel')}
       </h2>
+      <CallRemoteAudioSinks
+        entries={remoteAudioSinkEntries}
+        isDocumentPipOpen={isDocumentPipOpen}
+      />
       {useShareWithParticipantsLayout ? (
         <div
           ref={onSplit ? splitRef : undefined}
@@ -2592,15 +2599,8 @@ const FeedContent = ({
   const overlayLabel = isPip ? t('callYou') : shareOverlayLabel;
   const ariaLabel =
     isShare && !isPip ? shareOverlayLabel : isPip ? t('callYou') : resolvedName;
-  const mountRemoteAudio = shouldMountRemoteCallAudioSink(
-    feed,
-    isShare,
-    currentUserId,
-  );
-  const mountRemoteAudioInMainDocument = isDocumentPipOpen && mountRemoteAudio;
 
   const ref = useRef<HTMLVideoElement | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const stream = feed.stream ?? null;
   const mirrorLocalPreview =
     Boolean(currentUserId && feed.userId === currentUserId) &&
@@ -2712,37 +2712,8 @@ const FeedContent = ({
   const showParticipantVideoLabel = showVideoElement && !isPip;
 
   useEffect(() => {
-    const el = audioRef.current;
-    if (!el || !stream || !mountRemoteAudio) return;
-    el.srcObject = stream;
-    el.play().catch((err) => {
-      if (process.env.NODE_ENV === 'development') {
-        console.debug('[CallFeedTile] audio play rejected', err);
-      }
-    });
-
-    return () => {
-      el.srcObject = null;
-    };
-  }, [
-    mountRemoteAudio,
-    mountRemoteAudioInMainDocument,
-    stream,
-    streamBindVersion,
-  ]);
-
-  useEffect(() => {
     return registerCallPlaybackElement(ref.current);
   }, [hasVideo, liveVideoTrack?.id, streamBindVersion]);
-
-  useEffect(() => {
-    return registerCallPlaybackElement(audioRef.current);
-  }, [
-    mountRemoteAudio,
-    mountRemoteAudioInMainDocument,
-    stream,
-    streamBindVersion,
-  ]);
 
   useEffect(() => {
     const onFeedVisualChange = () => {
@@ -2805,17 +2776,12 @@ const FeedContent = ({
         }
         void el.play().catch(() => undefined);
       }
-      const audioEl = audioRef.current;
-      if (audioEl && mountRemoteAudio && stream) {
-        audioEl.srcObject = stream;
-        void audioEl.play().catch(() => undefined);
-      }
     };
     document.addEventListener('visibilitychange', onVisibility);
     return () => {
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [liveVideoTrack?.id, mountRemoteAudio, stream, remoteShareLiveKitTrack]);
+  }, [liveVideoTrack?.id, remoteShareLiveKitTrack]);
 
   /** Analyse mic/remote line whenever the tile has a live audio track (not just Matrix `isSpeaking`, which lags and hid real levels). */
   const hasLiveAudioTrack =
@@ -3025,33 +2991,6 @@ const FeedContent = ({
           ) : null}
         </div>
       ) : null}
-      {mountRemoteAudio
-        ? (() => {
-            const audioSink = (
-              <audio
-                ref={audioRef}
-                autoPlay
-                playsInline
-                aria-hidden
-                className={
-                  mountRemoteAudioInMainDocument
-                    ? 'pointer-events-none fixed size-0 overflow-hidden opacity-0'
-                    : undefined
-                }
-              />
-            );
-            if (
-              mountRemoteAudioInMainDocument &&
-              typeof document !== 'undefined'
-            ) {
-              return createPortal(
-                audioSink,
-                resolveCallAudioPortalTarget(document),
-              );
-            }
-            return audioSink;
-          })()
-        : null}
     </div>
   );
 };
