@@ -47,7 +47,7 @@ const metaClass =
   'truncate font-sans text-1 font-normal leading-tight text-muted-foreground';
 /** Compact track — default Switch (w-9) reads too long in this menu. */
 const darkModeSwitchClass =
-  'h-4 w-7 [&>span]:size-3 [&>span]:data-[state=checked]:translate-x-3';
+  'h-4 w-7 [&>span]:size-3 data-[state=checked]:[&>span]:translate-x-3';
 
 function useMemberProfileSpaceLabel() {
   const pathname = usePathname() ?? '';

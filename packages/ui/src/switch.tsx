@@ -19,7 +19,9 @@ const Switch = React.forwardRef<
   >
     <SwitchPrimitives.Thumb
       className={cn(
-        'pointer-events-none block size-4 rounded-full bg-white shadow-sm ring-0 transition-transform data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0',
+        // accent-contrast keeps the thumb readable on accent-9 in both themes
+        // (dark accent-9 is near-white; a white thumb disappears on it).
+        'pointer-events-none block size-4 rounded-full bg-accent-contrast shadow-sm ring-0 transition-transform data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0',
       )}
     />
   </SwitchPrimitives.Root>
