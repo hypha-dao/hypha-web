@@ -375,7 +375,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
         className="mt-2 box-border w-full min-w-0 sm:mt-4"
         data-member-home-ask=""
       >
-        <div className="mb-2.5 border-b border-border pb-2.5">
+        <div className="border-b border-border pb-2">
           <header className={MEMBER_TITLE_STACK}>
             <MemberEyebrow icon={Sparkles}>
               {t('askSpaceEyebrow', { name: askName })}

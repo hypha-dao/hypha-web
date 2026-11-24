@@ -12,13 +12,13 @@ export const MEMBER_KPI_SM = 'member-kpi-sm';
 
 /**
  * One gap for the whole title rhythm: eyebrow → large title, and large title →
- * first content. 10px matches energy-community page-intro. Keep screen stacks
- * and filters on this same token so home / wallet / members don't drift.
+ * first content. Keep screen stacks and filters on this same token so home /
+ * wallet / members don't drift. 8px — tight enough without feeling cramped.
  */
-export const MEMBER_TITLE_GAP = 'gap-2.5';
+export const MEMBER_TITLE_GAP = 'gap-2';
 
 /** Space below the title block when margin is easier than a flex gap. */
-export const MEMBER_TITLE_AFTER = 'mt-2.5';
+export const MEMBER_TITLE_AFTER = 'mt-2';
 
 /**
  * Eyebrow → large title. Use with a parent that also uses MEMBER_TITLE_GAP /

@@ -127,12 +127,12 @@ function MemberHomeCardSkeleton({
 function MemberHomeSkeleton() {
   return (
     <div
-      className="flex w-full min-w-0 flex-col gap-2.5 py-4"
+      className="flex w-full min-w-0 flex-col gap-2 py-4"
       aria-hidden
       data-member-home-skeleton=""
     >
-      <section className="flex min-w-0 flex-col gap-2.5">
-        <div className="flex flex-col gap-2.5">
+      <section className="flex min-w-0 flex-col gap-2">
+        <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-4">
             <Pulse text className="h-3 w-28" />
             <Pulse className="h-3 w-28" delayMs={40} />
