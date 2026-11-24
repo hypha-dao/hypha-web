@@ -48,6 +48,41 @@ vi.mock('../../coherence/server/web3/get-member-voting-power', () => ({
   getMemberVotingPower: memberPower,
 }));
 
+const sig = vi.hoisted(() => ({
+  page: vi.fn(),
+  count: vi.fn(),
+  summary: vi.fn(),
+  tags: vi.fn(),
+  upvotes: vi.fn(),
+  names: vi.fn(),
+  symbols: vi.fn(),
+}));
+vi.mock('../../coherence/server/list-signals-queries', () => ({
+  selectSignalsPage: sig.page,
+  countSignals: sig.count,
+  summariseSignals: sig.summary,
+  selectTopSignalTags: sig.tags,
+  selectSignalUpvotes: sig.upvotes,
+  selectPersonDisplayNames: sig.names,
+  selectTokenSymbolsByAddress: sig.symbols,
+}));
+vi.mock('../../coherence/server/signal-workflow', () => ({
+  readSignalWorkflowConfig: vi.fn(async () => ({
+    statuses: [
+      {
+        slug: 'backlog',
+        name: 'Backlog',
+        color: 'neutral',
+        category: 'backlog',
+        position: 0,
+      },
+    ],
+    boards: [
+      { slug: 'general', name: 'General', color: 'neutral', position: 0 },
+    ],
+  })),
+}));
+
 const isOnChainMemberOrDelegate = vi.fn();
 vi.mock('../../space/server/is-on-chain-member-or-delegate', () => ({
   isOnChainMemberOrDelegate: (...a: unknown[]) =>
@@ -92,6 +127,7 @@ import { getMyMembership } from '../get-my-membership';
 import { getSpace } from '../get-space';
 import { listProposals } from '../list-proposals';
 import { getMyVote } from '../get-my-vote';
+import { listSignals } from '../list-signals';
 
 const ADDR = '0xabc0000000000000000000000000000000000001' as const;
 const db = {
@@ -1138,5 +1174,239 @@ describe('visibility: get my vote', () => {
         via: via(),
       }),
     ).toMatchObject({ ok: false, code: 'invalid_identity' });
+  });
+});
+
+describe('visibility: list signals', () => {
+  const OTHER_PERSON = 'Hidden Person';
+  const row = (over: Record<string, unknown> = {}) => ({
+    id: 1,
+    slug: 'sig-1',
+    title: 'A signal',
+    description: 'About water',
+    type: 'Need',
+    priority: 'high',
+    tags: ['water'],
+    messages: 2,
+    archived: false,
+    creatorId: 7,
+    creatorName: 'Ada L',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-02T00:00:00.000Z',
+    dueAt: null,
+    status: 'backlog',
+    board: 'general',
+    assigneeIds: [8],
+    indicativePayouts: [{ amount: '5', token: ADDR }],
+    capitals: ['social'],
+    overdue: false,
+    // a field a careless presentation could leak
+    address: ADDR,
+    ...over,
+  });
+  const summaryRows = (total: number) => ({
+    total,
+    byType: new Map([['Need', total]]),
+    byPriority: new Map([['high', total]]),
+    byStatus: new Map([['backlog', total]]),
+    byBoard: new Map([['general', total]]),
+    overdue: 0,
+    unassigned: 0,
+  });
+  const bySpace = new Map<number, unknown[]>();
+  const ask = (
+    slug: string,
+    caller: unknown,
+    extra: Record<string, unknown> = {},
+  ) =>
+    listSignals(
+      { spaceSlug: slug, paging: { offset: 0, limit: 20 }, ...extra },
+      caller as never,
+      { db },
+    );
+
+  beforeEach(() => {
+    bySpace.clear();
+    bySpace.set(1, [row()]);
+    bySpace.set(4, [row({ slug: 'secret', title: 'secret' })]);
+    bySpace.set(6, [row({ slug: 'orphan' })]);
+    sig.page.mockImplementation(
+      async (_c: unknown, a: { filter: { spaceId: number } }) =>
+        bySpace.get(a.filter.spaceId) ?? [],
+    );
+    sig.summary.mockImplementation(
+      async (_c: unknown, f: { spaceId: number }) =>
+        summaryRows((bySpace.get(f.spaceId) ?? []).length),
+    );
+    sig.count.mockImplementation(
+      async (_c: unknown, f: { spaceId: number }) =>
+        (bySpace.get(f.spaceId) ?? []).length,
+    );
+    sig.tags.mockResolvedValue([{ tag: 'water', count: 1 }]);
+    sig.upvotes.mockResolvedValue(new Map());
+    sig.names.mockResolvedValue(new Map([[8, OTHER_PERSON]]));
+    sig.symbols.mockResolvedValue(new Map());
+  });
+
+  const nothingRead = () => {
+    expect(sig.page).not.toHaveBeenCalled();
+    expect(sig.summary).not.toHaveBeenCalled();
+    expect(sig.count).not.toHaveBeenCalled();
+    expect(sig.upvotes).not.toHaveBeenCalled();
+  };
+
+  it('non-member: a public space is listed, a space-level space is not found and nothing is read', async () => {
+    expect(await ask('s1', mcpUser())).toMatchObject({ ok: true });
+    sig.page.mockClear();
+    sig.summary.mockClear();
+    sig.count.mockClear();
+    sig.upvotes.mockClear();
+    expect(await ask('s4', mcpUser())).toMatchObject({
+      ok: false,
+      code: 'not_found',
+    });
+    nothingRead();
+  });
+
+  it('member and delegate: also the space they belong to', async () => {
+    chain.readMemberSpaceIds.mockResolvedValue([4]);
+    chain.readSpaceMembersBatch.mockResolvedValue(
+      new Map([[4, { members: [ADDR], executor: '0xe4' }]]),
+    );
+    expect(await ask('s4', mcpUser())).toMatchObject({ ok: true });
+    clearChainFactsCaches();
+    chain.readMemberSpaceIds.mockResolvedValue([]);
+    chain.readDelegateSpaceIds.mockResolvedValue([4]);
+    chain.readSpaceMembersBatch.mockResolvedValue(
+      new Map([[4, { members: ['0xdelegator'], executor: '0xe' }]]),
+    );
+    chain.readDelegatorsBatch.mockResolvedValue(
+      new Map([[4, ['0xdelegator']]]),
+    );
+    expect(await ask('s4', mcpUser())).toMatchObject({ ok: true });
+  });
+
+  it('organisation sibling: the organisation-level space, never the space-level one', async () => {
+    chain.readMemberSpaceIds.mockResolvedValue([6]);
+    chain.readSpaceMembersBatch.mockResolvedValue(
+      new Map([[6, { members: [ADDR], executor: '0xe6' }]]),
+    );
+    expect(await ask('s3', mcpUser())).toMatchObject({ ok: true });
+    expect(await ask('s4', mcpUser())).toMatchObject({ ok: false });
+  });
+
+  it('a space without an on-chain id is closed and its rows are never read', async () => {
+    expect(await ask('s6', mcpUser())).toMatchObject({
+      ok: false,
+      code: 'not_found',
+    });
+    nothingRead();
+  });
+
+  it('grants: a space outside them is not found and nothing is read', async () => {
+    expect(await ask('s1', mcpUser([2]))).toMatchObject({
+      ok: false,
+      code: 'not_found',
+    });
+    nothingRead();
+  });
+
+  it('every query carries the one checked space: a signal of another space never appears', async () => {
+    const r = await ask('s1', mcpUser());
+    if (!r.ok) throw new Error('unexpected');
+    expect(sig.page.mock.calls).toHaveLength(1);
+    expect(sig.page.mock.calls[0]![1].filter.spaceId).toBe(1);
+    expect(sig.summary.mock.calls[0]![1].spaceId).toBe(1);
+    expect(sig.tags.mock.calls[0]![1].spaceId).toBe(1);
+    expect(r.data.items.map((i) => i.slug)).toEqual(['sig-1']);
+    expect(JSON.stringify(r.data)).not.toContain('secret');
+  });
+
+  it('the summary is computed after the policy, over the asked space only', async () => {
+    bySpace.set(1, [row(), row({ id: 2, slug: 'sig-2' })]);
+    const r = await ask('s1', mcpUser());
+    if (!r.ok) throw new Error('unexpected');
+    expect(r.data.summary?.total).toBe(2);
+    expect(r.data.total).toBe(2);
+    sig.summary.mockClear();
+    await ask('s4', mcpUser());
+    expect(sig.summary).not.toHaveBeenCalled();
+  });
+
+  it('omitting the summary skips the summary queries and still counts the filtered set', async () => {
+    const r = await ask('s1', mcpUser(), { withSummary: false });
+    if (!r.ok) throw new Error('unexpected');
+    expect(r.data.summary).toBeNull();
+    expect(sig.summary).not.toHaveBeenCalled();
+    expect(sig.tags).not.toHaveBeenCalled();
+    expect(r.data.total).toBe(1);
+  });
+
+  it('fails closed when the access level cannot be read', async () => {
+    chain.readSpaceVisibilityBatch.mockRejectedValue(new Error('rpc'));
+    expect(await ask('s4', mcpUser())).toMatchObject({
+      ok: false,
+      code: 'access_check_failed',
+    });
+    nothingRead();
+  });
+
+  it('a failing read fails the call, never an empty list', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    sig.page.mockRejectedValueOnce(new Error('db'));
+    expect(await ask('s1', mcpUser())).toMatchObject({ ok: false });
+    sig.summary.mockRejectedValueOnce(new Error('db'));
+    expect(await ask('s1', mcpUser())).toMatchObject({ ok: false });
+    sig.upvotes.mockRejectedValueOnce(new Error('db'));
+    expect(await ask('s1', mcpUser())).toMatchObject({ ok: false });
+  });
+
+  it('returns no wallet address, no person id and no voter data', async () => {
+    sig.symbols.mockResolvedValue(new Map([[ADDR.toLowerCase(), 'SYM']]));
+    const r = await ask('s1', mcpUser());
+    if (!r.ok) throw new Error('unexpected');
+    const text = JSON.stringify(r.data);
+    expect(text).not.toContain('0x');
+    expect(text).not.toMatch(/creatorId|personId|assigneeIds|address/);
+    expect(r.data.items[0]!.indicativePayouts).toEqual([
+      { amount: '5', tokenSymbol: 'SYM' },
+    ]);
+  });
+
+  it('passes the caller person only for the filters about the caller', async () => {
+    await ask('s1', mcpUser(), {
+      createdByMe: true,
+      legacy: { assignedToMe: true },
+    });
+    const f = sig.page.mock.calls[0]![1].filter;
+    expect(f.createdByPersonId).toBe(1);
+    expect(f.legacy.assignedToPersonId).toBe(1);
+    sig.page.mockClear();
+    await ask('s1', mcpUser());
+    expect(sig.page.mock.calls[0]![1].filter.createdByPersonId).toBeUndefined();
+  });
+
+  it('a guest can read a public space but cannot ask about themselves', async () => {
+    expect(await ask('s1', { kind: 'guest' })).toMatchObject({ ok: true });
+    expect(
+      await ask('s1', { kind: 'guest' }, { createdByMe: true }),
+    ).toMatchObject({ ok: false, code: 'unauthenticated' });
+  });
+
+  it('exposes the task-like group only as the legacy group', async () => {
+    const r = await ask('s1', mcpUser());
+    if (!r.ok) throw new Error('unexpected');
+    expect(r.data.items[0]!.taskFields).toMatchObject({
+      status: 'backlog',
+      statusCategory: 'backlog',
+      board: 'general',
+      assignees: [OTHER_PERSON],
+      overdue: false,
+    });
+    expect(r.data.summary?.legacy.byStatus[0]).toMatchObject({
+      status: 'backlog',
+      name: 'Backlog',
+      count: 1,
+    });
   });
 });
