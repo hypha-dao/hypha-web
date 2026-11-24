@@ -386,7 +386,7 @@ export function MemberHomeThreadCard({
   const leadCta = primaryCtas[0] ?? null;
   const companionCta = primaryCtas[1] ?? null;
 
-  function choiceProps(id: string, primary = false) {
+  function choiceProps(id: string, primary = false, extraClassName?: string) {
     const picked = chosen === id;
     const filled = picked || (chosen == null && primary);
     const variant: 'default' | 'outline' = filled ? 'default' : 'outline';
@@ -394,7 +394,11 @@ export function MemberHomeThreadCard({
     return {
       variant,
       colorVariant,
-      className: cn(actionClass, picked && 'ring-1 ring-foreground'),
+      className: cn(
+        actionClass,
+        picked && 'ring-1 ring-foreground',
+        extraClassName,
+      ),
     };
   }
 
@@ -567,30 +571,56 @@ export function MemberHomeThreadCard({
               {t('gotIt')}
             </Button>
           ) : null}
-          {!complete && !outcome && ownDeadline ? (
-            <Button asChild {...choiceProps('update', true)}>
-              <Link
-                href={signalHref}
-                onClick={() => {
-                  if (!confirm('update')) return;
-                  moveOn(true);
-                }}
-              >
-                {t('updateThis')}
-              </Link>
-            </Button>
-          ) : null}
-          {!complete && !outcome && leadCta ? (
-            <Button
-              type="button"
-              {...choiceProps(leadCta, true)}
-              onClick={() => {
-                if (!confirm(leadCta)) return;
-                onCta(leadCta);
-              }}
-            >
-              {labelFor(leadCta)}
-            </Button>
+          {!complete && !outcome && (ownDeadline || leadCta) ? (
+            <div className="flex items-stretch gap-2">
+              {ownDeadline ? (
+                <Button
+                  asChild
+                  {...choiceProps(
+                    'update',
+                    true,
+                    cn('min-w-0', assistant ? 'flex-1' : 'w-full'),
+                  )}
+                >
+                  <Link
+                    href={signalHref}
+                    onClick={() => {
+                      if (!confirm('update')) return;
+                      moveOn(true);
+                    }}
+                  >
+                    {t('updateThis')}
+                  </Link>
+                </Button>
+              ) : leadCta ? (
+                <Button
+                  type="button"
+                  {...choiceProps(
+                    leadCta,
+                    true,
+                    cn('min-w-0', assistant ? 'flex-1' : 'w-full'),
+                  )}
+                  onClick={() => {
+                    if (!confirm(leadCta)) return;
+                    onCta(leadCta);
+                  }}
+                >
+                  {labelFor(leadCta)}
+                </Button>
+              ) : null}
+              {assistant ? (
+                <Button
+                  type="button"
+                  {...choiceProps('later', false, 'w-[min(40%,9rem)] shrink-0')}
+                  onClick={() => {
+                    if (!confirm('later')) return;
+                    ask(t('laterChosen', { title: item.title }));
+                  }}
+                >
+                  {t('notNow')}
+                </Button>
+              ) : null}
+            </div>
           ) : null}
           {!complete && !outcome && !isSignal && assistant ? (
             <div
@@ -634,40 +664,30 @@ export function MemberHomeThreadCard({
               </Button>
             </div>
           ) : null}
-          {!complete && !outcome && (companionCta || assistant) ? (
-            <div
-              className={cn(
-                'grid gap-2',
-                compact || !(companionCta && assistant)
-                  ? 'grid-cols-1'
-                  : 'grid-cols-2',
-              )}
+          {!complete && !outcome && companionCta ? (
+            <Button
+              type="button"
+              {...choiceProps(companionCta)}
+              onClick={() => {
+                if (!confirm(companionCta)) return;
+                onCta(companionCta);
+              }}
             >
-              {companionCta ? (
-                <Button
-                  type="button"
-                  {...choiceProps(companionCta)}
-                  onClick={() => {
-                    if (!confirm(companionCta)) return;
-                    onCta(companionCta);
-                  }}
-                >
-                  {labelFor(companionCta)}
-                </Button>
-              ) : null}
-              {assistant ? (
-                <Button
-                  type="button"
-                  {...choiceProps('later')}
-                  onClick={() => {
-                    if (!confirm('later')) return;
-                    ask(t('laterChosen', { title: item.title }));
-                  }}
-                >
-                  {t('notNow')}
-                </Button>
-              ) : null}
-            </div>
+              {labelFor(companionCta)}
+            </Button>
+          ) : null}
+          {/* Not now alone — only when there was no primary to sit beside. */}
+          {!complete && !outcome && assistant && !ownDeadline && !leadCta ? (
+            <Button
+              type="button"
+              {...choiceProps('later', false, 'w-[min(40%,9rem)]')}
+              onClick={() => {
+                if (!confirm('later')) return;
+                ask(t('laterChosen', { title: item.title }));
+              }}
+            >
+              {t('notNow')}
+            </Button>
           ) : null}
           {!complete ? (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
