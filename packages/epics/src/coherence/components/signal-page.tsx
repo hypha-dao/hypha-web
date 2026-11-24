@@ -30,6 +30,7 @@ import {
   signalVotingSpaceId,
   useSignalVotingMode,
 } from '../hooks/use-signal-voting-mode';
+import { prepareSignalDescriptionMarkdown } from '../utils/signal-description-markdown';
 import { countSignalMedia, splitSignalMedia } from '../utils/signal-media';
 import {
   signalDiscussionCount,
@@ -133,22 +134,22 @@ const SIGNAL_DESCRIPTION_COMPONENTS: MarkdownComponents = {
     </h4>
   ),
   p: ({ children }: MarkdownChildren) => (
-    <p className="my-2 text-2 leading-relaxed text-foreground first:mt-0 last:mb-0">
+    <p className="my-2.5 text-2 leading-[1.7] text-foreground first:mt-0 last:mb-0">
       {children}
     </p>
   ),
   ul: ({ children }: MarkdownChildren) => (
-    <ul className="my-2 ml-0 list-outside list-disc pl-4 text-2 leading-relaxed text-foreground">
+    <ul className="my-3 ml-0 list-outside list-disc space-y-2.5 pl-5 text-2 leading-[1.7] text-foreground marker:text-muted-foreground">
       {children}
     </ul>
   ),
   ol: ({ children }: MarkdownChildren) => (
-    <ol className="my-2 ml-0 list-outside list-decimal pl-4 text-2 leading-relaxed text-foreground">
+    <ol className="my-3 ml-0 list-outside list-decimal space-y-2.5 pl-5 text-2 leading-[1.7] text-foreground marker:text-muted-foreground">
       {children}
     </ol>
   ),
   li: ({ children }: MarkdownChildren) => (
-    <li className="my-0.5">{children}</li>
+    <li className="pl-1 [&>p]:my-0">{children}</li>
   ),
   blockquote: ({ children }: MarkdownChildren) => (
     <blockquote className="my-2 border-l-2 border-border pl-3 text-2 italic text-muted-foreground">
@@ -156,7 +157,7 @@ const SIGNAL_DESCRIPTION_COMPONENTS: MarkdownComponents = {
     </blockquote>
   ),
   strong: ({ children }: MarkdownChildren) => (
-    <strong className="font-semibold">{children}</strong>
+    <strong className="font-semibold text-foreground">{children}</strong>
   ),
   em: ({ children }: MarkdownChildren) => (
     <em className="italic">{children}</em>
@@ -186,12 +187,16 @@ const SignalDescriptionBody = React.memo(function SignalDescriptionBody({
 }: {
   source: string;
 }) {
+  const markdown = React.useMemo(
+    () => prepareSignalDescriptionMarkdown(source),
+    [source],
+  );
   return (
     <MarkdownSuspense
       components={SIGNAL_DESCRIPTION_COMPONENTS}
       FallBack={<SignalDescriptionFallback />}
     >
-      {source}
+      {markdown}
     </MarkdownSuspense>
   );
 });
@@ -710,7 +715,7 @@ export function SignalPage({
             </div>
 
             {description ? (
-              <div className="text-2 leading-[1.65] text-muted-foreground [&_strong]:font-medium [&_strong]:text-foreground">
+              <div className="text-2 text-foreground/90 [&_strong]:font-semibold [&_strong]:text-foreground">
                 <SignalDescriptionBody source={description} />
               </div>
             ) : null}
