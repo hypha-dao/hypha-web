@@ -34,7 +34,11 @@ import {
 } from '../../common/recent-space-history';
 import { useMemberNamedSpaces } from '../../network-exchange/use-member-named-spaces';
 import { PersonAvatar } from './person-avatar';
-import { memberSurfaceSpaceQuery, resolveMemberSpaceSlug } from './member-menu';
+import {
+  memberSurfaceSpaceQuery,
+  resolveMemberSpaceSlug,
+  spaceAskShortName,
+} from './member-menu';
 
 const menuItemClass =
   'min-h-10 gap-2 rounded-none px-3 py-0 text-2 font-normal font-sans leading-5 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:stroke-[1.25] [&_svg]:text-muted-foreground data-[highlighted]:[&_svg]:text-foreground';
@@ -110,6 +114,8 @@ export function MemberProfileMenu({
   const locale = useLocale();
   const { requestMemberSpaceAi } = useHumanChatPanel();
   const spaceLabel = useMemberProfileSpaceLabel();
+  const askName = spaceAskShortName(spaceLabel) || t('yourSpace');
+  const askLabel = t('askSpace', { name: askName });
   const displayName = [person?.name, person?.surname].filter(Boolean).join(' ');
   const primaryLine =
     displayName.trim() || person?.nickname || tNav('myProfile');
@@ -168,7 +174,7 @@ export function MemberProfileMenu({
           ) : null}
           <button type="button" className={sheetItemClass} onClick={openAsk}>
             <Sparkles className="craft-icon" aria-hidden />
-            <span className="flex-1 font-medium">{t('askGuide')}</span>
+            <span className="flex-1 font-medium">{askLabel}</span>
             <ChevronRight
               className="ml-auto craft-icon opacity-60"
               aria-hidden
@@ -275,7 +281,7 @@ export function MemberProfileMenu({
         ) : null}
         <DropdownMenuItem className={menuItemClass} onSelect={openAsk}>
           <Sparkles className="craft-icon" aria-hidden />
-          <span className="flex-1 font-medium">{t('askGuide')}</span>
+          <span className="flex-1 font-medium">{askLabel}</span>
           <ChevronRight className="ml-auto craft-icon opacity-60" aria-hidden />
         </DropdownMenuItem>
         {notificationCentrePath ? (
