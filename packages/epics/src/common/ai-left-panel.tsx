@@ -441,7 +441,7 @@ function MemberMenuSections({
 
   if (mode === 'collapsed') {
     return (
-      <SidebarGroup className="p-2 pt-4">
+      <SidebarGroup className="px-2 py-1 pt-2">
         <SidebarGroupContent>
           <SidebarMenu className="gap-2">
             {items.map((item) => renderItem(toNav(item), mode, keyPrefix))}
@@ -454,8 +454,8 @@ function MemberMenuSections({
   return (
     <>
       {groups.map((group) => (
-        <SidebarGroup key={group.label} className="p-2 pt-4">
-          <SidebarGroupLabel className="pointer-events-none">
+        <SidebarGroup key={group.label} className="px-2 py-1 first:pt-2">
+          <SidebarGroupLabel className="pointer-events-none h-6 uppercase tracking-wide">
             {group.label}
           </SidebarGroupLabel>
           <SidebarGroupContent>
