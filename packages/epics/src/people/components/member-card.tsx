@@ -138,8 +138,8 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   const showConnect = Boolean(onChat || onCall || onVideo);
 
   return (
-    <Card className="craft-card-interactive @container/member flex h-full w-full flex-col gap-2 p-3">
-      <div className="flex items-start gap-2.5">
+    <Card className="craft-card-interactive @container/member flex h-full w-full flex-col gap-1.5 p-3.5">
+      <div className="flex items-center gap-2.5">
         <PersonAvatar
           avatarSrc={avatarUrl}
           userName={nickname}
@@ -150,7 +150,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
           personId={id}
         />
 
-        <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-0.5">
             {isPersonRole(primaryOrientation) ? (
               <PersonRoleBadge role={primaryOrientation} />
@@ -182,9 +182,14 @@ export const MemberCard: React.FC<MemberCardProps> = ({
             <Skeleton height="16px" width="80px" loading={isLoading}>
               <p className="craft-meta truncate">@{nickname}</p>
             </Skeleton>
+            {localIsDelegate ? (
+              <span className="craft-meta font-medium">
+                {tCommon('delegatedVotingMemberLabel')}
+              </span>
+            ) : null}
           </div>
 
-          <div className="flex w-[7.75rem] shrink-0 flex-col items-end gap-2 @min-[24rem]/member:w-auto @min-[24rem]/member:max-w-[16rem]">
+          <div className="flex w-[7.75rem] shrink-0 flex-col items-end gap-1.5 @min-[24rem]/member:w-auto @min-[24rem]/member:max-w-[18rem]">
             {localIsDelegate && canLogin ? (
               <ActionGate
                 kind="member-action"
@@ -229,18 +234,29 @@ export const MemberCard: React.FC<MemberCardProps> = ({
                 onVideo={onVideo}
               />
             ) : null}
-            <Skeleton width="96px" height="16px" loading={isLoading}>
-              <div className="craft-meta flex min-w-0 max-w-full items-center">
-                <SewingPinFilledIcon className="mr-1 size-3.5 shrink-0" />
-                <span className="truncate text-1">{location}</span>
-              </div>
-            </Skeleton>
-            <Skeleton
-              width="96px"
-              height="16px"
-              loading={isLoading || isLoadingEvents}
-            >
-              <div className="flex h-4 min-w-0 max-w-full items-center">
+            <div className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-x-2 gap-y-1">
+              {location ? (
+                <Skeleton width="96px" height="16px" loading={isLoading}>
+                  <div className="craft-meta flex min-w-0 max-w-full items-center">
+                    <SewingPinFilledIcon className="mr-1 size-3.5 shrink-0" />
+                    <span className="truncate text-1">{location}</span>
+                  </div>
+                </Skeleton>
+              ) : null}
+              <MemberSpaceIcons
+                spaces={memberSpaces}
+                overflowHref={overflowHref}
+                isLoading={Boolean(address) && (isLoading || spacesLoading)}
+                size={24}
+                className="justify-end"
+              />
+            </div>
+            {joinEvent || isLoadingEvents ? (
+              <Skeleton
+                width="96px"
+                height="16px"
+                loading={isLoading || isLoadingEvents}
+              >
                 {joinEvent ? (
                   <span
                     className="craft-meta block max-w-full truncate"
@@ -260,26 +276,10 @@ export const MemberCard: React.FC<MemberCardProps> = ({
                     })}
                   </span>
                 ) : null}
-              </div>
-            </Skeleton>
+              </Skeleton>
+            ) : null}
           </div>
         </div>
-      </div>
-      <div className="flex min-h-5 min-w-0 items-center justify-between gap-2">
-        {localIsDelegate ? (
-          <span className="craft-meta font-medium">
-            {tCommon('delegatedVotingMemberLabel')}
-          </span>
-        ) : (
-          <span />
-        )}
-        <MemberSpaceIcons
-          spaces={memberSpaces}
-          overflowHref={overflowHref}
-          isLoading={Boolean(address) && (isLoading || spacesLoading)}
-          size={minimize ? 24 : 28}
-          className="justify-end"
-        />
       </div>
     </Card>
   );
