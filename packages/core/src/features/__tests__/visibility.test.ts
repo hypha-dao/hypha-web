@@ -48,6 +48,22 @@ vi.mock('../../coherence/server/web3/get-member-voting-power', () => ({
   getMemberVotingPower: memberPower,
 }));
 
+const quests = vi.hoisted(() => ({
+  list: vi.fn(),
+  docs: vi.fn(),
+  activate: vi.fn(),
+}));
+vi.mock('../../space-quests/server/queries', () => ({
+  listSpaceQuests: quests.list,
+}));
+vi.mock('../../space-quests/server/list-quests-queries', () => ({
+  selectQuestProposalDocuments: quests.docs,
+}));
+// the feature must never reach a write path: this spy has to stay uncalled
+vi.mock('../../space-quests/server/mutations', () => ({
+  activateSpaceQuestByDocumentId: quests.activate,
+}));
+
 const sig = vi.hoisted(() => ({
   page: vi.fn(),
   count: vi.fn(),
@@ -128,6 +144,7 @@ import { getSpace } from '../get-space';
 import { listProposals } from '../list-proposals';
 import { getMyVote } from '../get-my-vote';
 import { listSignals } from '../list-signals';
+import { listQuests } from '../list-quests';
 
 const ADDR = '0xabc0000000000000000000000000000000000001' as const;
 const db = {
@@ -1408,5 +1425,420 @@ describe('visibility: list signals', () => {
       name: 'Backlog',
       count: 1,
     });
+  });
+});
+
+describe('visibility: list quests', () => {
+  const OTHER_PERSON_ID = 99;
+  const quest = (over: Record<string, unknown> = {}) => ({
+    id: 1,
+    spaceId: 1,
+    slug: 'garden',
+    name: 'Build the garden',
+    goal: 'Plant things',
+    scopeIn: [],
+    scopeOut: [],
+    scopeInMarkdown: '- beds',
+    scopeOutMarkdown: '- roof',
+    successCriteria: 'It grows',
+    rewards: [
+      { amount: '10', token: 'USDC' },
+      { amount: '5', token: ADDR },
+    ],
+    status: 'active',
+    targetDate: '2026-12-31',
+    leadPersonId: 1,
+    leadName: 'Ada L (you)',
+    leadAvatarUrl: 'https://x/a.png',
+    creatorPersonId: 1,
+    proposalDocumentId: 50,
+    proposalSlug: 'garden-proposal',
+    proposalWeb3Id: 10,
+    proposalStatus: null,
+    acceptedAt: '2026-11-02T00:00:00.000Z',
+    chatRoomId: '!room:example',
+    health: {
+      state: 'on_track',
+      marker: 80,
+      summary: 'Going well',
+      updatesThisWeek: 1,
+      lastUpdateAt: '2026-11-20T00:00:00.000Z',
+      generatedAt: null,
+      daysToTarget: 30,
+    },
+    milestones: [
+      {
+        id: 1,
+        questId: 1,
+        order: 0,
+        name: 'Dig',
+        description: 'Dig the beds',
+        dueDate: '2026-12-01',
+        ownerPersonId: 1,
+        ownerName: 'Ada L',
+        status: 'in_progress',
+      },
+    ],
+    members: [
+      {
+        id: 1,
+        questId: 1,
+        personId: 1,
+        memberName: 'Ada L',
+        memberAvatarUrl: 'https://x/a.png',
+        roleLabel: 'Lead',
+        responsibilities: ['Plan'],
+        order: 0,
+        isLead: true,
+      },
+      {
+        id: 2,
+        questId: 1,
+        personId: OTHER_PERSON_ID,
+        memberName: 'Grace H',
+        memberAvatarUrl: null,
+        roleLabel: null,
+        responsibilities: [],
+        order: 1,
+        isLead: false,
+      },
+    ],
+    deliverables: [
+      { id: 1, questId: 1, name: 'Plan', url: 'https://x/plan', note: 'v1' },
+    ],
+    updates: [{ id: 1, text: 'private chatter', authorPersonId: 5 }],
+    createdAt: '2026-11-01T00:00:00.000Z',
+    updatedAt: '2026-11-02T00:00:00.000Z',
+    ...over,
+  });
+  const overviewOf = (rows: unknown[]) => ({
+    spaceSlug: 's1',
+    spaceTitle: 'Space 1',
+    quests: rows,
+    counts: {},
+  });
+  const ask = (
+    slug: string,
+    caller: unknown,
+    extra: Record<string, unknown> = {},
+  ) =>
+    listQuests(
+      { spaceSlug: slug, paging: { offset: 0, limit: 20 }, ...extra },
+      caller as never,
+      { db },
+    );
+  const slugsOf = async (
+    slug: string,
+    caller: unknown,
+    extra: Record<string, unknown> = {},
+  ) => {
+    const r = await ask(slug, caller, extra);
+    if (!r.ok) throw new Error(`unexpected failure ${r.code}`);
+    return r.data.items.map((item) => item.slug);
+  };
+
+  beforeEach(() => {
+    // the quests feature asks the list by the space's own slug
+    hostFields.bySlug = new Map(
+      [...hostFields.bySlug].map(([slug, host]) => [
+        slug,
+        { ...(host as object), slug },
+      ]),
+    );
+    quests.list.mockImplementation(
+      async ({ spaceSlug }: { spaceSlug: string }) =>
+        overviewOf(
+          spaceSlug === 's1'
+            ? [quest()]
+            : [quest({ slug: 'secret', name: 'secret', spaceId: 4 })],
+        ),
+    );
+    quests.docs.mockResolvedValue(
+      new Map([
+        [
+          50,
+          { id: 50, spaceId: 1, slug: 'garden-proposal', web3ProposalId: 10 },
+        ],
+      ]),
+    );
+  });
+
+  const nothingRead = () => {
+    expect(quests.list).not.toHaveBeenCalled();
+    expect(quests.docs).not.toHaveBeenCalled();
+  };
+
+  it('non-member: a public space is listed, a space-level space is not found and nothing is read', async () => {
+    expect(await ask('s1', mcpUser())).toMatchObject({ ok: true });
+    quests.list.mockClear();
+    quests.docs.mockClear();
+    expect(await ask('s4', mcpUser())).toMatchObject({
+      ok: false,
+      code: 'not_found',
+    });
+    nothingRead();
+  });
+
+  it('member and delegate: also the space they belong to', async () => {
+    chain.readMemberSpaceIds.mockResolvedValue([4]);
+    chain.readSpaceMembersBatch.mockResolvedValue(
+      new Map([[4, { members: [ADDR], executor: '0xe4' }]]),
+    );
+    expect(await ask('s4', mcpUser())).toMatchObject({ ok: true });
+    clearChainFactsCaches();
+    chain.readMemberSpaceIds.mockResolvedValue([]);
+    chain.readDelegateSpaceIds.mockResolvedValue([4]);
+    chain.readSpaceMembersBatch.mockResolvedValue(
+      new Map([[4, { members: ['0xdelegator'], executor: '0xe' }]]),
+    );
+    chain.readDelegatorsBatch.mockResolvedValue(
+      new Map([[4, ['0xdelegator']]]),
+    );
+    expect(await ask('s4', mcpUser())).toMatchObject({ ok: true });
+  });
+
+  it('organisation sibling: the organisation-level space, never the space-level one', async () => {
+    chain.readMemberSpaceIds.mockResolvedValue([6]);
+    chain.readSpaceMembersBatch.mockResolvedValue(
+      new Map([[6, { members: [ADDR], executor: '0xe6' }]]),
+    );
+    expect(await ask('s3', mcpUser())).toMatchObject({ ok: true });
+    expect(await ask('s4', mcpUser())).toMatchObject({ ok: false });
+  });
+
+  it('a space without an on-chain id is closed and its quests are never read', async () => {
+    expect(await ask('s6', mcpUser())).toMatchObject({
+      ok: false,
+      code: 'not_found',
+    });
+    nothingRead();
+  });
+
+  it('grants: a space outside them is not found and nothing is read', async () => {
+    expect(await ask('s1', mcpUser([2]))).toMatchObject({
+      ok: false,
+      code: 'not_found',
+    });
+    nothingRead();
+  });
+
+  it('a quest of another space never comes back, even if the list returns it', async () => {
+    quests.list.mockResolvedValue(
+      overviewOf([quest(), quest({ id: 2, slug: 'foreign', spaceId: 99 })]),
+    );
+    expect(await slugsOf('s1', mcpUser())).toEqual(['garden']);
+  });
+
+  it('fails closed when the access level cannot be read', async () => {
+    chain.readSpaceVisibilityBatch.mockRejectedValue(new Error('rpc'));
+    expect(await ask('s4', mcpUser())).toMatchObject({
+      ok: false,
+      code: 'access_check_failed',
+    });
+    nothingRead();
+  });
+
+  it('a failing read fails the call, never an empty list', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    quests.list.mockRejectedValueOnce(new Error('db'));
+    expect(await ask('s1', mcpUser())).toMatchObject({ ok: false });
+    quests.docs.mockRejectedValueOnce(new Error('db'));
+    expect(await ask('s1', mcpUser())).toMatchObject({ ok: false });
+  });
+
+  it('a read writes nothing: no activation, and the source reaches no write path or draft', async () => {
+    await ask('s1', mcpUser(), { includeProposalStatus: true });
+    expect(quests.activate).not.toHaveBeenCalled();
+    const { readFileSync } = await import('node:fs');
+    const source = readFileSync(
+      new URL('../list-quests/index.ts', import.meta.url),
+      'utf8',
+    );
+    const code = source
+      .split(String.fromCharCode(10))
+      .filter((line) => !/^\s*(\/\*|\*|\/\/)/.test(line))
+      .join(String.fromCharCode(10));
+    expect(code).not.toMatch(
+      /mutations|sync-proposal-status|drafts|activateSpaceQuest|syncSpaceQuest|\.insert\(|\.update\(|\.delete\(|transaction/,
+    );
+    expect(code).toMatch(/listSpaceQuests/);
+  });
+
+  it('mine: lead or member only, by the caller person id; others are excluded', async () => {
+    quests.list.mockResolvedValue(
+      overviewOf([
+        quest({ id: 1, slug: 'as-lead', leadPersonId: 1, members: [] }),
+        quest({
+          id: 2,
+          slug: 'as-member',
+          leadPersonId: OTHER_PERSON_ID,
+          members: [{ ...quest().members[0], personId: 1, isLead: false }],
+        }),
+        quest({
+          id: 3,
+          slug: 'not-mine',
+          leadPersonId: OTHER_PERSON_ID,
+          members: [{ ...quest().members[1] }],
+        }),
+      ]),
+    );
+    expect(await slugsOf('s1', mcpUser(), { mine: true })).toEqual([
+      'as-lead',
+      'as-member',
+    ]);
+    expect(await slugsOf('s1', mcpUser())).toHaveLength(3);
+    const r = await ask('s1', mcpUser(), { mine: true });
+    if (!r.ok) throw new Error('unexpected');
+    expect(r.data.total).toBe(2);
+    expect(r.data.counts.total).toBe(2);
+    expect(await ask('s1', { kind: 'guest' }, { mine: true })).toMatchObject({
+      ok: false,
+      code: 'unauthenticated',
+    });
+  });
+
+  it('mine never widens: a grant to another space leaves nothing', async () => {
+    expect(await ask('s1', mcpUser([2]), { mine: true })).toMatchObject({
+      ok: false,
+      code: 'not_found',
+    });
+  });
+
+  it('filters by the stored status, leaves archived out by default, and pages after the filters', async () => {
+    quests.list.mockResolvedValue(
+      overviewOf([
+        quest({ id: 1, slug: 'a', status: 'active' }),
+        quest({ id: 2, slug: 'p', status: 'proposed' }),
+        quest({ id: 3, slug: 'x', status: 'archived' }),
+        quest({ id: 4, slug: 'a2', status: 'active' }),
+      ]),
+    );
+    expect(await slugsOf('s1', mcpUser())).toEqual(['a', 'p', 'a2']);
+    expect(await slugsOf('s1', mcpUser(), { status: 'active' })).toEqual([
+      'a',
+      'a2',
+    ]);
+    expect(await slugsOf('s1', mcpUser(), { status: 'archived' })).toEqual([
+      'x',
+    ]);
+    expect(
+      await slugsOf('s1', mcpUser(), { includeArchived: true }),
+    ).toHaveLength(4);
+    const page2 = await ask('s1', mcpUser(), {
+      status: 'active',
+      paging: { offset: 1, limit: 1 },
+    });
+    if (!page2.ok) throw new Error('unexpected');
+    expect(page2.data.items.map((i) => i.slug)).toEqual(['a2']);
+    expect(page2.data.total).toBe(2);
+    expect(page2.data.counts).toMatchObject({
+      active: 2,
+      proposed: 1,
+      archived: 1,
+      total: 4,
+    });
+  });
+
+  it('a draft is never part of the answer (the draft table is not read)', async () => {
+    const r = await ask('s1', mcpUser());
+    if (!r.ok) throw new Error('unexpected');
+    // only the plain list is asked; there is no draft reader to call
+    expect(quests.list).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(r.data)).not.toMatch(/draft/i);
+  });
+
+  it('the linked proposal counts only when its document belongs to this space', async () => {
+    quests.list.mockResolvedValue(
+      overviewOf([
+        quest({ id: 1, slug: 'ok', proposalDocumentId: 50 }),
+        quest({ id: 2, slug: 'foreign', proposalDocumentId: 51 }),
+        quest({ id: 3, slug: 'gone', proposalDocumentId: 52 }),
+        quest({ id: 4, slug: 'none', proposalDocumentId: null }),
+      ]),
+    );
+    quests.docs.mockResolvedValue(
+      new Map([
+        [50, { id: 50, spaceId: 1, slug: 'mine-doc', web3ProposalId: 10 }],
+        [
+          51,
+          { id: 51, spaceId: 77, slug: 'other-space-doc', web3ProposalId: 11 },
+        ],
+      ]),
+    );
+    const r = await ask('s1', mcpUser());
+    if (!r.ok) throw new Error('unexpected');
+    const bySlug = Object.fromEntries(r.data.items.map((i) => [i.slug, i]));
+    expect(bySlug.ok!.proposal).toEqual({ slug: 'mine-doc', status: null });
+    expect(bySlug.foreign!.proposal).toBeNull();
+    expect(bySlug.gone!.proposal).toBeNull();
+    expect(bySlug.none!.proposal).toBeNull();
+    expect(JSON.stringify(r.data)).not.toContain('other-space-doc');
+  });
+
+  it('the vote state is read only on request, only for proposed quests, and fails the call when unreadable', async () => {
+    quests.list.mockResolvedValue(
+      overviewOf([
+        quest({
+          id: 1,
+          slug: 'voting',
+          status: 'proposed',
+          proposalDocumentId: 50,
+        }),
+        quest({
+          id: 2,
+          slug: 'running',
+          status: 'active',
+          proposalDocumentId: 50,
+        }),
+      ]),
+    );
+    chain.readProposalOutcomeIds.mockResolvedValue({
+      accepted: new Set(),
+      rejected: new Set([10]),
+      withdrawn: new Set(),
+    });
+    const off = await ask('s1', mcpUser());
+    expect(chain.readProposalOutcomeIds).not.toHaveBeenCalled();
+    if (!off.ok) throw new Error('unexpected');
+    expect(off.data.items.every((i) => i.proposal?.status === null)).toBe(true);
+
+    const on = await ask('s1', mcpUser(), { includeProposalStatus: true });
+    if (!on.ok) throw new Error('unexpected');
+    expect(chain.readProposalOutcomeIds).toHaveBeenCalledTimes(1);
+    const bySlug = Object.fromEntries(on.data.items.map((i) => [i.slug, i]));
+    expect(bySlug.voting!.proposal?.status).toBe('rejected');
+    // the stored status is never rewritten by what the vote says
+    expect(bySlug.voting!.status).toBe('proposed');
+    expect(bySlug.running!.proposal?.status).toBeNull();
+
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    chain.readProposalOutcomeIds.mockRejectedValue(new Error('rpc'));
+    expect(
+      await ask('s1', mcpUser(), { includeProposalStatus: true }),
+    ).toMatchObject({ ok: false, code: 'chain_read_failed' });
+  });
+
+  it('no chain read at all when no quest on the page is proposed', async () => {
+    await ask('s1', mcpUser(), { includeProposalStatus: true });
+    expect(chain.readProposalOutcomeIds).not.toHaveBeenCalled();
+  });
+
+  it('returns display names only: no person id, address, avatar, chat room or updates', async () => {
+    const r = await ask('s1', mcpUser());
+    if (!r.ok) throw new Error('unexpected');
+    const text = JSON.stringify(r.data);
+    expect(text).not.toContain('0x');
+    expect(text).not.toMatch(/personId|avatar|chatRoom|private chatter|!room/i);
+    expect(text).not.toContain(String(OTHER_PERSON_ID));
+    expect(r.data.items[0]!.lead).toBe('Ada L');
+    expect(r.data.items[0]!.members.map((m) => m.name)).toEqual([
+      'Ada L',
+      'Grace H',
+    ]);
+    expect(r.data.items[0]!.rewards).toEqual([
+      { amount: '10', token: 'USDC' },
+      { amount: '5', token: null },
+    ]);
+    expect(r.data.items[0]!.viewer).toEqual({ isLead: true, isMember: true });
   });
 });
