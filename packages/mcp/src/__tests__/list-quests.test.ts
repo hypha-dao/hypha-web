@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import type { McpFeatures } from '../deps';
 import { connect, makeDeps } from './harness';
+
+type Input = Parameters<McpFeatures['listQuests']>[0];
 import { safeWebLink } from '../presentation/quests';
 
 const ZERO_WIDTH = String.fromCodePoint(0x200b);
@@ -189,10 +192,10 @@ describe('hypha_list_quests', () => {
   });
 
   it('full text lowers the page size to 5; bad input is refused', async () => {
-    let seen: Record<string, any> = {};
+    let seen = {} as Input;
     const { deps } = makeDeps(
       {},
-      listing([], {}, (input) => (seen = input as Record<string, any>)),
+      listing([], {}, (input) => (seen = input as Input)),
     );
     await call(deps, { spaceSlug: 'alpha', text: 'full', pageSize: 20 });
     expect(seen.paging.limit).toBe(5);

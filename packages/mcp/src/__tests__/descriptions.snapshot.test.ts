@@ -94,7 +94,6 @@ describe('tools/list is the reviewed text, in the fixed order', () => {
     const { deps } = makeDeps();
     const { client, close } = await connect(deps);
     const { tools } = await client.listTools();
-    const instructions = client.getInstructions() ?? '';
     await close();
     for (const t of tools) {
       if (

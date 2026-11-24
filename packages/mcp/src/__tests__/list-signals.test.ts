@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import type { McpFeatures } from '../deps';
 import { connect, makeDeps } from './harness';
+
+type Input = Parameters<McpFeatures['listSignals']>[0];
 
 const ZERO_WIDTH = String.fromCodePoint(0x200b);
 
@@ -153,10 +156,10 @@ describe('hypha_list_signals', () => {
   });
 
   it('passes filters and the legacy group on, and parses updatedSince to a date', async () => {
-    let seen: Record<string, any> = {};
+    let seen = {} as Input;
     const { deps } = makeDeps(
       {},
-      listing([], {}, (input) => (seen = input as Record<string, any>)),
+      listing([], {}, (input) => (seen = input as Input)),
     );
     await call(deps, {
       spaceSlug: 'alpha',
@@ -189,7 +192,7 @@ describe('hypha_list_signals', () => {
       },
     });
     expect(seen.updatedSince).toBeInstanceOf(Date);
-    expect(seen.updatedSince.toISOString()).toBe('2026-11-01T00:00:00.000Z');
+    expect(seen.updatedSince!.toISOString()).toBe('2026-11-01T00:00:00.000Z');
   });
 
   it('rejects a malformed updatedSince, an unknown type and a bad slug as bad input', async () => {
@@ -219,10 +222,10 @@ describe('hypha_list_signals', () => {
   });
 
   it('full descriptions lower the page size to 10', async () => {
-    let seen: Record<string, any> = {};
+    let seen = {} as Input;
     const { deps } = makeDeps(
       {},
-      listing([], {}, (input) => (seen = input as Record<string, any>)),
+      listing([], {}, (input) => (seen = input as Input)),
     );
     await call(deps, {
       spaceSlug: 'alpha',
