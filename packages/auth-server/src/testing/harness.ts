@@ -195,6 +195,8 @@ export async function consent(
   oauthQuery: string,
   scope: string,
   expectedPerson: string = PERSON,
+  /** The space choice of the page: 'all' or space ids. */
+  spaceGrants: unknown = 'all',
 ) {
   const res = await s.handler(
     req('/api/auth/oauth2/consent', {
@@ -208,6 +210,7 @@ export async function consent(
       body: JSON.stringify({
         accept: true,
         scope,
+        space_grants: spaceGrants,
         oauth_query: oauthQuery,
         expected_person: expectedPerson,
       }),
@@ -230,7 +233,12 @@ export async function tokenRequest(s: Harness, params: Record<string, string>) {
 /** Full happy path: authorize -> login -> consent -> code exchange. Returns tokens and the jar. */
 export async function fullFlow(
   s: Harness,
-  opts: { person?: string; scope?: string; resource?: string } = {},
+  opts: {
+    person?: string;
+    scope?: string;
+    resource?: string;
+    spaceGrants?: unknown;
+  } = {},
 ) {
   const scope = opts.scope ?? 'spaces:read offline_access';
   const resource = opts.resource ?? RESOURCE;
@@ -248,7 +256,14 @@ export async function fullFlow(
   if (next.origin === new URL(REDIRECT_URI).origin) {
     cbUrl = next; // consent already given earlier: straight to the callback
   } else {
-    c = await consent(s, jar, next.search.slice(1), scope);
+    c = await consent(
+      s,
+      jar,
+      next.search.slice(1),
+      scope,
+      opts.person ?? PERSON,
+      opts.spaceGrants ?? 'all',
+    );
     if (!c.body?.url)
       return { pkce, jar, login, consent: c, stage: 'consent' as const };
     cbUrl = new URL(c.body.url);
@@ -275,6 +290,6 @@ export async function fullFlow(
 
 export async function resetAsTables(pool: Harness['pool']) {
   await pool.query(
-    'truncate as_registration_slot, as_identity, as_jwks, as_oauth_consent, as_oauth_access_token, as_oauth_refresh_token, as_oauth_client, as_session, as_account, as_user, as_verification restart identity cascade',
+    'truncate as_registration_slot, as_client_grant_space, as_client_grant, as_identity, as_jwks, as_oauth_consent, as_oauth_access_token, as_oauth_refresh_token, as_oauth_client, as_session, as_account, as_user, as_verification restart identity cascade',
   );
 }
