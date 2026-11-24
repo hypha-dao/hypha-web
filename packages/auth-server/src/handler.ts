@@ -233,6 +233,10 @@ async function handleConsent(
       typeof body.oauth_query === 'string' ? body.oauth_query : '';
     const clientId = new URLSearchParams(oauthQuery).get('client_id') ?? '';
     if (!clientId) return refuse(400, 'invalid_request');
+    // The choice only means something next to the scope that is approved: an approval has to
+    // name it (the library would otherwise grant everything the query asked for).
+    if (typeof body.scope !== 'string' || !body.scope.trim())
+      return refuse(400, 'invalid_request');
     if (!(await verifyOAuthQueryParams(oauthQuery, server.config.secret)))
       return refuse(400, 'invalid_signature');
     try {
@@ -240,9 +244,7 @@ async function handleConsent(
       if (value !== 'all') await assertSpacesExist(server.pool, value);
       // Without the read scope there is nothing to limit, and an existing refresh token may
       // still carry it: leave the stored grant alone rather than replace it.
-      const approvesRead =
-        typeof body.scope === 'string' &&
-        body.scope.split(/\s+/).includes('spaces:read');
+      const approvesRead = body.scope.split(/\s+/).includes('spaces:read');
       if (approvesRead)
         pending = { personId: session.user.id, clientId, value };
     } catch (error) {
