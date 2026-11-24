@@ -122,8 +122,9 @@
   }
 
   /*
-   * Member experience type scale (energy-community center-panel SoT).
-   * Sora for titles/KPIs, Manrope for eyebrows/body. Cap page + KPI at 32px.
+   * Member experience type scale (energy-community / Rue Verte SoT).
+   * Sora for titles/KPIs, Manrope for eyebrows/body. Page titles sit under
+   * the old 32px cap so they match the compact reference headlines.
    */
   .member-eyebrow {
     @apply m-0 text-[11px] font-bold tracking-[0.12em] text-muted-foreground uppercase;
@@ -131,7 +132,7 @@
   }
 
   .member-page-title {
-    @apply m-0 text-balance text-[28px] font-light leading-[1.15] tracking-normal text-foreground sm:text-[32px];
+    @apply m-0 text-balance text-[22px] font-medium leading-[1.2] tracking-[-0.02em] text-foreground sm:text-[24px];
     font-family: var(--font-family-heading);
   }
 
