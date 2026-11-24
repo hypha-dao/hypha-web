@@ -5,7 +5,7 @@
  * through a reviewed PR with a snapshot update (`__tests__/descriptions.snapshot.test.ts`),
  * a `DESCRIPTIONS_VERSION` bump and a line in `CHANGELOG.md`.
  */
-export const DESCRIPTIONS_VERSION = '1.5.0';
+export const DESCRIPTIONS_VERSION = '1.6.0';
 
 export const SERVER_NAME = 'hypha';
 export const SERVER_TITLE = 'Hypha';
@@ -20,7 +20,7 @@ export const SERVER_INSTRUCTIONS = [
   'Each space has a `slug`, its identifier, which the other tools need, and a `title`, its display name. Proposals and agreements inside a space have slugs too. Never guess a slug: find it with `hypha_list_spaces` and its `query` first.',
   'Members and delegates differ: a member belongs to the space, and a delegate can vote for members who delegated to them. A person can be one, both or neither.',
   'Everything here is read-only and personalised: "visible to you" means what the signed-in person may see in Hypha and has allowed this app to see, so another person gets different results.',
-  'Every space, proposal and signal carries a `url` to its Hypha page; share that link with the user.',
+  'Every space, proposal, signal and quest carries a `url` to its Hypha page; share that link with the user.',
   UNTRUSTED_LINE,
 ].join(' ');
 
@@ -32,6 +32,7 @@ export const TOOL_ORDER = [
   'hypha_get_my_membership',
   'hypha_get_my_vote',
   'hypha_list_signals',
+  'hypha_list_quests',
 ] as const;
 export type ToolName = (typeof TOOL_ORDER)[number];
 
@@ -190,6 +191,33 @@ export const TOOLS = {
       cursor: 'Paging cursor: the `nextCursor` of the previous result.',
       pageSize:
         'Signals per page, 1 to 50. Default 20. At most 10 when `description` is `full`.',
+    },
+  },
+  hypha_list_quests: {
+    title: 'List the quests of a space',
+    description: [
+      'List the quests of one Hypha space. A quest is a commitment that someone is accountable for, made through the space’s agreement process; it has a goal, a scope, success criteria, milestones, a lead and members. Signals, which commit nobody, are listed by `hypha_list_signals`.',
+      'Each quest carries its `status` as stored (`proposed` while the proposal that commits it is being voted on, then `active`, `paused`, `completed` or `archived`), its health, and the `proposal` that commits it. A read never changes anything, so a quest whose proposal has just passed can still say `proposed` for a short while. For quests that are still `proposed`, set `includeProposalStatus` to see how their vote is going; it costs one extra chain read.',
+      'To answer which quests the user is part of, pass `mine: true`: it returns the quests where the user is the lead or a member.',
+      'The long texts (goal, scope, success criteria and the milestone descriptions) default to a short excerpt of about 500 characters; use `full` only when you need the whole text, which lowers the page size to 5, and `none` when names and structure are enough. Milestones, deliverables and members always come in full. A cut text is flagged in `truncated`.',
+      '`total` counts the quests the user may see that match the filters, before paging; `counts` gives the stored statuses over all the quests of the space (or all of the user’s own with `mine`). Archived quests are left out unless asked for. Drafts that people have not committed yet are never included.',
+      'Never guess a slug: find the space with `hypha_list_spaces` and `query` first. Results depend on the user’s permissions; a space the user may not see is reported as not found.',
+      'Read-only.',
+      UNTRUSTED_LINE,
+    ].join(' '),
+    params: {
+      spaceSlug: 'The space slug, as returned by `hypha_list_spaces`.',
+      status:
+        'Only quests with this stored status: `active`, `proposed`, `paused`, `completed` or `archived`. A quest whose vote failed still has the status `proposed`; see `includeProposalStatus`.',
+      mine: 'Only the quests where the signed-in user is the lead or a member. Quests whose lead or members are listed by name only, without a Hypha profile, are not matched. Default false.',
+      includeArchived:
+        'Also return archived quests. Default false (`status: archived` returns them too).',
+      includeProposalStatus:
+        'For quests with status `proposed`, add the live state of the vote on their proposal: `onVoting`, `accepted`, `rejected` or `withdrawn`. Costs one extra chain read per call. Default false.',
+      text: 'How much of the long texts to return: `none`, `excerpt` (about 500 characters each, the default) or `full` (up to the stored limit, 20,000 characters). `full` lowers the page size to 5.',
+      cursor: 'Paging cursor: the `nextCursor` of the previous result.',
+      pageSize:
+        'Quests per page, 1 to 20. Default 10. At most 5 when `text` is `full`.',
     },
   },
 } as const;
