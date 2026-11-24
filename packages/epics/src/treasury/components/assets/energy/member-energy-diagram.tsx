@@ -16,10 +16,18 @@ import {
 } from './dummy-data';
 import { TimeframeToggle } from './timeframe-toggle';
 import {
+  MEMBER_BODY,
+  MEMBER_EYEBROW,
+  MEMBER_KPI,
+  MEMBER_KPI_SM,
+  MEMBER_SECTION_TITLE,
+} from '../../../../people/components/member-type';
+import {
   EnergyLineChartSkeleton,
   MemberEnergyBoardSkeleton,
 } from './loading-skeletons';
 import { homeTotals } from './member-energy-home-totals';
+import { cn } from '@hypha-platform/ui-utils';
 
 const SOLAR = '#3cae4a';
 const SHARED = '#8a918c';
@@ -58,18 +66,13 @@ function EnergyFigure({
 }) {
   return (
     <div className="min-w-0">
-      <p className="m-0 text-[11px] font-bold tracking-[0.12em] text-muted-foreground uppercase">
-        {label}
-      </p>
+      <p className={MEMBER_EYEBROW}>{label}</p>
       <p
-        className={
-          size === 'small'
-            ? 'mt-1 text-[22px] font-light leading-none'
-            : 'mt-1.5 text-[34px] font-light leading-none sm:text-[40px]'
-        }
+        className={cn(
+          size === 'small' ? `mt-1 ${MEMBER_KPI_SM}` : `mt-1.5 ${MEMBER_KPI}`,
+        )}
         style={{
           color: accent || size === 'large' ? SOLAR : undefined,
-          fontFamily: 'var(--font-family-heading)',
         }}
       >
         {value}
@@ -80,7 +83,7 @@ function EnergyFigure({
         ) : null}
       </p>
       {caption ? (
-        <p className="mt-2 m-0 text-[12px] leading-snug text-muted-foreground">
+        <p className={cn(MEMBER_BODY, 'mt-2 text-[12px] leading-snug')}>
           {caption}
         </p>
       ) : null}
@@ -231,12 +234,10 @@ export function MemberEnergyDiagram({ spaceSlug }: { spaceSlug: string }) {
 
       <div className="border border-border bg-transparent p-4 sm:p-5">
         <div className="mb-5 flex items-center justify-between gap-3">
-          <p className="m-0 text-[11px] font-bold tracking-[0.12em] text-muted-foreground uppercase">
-            {t('balance')}
-          </p>
+          <p className={MEMBER_EYEBROW}>{t('balance')}</p>
           {live ? (
             <p
-              className="m-0 inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.12em] uppercase"
+              className={cn(MEMBER_EYEBROW, 'inline-flex items-center gap-1.5')}
               style={{ color: SOLAR }}
             >
               <span
@@ -325,22 +326,16 @@ export function MemberEnergyDiagram({ spaceSlug }: { spaceSlug: string }) {
       <div className="border border-border bg-transparent p-4 sm:p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p
-              className="m-0 text-[17px] font-normal text-foreground"
-              style={{ fontFamily: 'var(--font-family-heading)' }}
-            >
+            <p className={MEMBER_SECTION_TITLE}>
               {batteryKwh > 0 ? t('neighbourhoodBattery') : t('sharedOnward')}
             </p>
-            <p className="mt-1 m-0 text-[13px] text-muted-foreground">
+            <p className={cn(MEMBER_BODY, 'mt-1 text-[13px]')}>
               {t('youAdded', {
                 value: formatEnergy(youShare, locale),
               })}
             </p>
           </div>
-          <p
-            className="m-0 text-[28px] font-light leading-none"
-            style={{ color: SOLAR, fontFamily: 'var(--font-family-heading)' }}
-          >
+          <p className={MEMBER_KPI_SM} style={{ color: SOLAR }}>
             {meterPercent}%
           </p>
         </div>

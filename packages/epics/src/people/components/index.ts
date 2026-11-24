@@ -38,6 +38,7 @@ export * from './member-menu';
 export * from './member-orientation-cookie';
 export * from './member-experience';
 export * from './member-space-page-title';
+export * from './member-type';
 export * from './member-space-chrome';
 export * from './spaces-rail-control';
 export * from './my-connections';

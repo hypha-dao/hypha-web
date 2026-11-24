@@ -43,11 +43,14 @@ import { SignalTypeBadge } from './signal-type-badge';
 import { SignalUpvoteButton } from './signal-upvote-button';
 import { useVoteEnabled } from '../../common/action-capabilities';
 import { useMemberExperience } from '../../people/components/member-experience';
+import {
+  MEMBER_EYEBROW,
+  MEMBER_PAGE_TITLE,
+} from '../../people/components/member-type';
 import { SignalVideoPlayer } from './signal-video-player';
 import { LegacySignalFieldsDetail } from './legacy-signal-fields/legacy-signal-fields-detail';
 
-const SECTION_LABEL_CLASS =
-  'text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground';
+const SECTION_LABEL_CLASS = MEMBER_EYEBROW;
 
 /**
  * Column gap for Created by / Created / Last reply / Discussion.
@@ -583,12 +586,7 @@ export function SignalPage({
           <div className="flex min-w-0 flex-col gap-6">
             <header className="flex min-w-0 flex-col gap-3">
               <SignalTypeBadge type={signal.type} variant="pill" />
-              <h1
-                className="m-0 text-6 font-light leading-[1.1] tracking-[-0.02em] text-foreground sm:text-7"
-                style={{ fontFamily: 'var(--font-family-heading)' }}
-              >
-                {signal.title}
-              </h1>
+              <h1 className={MEMBER_PAGE_TITLE}>{signal.title}</h1>
               <div className="flex min-w-0 flex-wrap items-center gap-2 text-1 text-muted-foreground">
                 <PersonAvatar
                   size="sm"

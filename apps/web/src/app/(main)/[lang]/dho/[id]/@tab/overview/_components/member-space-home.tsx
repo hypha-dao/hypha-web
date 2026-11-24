@@ -15,6 +15,10 @@ import {
 import {
   ActionGate,
   AiLeftPanel,
+  MEMBER_BODY,
+  MEMBER_EYEBROW,
+  MEMBER_PAGE_TITLE,
+  MEMBER_ROW_TITLE,
   SignalUpvoteButton,
   signalDetailPath,
   signalVotingSpaceId,
@@ -140,20 +144,13 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
       >
         {/* Eyebrow row — space left, section right (energy-community). */}
         <div className="flex items-center justify-between gap-4">
-          <p className="m-0 text-[11px] font-bold tracking-[0.12em] text-muted-foreground uppercase">
-            {spaceTitle}
-          </p>
-          <p className="m-0 text-[11px] font-bold tracking-[0.12em] text-muted-foreground uppercase">
-            {t('communitySignals')}
-          </p>
+          <p className={MEMBER_EYEBROW}>{spaceTitle}</p>
+          <p className={MEMBER_EYEBROW}>{t('communitySignals')}</p>
         </div>
 
         {/* Title + 36px arrows on one row (lovable compact 32px). */}
         <div className="mt-2.5 mb-[18px] flex items-center justify-between gap-4">
-          <h1
-            id="member-space-home-title"
-            className="craft-page-title m-0 text-[28px] font-light leading-[1.15] tracking-normal text-foreground sm:text-[32px]"
-          >
+          <h1 id="member-space-home-title" className={MEMBER_PAGE_TITLE}>
             {t('around')}
           </h1>
           <div className="hidden shrink-0 items-center gap-1.5 md:flex">
@@ -252,16 +249,23 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                     <div className={cn(HOME_CARD_IMAGE, 'bg-accent-3')} />
                   )}
                   <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                    <p className="m-0 text-[10px] font-bold tracking-[0.12em] text-muted-foreground uppercase">
+                    <p className={cn(MEMBER_EYEBROW, 'text-[10px]')}>
                       {typeLabel}
                     </p>
                     <h2
-                      className="mt-1.5 m-0 min-w-0 break-words text-[18px] font-normal leading-[1.3] tracking-[-0.01em] text-foreground"
-                      style={{ fontFamily: 'var(--font-family-heading)' }}
+                      className={cn(
+                        MEMBER_ROW_TITLE,
+                        'mt-1.5 min-w-0 break-words',
+                      )}
                     >
                       {signal.title}
                     </h2>
-                    <p className="mt-1.5 mb-2 line-clamp-2 min-w-0 text-[12px] leading-[1.45] text-muted-foreground">
+                    <p
+                      className={cn(
+                        MEMBER_BODY,
+                        'mt-1.5 mb-2 line-clamp-2 min-w-0 text-[12px] leading-[1.45]',
+                      )}
+                    >
                       {plainText(signal.description)}
                     </p>
                     <div className="mt-auto flex w-full min-w-0 flex-nowrap items-center gap-2 border-t border-border pt-3">

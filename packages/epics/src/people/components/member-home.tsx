@@ -43,6 +43,7 @@ import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-dis
 
 import { requestMemberHomeAsk } from './member-home-ask';
 import { HOME_CHAT_COLUMN, MemberHomeChat } from './member-home-chat';
+import { MEMBER_PAGE_TITLE } from './member-type';
 import { rememberSignalThreadRooms } from './member-connections';
 import {
   HOME_QUEUE_EVENT,
@@ -500,12 +501,11 @@ export function MemberHome({
                     ) : (
                       <h1
                         className={cn(
-                          'text-7',
+                          MEMBER_PAGE_TITLE,
                           showUnavailable
                             ? 'text-wrap break-words'
                             : 'truncate',
                         )}
-                        style={{ fontFamily: 'var(--font-family-heading)' }}
                       >
                         {t(greetingKey(), { name: displayName })}
                       </h1>

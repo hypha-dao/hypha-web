@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { useMemberExperience } from './member-experience';
+import { MEMBER_EYEBROW, MEMBER_PAGE_TITLE } from './member-type';
+import { cn } from '@hypha-platform/ui-utils';
 
 export type MemberTitleScreen =
   | 'signals'
@@ -116,16 +118,12 @@ export function MemberSpacePageTitle({
         */}
         <header className="craft-page-header flex min-h-[3.75rem] w-full flex-col items-start justify-center gap-1.5 text-left">
           {small ? (
-            <p className="m-0 text-[11px] font-bold tracking-[0.12em] text-muted-foreground uppercase">
-              {small}
-            </p>
+            <p className={MEMBER_EYEBROW}>{small}</p>
           ) : (
             <span className="block h-[1.125rem]" aria-hidden />
           )}
           <div className="flex w-full items-start justify-between gap-3">
-            <h1 className="craft-page-title m-0 min-h-[2rem] text-[28px] font-light leading-[1.15] tracking-normal sm:text-[32px]">
-              {large}
-            </h1>
+            <h1 className={cn(MEMBER_PAGE_TITLE, 'min-h-[2rem]')}>{large}</h1>
             {actions ? (
               <div className="flex shrink-0 items-center gap-2 pt-0.5">
                 {actions}

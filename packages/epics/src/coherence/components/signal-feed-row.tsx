@@ -19,6 +19,10 @@ import { countSignalMedia, signalListImage } from '../utils/signal-media';
 import type { SignalRoomActivity } from '../hooks/use-signal-room-activity';
 import { signalDiscussionCount } from '../utils/signal-room-replies';
 import type { SignalVotingModeStatus } from '../hooks/use-signal-voting-mode';
+import {
+  MEMBER_BODY,
+  MEMBER_ROW_TITLE,
+} from '../../people/components/member-type';
 
 export function signalOneLiner(description?: string | null): string {
   return stripDescription(
@@ -203,10 +207,7 @@ export function SignalFeedRow({
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <SignalTypeBadge type={signal.type} />
-          <h3
-            className="m-0 text-[18px] font-normal leading-[1.3] tracking-[-0.01em] text-foreground"
-            style={{ fontFamily: 'var(--font-family-heading)' }}
-          >
+          <h3 className={MEMBER_ROW_TITLE}>
             <Link
               href={href}
               className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
@@ -215,7 +216,12 @@ export function SignalFeedRow({
             </Link>
           </h3>
           {about ? (
-            <p className="mb-0 mt-1 line-clamp-2 text-[14px] leading-[1.55] text-muted-foreground max-md:text-[15px]">
+            <p
+              className={cn(
+                MEMBER_BODY,
+                'mt-1 line-clamp-2 max-md:text-[15px]',
+              )}
+            >
               {about}
             </p>
           ) : null}

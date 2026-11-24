@@ -1,5 +1,4 @@
 import { Locale } from '@hypha-platform/i18n';
-import { Heading } from '@hypha-platform/ui';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
@@ -31,27 +30,15 @@ export async function WalletPageFrame({
     <div className="w-full min-w-0 overflow-x-hidden overflow-y-auto">
       <MemberPageShell>
         <MemberScreenTitle screen="wallet" memberTitle={memberTitle}>
-          <header className="xl:hidden">
-            <p className="mb-2 text-1 font-bold uppercase text-foreground">
+          {/* Builder/funder only — MemberScreenTitle swaps this for members. */}
+          <header className="craft-page-header">
+            <p className="mb-1 text-1 font-medium text-muted-foreground">
               {t(titleKey)}
             </p>
-            <h1
-              className="text-7 leading-tight sm:text-8"
-              style={{ fontFamily: 'var(--font-family-heading)' }}
-            >
+            <h1 className="craft-page-title m-0 text-6 font-medium">
               {t('oneWallet')}
             </h1>
           </header>
-          <Heading
-            size="9"
-            color="secondary"
-            weight="medium"
-            align="center"
-            className="hidden flex-col leading-none xl:flex"
-          >
-            <span>{t(titleKey)}</span>
-            <span>{t('oneWallet')}</span>
-          </Heading>
         </MemberScreenTitle>
         {children}
       </MemberPageShell>
