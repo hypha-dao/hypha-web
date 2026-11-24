@@ -37,8 +37,11 @@ async function fetchJwks(url: string): Promise<JWKSResponse> {
   return (await res.json()) as JWKSResponse;
 }
 
+// Cached at the CDN for a few minutes: keys rotate rarely, and Neon (which fetches this on
+// a short poll) would otherwise cost a function run each time. Vercel hides `s-maxage` and
+// `stale-while-revalidate` from the client; check `x-vercel-cache` and `age` instead.
 const CACHE_HEADERS = {
-  'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+  'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
 };
 
 export async function GET() {

@@ -11,6 +11,10 @@ import {
   WHITE_LABEL_HOST_CONFIG_ENV,
   parseWhiteLabelHostConfig,
 } from './src/lib/white-label/config';
+import {
+  buildNoindexHeaderRule,
+  buildStaleAliasRedirectRule,
+} from './src/lib/non-canonical-hosts';
 
 const IMAGE_HOSTS = parseConfiguredImageHosts(
   process.env.NEXT_PUBLIC_IMAGE_HOSTS,
@@ -128,6 +132,8 @@ const nextConfig: NextConfig = {
   },
   headers: async () => {
     return [
+      // Previews, the bare preview host and `*.vercel.app`: not for indexing (#2696).
+      buildNoindexHeaderRule(NOT_MAPPED_HOST),
       // `X-Frame-Options` / `frame-ancestors` are set per response in
       // src/middleware.ts (white-label `/embed` must not carry `DENY`). Paths
       // the middleware matcher skips keep the static rule: with
@@ -198,6 +204,10 @@ const nextConfig: NextConfig = {
   },
   redirects: async () => {
     return [
+      // The stale Vercel alias moves to the canonical host, except the JWKS path
+      // (Neon fetches it there and does not follow redirects). First, so the
+      // root redirects below do not apply to this host (#2696).
+      buildStaleAliasRedirectRule(NOT_MAPPED_HOST),
       {
         source: '/',
         destination: `/${routing.defaultLocale}/network`,
