@@ -54,6 +54,10 @@ export async function disconnectApp(
       [personId, clientId],
     );
     await client.query(
+      'delete from as_client_grant where "userId" = $1 and "clientId" = $2',
+      [personId, clientId],
+    );
+    await client.query(
       'delete from as_oauth_consent where "userId" = $1 and "clientId" = $2',
       [personId, clientId],
     );

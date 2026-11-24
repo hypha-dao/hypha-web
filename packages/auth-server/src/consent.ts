@@ -1,6 +1,6 @@
 import { verifyOAuthQueryParams } from '@better-auth/oauth-provider';
 import type { AuthServer } from './auth';
-import { AUTH_SERVER_WRITE_SCOPES } from './config';
+import { AUTH_SERVER_WRITE_SCOPES, allowedScopesForResource } from './config';
 import { describeScope, type ScopeCopyKey } from './scope-copy';
 import { describeRedirect } from './redirect-display';
 
@@ -155,7 +155,14 @@ export async function loadConsentRequest(
     clientDiscoveryId: row.clientDiscoveryId,
     registration: row.registration,
   });
-  const requested = (params.get('scope') ?? '').split(/\s+/).filter(Boolean);
+  // Only the scopes the requested resources accept are offered (E52): the library drops the
+  // others from the token, so a tick on them would promise something that is not issued.
+  let requested = (params.get('scope') ?? '').split(/\s+/).filter(Boolean);
+  for (const resource of params.getAll('resource')) {
+    const allowed = allowedScopesForResource(resource);
+    if (allowed)
+      requested = requested.filter((scope) => allowed.includes(scope));
+  }
   return {
     oauthQuery,
     person: { id: session.user.id, name: session.user.name },

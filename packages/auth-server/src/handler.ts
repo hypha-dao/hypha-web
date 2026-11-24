@@ -11,6 +11,14 @@ import { corsPreflight, withCors } from './cors';
 import { authServerErrorPage } from './error-page';
 import { guardRegistration, narrowRegisteredClient } from './registration';
 import { logOnboardingStep, onboardingStepOf } from './onboarding-log';
+import { verifyOAuthQueryParams } from '@better-auth/oauth-provider';
+import {
+  GrantError,
+  assertSpacesExist,
+  parseGrantInput,
+  readGrant,
+  writeGrant,
+} from './grants';
 
 /**
  * The only HTTP surface the server exposes. Everything else Better Auth ships (client
@@ -205,13 +213,68 @@ async function handleConsent(
   if (!session || session.user.id !== expected)
     return refuse(409, 'account_changed');
   delete body.expected_person;
+  const spaceGrants = body.space_grants;
+  delete body.space_grants;
+
+  // Which spaces the app may read. Only an approval carries one, and the choice is stored for
+  // the person of the session and the client of the SIGNED authorization query: the app cannot
+  // choose or change it (it is not part of the query) and a body naming another person or
+  // client is not read. Stored before the library runs so the code can never be exchanged
+  // without it; put back if the library refuses.
+  let stored: {
+    personId: string;
+    clientId: string;
+    before: GrantSnapshot;
+  } | null = null;
+  if (body.accept === true) {
+    const oauthQuery =
+      typeof body.oauth_query === 'string' ? body.oauth_query : '';
+    const clientId = new URLSearchParams(oauthQuery).get('client_id') ?? '';
+    if (!clientId) return refuse(400, 'invalid_request');
+    if (!(await verifyOAuthQueryParams(oauthQuery, server.config.secret)))
+      return refuse(400, 'invalid_signature');
+    try {
+      const value = parseGrantInput(spaceGrants);
+      if (value !== 'all') await assertSpacesExist(server.pool, value);
+      const before = await readGrant(server.pool, session.user.id, clientId);
+      await writeGrant(server.pool, session.user.id, clientId, value);
+      stored = { personId: session.user.id, clientId, before };
+    } catch (error) {
+      if (error instanceof GrantError) return refuse(400, error.code);
+      throw error;
+    }
+  }
+
   const headers = new Headers(request.headers);
   headers.delete('content-length');
-  return server.auth.handler(
-    new Request(request.url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-    }),
-  );
+  let response: Response;
+  try {
+    response = await server.auth.handler(
+      new Request(request.url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      }),
+    );
+  } catch (error) {
+    if (stored)
+      await writeGrant(
+        server.pool,
+        stored.personId,
+        stored.clientId,
+        stored.before,
+      ).catch(() => undefined);
+    throw error;
+  }
+  if (stored && !response.ok) {
+    await writeGrant(
+      server.pool,
+      stored.personId,
+      stored.clientId,
+      stored.before,
+    ).catch(() => undefined);
+  }
+  return response;
 }
+
+type GrantSnapshot = Awaited<ReturnType<typeof readGrant>>;
