@@ -8,6 +8,7 @@ import {
   memberMenuGroup,
   memberPersonalRedirect,
   resolveMemberSpaceSlug,
+  spaceAskShortName,
 } from '../member-menu';
 
 const base = {
@@ -211,5 +212,16 @@ describe('memberPersonalRedirect', () => {
         spaceSlug: 'rue-verte',
       }),
     ).toBeNull();
+  });
+});
+
+describe('spaceAskShortName', () => {
+  it('uses the first word, skipping a leading article', () => {
+    expect(spaceAskShortName('Hypha Flywheel')).toBe('Hypha');
+    expect(spaceAskShortName('The Hypha Network')).toBe('Hypha');
+    expect(spaceAskShortName('A Solar Collective')).toBe('Solar');
+    expect(spaceAskShortName('An Open Commons')).toBe('Open');
+    expect(spaceAskShortName('The')).toBe('The');
+    expect(spaceAskShortName('')).toBe('');
   });
 });

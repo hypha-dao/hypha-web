@@ -3483,18 +3483,18 @@ export function AiLeftPanel({
       <PanelLeftClose className="craft-icon" />
     </button>
   ) : undefined;
-  // Right-dock host already draws back / identity / close.
-  const chromeHeader = embedInPanel ? null : (
-    <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
-      <AiPanelHeader
-        showCloseButton={false}
-        collapseLeftSlotAtMd={!isOnboardingPath}
-        leftSlot={headerLeftSlot}
-        rightSlot={closeButton}
-        askTitle={embedOnPage && memberExperience}
-      />
-    </SidebarHeader>
-  );
+  // Right-dock and member home page own their titles — no nested header box.
+  const chromeHeader =
+    embedInPanel || (embedOnPage && memberExperience) ? null : (
+      <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
+        <AiPanelHeader
+          showCloseButton={false}
+          collapseLeftSlotAtMd={!isOnboardingPath}
+          leftSlot={headerLeftSlot}
+          rightSlot={closeButton}
+        />
+      </SidebarHeader>
+    );
 
   const collapsedRailHeaderClass = `flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center justify-center border-b border-border px-4 py-2 ${NAV_CHROME_SURFACE_CLASS}`;
   const collapsedRailContentClass = `relative overflow-visible ${NAV_CHROME_SURFACE_CLASS}`;
@@ -3608,7 +3608,7 @@ export function AiLeftPanel({
     }
     if (embedOnPage) {
       return (
-        <div className="flex min-h-[28rem] w-full min-w-0 flex-col bg-background">
+        <div className="flex min-h-[24rem] w-full min-w-0 flex-col bg-transparent">
           {conversation}
         </div>
       );

@@ -774,7 +774,9 @@
       "treasuryTitle": "Ressurser vi deler.",
       "profileEyebrow": "Profil · Kontoen din",
       "profileTitle": "Profilen din."
-    }
+    },
+    "askSpace": "Spør {name}.",
+    "askSpaceEyebrow": "{name} · Din space-guide"
   },
   "Connections": {
     "titleLineOne": "Hold deg nær,",

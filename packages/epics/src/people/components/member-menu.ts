@@ -44,6 +44,43 @@ export function isMemberOrientation(
   return orientation === 'member';
 }
 
+/** Leading articles skipped when picking the short name for "Ask {name}". */
+const SPACE_ASK_ARTICLES = new Set([
+  'a',
+  'an',
+  'the',
+  'le',
+  'la',
+  'les',
+  'un',
+  'une',
+  'el',
+  'los',
+  'las',
+  'der',
+  'die',
+  'das',
+  'o',
+  'os',
+  'as',
+  'um',
+  'uma',
+]);
+
+/**
+ * First significant word of a space title for home "Ask {name}".
+ * Skips a leading article when another word follows.
+ */
+export function spaceAskShortName(title: string | null | undefined): string {
+  const words = (title ?? '').trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '';
+  const [first, second] = words;
+  if (second && SPACE_ASK_ARTICLES.has(first.toLowerCase())) {
+    return second;
+  }
+  return first;
+}
+
 export function memberMenuHref(
   lang: string,
   spaceSlug: string,

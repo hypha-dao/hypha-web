@@ -174,7 +174,9 @@
       "treasuryTitle": "Resources we share.",
       "profileEyebrow": "Profile · Your account",
       "profileTitle": "Your profile."
-    }
+    },
+    "askSpace": "Ask {name}.",
+    "askSpaceEyebrow": "{name} · Your space guide"
   },
   "Connections": {
     "titleLineOne": "Stay close,",

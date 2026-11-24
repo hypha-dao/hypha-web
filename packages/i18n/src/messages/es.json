@@ -1555,7 +1555,9 @@
       "treasuryTitle": "Recursos que compartimos.",
       "profileEyebrow": "Perfil · Tu cuenta",
       "profileTitle": "Tu perfil."
-    }
+    },
+    "askSpace": "Pregunta a {name}.",
+    "askSpaceEyebrow": "{name} · Tu guía del espacio"
   },
   "Connections": {
     "titleLineOne": "Quédate cerca,",

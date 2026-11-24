@@ -775,7 +775,9 @@
       "treasuryTitle": "Ресурси што ги споделуваме.",
       "profileEyebrow": "Профил · Вашата сметка",
       "profileTitle": "Вашиот профил."
-    }
+    },
+    "askSpace": "Прашај го {name}.",
+    "askSpaceEyebrow": "{name} · Твој водич за просторот"
   },
   "Connections": {
     "titleLineOne": "Остани блиску,",

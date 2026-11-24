@@ -775,7 +775,9 @@
       "treasuryTitle": "Middelen die we delen.",
       "profileEyebrow": "Profiel · Jouw account",
       "profileTitle": "Jouw profiel."
-    }
+    },
+    "askSpace": "Vraag {name}.",
+    "askSpaceEyebrow": "{name} · Jouw space-gids"
   },
   "Connections": {
     "titleLineOne": "Blijf dichtbij,",

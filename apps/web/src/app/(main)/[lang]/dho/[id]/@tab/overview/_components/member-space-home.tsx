@@ -19,6 +19,7 @@ import {
   MEMBER_ROW_TITLE,
   SignalUpvoteButton,
   signalVotingSpaceId,
+  spaceAskShortName,
   useHumanChatPanel,
   useSignalSpaceMembership,
   useSignalVotingMode,
@@ -92,6 +93,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
       ? coherenceSlug?.trim() || null
       : null;
   const spaceTitle = space?.title?.trim() || t('yourSpace');
+  const askName = spaceAskShortName(spaceTitle) || t('yourSpace');
   const spaceHeader =
     safeImage(space?.leadImage ?? null) ??
     (spaceLoading ? null : DEFAULT_SPACE_LEAD_IMAGE);
@@ -347,11 +349,23 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
         )}
       </section>
 
-      <section aria-label={t('askThisSpace')} className="mt-2 min-w-0 sm:mt-4">
-        <SidebarProvider
-          open
-          className="h-auto min-h-[28rem] border border-border"
-        >
+      <section
+        aria-label={t('askSpace', { name: askName })}
+        className="mt-2 min-w-0 sm:mt-4"
+        data-member-home-ask=""
+      >
+        <div className="mb-4 border-b border-border pb-4">
+          <p className={MEMBER_EYEBROW}>
+            {t('askSpaceEyebrow', { name: askName })}
+          </p>
+          <h2
+            id="member-space-home-ask-title"
+            className={cn(MEMBER_PAGE_TITLE, 'mt-2.5')}
+          >
+            {t('askSpace', { name: askName })}
+          </h2>
+        </div>
+        <SidebarProvider open className="h-auto min-h-[24rem]">
           <AiLeftPanel embed="page" />
         </SidebarProvider>
       </section>

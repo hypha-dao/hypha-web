@@ -775,7 +775,9 @@
       "treasuryTitle": "Ressourcen, die wir teilen.",
       "profileEyebrow": "Profil · Dein Konto",
       "profileTitle": "Dein Profil."
-    }
+    },
+    "askSpace": "Frag {name}.",
+    "askSpaceEyebrow": "{name} · Dein Space-Guide"
   },
   "Connections": {
     "titleLineOne": "Bleib nah,",
