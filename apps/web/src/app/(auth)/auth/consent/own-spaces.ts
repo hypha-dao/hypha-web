@@ -8,6 +8,7 @@ export type PickerSpace = {
   title: string;
   /** Title of the parent space, shown next to a sub-space (no inheritance: each is its own row). */
   parentTitle: string | null;
+  logoUrl: string | null;
 };
 
 /**
@@ -48,6 +49,7 @@ export async function loadPickerSpaces(
     return result.data.items.map((space) => ({
       id: space.id,
       title: space.title,
+      logoUrl: space.logoUrl ?? null,
       parentTitle:
         space.parentId != null ? titleById.get(space.parentId) ?? null : null,
     }));

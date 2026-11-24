@@ -6010,7 +6010,6 @@
         "filter": "Filtrar tus espacios",
         "selectAll": "Seleccionar todos",
         "selectNone": "No seleccionar ninguno",
-        "count": "{count} de {max} seleccionados",
         "limit": "Estás en más de {max} espacios, así que solo están seleccionados los primeros {max}. Para incluir todos los espacios, elige «Todos mis espacios».",
         "none": "Aún no eres miembro de ningún espacio. Elige «Todos mis espacios» o únete primero a un espacio.",
         "unavailable": "No se pudieron cargar tus espacios en este momento. Aún puedes elegir «Todos mis espacios».",

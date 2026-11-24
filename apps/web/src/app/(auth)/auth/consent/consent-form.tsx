@@ -2,7 +2,13 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { Button, Checkbox } from '@hypha-platform/ui';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Button,
+  Checkbox,
+} from '@hypha-platform/ui';
 import {
   AUTH_SERVER_API_BASE_PATH,
   MAX_SPACE_GRANTS,
@@ -18,7 +24,12 @@ type Scope = {
   warn: boolean;
 };
 
-type PickerSpace = { id: number; title: string; parentTitle: string | null };
+type PickerSpace = {
+  id: number;
+  title: string;
+  parentTitle: string | null;
+  logoUrl: string | null;
+};
 
 export function ConsentForm({
   oauthQuery,
@@ -47,9 +58,7 @@ export function ConsentForm({
   );
   // Which spaces the app may read. Explicit by default and preselected up to the limit; "all"
   // is a separate choice that also covers spaces joined later (it is not "tick everything").
-  const [mode, setMode] = React.useState<'spaces' | 'all'>(
-    pickerSpaces ? 'spaces' : 'all',
-  );
+  const [mode, setMode] = React.useState<'spaces' | 'all'>('all');
   const [chosen, setChosen] = React.useState<Set<number>>(
     () =>
       new Set((pickerSpaces ?? []).slice(0, MAX_SPACE_GRANTS).map((x) => x.id)),
@@ -192,6 +201,23 @@ export function ConsentForm({
           <legend className="text-2 font-medium">
             {t('consent.spaces.title')}
           </legend>
+          <label className="flex items-start gap-3 border p-3">
+            <input
+              type="radio"
+              name="space-mode"
+              className="mt-1"
+              checked={mode === 'all'}
+              onChange={() => setMode('all')}
+            />
+            <span className="flex flex-col">
+              <span className="text-2 font-medium">
+                {t('consent.spaces.all.title')}
+              </span>
+              <span className="text-1 text-neutral-11">
+                {t('consent.spaces.all.detail')}
+              </span>
+            </span>
+          </label>
           <label
             className={`flex items-start gap-3 border p-3 ${
               pickerSpaces ? '' : 'opacity-60'
@@ -253,12 +279,6 @@ export function ConsentForm({
                     >
                       {t('consent.spaces.selectNone')}
                     </button>
-                    <span className="text-neutral-11" aria-live="polite">
-                      {t('consent.spaces.count', {
-                        count: chosen.size,
-                        max: MAX_SPACE_GRANTS,
-                      })}
-                    </span>
                   </div>
                   {overLimit ? (
                     <p role="note" className="text-1 text-warning-11">
@@ -275,6 +295,14 @@ export function ConsentForm({
                             toggleSpace(space.id, v === true)
                           }
                         />
+                        <Avatar className="h-6 w-6">
+                          {space.logoUrl ? (
+                            <AvatarImage src={space.logoUrl} alt="" />
+                          ) : null}
+                          <AvatarFallback className="text-1">
+                            {(space.title || '?').slice(0, 1).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
                         <label htmlFor={`space-${space.id}`} className="text-2">
                           {space.title}
                           {space.parentTitle ? (
@@ -298,23 +326,6 @@ export function ConsentForm({
               {t('consent.spaces.unavailable')}
             </p>
           ) : null}
-          <label className="flex items-start gap-3 border p-3">
-            <input
-              type="radio"
-              name="space-mode"
-              className="mt-1"
-              checked={mode === 'all'}
-              onChange={() => setMode('all')}
-            />
-            <span className="flex flex-col">
-              <span className="text-2 font-medium">
-                {t('consent.spaces.all.title')}
-              </span>
-              <span className="text-1 text-neutral-11">
-                {t('consent.spaces.all.detail')}
-              </span>
-            </span>
-          </label>
           <p className="text-1 text-neutral-11">{t('consent.spaces.note')}</p>
         </fieldset>
       ) : null}

@@ -5996,7 +5996,6 @@
         "filter": "Deine Spaces filtern",
         "selectAll": "Alle auswählen",
         "selectNone": "Keine auswählen",
-        "count": "{count} von {max} ausgewählt",
         "limit": "Du bist in mehr als {max} Spaces, deshalb sind nur die ersten {max} ausgewählt. Um jeden Space einzuschließen, wähle „Alle meine Spaces“.",
         "none": "Du bist noch in keinem Space Mitglied. Wähle stattdessen „Alle meine Spaces“ oder tritt zuerst einem Space bei.",
         "unavailable": "Deine Spaces konnten gerade nicht geladen werden. Du kannst trotzdem „Alle meine Spaces“ wählen.",

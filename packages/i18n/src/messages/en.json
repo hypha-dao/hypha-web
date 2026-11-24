@@ -6018,7 +6018,6 @@
         "filter": "Filter your spaces",
         "selectAll": "Select all",
         "selectNone": "Select none",
-        "count": "{count} of {max} selected",
         "limit": "You are in more than {max} spaces, so only the first {max} are selected. To include every space, choose “All my spaces”.",
         "none": "You are not a member of any space yet. Choose “All my spaces” instead, or join a space first.",
         "unavailable": "Your spaces could not be loaded right now. You can still choose “All my spaces”.",

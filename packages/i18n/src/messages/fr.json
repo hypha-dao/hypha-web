@@ -5993,7 +5993,6 @@
         "filter": "Filtrer vos espaces",
         "selectAll": "Tout sélectionner",
         "selectNone": "Tout désélectionner",
-        "count": "{count} sur {max} sélectionnés",
         "limit": "Vous êtes dans plus de {max} espaces, donc seuls les {max} premiers sont sélectionnés. Pour inclure tous les espaces, choisissez « Tous mes espaces ».",
         "none": "Vous n'êtes encore membre d'aucun espace. Choisissez plutôt « Tous mes espaces » ou rejoignez d'abord un espace.",
         "unavailable": "Vos espaces n'ont pas pu être chargés pour le moment. Vous pouvez quand même choisir « Tous mes espaces ».",
