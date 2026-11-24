@@ -2,9 +2,21 @@
 
 import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
+import {
+  Coins,
+  FileCheck2,
+  MessagesSquare,
+  Radio,
+  UserRound,
+  UsersRound,
+  Wallet,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
 
 import { useMemberExperience } from './member-experience';
-import { MEMBER_EYEBROW, MEMBER_PAGE_TITLE } from './member-type';
+import { MemberEyebrow } from './member-eyebrow';
+import { MEMBER_PAGE_TITLE } from './member-type';
 import { cn } from '@hypha-platform/ui-utils';
 
 export type MemberTitleScreen =
@@ -16,6 +28,17 @@ export type MemberTitleScreen =
   | 'messages'
   | 'energy'
   | 'profile';
+
+const SCREEN_ICONS: Record<MemberTitleScreen, LucideIcon> = {
+  signals: Radio,
+  decisions: FileCheck2,
+  members: UsersRound,
+  treasury: Coins,
+  wallet: Wallet,
+  messages: MessagesSquare,
+  energy: Zap,
+  profile: UserRound,
+};
 
 type MemberSpacePageTitleProps = {
   /** Builder/funder page name (and member fallback). */
@@ -33,6 +56,8 @@ type MemberSpacePageTitleProps = {
   eyebrow?: string;
   /** Override the large member title. */
   memberTitle?: string;
+  /** Override the eyebrow icon (defaults from `screen`). */
+  eyebrowIcon?: LucideIcon | null;
 };
 
 function formatCount(count?: number | null, lang?: string): string | null {
@@ -106,6 +131,7 @@ export function MemberSpacePageTitle({
   filters,
   eyebrow,
   memberTitle,
+  eyebrowIcon,
 }: MemberSpacePageTitleProps) {
   const t = useTranslations('MemberMenu');
   const { isMember } = useMemberExperience();
@@ -115,6 +141,10 @@ export function MemberSpacePageTitle({
     const copy = screen ? memberCopy(t, screen, formattedCount) : null;
     const small = eyebrow ?? copy?.eyebrow ?? null;
     const large = memberTitle ?? copy?.title ?? title;
+    const Icon =
+      eyebrowIcon === null
+        ? null
+        : eyebrowIcon ?? (screen ? SCREEN_ICONS[screen] : null);
 
     return (
       <div className="flex flex-col gap-3" data-member-page-title="">
@@ -124,7 +154,7 @@ export function MemberSpacePageTitle({
         */}
         <header className="craft-page-header flex min-h-[3.75rem] w-full flex-col items-start justify-center gap-1.5 text-left">
           {small ? (
-            <p className={MEMBER_EYEBROW}>{small}</p>
+            <MemberEyebrow icon={Icon}>{small}</MemberEyebrow>
           ) : (
             <span className="block h-[1.125rem]" aria-hidden />
           )}

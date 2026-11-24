@@ -2,7 +2,7 @@
 
 import { useMemo, useRef } from 'react';
 import useSWR from 'swr';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Radio, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
@@ -17,6 +17,7 @@ import {
   MEMBER_EYEBROW,
   MEMBER_PAGE_TITLE,
   MEMBER_ROW_TITLE,
+  MemberEyebrow,
   SignalUpvoteButton,
   signalVotingSpaceId,
   spaceAskShortName,
@@ -150,8 +151,8 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
       >
         {/* Eyebrow row — space left, section right (energy-community). */}
         <div className="flex items-center justify-between gap-4">
-          <p className={MEMBER_EYEBROW}>{spaceTitle}</p>
-          <p className={MEMBER_EYEBROW}>{t('communitySignals')}</p>
+          <MemberEyebrow>{spaceTitle}</MemberEyebrow>
+          <MemberEyebrow icon={Radio}>{t('communitySignals')}</MemberEyebrow>
         </div>
 
         {/* Title + 36px arrows on one row (lovable compact 32px). */}
@@ -355,9 +356,9 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
         data-member-home-ask=""
       >
         <div className="mb-4 border-b border-border pb-4">
-          <p className={MEMBER_EYEBROW}>
+          <MemberEyebrow icon={Sparkles}>
             {t('askSpaceEyebrow', { name: askName })}
-          </p>
+          </MemberEyebrow>
           <h2
             id="member-space-home-ask-title"
             className={cn(MEMBER_PAGE_TITLE, 'mt-2.5')}
