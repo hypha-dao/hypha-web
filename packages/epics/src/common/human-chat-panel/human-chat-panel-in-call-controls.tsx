@@ -819,9 +819,10 @@ export function HumanChatPanelInCallControls({
               capturePreference === 'recording_with_transcript'
             }
             onMouseDown={(event) => {
+              /** Keep focus where it is; activation happens on click so keyboard works too. */
               event.preventDefault();
-              selectCapturePreference('recording_with_transcript');
             }}
+            onClick={() => selectCapturePreference('recording_with_transcript')}
             className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
           >
             <span className="inline-flex items-center gap-2">
