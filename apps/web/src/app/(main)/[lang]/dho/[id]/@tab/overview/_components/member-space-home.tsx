@@ -58,13 +58,13 @@ function signalKind(type: string) {
 }
 
 /**
- * Home signal strip — compact vs energy-community’s ~2.2-wide cards.
- * ~3.2 across on desktop (16px gaps), ~70% on phone, hard max so photos stay short.
+ * Home signal strip — match image 1 (energy-community / Rue Verte mock).
+ * ~2.2 cards across on desktop, near-square card, 16:9 lead image.
  */
 const HOME_CARD_WIDTH =
-  'w-[min(17.5rem,calc((100%-32px)/3.2))] max-md:w-[70%] min-w-[10.5rem]';
-/** Fixed photo height so width changes don’t puff the strip. */
-const HOME_CARD_IMAGE = 'mb-2 h-[7.5rem] w-full object-cover';
+  'w-[min(22rem,calc((100%-2rem)/2.2))] max-md:w-[78%] min-w-[14rem]';
+/** Lead image keeps 16:9 as the card width changes. */
+const HOME_CARD_IMAGE = 'mb-2.5 aspect-[16/9] w-full object-cover';
 
 /** Theme `size-9` is 64px — arrows must stay 36px like the reference. */
 const HOME_ARROW_CLASS =
@@ -203,13 +203,13 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
               <div
                 key={index}
                 className={cn(
-                  `flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 flex-col border border-border p-2.5`,
+                  `flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 flex-col border border-border p-3`,
                   index === 1 && 'hidden md:flex',
                   index === 2 && 'hidden lg:flex',
                 )}
               >
                 <div className={cn(HOME_CARD_IMAGE, 'bg-accent-3')} />
-                <div className="mt-2 flex flex-1 flex-col gap-1.5">
+                <div className="mt-1 flex flex-1 flex-col gap-1.5">
                   <div className="h-2.5 w-14 bg-accent-3/60" />
                   <div className="h-4 w-4/5 bg-accent-3/60" />
                   <div className="h-2.5 w-full bg-accent-3/50" />
@@ -270,7 +270,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                 <article
                   key={signal.id}
                   className={cn(
-                    `relative flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 snap-start flex-col border bg-transparent p-2.5 transition-colors`,
+                    `relative flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 snap-start flex-col border bg-transparent p-3 transition-colors`,
                     selected
                       ? 'border-foreground ring-1 ring-foreground'
                       : 'border-border hover:bg-foreground/[0.02]',
@@ -306,7 +306,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                     <h2
                       className={cn(
                         MEMBER_ROW_TITLE,
-                        'mt-1.5 min-w-0 break-words',
+                        'mt-1.5 line-clamp-2 min-w-0 break-words',
                       )}
                     >
                       {signal.title}
@@ -314,7 +314,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                     <p
                       className={cn(
                         MEMBER_BODY,
-                        'mt-1.5 mb-2 line-clamp-2 min-w-0 text-[12px] leading-[1.45]',
+                        'mt-1.5 mb-3 line-clamp-2 min-w-0 text-[12px] leading-[1.45]',
                       )}
                     >
                       {plainText(signal.description)}
