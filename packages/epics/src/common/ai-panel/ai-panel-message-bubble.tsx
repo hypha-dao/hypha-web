@@ -751,18 +751,6 @@ export function AiPanelMessageBubble({
     fileParts.length === 0 &&
     renderedToolParts.length === 0 &&
     !generatedVisualsCard;
-  const isSingleLineAssistantText =
-    !isUser &&
-    !isStreaming &&
-    hasVisibleText &&
-    fileParts.length === 0 &&
-    renderedToolParts.length === 0 &&
-    !generatedVisualsCard &&
-    markdownBlocks.length === 1 &&
-    markdownBlocks[0]?.type === 'paragraph' &&
-    markdownBlocks[0].lines.length === 1 &&
-    (markdownBlocks[0].lines[0]?.length ?? 0) <= 110;
-
   const handleCopy = useCallback(async () => {
     if (!textContent) return;
     try {
@@ -886,25 +874,23 @@ export function AiPanelMessageBubble({
   });
 
   const showMobilizedAgents = !isUser && mobilizedAgents.length > 0;
-  const alignSingleLine = isSingleLineAssistantText && !showMobilizedAgents;
 
   return (
     <div
       className={cn(
-        // Top-align avatar + bubble so photo intrinsic size / stretch cannot
-        // inflate the message row (and the filled bubble) vertically.
-        'flex items-start gap-2',
+        // Centre the mark with the bubble — welcome copy wraps short of full
+        // width, so top-align left the avatar floating at the first line.
+        'flex items-center gap-2',
         isUser && 'flex-row-reverse',
-        alignSingleLine && 'items-center',
       )}
     >
       {isUser ? (
         chrome === 'quiet' && !userAvatarUrl?.trim() ? (
-          <div className="mt-px flex h-7 w-7 shrink-0 items-center justify-center self-start text-muted-foreground">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center text-muted-foreground">
             <User className="size-3.5" strokeWidth={1.25} aria-hidden />
           </div>
         ) : (
-          <div className="mt-px h-7 w-7 shrink-0 self-start overflow-hidden rounded-full">
+          <div className="h-7 w-7 shrink-0 overflow-hidden rounded-full">
             <PersonAvatar
               size="sm"
               avatarSrc={userAvatarUrl?.trim() || undefined}
@@ -915,12 +901,7 @@ export function AiPanelMessageBubble({
           </div>
         )
       ) : assistantAvatarSrc && !assistantImageFailed ? (
-        <div
-          className={cn(
-            'flex h-7 w-7 shrink-0 self-start items-center justify-center overflow-hidden rounded-full border-0 bg-transparent',
-            alignSingleLine ? 'mt-0' : 'mt-px',
-          )}
-        >
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border-0 bg-transparent">
           {/* eslint-disable-next-line @next/next/no-img-element -- space logo URLs are external / CDN */}
           <img
             src={assistantAvatarSrc}
@@ -930,15 +911,14 @@ export function AiPanelMessageBubble({
           />
         </div>
       ) : (
-        <MemberHomeMark
-          className={cn('h-8 w-8', alignSingleLine ? 'mt-0' : 'mt-px')}
-        />
+        <MemberHomeMark className="h-8 w-8 shrink-0" />
       )}
       <div
         className={cn(
-          // Mentions-dense stack: expertise header → bubble (gap-0.5)
-          'group flex max-w-[85%] min-w-0 flex-col gap-0.5',
-          isUser && 'items-end',
+          // Mentions-dense stack: expertise header → bubble (gap-0.5).
+          // Assistant copy wraps at ~2/3 so long welcome lines read cleaner.
+          'group flex min-w-0 flex-col gap-0.5',
+          isUser ? 'max-w-[85%] items-end' : 'max-w-[66%]',
         )}
       >
         {showMobilizedAgents ? (
