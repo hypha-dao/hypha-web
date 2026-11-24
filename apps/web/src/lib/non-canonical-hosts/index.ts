@@ -31,6 +31,9 @@ export const NON_CANONICAL_HOST_PATTERN =
 /** `source` matching every path except the JWKS path (the path is regex-escaped). */
 const ALL_PATHS_BUT_JWKS = '/:path((?!\\.well-known/jwks\\.json$).*)';
 
+const escapeRegExp = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 type HostCondition = NonNullable<Header['missing']>;
 
 /** Mapped (white-label) hosts are sites of their own: never touched. */
@@ -58,7 +61,7 @@ export function buildStaleAliasRedirectRule(
     has: [
       {
         type: 'host',
-        value: STALE_ALIAS_HOST.replace(/\./g, '\\.'),
+        value: escapeRegExp(STALE_ALIAS_HOST),
       },
     ],
     missing: notMappedHost,
