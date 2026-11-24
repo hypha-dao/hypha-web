@@ -223,12 +223,8 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
           >
             {signals.map((signal) => {
               const image = safeImage(signal.leadImage) ?? spaceHeader;
-              const href = signal.slug
-                ? `${signalDetailPath(
-                    lang,
-                    spaceSlug,
-                    signal.slug,
-                  )}?discussion=open`
+              const detailHref = signal.slug
+                ? signalDetailPath(lang, spaceSlug, signal.slug)
                 : `/${lang}/dho/${spaceSlug}/coherence`;
               const typeKey = `types.${signal.type.trim()}`;
               const typeLabel =
@@ -239,16 +235,30 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                 <article
                   key={signal.id}
                   className={cn(
-                    `flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 snap-start cursor-pointer flex-col border border-border bg-transparent p-2.5`,
+                    `relative flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 snap-start flex-col border border-border bg-transparent p-2.5 transition-colors hover:bg-foreground/[0.02]`,
                   )}
                 >
+                  <Link
+                    href={detailHref}
+                    className="absolute inset-0 z-0"
+                    aria-label={signal.title}
+                  />
                   {image ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={image} alt="" className={HOME_CARD_IMAGE} />
+                    <img
+                      src={image}
+                      alt=""
+                      className={cn(HOME_CARD_IMAGE, 'pointer-events-none')}
+                    />
                   ) : (
-                    <div className={cn(HOME_CARD_IMAGE, 'bg-accent-3')} />
+                    <div
+                      className={cn(
+                        HOME_CARD_IMAGE,
+                        'pointer-events-none bg-accent-3',
+                      )}
+                    />
                   )}
-                  <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                  <div className="pointer-events-none relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col">
                     <p className={cn(MEMBER_EYEBROW, 'text-[10px]')}>
                       {typeLabel}
                     </p>
@@ -268,8 +278,12 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                     >
                       {plainText(signal.description)}
                     </p>
-                    <div className="mt-auto flex w-full min-w-0 flex-nowrap items-center gap-2 border-t border-border pt-3">
-                      <div className="min-w-0 shrink-0">
+                    <div className="pointer-events-auto mt-auto flex w-full min-w-0 flex-nowrap items-center gap-2 border-t border-border pt-3">
+                      <div
+                        className="min-w-0 shrink-0"
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                      >
                         <ActionGate kind="upvote" fullAppPath="" label={null}>
                           <SignalUpvoteButton
                             slug={signal.slug}
@@ -288,7 +302,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                         </ActionGate>
                       </div>
                       <Link
-                        href={href}
+                        href={detailHref}
                         className="inline-flex h-[34px] min-h-[34px] shrink-0 items-center gap-1.5 border border-border bg-transparent px-3 text-[12px] text-foreground hover:bg-foreground/5"
                       >
                         {t('open')}
