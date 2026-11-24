@@ -42,7 +42,11 @@ import type { SignupOrientation } from './signup-flow';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 
 import { requestMemberHomeAsk } from './member-home-ask';
-import { HOME_CHAT_COLUMN, MemberHomeChat } from './member-home-chat';
+import {
+  HOME_CHAT_COLUMN,
+  HOME_CHAT_INSET,
+  MemberHomeChat,
+} from './member-home-chat';
 import { MEMBER_PAGE_TITLE } from './member-type';
 import { rememberSignalThreadRooms } from './member-connections';
 import {
@@ -334,19 +338,19 @@ export function MemberHome({
   }, [home]);
 
   return (
-    <div className="@container/home relative isolate -mb-8 -mt-4 flex h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] min-h-0 w-full min-w-0 flex-col overflow-hidden md:-mt-5 xl:h-[calc(100svh-var(--menu-top-height,4.5rem))] xl:pt-5">
+    <div className="@container/home relative isolate -mb-8 -mt-4 flex h-[calc(100svh-var(--menu-top-height,4.5rem)-var(--mobile-tab-offset,6rem))] min-h-0 w-full min-w-0 flex-col overflow-hidden px-3 sm:px-4 md:-mt-5 md:px-6 xl:h-[calc(100svh-var(--menu-top-height,4.5rem))] xl:px-8 xl:pt-5">
       <MemberHomeBanner />
       <div className="flex min-h-0 w-full min-w-0 flex-1 flex-row overflow-hidden">
         <div
           className={cn(
-            'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden @min-[68rem]/home:grid @min-[68rem]/home:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] @min-[68rem]/home:grid-rows-[minmax(0,1fr)] @min-[80rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(17rem,22rem)]',
+            'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden @min-[68rem]/home:grid @min-[68rem]/home:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] @min-[68rem]/home:grid-rows-[minmax(0,1fr)] @min-[68rem]/home:gap-x-0 @min-[80rem]/home:grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)_minmax(16rem,20rem)]',
             (showField || showEnergy) && 'max-xl:overflow-y-auto',
           )}
         >
           <aside
             aria-label={t('panelSpaces')}
             className={cn(
-              'member-home-pane narrow-scrollbar col-start-1 row-start-1 hidden min-h-0 min-w-0 flex-col gap-4 overflow-x-hidden overflow-y-auto border-t border-border px-4 py-4 @min-[80rem]/home:flex @min-[80rem]/home:w-full @min-[80rem]/home:max-w-[20rem] @min-[80rem]/home:border-r @min-[80rem]/home:border-t-0',
+              'member-home-pane narrow-scrollbar col-start-1 row-start-1 hidden min-h-0 min-w-0 flex-col gap-4 overflow-x-hidden overflow-y-auto border-t border-border px-5 py-4 @min-[80rem]/home:flex @min-[80rem]/home:w-full @min-[80rem]/home:max-w-[18rem] @min-[80rem]/home:border-r @min-[80rem]/home:border-t-0',
               showField &&
                 'max-xl:flex max-xl:shrink-0 max-xl:overflow-visible max-xl:border-0 max-xl:px-5',
             )}
@@ -489,7 +493,7 @@ export function MemberHome({
               (showField || showEnergy) && !showUnavailable && 'max-xl:hidden',
             )}
           >
-            <div className="shrink-0 px-5 pt-4 md:px-4">
+            <div className={cn('shrink-0 pt-4', HOME_CHAT_INSET)}>
               <div className="flex min-w-0 items-start gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <span
@@ -577,7 +581,7 @@ export function MemberHome({
           <aside
             aria-label={t('panelInsights')}
             className={cn(
-              'narrow-scrollbar row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-l border-border bg-transparent px-4 py-4 @min-[68rem]/home:col-start-2 @min-[68rem]/home:flex @min-[80rem]/home:col-start-3',
+              'narrow-scrollbar row-start-1 hidden min-h-0 flex-col gap-4 overflow-y-auto border-l border-border bg-transparent px-5 py-4 @min-[68rem]/home:col-start-2 @min-[68rem]/home:flex @min-[80rem]/home:col-start-3',
               showField &&
                 'max-xl:flex max-xl:shrink-0 max-xl:overflow-visible max-xl:border-0 max-xl:px-5',
             )}
@@ -806,7 +810,7 @@ function ClassicBoard({
       ref={boardRef}
       className="narrow-scrollbar @container min-h-0 flex-1 overflow-y-auto py-6"
     >
-      <div className={cn(HOME_CHAT_COLUMN, 'px-5 md:px-4')}>
+      <div className={cn(HOME_CHAT_COLUMN, HOME_CHAT_INSET)}>
         <h2
           className="text-3"
           style={{ fontFamily: 'var(--font-family-heading)' }}
@@ -925,15 +929,16 @@ function ChatSkeleton() {
         <div
           className={cn(
             HOME_CHAT_COLUMN,
-            'grid w-full gap-4 px-5 py-4 md:px-4',
+            HOME_CHAT_INSET,
+            'grid w-full gap-4 py-4',
           )}
         >
           <ArrivalShape />
         </div>
       </div>
-      <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pt-2 pb-3')}>
+      <div className={cn(HOME_CHAT_COLUMN, HOME_CHAT_INSET, 'shrink-0 pt-2 pb-3')}>
         {/* Same place as live chips: above the composer, not in the scroll. */}
-        <div className="px-5 pb-2 md:px-4">
+        <div className="pb-2">
           <div className="narrow-scrollbar flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto">
             {chipWidths.map((width, index) => (
               <HomePulse
@@ -946,7 +951,7 @@ function ChatSkeleton() {
           </div>
         </div>
         {/* AiPanelChatBar panel: 36px icon wells + text line. */}
-        <div className="mx-5 border border-border bg-background md:mx-4">
+        <div className="border border-border bg-background">
           <div className="flex min-w-0 items-center gap-2 px-2 pt-0 pb-2.5">
             <HomePulse className="h-9 w-9 shrink-0" />
             <HomePulse className="h-9 w-9 shrink-0" delayMs={40} />

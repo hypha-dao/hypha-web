@@ -532,9 +532,14 @@ function homeTextIsOneLine(text: string) {
   return (text.match(/[.!?]/g)?.length ?? 0) <= 2;
 }
 
-/** From `lg`: ~3/4 of the screen, inset in the main pane, capped at 72rem. */
-export const HOME_CHAT_COLUMN =
-  'mx-auto w-full min-w-0 lg:max-w-[min(75%,75vw,72rem)]';
+/**
+ * Chat column fills the home main pane. Outer page margins live on the home
+ * shell — a max-width here left a dead band beside the right rail.
+ */
+export const HOME_CHAT_COLUMN = 'w-full min-w-0';
+
+/** Shared horizontal inset for chat body, chips, and composer. */
+export const HOME_CHAT_INSET = 'px-5 md:px-6';
 
 const HOME_LINK = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g;
 
@@ -1927,7 +1932,7 @@ export function MemberHomeChat({
         className="narrow-scrollbar min-h-0 w-full min-w-0 flex-1 overflow-y-auto [overflow-anchor:none]"
         aria-label={t('conversation')}
       >
-        <div className={cn(HOME_CHAT_COLUMN, 'grid gap-4 px-5 py-4 md:px-4')}>
+        <div className={cn(HOME_CHAT_COLUMN, HOME_CHAT_INSET, 'grid gap-4 py-4')}>
           <MemberHomeActivationCard
             lang={lang}
             spaces={intelligence.expiringSpaces ?? []}
@@ -2310,22 +2315,22 @@ export function MemberHomeChat({
         </div>
       </div>
 
-      <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pt-2 pb-3')}>
+      <div className={cn(HOME_CHAT_COLUMN, HOME_CHAT_INSET, 'shrink-0 pt-2 pb-3')}>
         {dialogue && micNeedsGrant ? (
           <button
             type="button"
             onClick={() => {
               void voiceInterview.startListening();
             }}
-            className="px-5 pb-1 text-left text-1 text-neutral-11 md:px-4"
+            className="pb-1 text-left text-1 text-neutral-11"
           >
             {t('soundNeedsMic')}
           </button>
         ) : null}
-        <div className="px-5 pb-2 md:px-4">
+        <div className="pb-2">
           {renderSuggestionChips('composer')}
         </div>
-        <div className="mx-5 border border-border bg-background md:mx-4">
+        <div className="border border-border bg-background">
           <AiPanelChatBar
             value={input}
             onChange={setInput}
