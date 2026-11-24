@@ -263,7 +263,15 @@ async function handleConsent(
         pending.value,
       );
     } catch {
-      // The code in this response is never delivered; the previous grant stays in force.
+      // The code in this response is never delivered and the previous grant stays in force. The
+      // library has already stored the consent, which would let the next authorization skip the
+      // picker and use that previous grant: drop it (best effort) so the person is asked again.
+      await server.pool
+        .query(
+          'delete from as_oauth_consent where "userId" = $1 and "clientId" = $2',
+          [pending.personId, pending.clientId],
+        )
+        .catch(() => undefined);
       return refuse(500, 'server_error');
     }
   }
