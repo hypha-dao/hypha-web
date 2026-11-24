@@ -35,6 +35,9 @@ export async function loadPickerSpaces(
     const result = await listSpaces(
       {
         mine: true,
+        // Sub-spaces are spaces of their own (a grant never reaches down a tree), so they have
+        // to be listed too; the list's default is top-level spaces only.
+        parentOnly: false,
         authoritative: true,
         omitFlagArchived: true,
         titleOrder: 'asc',
