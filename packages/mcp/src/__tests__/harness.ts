@@ -94,6 +94,15 @@ export function makeDeps(
           asOfBlock: 1,
         },
       }),
+      listSignals: async () => ({
+        ok: true,
+        data: {
+          items: [],
+          total: 0,
+          summary: null,
+          asOf: '2026-11-19T00:00:00.000Z',
+        },
+      }),
       getMyMembership: async () => ({
         ok: true,
         data: {
@@ -108,6 +117,8 @@ export function makeDeps(
     spaceUrl: (slug) => `https://app.example/en/dho/${slug}/overview`,
     proposalUrl: (space, slug) =>
       `https://app.example/en/dho/${space}/agreements/proposal/${slug}`,
+    signalUrl: (space, slug) =>
+      `https://app.example/en/dho/${space}/coherence?signal=${slug}`,
     log: (entry) => logs.push(entry),
     ...over,
   };

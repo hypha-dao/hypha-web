@@ -29,6 +29,7 @@ describe('tools/list is the reviewed text, in the fixed order', () => {
       'hypha_list_proposals',
       'hypha_get_my_membership',
       'hypha_get_my_vote',
+      'hypha_list_signals',
     ]);
   });
 
@@ -76,6 +77,7 @@ describe('tools/list is the reviewed text, in the fixed order', () => {
       'hypha_list_proposals',
       'hypha_get_my_membership',
       'hypha_get_my_vote',
+      'hypha_list_signals',
     ]) {
       expect(tools.find((t) => t.name === name)?.description, name).toMatch(
         /never guess a slug/i,
@@ -86,7 +88,7 @@ describe('tools/list is the reviewed text, in the fixed order', () => {
     expect(instructions).toMatch(/delegate/);
   });
 
-  it('the word quest appears only where the label is explained', async () => {
+  it('the word quest appears only where the label is explained or where signals point to quests', async () => {
     const { deps } = makeDeps();
     const { client, close } = await connect(deps);
     const { tools } = await client.listTools();
@@ -94,7 +96,12 @@ describe('tools/list is the reviewed text, in the fixed order', () => {
     await close();
     expect(instructions).not.toMatch(/quest/i);
     for (const t of tools) {
-      if (t.name === 'hypha_list_proposals') continue;
+      if (
+        t.name === 'hypha_list_proposals' ||
+        t.name === 'hypha_list_signals'
+      ) {
+        continue;
+      }
       expect(t.description, t.name).not.toMatch(/quest/i);
     }
   });
