@@ -1,8 +1,6 @@
 'use client';
 
 import { useMemo, useRef } from 'react';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -20,15 +18,14 @@ import {
   MEMBER_PAGE_TITLE,
   MEMBER_ROW_TITLE,
   SignalUpvoteButton,
-  signalDetailPath,
   signalVotingSpaceId,
+  useHumanChatPanel,
   useSignalSpaceMembership,
   useSignalVotingMode,
 } from '@hypha-platform/epics';
 import { MEMBER_SCREEN_STACK } from '../../../../../_components/member-page-shell';
 import { SidebarProvider } from '@hypha-platform/ui';
 import { cn, stripDescription } from '@hypha-platform/ui-utils';
-import type { Locale } from '@hypha-platform/i18n';
 
 type HomeSignal = {
   id: number;
@@ -37,6 +34,7 @@ type HomeSignal = {
   slug: string | null;
   type: string;
   leadImage: string | null;
+  roomId?: string | null;
   archived?: boolean;
   upvotes?: CoherenceUpvoteSummary;
 };
@@ -82,11 +80,17 @@ function safeImage(url: string | null) {
 export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
   const t = useTranslations('MemberMenu');
   const signalTypes = useTranslations('CoherenceTab');
-  const params = useParams<{ lang?: string }>();
-  const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const stripRef = useRef<HTMLDivElement>(null);
   const { getAccessToken, isLoading: authLoading } = useAuthentication();
+  const { open, mode, coherenceSlug, coherenceChannel, openCoherenceChat } =
+    useHumanChatPanel();
   const { space, isLoading: spaceLoading } = useSpaceBySlug(spaceSlug);
+  const activeSignalSlug =
+    open &&
+    mode === 'coherence' &&
+    (!coherenceChannel || coherenceChannel === 'signal')
+      ? coherenceSlug?.trim() || null
+      : null;
   const spaceTitle = space?.title?.trim() || t('yourSpace');
   const spaceHeader =
     safeImage(space?.leadImage ?? null) ??
@@ -223,25 +227,45 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
           >
             {signals.map((signal) => {
               const image = safeImage(signal.leadImage) ?? spaceHeader;
-              const detailHref = signal.slug
-                ? signalDetailPath(lang, spaceSlug, signal.slug)
-                : `/${lang}/dho/${spaceSlug}/coherence`;
               const typeKey = `types.${signal.type.trim()}`;
               const typeLabel =
                 signal.type.trim() && signalTypes.has(typeKey as never)
                   ? signalTypes(typeKey as never)
                   : signalKind(signal.type);
+              const slug = signal.slug?.trim() || '';
+              const selected = Boolean(slug) && activeSignalSlug === slug;
+              const openSignalChat = () => {
+                if (!slug) return;
+                openCoherenceChat(
+                  signal.roomId?.trim() || null,
+                  signal.title,
+                  slug,
+                  signal.description ?? null,
+                  spaceSlug,
+                  {
+                    channel: 'signal',
+                    signalLeadImage: safeImage(signal.leadImage),
+                    signalTypeLabel: typeLabel || null,
+                  },
+                );
+              };
               return (
                 <article
                   key={signal.id}
                   className={cn(
-                    `relative flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 snap-start flex-col border border-border bg-transparent p-2.5 transition-colors hover:bg-foreground/[0.02]`,
+                    `relative flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 snap-start flex-col border bg-transparent p-2.5 transition-colors`,
+                    selected
+                      ? 'border-foreground ring-1 ring-foreground'
+                      : 'border-border hover:bg-foreground/[0.02]',
                   )}
                 >
-                  <Link
-                    href={detailHref}
+                  <button
+                    type="button"
                     className="absolute inset-0 z-0"
                     aria-label={signal.title}
+                    aria-pressed={selected}
+                    onClick={openSignalChat}
+                    disabled={!slug}
                   />
                   {image ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -301,9 +325,11 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                           />
                         </ActionGate>
                       </div>
-                      <Link
-                        href={detailHref}
-                        className="inline-flex h-[34px] min-h-[34px] shrink-0 items-center gap-1.5 border border-border bg-transparent px-3 text-[12px] text-foreground hover:bg-foreground/5"
+                      <button
+                        type="button"
+                        className="inline-flex h-[34px] min-h-[34px] shrink-0 items-center gap-1.5 border border-border bg-transparent px-3 text-[12px] text-foreground hover:bg-foreground/5 disabled:opacity-50"
+                        onClick={openSignalChat}
+                        disabled={!slug}
                       >
                         {t('open')}
                         <ChevronRight
@@ -311,7 +337,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                           strokeWidth={1.5}
                           aria-hidden
                         />
-                      </Link>
+                      </button>
                     </div>
                   </div>
                 </article>

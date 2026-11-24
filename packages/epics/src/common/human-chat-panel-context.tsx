@@ -90,6 +90,12 @@ export type OpenCoherenceChatOptions = {
   channel?: CoherenceOpenedChannel | null;
   /** Context section whose room this is, so its section agent answers. */
   contextSectionKey?: SpaceContextSectionKey | null;
+  /**
+   * Member home dock: image + type label shown above the signal conversation
+   * so the detail page can be skipped.
+   */
+  signalLeadImage?: string | null;
+  signalTypeLabel?: string | null;
 };
 
 /** Space Context section shown in the right panel in place of a chat. */
@@ -156,6 +162,9 @@ export type HumanChatPanelContextValue = {
   coherenceChannel: CoherenceOpenedChannel | null;
   /** Set with `coherenceChannel: 'context'` for a Context section room. */
   coherenceContextSectionKey: SpaceContextSectionKey | null;
+  /** Member signal dock preview (image + type) above the conversation. */
+  coherenceSignalLeadImage: string | null;
+  coherenceSignalTypeLabel: string | null;
   openCoherenceChat: (
     roomId: string | null,
     title: string,
@@ -217,6 +226,8 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   coherencePeerPerson: null,
   coherenceChannel: null,
   coherenceContextSectionKey: null,
+  coherenceSignalLeadImage: null,
+  coherenceSignalTypeLabel: null,
   openCoherenceChat: () => {},
   closeCoherenceChat: () => {},
   panelAvailable: false,
@@ -270,6 +281,12 @@ export function HumanChatPanelProvider({
     useState<CoherenceOpenedChannel | null>(null);
   const [coherenceContextSectionKey, setCoherenceContextSectionKey] =
     useState<SpaceContextSectionKey | null>(null);
+  const [coherenceSignalLeadImage, setCoherenceSignalLeadImage] = useState<
+    string | null
+  >(null);
+  const [coherenceSignalTypeLabel, setCoherenceSignalTypeLabel] = useState<
+    string | null
+  >(null);
   const [unreadMentionCount, setUnreadMentionCountState] = useState(0);
   const [focusedSpaceChat, setFocusedSpaceChatState] =
     useState<FocusedSpaceChat | null>(null);
@@ -350,6 +367,10 @@ export function HumanChatPanelProvider({
           ? options.contextSectionKey ?? null
           : null,
       );
+      const leadImage = options?.signalLeadImage?.trim() || null;
+      const typeLabel = options?.signalTypeLabel?.trim() || null;
+      setCoherenceSignalLeadImage(leadImage);
+      setCoherenceSignalTypeLabel(typeLabel);
       const peerSlug = options?.peerPerson?.slug?.trim() ?? '';
       const peerAddress = options?.peerPerson?.address?.trim() || null;
       const peerId =
@@ -370,7 +391,7 @@ export function HumanChatPanelProvider({
       // A real room replaces the quest helper. This does not create a room.
       setQuestChatRequested(false);
       setMemberSpaceAiRequested(false);
-      // Keep member inbox requested so Back returns to the conversations list.
+      setMemberInboxRequested(false);
       // Idempotently open the sidebar — avoids race condition with toggle()
       setOpen(true);
     },
@@ -388,6 +409,8 @@ export function HumanChatPanelProvider({
     setCoherencePeerPerson(null);
     setCoherenceChannel(null);
     setCoherenceContextSectionKey(null);
+    setCoherenceSignalLeadImage(null);
+    setCoherenceSignalTypeLabel(null);
   }, []);
 
   const openHumanChatPanel = useCallback(() => {
@@ -422,6 +445,8 @@ export function HumanChatPanelProvider({
     setCoherencePeerPerson(null);
     setCoherenceChannel(null);
     setCoherenceContextSectionKey(null);
+    setCoherenceSignalLeadImage(null);
+    setCoherenceSignalTypeLabel(null);
     setSpaceContextSection(null);
     setQuestChatRequested(false);
     setMemberSpaceAiRequested(false);
@@ -444,6 +469,8 @@ export function HumanChatPanelProvider({
     setCoherencePeerPerson(null);
     setCoherenceChannel(null);
     setCoherenceContextSectionKey(null);
+    setCoherenceSignalLeadImage(null);
+    setCoherenceSignalTypeLabel(null);
     setSpaceContextSection(null);
     setQuestChatRequested(false);
     setMemberInboxRequested(false);
@@ -476,6 +503,8 @@ export function HumanChatPanelProvider({
         coherencePeerPerson,
         coherenceChannel,
         coherenceContextSectionKey,
+        coherenceSignalLeadImage,
+        coherenceSignalTypeLabel,
         openCoherenceChat,
         closeCoherenceChat,
         panelAvailable,

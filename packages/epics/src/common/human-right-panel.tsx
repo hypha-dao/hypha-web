@@ -127,6 +127,8 @@ import {
 } from './human-chat-panel';
 import { HumanChatPanelTypingIndicator } from './human-chat-panel/human-chat-panel-typing-indicator';
 import { isSignalThreadJoin } from './human-chat-panel/signal-thread-join';
+import { MemberSignalDockPreview } from './human-chat-panel/member-signal-dock-preview';
+import { useMemberExperience } from '../people/components/member-experience';
 import { useChatRoomTyping } from './human-chat-panel/use-chat-room-typing';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
@@ -1159,6 +1161,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     coherencePeerPerson,
     coherenceChannel,
     coherenceContextSectionKey,
+    coherenceSignalLeadImage,
+    coherenceSignalTypeLabel,
     open,
     closeCoherenceChat,
     openCoherenceChat,
@@ -1167,6 +1171,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     memberInboxRequested,
     setUnreadMentionCount,
   } = useHumanChatPanel();
+  const { isMember: memberExperience } = useMemberExperience();
   const chatModeRef = useRef(mode);
   chatModeRef.current = mode;
   // A Context section room opened from Messages is answered by that section's
@@ -6826,6 +6831,31 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                     spaceSlug={coherenceSpaceSlug?.trim() || spaceSlug || ''}
                     questSlug={coherenceSlug.trim()}
                     onThread={onHelperThread}
+                  />
+                ) : null}
+                {memberExperience &&
+                isSignalThread &&
+                coherenceTitle?.trim() ? (
+                  <MemberSignalDockPreview
+                    title={coherenceTitle.trim()}
+                    description={
+                      coherenceDescription ??
+                      openSignalForCreator?.description ??
+                      null
+                    }
+                    leadImage={
+                      coherenceSignalLeadImage ??
+                      openSignalForCreator?.leadImage ??
+                      null
+                    }
+                    typeLabel={
+                      coherenceSignalTypeLabel ??
+                      (openSignalForCreator?.type
+                        ? String(openSignalForCreator.type)
+                            .replace(/[_-]+/g, ' ')
+                            .replace(/^\w/, (c) => c.toUpperCase())
+                        : null)
+                    }
                   />
                 ) : null}
                 {isJoining ? (
