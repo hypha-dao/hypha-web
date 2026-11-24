@@ -5,4 +5,4 @@
 ## Docs
 
 - [Hypha network](https://app.hypha.earth/en/network): public overview of Spaces on the platform
-- [Hosted MCP server](https://mcp.hypha.earth): Model Context Protocol server exposing Hypha platform data to AI tools
+- [Hosted MCP server](https://mcp.hypha.earth/mcp): Model Context Protocol endpoint exposing Hypha platform data to AI tools (OAuth; discovery at /.well-known/oauth-protected-resource/mcp)
