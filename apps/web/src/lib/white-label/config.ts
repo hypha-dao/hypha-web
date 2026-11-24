@@ -367,7 +367,7 @@ function hostOfUrlOrHost(value: string | undefined): string | null {
 // the deployment's own `VERCEL_URL` on production (internal self-calls such as
 // the cron routes use it), where that helper deliberately skips it.
 // Same default as `getAppBaseUrl()` when `NEXT_PUBLIC_APP_URL` is unset.
-const DEFAULT_APP_HOST = 'app.hypha.earth';
+export const DEFAULT_APP_HOST = 'app.hypha.earth';
 
 function derivedMainHosts(): string[] {
   const candidates = [
