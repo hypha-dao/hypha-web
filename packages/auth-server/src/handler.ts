@@ -238,7 +238,13 @@ async function handleConsent(
     try {
       const value = parseGrantInput(spaceGrants);
       if (value !== 'all') await assertSpacesExist(server.pool, value);
-      pending = { personId: session.user.id, clientId, value };
+      // Without the read scope there is nothing to limit, and an existing refresh token may
+      // still carry it: leave the stored grant alone rather than replace it.
+      const approvesRead =
+        typeof body.scope === 'string' &&
+        body.scope.split(/\s+/).includes('spaces:read');
+      if (approvesRead)
+        pending = { personId: session.user.id, clientId, value };
     } catch (error) {
       if (error instanceof GrantError) return refuse(400, error.code);
       throw error;
