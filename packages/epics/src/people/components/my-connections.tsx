@@ -162,6 +162,7 @@ import {
   isInboxFilter,
   peopleInboxKind,
   rowMatchesInboxFilter,
+  rowMatchesMemberInboxTab,
   type InboxChannelKind,
   type InboxContext,
   type InboxFilter,
@@ -895,7 +896,7 @@ function roomStamp(room: Room, selfId: string | null) {
   for (let index = start; index < events.length; index += 1) {
     if (events[index]?.getType() === EventType.RoomMessage) clear += 1;
   }
-  const receipt = selfId ? room.getEventReadUpTo(selfId, false) ?? '' : '';
+  const receipt = selfId ? (room.getEventReadUpTo(selfId, false) ?? '') : '';
   return [
     room.getMyMembership(),
     events.length,
@@ -2064,7 +2065,7 @@ export function MyConnections({
   const home =
     homeRaw?.partial && fullError
       ? { ...homeRaw, partial: false }
-      : homeRaw ?? null;
+      : (homeRaw ?? null);
   const { data: inboxContext } = useSWR<InboxContext>(
     section === 'messages' && jwt
       ? ['/api/v1/people/me/message-inbox-context', jwt]
@@ -2125,7 +2126,7 @@ export function MyConnections({
   const connections =
     directory && directory.length >= (home?.connections.length ?? 0)
       ? directory
-      : home?.connections ?? [];
+      : (home?.connections ?? []);
   const connectionTotal = Math.max(
     home?.counts.connections ?? 0,
     connections.length,
@@ -2786,13 +2787,19 @@ export function MyConnections({
         memberTab === 'direct'
           ? scopedDirect.filter((row) => kindOf(row) === 'dm')
           : memberTab === 'groups'
-          ? scopedDirect.filter((row) => kindOf(row) === 'group')
-          : memberTab === 'channels'
-          ? scopedChannels
-          : sortConversationsByLastMessage([
-              ...scopedDirect,
-              ...scopedChannels,
-            ]);
+            ? scopedDirect.filter((row) => kindOf(row) === 'group')
+            : memberTab === 'channels'
+              ? sortConversationsByLastMessage(
+                  scopedChannels.filter(
+                    (row) =>
+                      row.inbox != null &&
+                      rowMatchesMemberInboxTab(row.inbox.kind, 'channels'),
+                  ),
+                )
+              : sortConversationsByLastMessage([
+                  ...scopedDirect,
+                  ...scopedChannels,
+                ]);
       return { rows, counts, memberCounts };
     }
     if (section !== 'messages' || picking || inboxFilter === 'direct') {
@@ -2890,8 +2897,8 @@ export function MyConnections({
   const shownRows = inboxWindow
     ? inboxWindow.rows
     : section === 'messages' && !picking
-    ? inboxView.rows
-    : people;
+      ? inboxView.rows
+      : people;
   // Store paint can ready the list via a channel while Direct still has no
   // rows — keep the skeleton until initial sync before claiming empty.
   const messagesEmptyPending =
@@ -2975,16 +2982,16 @@ export function MyConnections({
     section === 'archived'
       ? t('tabs.archived')
       : section === 'messages' && !picking
-      ? isPanel || (memberSpaceInbox && memberTab === 'all')
-        ? t('inbox.allTitle')
-        : memberSpaceInbox && memberTab === 'direct'
-        ? t('inbox.directTitle')
-        : memberSpaceInbox && memberTab === 'groups'
-        ? t('inbox.memberGroups')
-        : memberSpaceInbox && memberTab === 'channels'
-        ? t('inbox.memberChannels')
-        : t(`inbox.${inboxFilter}Title`)
-      : t('people');
+        ? isPanel || (memberSpaceInbox && memberTab === 'all')
+          ? t('inbox.allTitle')
+          : memberSpaceInbox && memberTab === 'direct'
+            ? t('inbox.directTitle')
+            : memberSpaceInbox && memberTab === 'groups'
+              ? t('inbox.memberGroups')
+              : memberSpaceInbox && memberTab === 'channels'
+                ? t('inbox.memberChannels')
+                : t(`inbox.${inboxFilter}Title`)
+        : t('people');
   const showChannelTags = section === 'messages' && !picking;
   const selectedPeople = useMemo(
     () => [...selectedById.values()],
@@ -3309,8 +3316,8 @@ export function MyConnections({
                     {needle
                       ? t('startConversation')
                       : card.kind === 'reconnect'
-                      ? t('longTimeNoSee')
-                      : t('worthMeeting')}
+                        ? t('longTimeNoSee')
+                        : t('worthMeeting')}
                   </span>
                   <span className="w-full truncate text-1 text-muted-foreground">
                     {needle
@@ -3318,14 +3325,14 @@ export function MyConnections({
                         ? formatWhen(card.lastTs, locale, t('justNow'))
                         : t('noMessage')
                       : card.kind === 'reconnect'
-                      ? card.lastTs
-                        ? formatWhen(card.lastTs, locale, t('justNow'))
-                        : t('noMessage')
-                      : card.spaceTitle
-                      ? card.spaceTitle
-                      : card.sharedSpaceCount > 0
-                      ? t('sharedCount', { count: card.sharedSpaceCount })
-                      : t('noMessage')}
+                        ? card.lastTs
+                          ? formatWhen(card.lastTs, locale, t('justNow'))
+                          : t('noMessage')
+                        : card.spaceTitle
+                          ? card.spaceTitle
+                          : card.sharedSpaceCount > 0
+                            ? t('sharedCount', { count: card.sharedSpaceCount })
+                            : t('noMessage')}
                   </span>
                 </button>
               ))}
@@ -3376,6 +3383,11 @@ export function MyConnections({
             </div>
           ) : null}
           <div
+            id="member-inbox-panel"
+            role={memberSpaceInbox ? 'tabpanel' : undefined}
+            aria-labelledby={
+              memberSpaceInbox ? `member-inbox-tab-${memberTab}` : undefined
+            }
             data-messages-list-frame=""
             className={cn(
               'min-h-0 min-w-0 flex-1 flex-col gap-3',
@@ -3619,10 +3631,10 @@ export function MyConnections({
                         ? t('noMembersMatchSearch')
                         : t('noMatches')
                       : memberSpaceInbox && memberTab !== 'direct'
-                      ? t('inbox.empty')
-                      : showChannelTags && inboxFilter !== 'direct'
-                      ? t('inbox.empty')
-                      : t('empty')}
+                        ? t('inbox.empty')
+                        : showChannelTags && inboxFilter !== 'direct'
+                          ? t('inbox.empty')
+                          : t('empty')}
                   </p>
                 ) : null}
 
@@ -3924,11 +3936,11 @@ function MemberList({
             ? row.mine
               ? youLabel(previewText)
               : row.senderName
-              ? tInbox('theyWrote', {
-                  name: row.senderName,
-                  message: previewText,
-                })
-              : previewText
+                ? tInbox('theyWrote', {
+                    name: row.senderName,
+                    message: previewText,
+                  })
+                : previewText
             : noMessage;
           const when = row.lastTs
             ? formatWhen(row.lastTs, locale, justNow)
@@ -3951,7 +3963,7 @@ function MemberList({
           const signalType =
             row.inbox?.signalType && SIGNAL_TYPE_KEYS.has(row.inbox.signalType)
               ? tTypes(row.inbox.signalType as 'Need')
-              : row.inbox?.signalType ?? null;
+              : (row.inbox?.signalType ?? null);
           const context =
             showChannelTags && row.inbox
               ? inboxContextLine(row.inbox, signalType)

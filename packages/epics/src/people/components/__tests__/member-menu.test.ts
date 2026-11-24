@@ -106,6 +106,7 @@ describe('memberSurfaceSpaceQuery', () => {
     expect(
       memberSurfaceSpaceQuery('/en/my-wallet/actions/activate-spaces', '42'),
     ).toBeNull();
+    expect(memberSurfaceSpaceQuery('/en/messages', '123')).toBe('123');
     expect(memberSurfaceSpaceQuery('/en/dho/rue-verte/overview', 'other')).toBe(
       null,
     );

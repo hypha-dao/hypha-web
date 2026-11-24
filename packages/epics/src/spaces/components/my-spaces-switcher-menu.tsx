@@ -135,8 +135,19 @@ export function MySpacesSwitcherMenu({
         href={href}
         title={space.title}
         iconUrl={resolveSpaceDisplayLogoUrl(space, logoVariant)}
-        onClick={() => {
+        onClick={(event) => {
           onSelect?.();
+          // Let Link own modified clicks (new tab). Only push on a plain click.
+          if (
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey ||
+            event.button !== 0
+          ) {
+            return;
+          }
+          event.preventDefault();
           router.push(href);
         }}
         className="rounded-lg px-2 py-1.5 text-sm text-foreground hover:bg-background-4/70"

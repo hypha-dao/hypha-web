@@ -7,7 +7,10 @@ import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   DEFAULT_SPACE_LEAD_IMAGE,
+  mergePendingSignalUpvotes,
+  useMe,
   useSpaceBySlug,
+  type Coherence,
   type CoherenceUpvoteSummary,
 } from '@hypha-platform/core/client';
 import {
@@ -84,6 +87,8 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
   const signalTypes = useTranslations('CoherenceTab');
   const stripRef = useRef<HTMLDivElement>(null);
   const { getAccessToken, isLoading: authLoading } = useAuthentication();
+  const { person } = useMe();
+  const viewerKey = person?.slug?.trim() || person?.address?.trim() || 'anon';
   const { open, mode, coherenceSlug, coherenceChannel, openCoherenceChat } =
     useHumanChatPanel();
   const { space, isLoading: spaceLoading } = useSpaceBySlug(spaceSlug);
@@ -110,8 +115,8 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
         spaceSlug,
       )}/coherences?pageSize=12&orderBy=mostrecent`;
   const { data, error, isLoading, mutate } = useSWR<{ data?: HomeSignal[] }>(
-    endpoint,
-    async (url: string) => {
+    endpoint ? [endpoint, viewerKey] : null,
+    async ([url]: [string, string]) => {
       const headers: HeadersInit = { Accept: 'application/json' };
       const token = await getAccessToken().catch(() => null);
       if (token) headers.Authorization = `Bearer ${token}`;
@@ -119,13 +124,22 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
       if (!response.ok) {
         throw new Error(`Failed to load signals: ${response.status}`);
       }
-      return (await response.json()) as { data?: HomeSignal[] };
+      const json = (await response.json()) as { data?: HomeSignal[] };
+      const merged = mergePendingSignalUpvotes(
+        spaceSlug,
+        (json.data ?? []) as Coherence[],
+        { fromFetch: true },
+      ) as HomeSignal[];
+      return { ...json, data: merged };
     },
   );
-  const signals = useMemo(
-    () => (data?.data ?? []).filter((signal) => signal.title?.trim()),
-    [data],
-  );
+  const signals = useMemo(() => {
+    const items = (data?.data ?? []).filter((signal) => signal.title?.trim());
+    return mergePendingSignalUpvotes(
+      spaceSlug,
+      items as Coherence[],
+    ) as HomeSignal[];
+  }, [data, spaceSlug]);
 
   const scrollStrip = (direction: -1 | 1) => {
     const strip = stripRef.current;

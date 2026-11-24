@@ -599,6 +599,29 @@ export const LineChart = ({
           </div>
         ))}
       </div>
+      <table className="sr-only">
+        <caption>Chart readings</caption>
+        <thead>
+          <tr>
+            <th scope="col">Period</th>
+            {series.map((item) => (
+              <th key={item.key} scope="col">
+                {item.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {labels.map((label, index) => (
+            <tr key={`${label}-${index}`}>
+              <th scope="row">{label}</th>
+              {series.map((item) => (
+                <td key={item.key}>{fmt(item.values[index] ?? 0)}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };

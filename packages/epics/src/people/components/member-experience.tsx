@@ -53,9 +53,26 @@ export function RememberOrientation() {
 export function useMemberExperience() {
   const remembered = useContext(RememberedOrientationContext);
   const { person, isLoading } = useMe();
-  return resolveMemberExperience({
-    liveSettled: !isLoading || person != null,
+  const profileSettled = !isLoading || person != null;
+  const resolved = resolveMemberExperience({
+    liveSettled: profileSettled,
     liveOrientation: person?.primaryOrientation,
     remembered,
   });
+  return {
+    ...resolved,
+    /** True once the profile request finished (or person is already known). */
+    profileSettled,
+    /**
+     * Member only after the live profile says so — not from the cookie alone.
+     * Use this for redirects that must not fire on a remembered persona.
+     */
+    liveIsMember:
+      profileSettled &&
+      resolveMemberExperience({
+        liveSettled: true,
+        liveOrientation: person?.primaryOrientation,
+        remembered: null,
+      }).isMember,
+  };
 }

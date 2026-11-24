@@ -18,12 +18,13 @@ export function SpaceOverviewEntry({
   children: ReactNode;
 }) {
   const { data, isLoading, error } = useSpaceEnergy(spaceSlug);
-  const { isMember, settled } = useMemberExperience();
+  const { liveIsMember, profileSettled } = useMemberExperience();
   const pathname = usePathname();
   const router = useRouter();
   // Members land on the space home. Energy stays its own screen in their menu.
-  // Wait until the persona is known so a member is not sent to energy first.
-  const energyHome = !stay && settled && !isMember && data?.enabled === true;
+  // Wait for the live profile — a remembered cookie must not bounce members.
+  const energyHome =
+    !stay && profileSettled && !liveIsMember && data?.enabled === true;
 
   useEffect(() => {
     if (!energyHome || !pathname) return;

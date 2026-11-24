@@ -39,6 +39,7 @@ import {
 } from '../../people/components/member-menu';
 import { useMemberExperience } from '../../people/components/member-experience';
 import { getRootSpace } from '../get-root-space';
+import { useMemberNamedSpaces } from '../../network-exchange/use-member-named-spaces';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
 import { MemberHomeMark } from '../../people/components/member-home-mark';
 import {
@@ -106,6 +107,7 @@ export function AiPanelHeader({
   const { web3SpaceIds } = useMemberWeb3SpaceIds({
     personAddress: person?.address as Address | undefined,
   });
+  const namedSpaces = useMemberNamedSpaces();
   const {
     data: allSpaces = [],
     error: allSpacesError,
@@ -122,15 +124,11 @@ export function AiPanelHeader({
       return (await response.json()) as Space[];
     },
   );
-  const memberSlugs = useMemo(() => {
-    const ids = new Set((web3SpaceIds ?? []).map((id) => id.toString()));
-    return allSpaces
-      .filter(
-        (space) =>
-          space.web3SpaceId != null && ids.has(String(space.web3SpaceId)),
-      )
-      .map((space) => space.slug);
-  }, [allSpaces, web3SpaceIds]);
+  // Same title-sorted membership list the menu and top bar use.
+  const memberSlugs = useMemo(
+    () => namedSpaces.map((space) => space.slug),
+    [namedSpaces],
+  );
   // A space URL wins for everyone. Members keep that space on wallet and
   // messages, which are not under `/dho/`. Builders and funders do not.
   const activeSpaceSlug = useMemo(() => {
@@ -245,14 +243,14 @@ export function AiPanelHeader({
       member && !pathSlug && /^\/[^/]+\/my-wallet(?:\/|$)/.test(pathname ?? '')
         ? memberMenuHref(lang, space.slug, 'wallet')
         : member &&
-          !pathSlug &&
-          /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(pathname ?? '')
-        ? memberMenuHref(lang, space.slug, 'messages')
-        : getDhoSpaceContextPath({
-            pathname,
-            lang,
-            spaceSlug: space.slug,
-          }) ?? `/${lang}/dho/${space.slug}/agreements`;
+            !pathSlug &&
+            /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(pathname ?? '')
+          ? memberMenuHref(lang, space.slug, 'messages')
+          : (getDhoSpaceContextPath({
+              pathname,
+              lang,
+              spaceSlug: space.slug,
+            }) ?? `/${lang}/dho/${space.slug}/agreements`);
     return (
       <DropdownMenuItem
         key={space.id}
@@ -285,8 +283,8 @@ export function AiPanelHeader({
         memberAsk
           ? 'grid-cols-1 px-4'
           : reserveDesktopLeftColumn
-          ? 'grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] ps-4 pe-4'
-          : 'grid-cols-[minmax(0,1fr)_2.25rem] ps-4 pe-4',
+            ? 'grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] ps-4 pe-4'
+            : 'grid-cols-[minmax(0,1fr)_2.25rem] ps-4 pe-4',
         showLeftSlot &&
           collapseLeftSlotAtMd &&
           'max-md:grid-cols-[2.25rem_minmax(0,1fr)_2.25rem]',

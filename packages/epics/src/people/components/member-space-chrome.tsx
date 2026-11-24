@@ -38,6 +38,7 @@ import {
   isCommunityMenuKey,
   memberMenuGroup,
   memberPersonalRedirect,
+  memberSurfaceSpaceQuery,
   resolveMemberSpaceSlug,
   type MemberMenuItem,
   type MemberMenuKey,
@@ -62,10 +63,10 @@ export function useMemberSpace() {
   const pathname = usePathname() ?? '';
   const searchParams = useSearchParams();
   const pathSlug = getDhoSpaceSlugFromPathname(pathname) ?? null;
-  const onMessages = /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(
+  const querySlug = memberSurfaceSpaceQuery(
     pathname,
+    searchParams.get('space'),
   );
-  const querySlug = onMessages ? searchParams.get('space') : null;
   const named = useMemberNamedSpaces();
   const [recent, setRecent] = useState<string[]>(() => readRecentSpaceSlugs());
 
@@ -111,7 +112,7 @@ function useMemberMenuItems() {
 }
 
 export function MemberSpaceFrame({ children }: { children: ReactNode }) {
-  const { isMember: member } = useMemberExperience();
+  const { liveIsMember } = useMemberExperience();
   const router = useRouter();
   const pathname = usePathname() ?? '';
   const searchParams = useSearchParams();
@@ -121,7 +122,8 @@ export function MemberSpaceFrame({ children }: { children: ReactNode }) {
   const search = searchParams.toString() ? `?${searchParams.toString()}` : '';
 
   useEffect(() => {
-    if (!member || !slug) return;
+    // Wait for the live profile — a remembered cookie must not bounce builders.
+    if (!liveIsMember || !slug) return;
     const next = memberPersonalRedirect({
       pathname,
       search,
@@ -130,7 +132,7 @@ export function MemberSpaceFrame({ children }: { children: ReactNode }) {
     });
     if (!next || next === `${pathname}${search}`) return;
     router.replace(next);
-  }, [lang, member, pathname, router, search, slug]);
+  }, [lang, liveIsMember, pathname, router, search, slug]);
 
   return children;
 }

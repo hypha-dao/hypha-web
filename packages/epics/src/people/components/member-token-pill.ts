@@ -51,12 +51,15 @@ function pickPrimary(
         token.archived !== true,
     );
   });
+  // Oldest community token first; type order only breaks a createdAt tie.
   eligible.sort((left, right) => {
-    const byType =
+    const byAge =
+      createdAtTime(left.createdAt) - createdAtTime(right.createdAt);
+    if (byAge !== 0) return byAge;
+    return (
       types.indexOf(left.type?.trim() ?? '') -
-      types.indexOf(right.type?.trim() ?? '');
-    if (byType !== 0) return byType;
-    return createdAtTime(left.createdAt) - createdAtTime(right.createdAt);
+      types.indexOf(right.type?.trim() ?? '')
+    );
   });
   return eligible[0] ?? null;
 }
@@ -81,9 +84,16 @@ export function selectMemberTokenPill(input: {
 
 export function formatMemberTokenAmount(amount: number, locale = 'en'): string {
   if (!Number.isFinite(amount) || amount <= 0) return '';
-  const fractionDigits = Number.isInteger(amount) ? 0 : 2;
+  if (Number.isInteger(amount)) {
+    return new Intl.NumberFormat(locale, {
+      maximumFractionDigits: 0,
+      minimumFractionDigits: 0,
+    }).format(amount);
+  }
+  // Keep dust holdings visible — two digits would round 0.004 to "0".
+  const digits = amount >= 0.01 ? 2 : 4;
   return new Intl.NumberFormat(locale, {
-    maximumFractionDigits: fractionDigits,
+    maximumFractionDigits: digits,
     minimumFractionDigits: 0,
   }).format(amount);
 }

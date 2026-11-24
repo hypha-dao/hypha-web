@@ -14,6 +14,18 @@ describe('signalListImage', () => {
     ).toBe('https://cdn.example.com/lead.jpg');
   });
 
+  it('keeps lead priority when the lead is also later in attachments', () => {
+    expect(
+      signalListImage({
+        leadImage: 'https://cdn.example.com/lead.jpg',
+        attachments: [
+          { name: 'other.png', url: 'https://cdn.example.com/other.png' },
+          { name: 'lead.jpg', url: 'https://cdn.example.com/lead.jpg' },
+        ],
+      }),
+    ).toBe('https://cdn.example.com/lead.jpg');
+  });
+
   it('uses the first image attachment when there is no lead image', () => {
     expect(
       signalListImage({

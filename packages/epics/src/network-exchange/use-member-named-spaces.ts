@@ -14,7 +14,7 @@ export type MemberNamedSpace = {
   ecosystemLogoUrlDark?: string | null;
 };
 
-const SLUG = /^[a-z0-9_-]{1,80}$/i;
+const SLUG = /^[a-z0-9_-]{1,128}$/i;
 
 /** Spaces the member belongs to on-chain — same source as My Spaces. */
 export function useMemberNamedSpaces(): MemberNamedSpace[] {

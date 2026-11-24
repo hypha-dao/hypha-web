@@ -100,11 +100,40 @@ describe('selectMemberTokenPill', () => {
       }),
     ).toEqual({ symbol: 'OLD', amount: 1 });
   });
+
+  it('prefers the oldest primary token across types', () => {
+    expect(
+      selectMemberTokenPill({
+        minted: [
+          {
+            address: '0xfff',
+            symbol: 'NEWCRED',
+            type: 'credits',
+            createdAt: '2025-01-01T00:00:00.000Z',
+          },
+          {
+            address: '0xeee',
+            symbol: 'OLDUTIL',
+            type: 'utility',
+            createdAt: '2023-01-01T00:00:00.000Z',
+          },
+        ],
+        holdings: [
+          { address: '0xfff', value: 9 },
+          { address: '0xeee', value: 1 },
+        ],
+      }),
+    ).toEqual({ symbol: 'OLDUTIL', amount: 1 });
+  });
 });
 
 describe('formatMemberTokenAmount', () => {
   it('groups a whole balance', () => {
     expect(formatMemberTokenAmount(1284, 'en')).toBe('1,284');
+  });
+
+  it('keeps dust holdings readable', () => {
+    expect(formatMemberTokenAmount(0.004, 'en')).toBe('0.004');
   });
 
   it('returns nothing for an empty balance', () => {

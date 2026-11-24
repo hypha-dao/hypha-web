@@ -171,7 +171,8 @@ export function memberMenuGroup(
  * The space in the URL wins. Otherwise the most recently opened space the
  * member belongs to, then the first membership.
  */
-const QUERY_SPACE_SLUG = /^[a-z0-9_-]{1,80}$/i;
+/** Matches space creation (up to 128) and persisted slugs. */
+const QUERY_SPACE_SLUG = /^[a-z0-9_-]{1,128}$/i;
 
 export function resolveMemberSpaceSlug(input: {
   pathSlug: string | null;
@@ -192,25 +193,21 @@ export function resolveMemberSpaceSlug(input: {
 }
 
 /**
- * Personal home, spaces, and network send a member into their space.
- * Wallet and messages stay on that space instead of falling back to the network.
- */
-/**
- * `?space=` on a member's wallet or messages screen. A bare number is a
- * wallet action id, not a space slug.
+ * `?space=` on a member's wallet or messages screen. A bare number is only
+ * rejected on wallet routes (action ids); messages may use digit-only slugs.
  */
 export function memberSurfaceSpaceQuery(
   pathname: string,
   querySlug: string | null | undefined,
 ): string | null {
-  const onSurface =
-    /^\/[^/]+\/my-wallet(?:\/|$)/.test(pathname) ||
-    /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(pathname);
-  if (!onSurface) return null;
+  const onWallet = /^\/[^/]+\/my-wallet(?:\/|$)/.test(pathname);
+  const onMessages = /^\/[^/]+\/(?:messages|connections)(?:\/|$)/.test(
+    pathname,
+  );
+  if (!onWallet && !onMessages) return null;
   const slug = querySlug?.trim() || '';
-  if (!slug || !/^[a-z0-9_-]{1,80}$/i.test(slug) || /^\d+$/.test(slug)) {
-    return null;
-  }
+  if (!slug || !QUERY_SPACE_SLUG.test(slug)) return null;
+  if (onWallet && /^\d+$/.test(slug)) return null;
   return slug;
 }
 

@@ -228,6 +228,8 @@ export function useOnboardingVoiceRealtime({
   speakDisplayedText = false,
 }: UseOnboardingVoiceRealtimeOptions) {
   const connectionRef = useRef<RealtimeVoiceConnection | null>(null);
+  /** This panel opened the shared warm mic and must release it on teardown. */
+  const warmMicOwnedRef = useRef(false);
   const connectInFlightRef = useRef(false);
   const connectGenerationRef = useRef(0);
   const connectRetryCountRef = useRef(0);
@@ -842,8 +844,11 @@ export function useOnboardingVoiceRealtime({
     connectionRef.current = null;
     if (connection) {
       connection.close();
-      // Only the session that opened the mic may release it. A closed menu
-      // copy of this panel must not stop the space assistant on the page.
+    }
+    // Release when this panel acquired the mic — even if the connection
+    // already cleared itself after a failed/closed transport.
+    if (warmMicOwnedRef.current) {
+      warmMicOwnedRef.current = false;
       releaseWarmMicStream();
     }
     setPhase('idle');
@@ -1083,8 +1088,8 @@ export function useOnboardingVoiceRealtime({
           typeof event.delta === 'string'
             ? event.delta
             : typeof event.transcript === 'string'
-            ? event.transcript
-            : '';
+              ? event.transcript
+              : '';
         if (!delta) return;
         interimDictationRef.current = `${interimDictationRef.current}${delta}`;
         const preview = interimDictationRef.current.trim();
@@ -1233,7 +1238,8 @@ export function useOnboardingVoiceRealtime({
       if (generation !== connectGenerationRef.current) return;
 
       if (captureMicrophoneRef.current) {
-        await acquireWarmMicStream();
+        const stream = await acquireWarmMicStream();
+        if (stream) warmMicOwnedRef.current = true;
       }
       if (generation !== connectGenerationRef.current) return;
 
@@ -1263,6 +1269,10 @@ export function useOnboardingVoiceRealtime({
               connectionRef.current === activeConnection
             ) {
               connectionRef.current = null;
+            }
+            if (warmMicOwnedRef.current) {
+              warmMicOwnedRef.current = false;
+              releaseWarmMicStream();
             }
             setPhase('idle');
           }
@@ -1448,7 +1458,9 @@ export function useOnboardingVoiceRealtime({
     micNeedsGestureRef.current = false;
     connectRetryCountRef.current = 0;
     if (captureMicrophoneRef.current) {
-      void acquireWarmMicStream();
+      void acquireWarmMicStream().then((stream) => {
+        if (stream) warmMicOwnedRef.current = true;
+      });
     }
     await connect();
   }, [connect, flushQueuedSpeech, releaseMic]);
@@ -1505,7 +1517,11 @@ export function useOnboardingVoiceRealtime({
       if (connectionRef.current || connectInFlightRef.current) return;
       micNeedsGestureRef.current = false;
       connectRetryCountRef.current = 0;
-      if (captureMicrophoneRef.current) void acquireWarmMicStream();
+      if (captureMicrophoneRef.current) {
+        void acquireWarmMicStream().then((stream) => {
+          if (stream) warmMicOwnedRef.current = true;
+        });
+      }
       void connectRef.current();
     };
     window.addEventListener('pointerdown', unlock);

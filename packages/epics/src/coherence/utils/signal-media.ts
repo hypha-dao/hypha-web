@@ -49,20 +49,26 @@ export type SignalMediaCounts = {
   documents: number;
 };
 
+function safeMediaUrl(url: string | null | undefined): string | null {
+  const trimmed = url?.trim() ?? '';
+  if (
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('/')
+  ) {
+    return trimmed;
+  }
+  return null;
+}
+
 /** Lead image, otherwise the first image attachment. Unsafe URLs are dropped. */
 export function signalListImage(input?: {
   leadImage?: string | null;
   attachments?: SignalMediaItem[] | null;
 }): string | null {
-  const url = splitSignalMedia(input).images[0]?.url?.trim() ?? '';
-  if (
-    url.startsWith('https://') ||
-    url.startsWith('http://') ||
-    url.startsWith('/')
-  ) {
-    return url;
-  }
-  return null;
+  const lead = safeMediaUrl(input?.leadImage);
+  if (lead) return lead;
+  return safeMediaUrl(splitSignalMedia(input).images[0]?.url);
 }
 
 export function countSignalMedia(input?: {
