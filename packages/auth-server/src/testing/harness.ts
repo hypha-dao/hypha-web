@@ -262,7 +262,7 @@ export async function fullFlow(
       next.search.slice(1),
       scope,
       opts.person ?? PERSON,
-      opts.spaceGrants ?? 'all',
+      opts.spaceGrants === undefined ? 'all' : opts.spaceGrants,
     );
     if (!c.body?.url)
       return { pkce, jar, login, consent: c, stage: 'consent' as const };

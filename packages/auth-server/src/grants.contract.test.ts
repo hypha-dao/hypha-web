@@ -134,10 +134,10 @@ run(
       },
     );
 
-    it('a refused library step puts the earlier grant back', async () => {
+    it('a refused library step leaves the earlier grant untouched', async () => {
       const first = await h.fullFlow(s, { spaceGrants: [spaceA] });
       expect(first.stage).toBe('done');
-      // A scope that was not asked for is refused by the library after the grant was written.
+      // A scope that was not asked for is refused by the library so the new choice must not have been stored.
       const pkce = h.makePkce();
       const jar = new h.CookieJar();
       const u = h.authorizeUrl(pkce, { prompt: 'consent' });

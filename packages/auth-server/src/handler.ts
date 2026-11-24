@@ -14,9 +14,9 @@ import { logOnboardingStep, onboardingStepOf } from './onboarding-log';
 import { verifyOAuthQueryParams } from '@better-auth/oauth-provider';
 import {
   GrantError,
+  type GrantValue,
   assertSpacesExist,
   parseGrantInput,
-  readGrant,
   writeGrant,
 } from './grants';
 
@@ -219,12 +219,14 @@ async function handleConsent(
   // Which spaces the app may read. Only an approval carries one, and the choice is stored for
   // the person of the session and the client of the SIGNED authorization query: the app cannot
   // choose or change it (it is not part of the query) and a body naming another person or
-  // client is not read. Stored before the library runs so the code can never be exchanged
-  // without it; put back if the library refuses.
-  let stored: {
+  // client is not read. The choice is checked before the library runs but only written once the
+  // library has accepted the consent, and before the response (which carries the code) is
+  // returned: a refused approval never touches the stored grant, and the code cannot be
+  // exchanged before the browser has received it.
+  let pending: {
     personId: string;
     clientId: string;
-    before: GrantSnapshot;
+    value: GrantValue;
   } | null = null;
   if (body.accept === true) {
     const oauthQuery =
@@ -236,9 +238,7 @@ async function handleConsent(
     try {
       const value = parseGrantInput(spaceGrants);
       if (value !== 'all') await assertSpacesExist(server.pool, value);
-      const before = await readGrant(server.pool, session.user.id, clientId);
-      await writeGrant(server.pool, session.user.id, clientId, value);
-      stored = { personId: session.user.id, clientId, before };
+      pending = { personId: session.user.id, clientId, value };
     } catch (error) {
       if (error instanceof GrantError) return refuse(400, error.code);
       throw error;
@@ -247,34 +247,25 @@ async function handleConsent(
 
   const headers = new Headers(request.headers);
   headers.delete('content-length');
-  let response: Response;
-  try {
-    response = await server.auth.handler(
-      new Request(request.url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body),
-      }),
-    );
-  } catch (error) {
-    if (stored)
+  const response = await server.auth.handler(
+    new Request(request.url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    }),
+  );
+  if (pending && response.ok) {
+    try {
       await writeGrant(
         server.pool,
-        stored.personId,
-        stored.clientId,
-        stored.before,
-      ).catch(() => undefined);
-    throw error;
-  }
-  if (stored && !response.ok) {
-    await writeGrant(
-      server.pool,
-      stored.personId,
-      stored.clientId,
-      stored.before,
-    ).catch(() => undefined);
+        pending.personId,
+        pending.clientId,
+        pending.value,
+      );
+    } catch {
+      // The code in this response is never delivered; the previous grant stays in force.
+      return refuse(500, 'server_error');
+    }
   }
   return response;
 }
-
-type GrantSnapshot = Awaited<ReturnType<typeof readGrant>>;
