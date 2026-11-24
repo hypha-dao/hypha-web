@@ -83,7 +83,7 @@ export function resolveCallAudioPortalTarget(
 }
 
 export type RemoteCallAudioSinkEntry<F> = {
-  /** Stable across layout and active-speaker changes: `userId:purpose`. */
+  /** Stable across layout and active-speaker changes: `userId:deviceId:purpose`. */
   key: string;
   feed: F;
   isShare: boolean;
@@ -91,9 +91,9 @@ export type RemoteCallAudioSinkEntry<F> = {
 
 /** Identity of one remote audio sink; never includes layout, index or reactions. */
 export function remoteCallAudioSinkKey(
-  feed: Pick<CallFeed, 'userId' | 'purpose'>,
+  feed: Pick<CallFeed, 'userId' | 'deviceId' | 'purpose'>,
 ): string {
-  return `${feed.userId}:${String(feed.purpose)}`;
+  return `${feed.userId}:${String(feed.deviceId)}:${String(feed.purpose)}`;
 }
 
 /**
@@ -101,7 +101,10 @@ export function remoteCallAudioSinkKey(
  * which tile (if any) currently shows the participant.
  */
 export function buildRemoteCallAudioSinkEntries<
-  F extends Pick<CallFeed, 'isLocal' | 'stream' | 'userId' | 'purpose'>,
+  F extends Pick<
+    CallFeed,
+    'isLocal' | 'stream' | 'userId' | 'deviceId' | 'purpose'
+  >,
 >(
   userMediaFeeds: readonly F[],
   shareFeeds: readonly F[],

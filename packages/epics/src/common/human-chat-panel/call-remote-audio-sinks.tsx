@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useReducer, useRef } from 'react';
+import { useEffect, useLayoutEffect, useReducer, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { CallFeed } from 'matrix-js-sdk/lib/webrtc/callFeed';
 import { CallFeedEvent } from 'matrix-js-sdk/lib/webrtc/callFeed';
@@ -24,7 +24,10 @@ function CallRemoteAudioSink({
   const stream = feed.stream ?? null;
   const signature = callAudioStreamSignature(stream);
   const streamRef = useRef(stream);
-  streamRef.current = stream;
+  /** Written after commit so an uncommitted render never feeds the listener. */
+  useLayoutEffect(() => {
+    streamRef.current = stream;
+  }, [stream]);
 
   useEffect(() => {
     feed.on(CallFeedEvent.NewStream, rebind);
@@ -77,7 +80,7 @@ function CallRemoteAudioSink({
 }
 
 /**
- * Flat list of remote audio sinks, one per remote feed, keyed by `userId:purpose`.
+ * Flat list of remote audio sinks, one per remote feed, keyed by `userId:deviceId:purpose`.
  * Rendered once at the stage root so layout or active-speaker changes never
  * unmount or re-parent an `<audio>` element (#2708).
  */

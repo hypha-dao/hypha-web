@@ -29,7 +29,7 @@ function feed(
 ): CallFeed {
   return {
     userId,
-    deviceId: 'd',
+    deviceId: opts.deviceId ?? 'd',
     purpose: opts.purpose ?? 'user-media',
     isLocal: opts.isLocal ?? (() => false),
     stream: opts.stream ?? stream(opts.audio ?? ['a-' + userId]),
@@ -37,15 +37,15 @@ function feed(
 }
 
 describe('buildRemoteCallAudioSinkEntries', () => {
-  it('returns one sink per remote participant keyed by userId:purpose', () => {
+  it('returns one sink per remote participant keyed by userId:deviceId:purpose', () => {
     const entries = buildRemoteCallAudioSinkEntries(
       [feed('@a:x'), feed('@b:x')],
       [],
       '@me:x',
     );
     expect(entries.map((e) => e.key)).toEqual([
-      '@a:x:user-media',
-      '@b:x:user-media',
+      '@a:x:d:user-media',
+      '@b:x:d:user-media',
     ]);
   });
 
@@ -55,7 +55,7 @@ describe('buildRemoteCallAudioSinkEntries', () => {
       [],
       '@me:x',
     );
-    expect(entries.map((e) => e.key)).toEqual(['@a:x:user-media']);
+    expect(entries.map((e) => e.key)).toEqual(['@a:x:d:user-media']);
   });
 
   it('mounts screenshare audio only when the share has an audio track', () => {
@@ -69,7 +69,7 @@ describe('buildRemoteCallAudioSinkEntries', () => {
       [share(['s'])],
       '@me:x',
     );
-    expect(entries.map((e) => e.key)).toEqual(['@a:x:screenshare']);
+    expect(entries.map((e) => e.key)).toEqual(['@a:x:d:screenshare']);
   });
 
   it('keeps camera and share audio of one user as separate stable sinks', () => {
@@ -79,8 +79,20 @@ describe('buildRemoteCallAudioSinkEntries', () => {
       '@me:x',
     );
     expect(entries.map((e) => e.key)).toEqual([
-      '@a:x:user-media',
-      '@a:x:screenshare',
+      '@a:x:d:user-media',
+      '@a:x:d:screenshare',
+    ]);
+  });
+
+  it('keeps a separate sink per session of one user', () => {
+    const entries = buildRemoteCallAudioSinkEntries(
+      [feed('@a:x', { deviceId: 'old' }), feed('@a:x', { deviceId: 'new' })],
+      [],
+      '@me:x',
+    );
+    expect(entries.map((e) => e.key)).toEqual([
+      '@a:x:old:user-media',
+      '@a:x:new:user-media',
     ]);
   });
 
