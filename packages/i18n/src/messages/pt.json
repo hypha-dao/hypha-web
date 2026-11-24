@@ -1552,7 +1552,9 @@
       "membersEyebrow": "Membros · {count} agregados",
       "membersTitle": "Quem vive e partilha aqui.",
       "treasuryEyebrow": "Tesouraria da comunidade · Dinheiro partilhado e despesas",
-      "treasuryTitle": "Recursos que partilhamos."
+      "treasuryTitle": "Recursos que partilhamos.",
+      "profileEyebrow": "Perfil · A sua conta",
+      "profileTitle": "O seu perfil."
     }
   },
   "Connections": {

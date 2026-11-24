@@ -171,7 +171,9 @@
       "membersEyebrow": "Members · {count} households",
       "membersTitle": "Who lives and shares here.",
       "treasuryEyebrow": "Community treasury · Shared money and spending",
-      "treasuryTitle": "Resources we share."
+      "treasuryTitle": "Resources we share.",
+      "profileEyebrow": "Profile · Your account",
+      "profileTitle": "Your profile."
     }
   },
   "Connections": {

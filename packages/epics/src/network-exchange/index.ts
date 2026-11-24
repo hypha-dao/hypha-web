@@ -8,3 +8,4 @@ export * from './network-quick-create';
 export * from './network-impact-board';
 export * from './network-exchange-share-card';
 export * from './network-reciprocal-exchange';
+export * from './use-member-named-spaces';

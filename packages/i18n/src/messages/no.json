@@ -771,7 +771,9 @@
       "membersEyebrow": "Medlemmer · {count} husholdninger",
       "membersTitle": "Hvem bor og deler her.",
       "treasuryEyebrow": "Fellesskapskasse · Delt penger og utgifter",
-      "treasuryTitle": "Ressurser vi deler."
+      "treasuryTitle": "Ressurser vi deler.",
+      "profileEyebrow": "Profil · Kontoen din",
+      "profileTitle": "Profilen din."
     }
   },
   "Connections": {

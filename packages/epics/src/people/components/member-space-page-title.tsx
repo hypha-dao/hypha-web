@@ -14,7 +14,8 @@ export type MemberTitleScreen =
   | 'treasury'
   | 'wallet'
   | 'messages'
-  | 'energy';
+  | 'energy'
+  | 'profile';
 
 type MemberSpacePageTitleProps = {
   /** Builder/funder page name (and member fallback). */
@@ -83,6 +84,11 @@ function memberCopy(
       return {
         eyebrow: t('titles.energyEyebrow'),
         title: t('titles.energyTitle'),
+      };
+    case 'profile':
+      return {
+        eyebrow: t('titles.profileEyebrow'),
+        title: t('titles.profileTitle'),
       };
   }
 }

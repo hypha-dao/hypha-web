@@ -4,11 +4,8 @@ import {
   ProfileMemberSpaces,
   ProfilePageParams,
 } from '@hypha-platform/epics';
-import { ProfileBackLink } from '@web/components/profile-back-link';
 import { ProfileStoryConnected } from '@web/components/profile-story-connected';
-import { Text } from '@radix-ui/themes';
-import { Container, Separator } from '@hypha-platform/ui';
-import React from 'react';
+import { Separator } from '@hypha-platform/ui';
 import {
   findPersonBySlug,
   getSpacesByWeb3Ids,
@@ -19,6 +16,7 @@ import { web3Client } from '@hypha-platform/core/server';
 import { Hex, zeroAddress } from 'viem';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
+import { ProfilePageFrame } from '../_components/profile-page-frame';
 
 type PageProps = {
   params: Promise<ProfilePageParams>;
@@ -59,13 +57,7 @@ export default async function ProfilePage(props: PageProps) {
   }
 
   return (
-    <Container className="w-full">
-      <div className="mb-6 flex items-center w-full">
-        <ProfileBackLink lang={lang} />
-        <Text className="text-sm text-neutral-11 ml-1">
-          / {tProfile('profilePage')}
-        </Text>
-      </div>
+    <ProfilePageFrame lang={lang}>
       {person ? (
         <div className="flex flex-col gap-8">
           <ProfileStoryConnected
@@ -104,6 +96,6 @@ export default async function ProfilePage(props: PageProps) {
       ) : (
         <p>{tProfile('personNotFound')}</p>
       )}
-    </Container>
+    </ProfilePageFrame>
   );
 }

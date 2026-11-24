@@ -772,7 +772,9 @@
       "membersEyebrow": "Членови · {count} домаќинства",
       "membersTitle": "Кој живее и споделува овде.",
       "treasuryEyebrow": "Благајна на заедницата · Заеднички пари и трошоци",
-      "treasuryTitle": "Ресурси што ги споделуваме."
+      "treasuryTitle": "Ресурси што ги споделуваме.",
+      "profileEyebrow": "Профил · Вашата сметка",
+      "profileTitle": "Вашиот профил."
     }
   },
   "Connections": {

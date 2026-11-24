@@ -772,7 +772,9 @@
       "membersEyebrow": "Membres · {count} foyers",
       "membersTitle": "Qui vit et partage ici.",
       "treasuryEyebrow": "Trésorerie de la communauté · Argent partagé et dépenses",
-      "treasuryTitle": "Ressources que nous partageons."
+      "treasuryTitle": "Ressources que nous partageons.",
+      "profileEyebrow": "Profil · Votre compte",
+      "profileTitle": "Votre profil."
     }
   },
   "Connections": {
