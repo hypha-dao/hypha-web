@@ -357,8 +357,16 @@ const NAV_CHROME_SURFACE_CLASS = 'bg-background-2 dark:bg-background-5';
 
 type AiLeftPanelProps = {
   enableSpaceMemory?: boolean;
-  /** Member space home: the conversation sits on the page, not in the left rail. */
-  embed?: 'page';
+  /**
+   * `page` — member space home: conversation on the page (keeps ask title).
+   * `panel` — right-dock space AI: fills the host, no inner chrome header.
+   */
+  embed?: 'page' | 'panel';
+  /**
+   * Prefer this space over the route (member "Ask this space" from profile /
+   * messages when the path has no `/dho/` slug).
+   */
+  spaceSlugOverride?: string | null;
 };
 
 type NavItem = {
@@ -523,6 +531,7 @@ function formatChatStreamErrorMessage(error: unknown): string {
 export function AiLeftPanel({
   enableSpaceMemory = false,
   embed,
+  spaceSlugOverride = null,
 }: AiLeftPanelProps) {
   const { isAuthenticated, isLoading, getAccessToken } = useAuthentication();
   const matrix = useMatrix();
@@ -537,8 +546,9 @@ export function AiLeftPanel({
     () => getDhoSpaceSlugFromPathname(pathname),
     [pathname],
   );
+  const overrideSlug = spaceSlugOverride?.trim() || null;
   /** Prefer pathname: AiLeftPanel mounts in root layout where `id` is often missing for `/dho/[id]/...` routes. */
-  const spaceSlug = spaceSlugFromPath ?? params?.id;
+  const spaceSlug = overrideSlug || spaceSlugFromPath || params?.id;
   const t = useTranslations('AiPanel');
   const tCommon = useTranslations('Common');
   const tModalAside = useTranslations('ModalAside');
@@ -647,7 +657,8 @@ export function AiLeftPanel({
     showAiOverlay,
     hideAiOverlay,
   } = useAiPanel();
-  const embedOnPage = embed === 'page';
+  const embedOnPage = embed === 'page' || embed === 'panel';
+  const embedInPanel = embed === 'panel';
   const showingAi = embedOnPage || isAiOpen;
   const [micOn, setMicOn] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
@@ -3472,6 +3483,18 @@ export function AiLeftPanel({
       <PanelLeftClose className="craft-icon" />
     </button>
   ) : undefined;
+  // Right-dock host already draws back / identity / close.
+  const chromeHeader = embedInPanel ? null : (
+    <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
+      <AiPanelHeader
+        showCloseButton={false}
+        collapseLeftSlotAtMd={!isOnboardingPath}
+        leftSlot={headerLeftSlot}
+        rightSlot={closeButton}
+        askTitle={embedOnPage && memberExperience}
+      />
+    </SidebarHeader>
+  );
 
   const collapsedRailHeaderClass = `flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center justify-center border-b border-border px-4 py-2 ${NAV_CHROME_SURFACE_CLASS}`;
   const collapsedRailContentClass = `relative overflow-visible ${NAV_CHROME_SURFACE_CLASS}`;
@@ -3576,6 +3599,13 @@ export function AiLeftPanel({
   };
   const withDesktopIconRail = (conversation: ReactNode) => {
     if (isOnboardingPath) return conversation;
+    if (embedInPanel) {
+      return (
+        <div className="flex h-full min-h-0 w-full min-w-0 flex-col bg-background">
+          {conversation}
+        </div>
+      );
+    }
     if (embedOnPage) {
       return (
         <div className="flex min-h-[28rem] w-full min-w-0 flex-col bg-background">
@@ -3659,15 +3689,7 @@ export function AiLeftPanel({
   if (isLoading) {
     return withDesktopIconRail(
       <>
-        <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
-          <AiPanelHeader
-            showCloseButton={false}
-            collapseLeftSlotAtMd={!isOnboardingPath}
-            leftSlot={headerLeftSlot}
-            rightSlot={closeButton}
-            askTitle={embedOnPage && memberExperience}
-          />
-        </SidebarHeader>
+        {chromeHeader}
         <SidebarContent className="flex flex-1 items-center justify-center bg-page-background dark:bg-background-2">
           <div className="text-sm text-muted-foreground">{t('loading')}</div>
         </SidebarContent>
@@ -3678,15 +3700,7 @@ export function AiLeftPanel({
   if (blockSpaceAiForActivityAccess) {
     return withDesktopIconRail(
       <>
-        <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
-          <AiPanelHeader
-            showCloseButton={false}
-            collapseLeftSlotAtMd={!isOnboardingPath}
-            leftSlot={headerLeftSlot}
-            rightSlot={closeButton}
-            askTitle={embedOnPage && memberExperience}
-          />
-        </SidebarHeader>
+        {chromeHeader}
         <SidebarContent className="flex flex-1 items-center justify-center bg-page-background px-6 dark:bg-background-2">
           <SpaceAccessDenied
             userState={userSpaceState}
@@ -3701,15 +3715,7 @@ export function AiLeftPanel({
   if (!isAuthenticated) {
     return withDesktopIconRail(
       <>
-        <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
-          <AiPanelHeader
-            showCloseButton={false}
-            collapseLeftSlotAtMd={!isOnboardingPath}
-            leftSlot={headerLeftSlot}
-            rightSlot={closeButton}
-            askTitle={embedOnPage && memberExperience}
-          />
-        </SidebarHeader>
+        {chromeHeader}
         <SidebarContent className="flex flex-1 items-center justify-center bg-page-background px-6 dark:bg-background-2">
           <SpaceAccessDenied
             userState={userSpaceState}
@@ -3723,15 +3729,7 @@ export function AiLeftPanel({
 
   return withDesktopIconRail(
     <>
-      <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
-        <AiPanelHeader
-          showCloseButton={false}
-          collapseLeftSlotAtMd={!isOnboardingPath}
-          leftSlot={headerLeftSlot}
-          rightSlot={closeButton}
-          askTitle={embedOnPage && memberExperience}
-        />
-      </SidebarHeader>
+      {chromeHeader}
       <SidebarContent className="bg-page-background dark:bg-background-2 min-h-0">
         {spaceSlug && blockSpaceAiForSubscription ? (
           <div className="mx-3 mt-3 shrink-0">

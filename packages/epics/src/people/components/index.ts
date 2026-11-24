@@ -40,6 +40,7 @@ export * from './member-experience';
 export * from './member-space-page-title';
 export * from './member-type';
 export * from './member-space-chrome';
+export * from './member-space-ai-side-panel';
 export * from './spaces-rail-control';
 export * from './my-connections';
 export * from './account-required-gate';

@@ -26,7 +26,7 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import { localeMetadata } from '@hypha-platform/i18n/client';
 
-import { useAiPanel } from '../../common/human-chat-panel-context';
+import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { getDhoSpaceSlugFromPathname } from '../../common/get-dho-space-slug-from-pathname';
 import {
   readRecentSpaceSlugs,
@@ -108,7 +108,7 @@ export function MemberProfileMenu({
   const tNav = useTranslations('Navigation');
   const tFooter = useTranslations('Footer');
   const locale = useLocale();
-  const { openAiPanel, setAiOverlayVisible } = useAiPanel();
+  const { requestMemberSpaceAi } = useHumanChatPanel();
   const spaceLabel = useMemberProfileSpaceLabel();
   const displayName = [person?.name, person?.surname].filter(Boolean).join(' ');
   const primaryLine =
@@ -120,8 +120,8 @@ export function MemberProfileMenu({
 
   const openAsk = () => {
     onClose();
-    openAiPanel();
-    setAiOverlayVisible(false);
+    // Members keep space AI in the right dock (left rail is force-closed).
+    requestMemberSpaceAi();
   };
 
   const header = (

@@ -189,6 +189,13 @@ export type HumanChatPanelContextValue = {
   memberInboxRequested: boolean;
   requestMemberInbox: () => void;
   dismissMemberInbox: () => void;
+  /**
+   * Member "Ask this space": show the space AI conversation in the right panel
+   * (energy-community Vesta dock), not the left rail.
+   */
+  memberSpaceAiRequested: boolean;
+  requestMemberSpaceAi: () => void;
+  dismissMemberSpaceAi: () => void;
 };
 
 const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
@@ -225,6 +232,9 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   memberInboxRequested: false,
   requestMemberInbox: () => {},
   dismissMemberInbox: () => {},
+  memberSpaceAiRequested: false,
+  requestMemberSpaceAi: () => {},
+  dismissMemberSpaceAi: () => {},
 });
 
 /**
@@ -270,11 +280,13 @@ export function HumanChatPanelProvider({
     useState<SpaceQuestDraftPanelSession | null>(null);
   const [questChatRequested, setQuestChatRequested] = useState(false);
   const [memberInboxRequested, setMemberInboxRequested] = useState(false);
+  const [memberSpaceAiRequested, setMemberSpaceAiRequested] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setSpaceContextSection(null);
       setMemberInboxRequested(false);
+      setMemberSpaceAiRequested(false);
     }
   }, [open]);
 
@@ -357,6 +369,7 @@ export function HumanChatPanelProvider({
       setSpaceContextSection(null);
       // A real room replaces the quest helper. This does not create a room.
       setQuestChatRequested(false);
+      setMemberSpaceAiRequested(false);
       // Keep member inbox requested so Back returns to the conversations list.
       // Idempotently open the sidebar — avoids race condition with toggle()
       setOpen(true);
@@ -384,11 +397,13 @@ export function HumanChatPanelProvider({
   const closeHumanChatPanel = useCallback(() => {
     setQuestChatRequested(false);
     setMemberInboxRequested(false);
+    setMemberSpaceAiRequested(false);
     setOpen(false);
   }, [setOpen]);
 
   const requestQuestChat = useCallback(() => {
     setQuestChatRequested(true);
+    setMemberSpaceAiRequested(false);
     setOpen(true);
   }, [setOpen]);
 
@@ -409,12 +424,35 @@ export function HumanChatPanelProvider({
     setCoherenceContextSectionKey(null);
     setSpaceContextSection(null);
     setQuestChatRequested(false);
+    setMemberSpaceAiRequested(false);
     setMemberInboxRequested(true);
     setOpen(true);
   }, [setOpen]);
 
   const dismissMemberInbox = useCallback(() => {
     setMemberInboxRequested(false);
+  }, []);
+
+  const requestMemberSpaceAi = useCallback(() => {
+    setMode('space');
+    setCoherenceRoomId(null);
+    setCoherenceTitle(null);
+    setCoherenceSlug(null);
+    setCoherenceDescription(null);
+    setCoherenceSpaceSlug(null);
+    setCoherencePublic(false);
+    setCoherencePeerPerson(null);
+    setCoherenceChannel(null);
+    setCoherenceContextSectionKey(null);
+    setSpaceContextSection(null);
+    setQuestChatRequested(false);
+    setMemberInboxRequested(false);
+    setMemberSpaceAiRequested(true);
+    setOpen(true);
+  }, [setOpen]);
+
+  const dismissMemberSpaceAi = useCallback(() => {
+    setMemberSpaceAiRequested(false);
   }, []);
 
   return (
@@ -453,6 +491,9 @@ export function HumanChatPanelProvider({
         memberInboxRequested,
         requestMemberInbox,
         dismissMemberInbox,
+        memberSpaceAiRequested,
+        requestMemberSpaceAi,
+        dismissMemberSpaceAi,
       }}
     >
       {children}

@@ -136,6 +136,7 @@ import type { GroupFace } from '../people/components/member-connections';
 import { PersonAvatar } from '../people/components/person-avatar';
 import { MemberHomeMark } from '../people/components/member-home-mark';
 import { MemberInboxSidePanel } from '../people/components/member-inbox-side-panel';
+import { MemberSpaceAiSidePanel } from '../people/components/member-space-ai-side-panel';
 import { memberSurfaceSpaceQuery } from '../people/components/member-menu';
 import {
   chatRoomAliasLocalpart,
@@ -1054,6 +1055,7 @@ export function HumanRightPanel(props: HumanRightPanelProps) {
     questChatRequested,
     closeHumanChatPanel,
     memberInboxRequested,
+    memberSpaceAiRequested,
     mode,
   } = useHumanChatPanel();
   const routeSpaceSlug = getDhoSpaceSlugFromPathname(pathname) || '';
@@ -1088,6 +1090,11 @@ export function HumanRightPanel(props: HumanRightPanelProps) {
         onClose={closeSpaceContextSection}
       />
     );
+  }
+
+  // Member "Ask this space": space AI conversation in the right dock.
+  if (memberSpaceAiRequested && mode !== 'coherence') {
+    return <MemberSpaceAiSidePanel onClose={closeHumanChatPanel} />;
   }
 
   // Member chat icon: conversations list until a row opens a coherence chat.
