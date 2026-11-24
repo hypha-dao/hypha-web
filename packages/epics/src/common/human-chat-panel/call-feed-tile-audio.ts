@@ -81,3 +81,56 @@ export function resolveCallAudioPortalTarget(
 ): Element {
   return mainDocument.body;
 }
+
+export type RemoteCallAudioSinkEntry<F> = {
+  /** Stable across layout and active-speaker changes: `userId:purpose`. */
+  key: string;
+  feed: F;
+  isShare: boolean;
+};
+
+/** Identity of one remote audio sink; never includes layout, index or reactions. */
+export function remoteCallAudioSinkKey(
+  feed: Pick<CallFeed, 'userId' | 'purpose'>,
+): string {
+  return `${feed.userId}:${String(feed.purpose)}`;
+}
+
+/**
+ * One entry per remote feed that should play audio, in a flat list independent of
+ * which tile (if any) currently shows the participant.
+ */
+export function buildRemoteCallAudioSinkEntries<
+  F extends Pick<CallFeed, 'isLocal' | 'stream' | 'userId' | 'purpose'>,
+>(
+  userMediaFeeds: readonly F[],
+  shareFeeds: readonly F[],
+  currentUserId?: string | null,
+): RemoteCallAudioSinkEntry<F>[] {
+  const out: RemoteCallAudioSinkEntry<F>[] = [];
+  const seen = new Set<string>();
+  const add = (feed: F, isShare: boolean) => {
+    if (!shouldMountRemoteCallAudioSink(feed, isShare, currentUserId)) return;
+    const key = remoteCallAudioSinkKey(feed);
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ key, feed, isShare });
+  };
+  for (const feed of userMediaFeeds) add(feed, false);
+  for (const feed of shareFeeds) add(feed, true);
+  return out;
+}
+
+/**
+ * Feeds are rebuilt (new `MediaStream`) on every stage render, so sinks rebind on the
+ * identity of the audio tracks, not of the stream object.
+ */
+export function callAudioStreamSignature(
+  stream: Pick<MediaStream, 'getAudioTracks'> | null | undefined,
+): string {
+  if (!stream) return '';
+  return stream
+    .getAudioTracks()
+    .map((track) => track.id)
+    .join('|');
+}
