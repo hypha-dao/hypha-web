@@ -3541,6 +3541,8 @@
     "callControlsCameraOnAria": "Câmara, ligada",
     "callControlsScreenshare": "Partilha de ecrã",
     "callControlsScreenshareActiveAria": "Partilha de ecrã, ativa",
+    "callControlsMore": "Mais controlos da chamada",
+    "callControlsMoreBack": "Voltar",
     "callControlsScreenshareInactiveAria": "Partilha de ecrã, inativa",
     "callVoiceProcessingLabel": "Processamento de voz",
     "callVoiceProcessingStandard": "Fala",

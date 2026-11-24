@@ -4154,6 +4154,8 @@
     "callControlsCameraOnAria": "Camera, on",
     "callControlsScreenshare": "Screen share",
     "callControlsScreenshareActiveAria": "Screen share, active",
+    "callControlsMore": "More call controls",
+    "callControlsMoreBack": "Back",
     "callControlsScreenshareInactiveAria": "Screen share, inactive",
     "callReactButton": "Reactions",
     "callReactButtonAria": "Open reactions and hand raise menu",
