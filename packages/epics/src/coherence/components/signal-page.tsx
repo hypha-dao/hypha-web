@@ -457,6 +457,49 @@ export function SignalPage({
   const feedHref = `/${lang}/dho/${spaceSlug}/coherence`;
   if (!signal) {
     if (isSignalsLoading) {
+      if (memberExperience) {
+        return (
+          <div
+            className="flex w-full min-w-0 flex-col gap-6 py-2"
+            aria-busy
+            data-testid="signal-page-loading"
+            data-member-signal-detail
+          >
+            <Skeleton loading className="h-4 w-20 rounded-none" />
+            <div className="flex min-w-0 flex-col gap-5">
+              <header className="flex min-w-0 flex-col gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Skeleton loading className="h-6 w-20 rounded-none" />
+                  <Skeleton loading className="h-4 w-12 rounded-none" />
+                </div>
+                <Skeleton
+                  loading
+                  className="h-8 w-full max-w-xl rounded-none"
+                />
+                <div className="flex items-center gap-2">
+                  <Skeleton loading className="size-6 shrink-0 rounded-full" />
+                  <Skeleton loading className="h-3.5 w-48 rounded-none" />
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <Skeleton loading className="h-6 w-24 rounded-none" />
+                  <Skeleton loading className="h-6 w-20 rounded-none" />
+                  <Skeleton loading className="h-6 w-16 rounded-none" />
+                </div>
+              </header>
+              <div className="flex flex-wrap items-center gap-2">
+                <Skeleton loading className="h-9 w-24 rounded-none" />
+                <Skeleton loading className="h-9 w-36 rounded-none" />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Skeleton loading className="h-3.5 w-full rounded-none" />
+                <Skeleton loading className="h-3.5 w-11/12 rounded-none" />
+                <Skeleton loading className="h-3.5 w-4/5 rounded-none" />
+                <Skeleton loading className="h-3.5 w-2/3 rounded-none" />
+              </div>
+            </div>
+          </div>
+        );
+      }
       return (
         <div className="flex flex-col gap-4" aria-busy>
           <Skeleton loading className="h-4 w-48 rounded-none" />
