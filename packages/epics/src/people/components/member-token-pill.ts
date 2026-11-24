@@ -51,15 +51,14 @@ function pickPrimary(
         token.archived !== true,
     );
   });
-  // Oldest community token first; type order only breaks a createdAt tie.
+  // Credits (and friends) win over older utility/impact — otherwise a space
+  // with a stale utility token hides the ECREDITS pill the member actually holds.
   eligible.sort((left, right) => {
-    const byAge =
-      createdAtTime(left.createdAt) - createdAtTime(right.createdAt);
-    if (byAge !== 0) return byAge;
-    return (
+    const byType =
       types.indexOf(left.type?.trim() ?? '') -
-      types.indexOf(right.type?.trim() ?? '')
-    );
+      types.indexOf(right.type?.trim() ?? '');
+    if (byType !== 0) return byType;
+    return createdAtTime(left.createdAt) - createdAtTime(right.createdAt);
   });
   return eligible[0] ?? null;
 }

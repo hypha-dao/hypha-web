@@ -101,13 +101,13 @@ describe('selectMemberTokenPill', () => {
     ).toEqual({ symbol: 'OLD', amount: 1 });
   });
 
-  it('prefers the oldest primary token across types', () => {
+  it('prefers credits over an older utility token', () => {
     expect(
       selectMemberTokenPill({
         minted: [
           {
             address: '0xfff',
-            symbol: 'NEWCRED',
+            symbol: 'ECREDITS',
             type: 'credits',
             createdAt: '2025-01-01T00:00:00.000Z',
           },
@@ -119,11 +119,11 @@ describe('selectMemberTokenPill', () => {
           },
         ],
         holdings: [
-          { address: '0xfff', value: 9 },
+          { address: '0xfff', value: 1284 },
           { address: '0xeee', value: 1 },
         ],
       }),
-    ).toEqual({ symbol: 'OLDUTIL', amount: 1 });
+    ).toEqual({ symbol: 'ECREDITS', amount: 1284 });
   });
 });
 
