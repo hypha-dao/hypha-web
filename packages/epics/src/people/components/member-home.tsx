@@ -96,6 +96,9 @@ type MemberHomeProps = {
 };
 
 const ORIENTATIONS: SignupOrientation[] = ['member', 'builder', 'investor'];
+/** Notifications + Attention needed tiles — keep the home rail short. */
+const HOME_TILE_PREVIEW = 3;
+
 function orientationLabelKey(orientation: SignupOrientation) {
   if (orientation === 'member') return 'orientationMember' as const;
   if (orientation === 'builder') return 'orientationBuilder' as const;
@@ -432,7 +435,7 @@ export function MemberHome({
                 <ResourceList
                   isLoading={railsBusy}
                   empty={t('noNotifications')}
-                  maxItems={5}
+                  maxItems={HOME_TILE_PREVIEW}
                   markSize={24}
                   items={
                     home
@@ -470,7 +473,7 @@ export function MemberHome({
                       : []
                   }
                 />
-                {home && home.notifications.length > 5 ? (
+                {home && home.notifications.length > HOME_TILE_PREVIEW ? (
                   <Button asChild className="mt-4 w-full text-sm">
                     <Link href={`/${lang}/home/notifications`}>
                       {t('seeMoreNotifications')}
@@ -1042,8 +1045,6 @@ function Tile({
   );
 }
 
-const ATTENTION_PAGE = 5;
-
 function AttentionNeeded({
   lang,
   home,
@@ -1090,10 +1091,10 @@ function AttentionNeeded({
       <ResourceList
         isLoading={home == null}
         empty={t('noWaiting')}
-        maxItems={ATTENTION_PAGE}
+        maxItems={HOME_TILE_PREVIEW}
         items={items}
       />
-      {items.length > ATTENTION_PAGE ? (
+      {items.length > HOME_TILE_PREVIEW ? (
         <Button asChild className="mt-4 w-full text-sm">
           <Link href={`/${lang}/home/attention`}>{t('seeMore')}</Link>
         </Button>
