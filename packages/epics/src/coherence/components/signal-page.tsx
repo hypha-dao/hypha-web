@@ -40,6 +40,7 @@ import { SignalCreatorActions } from './signal-creator-actions';
 import { useSignalMediaSummary } from './signal-media-chips';
 import { useSignalShortDate } from './signal-feed-row';
 import { SignalTypeBadge } from './signal-type-badge';
+import { SignalTagBadges } from './signal-tag-badges';
 import { SignalUpvoteButton } from './signal-upvote-button';
 import { useVoteEnabled } from '../../common/action-capabilities';
 import { useMemberExperience } from '../../people/components/member-experience';
@@ -49,6 +50,11 @@ import {
 } from '../../people/components/member-type';
 import { SignalVideoPlayer } from './signal-video-player';
 import { LegacySignalFieldsDetail } from './legacy-signal-fields/legacy-signal-fields-detail';
+import { legacySignalFieldsToShow } from './legacy-signal-fields/legacy-signal-fields';
+import {
+  PRIORITY_DOT_MARK_CLASS,
+  priorityDotClass,
+} from '../utils/signal-priority-styles';
 
 const SECTION_LABEL_CLASS = MEMBER_EYEBROW;
 
@@ -553,6 +559,14 @@ export function SignalPage({
     const memberVideo = resolveSignalVideo(signal.videoUrl);
     const leadImage = memberImages[0] ?? null;
     const moreImages = memberImages.slice(1);
+    const legacy = legacySignalFieldsToShow(signal);
+    const priority = legacy?.priority ?? null;
+    const priorityLabel = priority
+      ? t.has(`priorities.${priority}` as never)
+        ? t(`priorities.${priority}` as never)
+        : priority
+      : null;
+    const tags = legacy?.tags ?? [];
 
     const hasRightMedia = Boolean(
       leadImage || memberVideo || moreImages.length,
@@ -583,9 +597,24 @@ export function SignalPage({
               'lg:grid-cols-[minmax(0,1fr)_minmax(14rem,22rem)] lg:items-start',
           )}
         >
-          <div className="flex min-w-0 flex-col gap-6">
+          <div className="flex min-w-0 flex-col gap-5">
             <header className="flex min-w-0 flex-col gap-3">
-              <SignalTypeBadge type={signal.type} variant="pill" />
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <SignalTypeBadge type={signal.type} variant="pill" />
+                {priority && priorityLabel ? (
+                  <span className="inline-flex items-center gap-1.5 text-1 text-muted-foreground">
+                    <span
+                      className={cn(
+                        PRIORITY_DOT_MARK_CLASS,
+                        priorityDotClass(priority),
+                      )}
+                      aria-hidden
+                    />
+                    <span className="sr-only">{t('priority')}: </span>
+                    {priorityLabel}
+                  </span>
+                ) : null}
+              </div>
               <h1 className={MEMBER_PAGE_TITLE}>{signal.title}</h1>
               <div className="flex min-w-0 flex-wrap items-center gap-2 text-1 text-muted-foreground">
                 <PersonAvatar
@@ -597,9 +626,16 @@ export function SignalPage({
                 />
                 <p className="m-0 min-w-0 break-words">{byline}</p>
               </div>
+              {tags.length > 0 ? (
+                <SignalTagBadges
+                  tags={tags}
+                  maxVisible={tags.length}
+                  showHashPrefix={false}
+                />
+              ) : null}
             </header>
 
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            <div className="flex flex-wrap items-center gap-2">
               {!canUpvote ? null : (
                 <SignalUpvoteButton
                   slug={signal.slug}
@@ -613,8 +649,8 @@ export function SignalPage({
                   refresh={refresh}
                   archived={signal.archived}
                   summaryState={upvoteSummary}
-                  layout="stack"
-                  className="self-start"
+                  layout="row"
+                  className="h-9 shrink-0 [&_[data-testid='signal-upvote-cell']]:h-9"
                 />
               )}
               {humanChatEnabled ? (
@@ -622,7 +658,7 @@ export function SignalPage({
                   type="button"
                   data-testid="signal-open-discussion"
                   onClick={openChat}
-                  className="inline-flex h-9 items-center gap-1.5 border border-border px-3 text-1 font-medium text-foreground hover:bg-foreground/5"
+                  className="inline-flex h-9 shrink-0 items-center gap-1.5 border border-border bg-transparent px-3 text-1 font-medium text-foreground hover:bg-foreground/5"
                 >
                   {t('openDiscussion')}
                   <span aria-hidden>→</span>
@@ -708,9 +744,6 @@ export function SignalPage({
             </aside>
           ) : null}
         </article>
-
-        {/* TODO: Temporary for Reciprocal Exchange. Delete with legacy-signal-fields/. */}
-        <LegacySignalFieldsDetail signal={signal} />
       </div>
     );
   }
