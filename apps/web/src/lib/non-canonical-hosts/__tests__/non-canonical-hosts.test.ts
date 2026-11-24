@@ -205,6 +205,38 @@ describe('JWKS route cache header', () => {
     );
   });
 
+  it('caches a response without optional keys for 30 s only, never stale', async () => {
+    vi.stubEnv('NEXT_PUBLIC_PRIVY_APP_ID', 'app-id');
+    vi.stubEnv('PRIVY_EXTRA_JWKS_APP_IDS', 'extra-app');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) =>
+        url.includes('extra-app')
+          ? new Response('x', { status: 500 })
+          : Response.json({ keys: [{ kid: 'k1' }] }),
+      ),
+    );
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { GET } = await import('../../../app/.well-known/jwks.json/route');
+    const res = await GET();
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Cache-Control')).toBe('public, s-maxage=30');
+  });
+
+  it('uses the long window when every optional fetch succeeds', async () => {
+    vi.stubEnv('NEXT_PUBLIC_PRIVY_APP_ID', 'app-id');
+    vi.stubEnv('PRIVY_EXTRA_JWKS_APP_IDS', 'extra-app');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Response.json({ keys: [{ kid: 'k1' }] })),
+    );
+    const { GET } = await import('../../../app/.well-known/jwks.json/route');
+    const res = await GET();
+    expect(res.headers.get('Cache-Control')).toBe(
+      'public, s-maxage=300, stale-while-revalidate=600',
+    );
+  });
+
   it('does not cache a failure', async () => {
     vi.stubEnv('NEXT_PUBLIC_PRIVY_APP_ID', 'app-id');
     vi.stubGlobal(

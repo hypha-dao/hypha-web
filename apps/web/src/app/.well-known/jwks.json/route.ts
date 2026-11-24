@@ -46,6 +46,11 @@ async function fetchJwks(url: string): Promise<JWKSResponse> {
 const CACHE_HEADERS = {
   'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
 };
+// A response that omits optional keys (a provider fetch failed) must not outlive a short
+// window, and is never served stale: tokens signed by an omitted key would fail meanwhile.
+const PARTIAL_CACHE_HEADERS = {
+  'Cache-Control': 'public, s-maxage=30',
+};
 
 export async function GET() {
   try {
@@ -57,8 +62,10 @@ export async function GET() {
     ]);
 
     const optional = await Promise.allSettled(optionalPrivyUrls.map(fetchJwks));
+    let partial = false;
     for (const result of optional) {
       if (result.status === 'rejected') {
+        partial = true;
         console.warn('Optional JWKS fetch failed:', result.reason);
       }
     }
@@ -77,7 +84,9 @@ export async function GET() {
       keys: results.flatMap((r) => r.keys || []),
     };
 
-    return NextResponse.json(combinedJwks, { headers: CACHE_HEADERS });
+    return NextResponse.json(combinedJwks, {
+      headers: partial ? PARTIAL_CACHE_HEADERS : CACHE_HEADERS,
+    });
   } catch (error) {
     console.error('Error fetching JWKS:', error);
     return NextResponse.json(
