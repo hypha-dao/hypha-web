@@ -51,12 +51,13 @@ function signalKind(type: string) {
 }
 
 /**
- * Energy-community / lovable home strip:
- * gap 24px, ~2.2 cards on desktop with a peek; ~82% width on phone.
- * Use pixel calc — theme spacing-5 is 24px (gap-5), not 1.5rem.
+ * Home signal strip — compact vs energy-community’s ~2.2-wide cards.
+ * ~3.2 across on desktop (16px gaps), ~70% on phone, hard max so photos stay short.
  */
 const HOME_CARD_WIDTH =
-  'w-[min(100%,calc((100%-24px)/2.2))] max-md:w-[82%] min-w-[240px]';
+  'w-[min(17.5rem,calc((100%-32px)/3.2))] max-md:w-[70%] min-w-[10.5rem]';
+/** Fixed photo height so width changes don’t puff the strip. */
+const HOME_CARD_IMAGE = 'mb-2 h-[7.5rem] w-full object-cover';
 
 /** Theme `size-9` is 64px — arrows must stay 36px like the reference. */
 const HOME_ARROW_CLASS =
@@ -177,27 +178,27 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
 
         {authLoading || isLoading || (!data && !error) ? (
           <div
-            className="flex snap-x items-stretch gap-5 overflow-hidden"
+            className="flex snap-x items-stretch gap-4 overflow-hidden"
             aria-hidden
           >
             {[0, 1, 2].map((index) => (
               <div
                 key={index}
                 className={cn(
-                  `flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 flex-col border border-border p-3`,
+                  `flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 flex-col border border-border p-2.5`,
                   index === 1 && 'hidden md:flex',
                   index === 2 && 'hidden lg:flex',
                 )}
               >
-                <div className="aspect-video w-full bg-accent-3" />
-                <div className="mt-2.5 flex flex-1 flex-col gap-2">
-                  <div className="h-2.5 w-16 bg-accent-3/60" />
-                  <div className="h-5 w-4/5 bg-accent-3/60" />
-                  <div className="h-3 w-full bg-accent-3/50" />
-                  <div className="h-3 w-5/6 bg-accent-3/50" />
-                  <div className="mt-auto flex items-center gap-2.5 border-t border-border pt-4">
-                    <div className="h-[36px] w-24 bg-accent-3/60" />
-                    <div className="h-[34px] w-16 bg-accent-3/60" />
+                <div className={cn(HOME_CARD_IMAGE, 'bg-accent-3')} />
+                <div className="mt-2 flex flex-1 flex-col gap-1.5">
+                  <div className="h-2.5 w-14 bg-accent-3/60" />
+                  <div className="h-4 w-4/5 bg-accent-3/60" />
+                  <div className="h-2.5 w-full bg-accent-3/50" />
+                  <div className="h-2.5 w-5/6 bg-accent-3/50" />
+                  <div className="mt-auto flex items-center gap-2 border-t border-border pt-3">
+                    <div className="h-[36px] w-20 bg-accent-3/60" />
+                    <div className="h-[34px] w-14 bg-accent-3/60" />
                   </div>
                 </div>
               </div>
@@ -221,7 +222,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
         ) : (
           <div
             ref={stripRef}
-            className="flex snap-x items-stretch gap-5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex snap-x items-stretch gap-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {signals.map((signal) => {
               const image = safeImage(signal.leadImage) ?? spaceHeader;
@@ -241,33 +242,29 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                 <article
                   key={signal.id}
                   className={cn(
-                    `flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 snap-start cursor-pointer flex-col border border-border bg-transparent p-3`,
+                    `flex min-w-0 ${HOME_CARD_WIDTH} shrink-0 snap-start cursor-pointer flex-col border border-border bg-transparent p-2.5`,
                   )}
                 >
                   {image ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={image}
-                      alt=""
-                      className="mb-2.5 aspect-video w-full object-cover"
-                    />
+                    <img src={image} alt="" className={HOME_CARD_IMAGE} />
                   ) : (
-                    <div className="mb-2.5 aspect-video w-full bg-accent-3" />
+                    <div className={cn(HOME_CARD_IMAGE, 'bg-accent-3')} />
                   )}
                   <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                    <p className="m-0 text-[11px] font-bold tracking-[0.12em] text-muted-foreground uppercase">
+                    <p className="m-0 text-[10px] font-bold tracking-[0.12em] text-muted-foreground uppercase">
                       {typeLabel}
                     </p>
                     <h2
-                      className="mt-2 m-0 min-w-0 break-words text-[20px] font-light leading-[1.15] text-foreground"
+                      className="mt-1.5 m-0 min-w-0 break-words text-[17px] font-light leading-[1.2] text-foreground"
                       style={{ fontFamily: 'var(--font-family-heading)' }}
                     >
                       {signal.title}
                     </h2>
-                    <p className="mt-2 mb-2.5 line-clamp-2 min-w-0 text-[13px] leading-[1.5] text-muted-foreground">
+                    <p className="mt-1.5 mb-2 line-clamp-2 min-w-0 text-[12px] leading-[1.45] text-muted-foreground">
                       {plainText(signal.description)}
                     </p>
-                    <div className="mt-auto flex w-full min-w-0 flex-nowrap items-center gap-2.5 border-t border-border pt-4">
+                    <div className="mt-auto flex w-full min-w-0 flex-nowrap items-center gap-2 border-t border-border pt-3">
                       <div className="min-w-0 shrink-0">
                         <ActionGate kind="upvote" fullAppPath="" label={null}>
                           <SignalUpvoteButton
@@ -288,7 +285,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                       </div>
                       <Link
                         href={href}
-                        className="inline-flex h-[34px] min-h-[34px] shrink-0 items-center gap-2 border border-border bg-transparent px-3.5 text-[13px] text-foreground hover:bg-foreground/5"
+                        className="inline-flex h-[34px] min-h-[34px] shrink-0 items-center gap-1.5 border border-border bg-transparent px-3 text-[12px] text-foreground hover:bg-foreground/5"
                       >
                         {t('open')}
                         <ChevronRight

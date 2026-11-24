@@ -2760,6 +2760,17 @@ export function MyConnections({
         row.inbox ? [{ kind: row.inbox.kind, unread: row.unread }] : [],
       ),
     ]);
+    // Side-panel dock: always the unified All list (no filter tabs).
+    if (isPanel && section === 'messages' && !picking) {
+      return {
+        rows: sortConversationsByLastMessage([
+          ...scopedDirect,
+          ...scopedChannels,
+        ]),
+        counts,
+        memberCounts: null,
+      };
+    }
     if (memberSpaceInbox && spaceSlug && section === 'messages' && !picking) {
       const memberCounts = memberInboxTabCounts([
         ...countedDirect.map((row) => ({
@@ -2814,6 +2825,7 @@ export function MyConnections({
     inboxContext,
     inboxFilter,
     inboxMentionNames,
+    isPanel,
     memberSpaceInbox,
     memberTab,
     needle,
@@ -2963,7 +2975,15 @@ export function MyConnections({
     section === 'archived'
       ? t('tabs.archived')
       : section === 'messages' && !picking
-      ? t(`inbox.${inboxFilter}Title`)
+      ? isPanel || (memberSpaceInbox && memberTab === 'all')
+        ? t('inbox.allTitle')
+        : memberSpaceInbox && memberTab === 'direct'
+        ? t('inbox.directTitle')
+        : memberSpaceInbox && memberTab === 'groups'
+        ? t('inbox.memberGroups')
+        : memberSpaceInbox && memberTab === 'channels'
+        ? t('inbox.memberChannels')
+        : t(`inbox.${inboxFilter}Title`)
       : t('people');
   const showChannelTags = section === 'messages' && !picking;
   const selectedPeople = useMemo(
@@ -3221,7 +3241,12 @@ export function MyConnections({
   }
 
   return (
-    <div className={cn('flex min-w-0 flex-col', isPanel ? 'gap-3' : 'gap-6')}>
+    <div
+      className={cn(
+        'flex min-w-0 flex-col',
+        isPanel ? 'h-full min-h-0 flex-1 gap-3 overflow-hidden' : 'gap-6',
+      )}
+    >
       <div className={isPanel ? 'hidden' : undefined}>
         <MemberHomePeople
           people={connections}
@@ -3316,10 +3341,10 @@ export function MyConnections({
             section === 'messages' &&
               !isPanel &&
               'min-h-0 flex-1 gap-4 lg:flex-row lg:items-start lg:gap-6',
-            section === 'messages' && isPanel && 'gap-3',
+            section === 'messages' && isPanel && 'gap-3 overflow-hidden',
           )}
         >
-          {section === 'messages' ? (
+          {section === 'messages' && !isPanel ? (
             <div
               ref={setInboxFiltersRef}
               data-messages-filters=""
@@ -3328,13 +3353,10 @@ export function MyConnections({
                 // the list's own scroll are unchanged. The unread counts stay
                 // in view instead of leaving with the page.
                 'narrow-scrollbar w-full shrink-0',
-                !isPanel &&
-                  'lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:self-start lg:min-h-0 lg:bg-page-background',
-                !isPanel && (memberSpaceInbox ? 'lg:w-40' : 'lg:w-80'),
-                isPanel || memberSpaceInbox || !(picking || inboxChannelOpen)
-                  ? isPanel
-                    ? 'flex-none'
-                    : 'lg:flex-none'
+                'lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:self-start lg:min-h-0 lg:bg-page-background',
+                memberSpaceInbox ? 'lg:w-40' : 'lg:w-80',
+                memberSpaceInbox || !(picking || inboxChannelOpen)
+                  ? 'lg:flex-none'
                   : 'hidden lg:block',
               )}
             >
@@ -3358,7 +3380,7 @@ export function MyConnections({
             className={cn(
               'min-h-0 min-w-0 flex-1 flex-col gap-3',
               isPanel
-                ? 'flex overflow-visible'
+                ? 'flex overflow-hidden'
                 : 'overflow-visible lg:overflow-hidden lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)]',
               // Sticky + viewport height from MessagesViewportLock so the
               // list scrolls inside while the page still moves.
@@ -3389,7 +3411,7 @@ export function MyConnections({
                 {t(`inbox.${inboxFilter}Title`)}
               </button>
             ) : null}
-            <div className="flex min-h-0 flex-1 flex-col gap-3">
+            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
               <div className="flex shrink-0 flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <label className="relative min-w-0 flex-1">
@@ -3561,7 +3583,7 @@ export function MyConnections({
                 </p>
               ) : null}
 
-              <div className="flex min-h-0 flex-1 flex-col gap-3">
+              <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
                 {listLoading || messagesEmptyPending ? (
                   <MemberListSkeleton
                     title={
@@ -3634,6 +3656,7 @@ export function MyConnections({
                     }}
                     onOpen={(row) => void openMember(row)}
                     scrollRef={inboxListRef}
+                    forceScroll={isPanel}
                     footer={
                       canLoadMoreInbox ? (
                         <li
@@ -3831,6 +3854,7 @@ function MemberList({
   onOpen,
   showChannelTags = false,
   scrollRef,
+  forceScroll = false,
   footer = null,
 }: {
   title: string;
@@ -3855,6 +3879,8 @@ function MemberList({
   showChannelTags?: boolean;
   /** Scrollport for the conversation rows. The title stays fixed above it. */
   scrollRef?: Ref<HTMLUListElement>;
+  /** Always scroll the list (member right-panel dock is narrower than `lg`). */
+  forceScroll?: boolean;
   footer?: ReactNode;
 }) {
   const tInbox = useTranslations('Connections');
@@ -3869,13 +3895,23 @@ function MemberList({
     [chainScroll, scrollRef],
   );
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-visible rounded-none border border-border bg-background lg:overflow-hidden">
+    <section
+      className={cn(
+        'flex min-h-0 flex-1 flex-col rounded-none border border-border bg-background',
+        forceScroll ? 'overflow-hidden' : 'overflow-visible lg:overflow-hidden',
+      )}
+    >
       <h2 className="shrink-0 border-b border-border px-4 py-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
         {title}
       </h2>
       <ul
         ref={setListRef}
-        className="narrow-scrollbar min-h-0 flex-1 overflow-visible lg:overflow-y-auto lg:overscroll-contain"
+        className={cn(
+          'narrow-scrollbar min-h-0 flex-1',
+          forceScroll
+            ? 'overflow-y-auto overscroll-contain'
+            : 'overflow-visible lg:overflow-y-auto lg:overscroll-contain',
+        )}
       >
         {rows.map((row) => {
           const previewText = previewForInboxDisplay(row.preview);

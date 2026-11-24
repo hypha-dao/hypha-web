@@ -21,8 +21,8 @@ type MemberInboxSidePanelProps = {
 
 /**
  * Right-panel conversations list for the member top-bar chat icon.
- * Mirrors energy-community MessagesDock list view — All messages for the
- * active space when one is in context.
+ * Mirrors energy-community MessagesDock: unified All list (no filter tabs),
+ * search + scrollable rows for the active space when one is in context.
  */
 export function MemberInboxSidePanel({ onClose }: MemberInboxSidePanelProps) {
   const t = useTranslations('MemberMenu');
@@ -52,7 +52,7 @@ export function MemberInboxSidePanel({ onClose }: MemberInboxSidePanelProps) {
 
   return (
     <div
-      className="flex h-full min-h-0 w-full flex-col bg-background"
+      className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-background"
       data-testid="member-inbox-side-panel"
     >
       <header className="flex h-[var(--menu-top-height,4.5rem)] shrink-0 items-center gap-2 border-b border-border px-3">
@@ -68,7 +68,7 @@ export function MemberInboxSidePanel({ onClose }: MemberInboxSidePanelProps) {
           <X className="craft-icon" aria-hidden />
         </button>
       </header>
-      <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-3">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 py-3">
         <MyConnections
           section="messages"
           spaceSlug={spaceSlug}
