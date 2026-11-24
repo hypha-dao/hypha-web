@@ -14,10 +14,11 @@ import type {
   QuestMilestoneStatus,
   QuestStatus,
 } from '../../space-quests/constants';
-import { stripViewerYouMarker } from '../../space-quests/markdown';
 import { selectQuestProposalDocuments } from '../../space-quests/server/list-quests-queries';
-import { listSpaceQuests } from '../../space-quests/server/queries';
-import type { QuestRecord } from '../../space-quests/types';
+import {
+  readQuestsListing,
+  type QuestListingRecord,
+} from '../../space-quests/server/list-quests-read';
 import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
 
 export type ListQuestsInput = {
@@ -99,7 +100,8 @@ const ADDRESS = /^0x[0-9a-fA-F]{40}$/;
 /**
  * Feature function "list quests": the quests of one space. A quest is a commitment someone
  * is accountable for, committed through the space's agreement process (K92). It reads with
- * the plain list (`listSpaceQuests`) and writes nothing of any kind: it never activates a
+ * its own listing read (`readQuestsListing`: filters, counts and paging in the database, the
+ * parts of the page's quests only) and writes nothing of any kind: it never activates a
  * quest, never opens a chat room, and never returns a draft (drafts live in their own table
  * and are author-private). The access policy runs first on the light host lookup, and no
  * rule per quest exists in the data model, so the space's access is the whole gate.
@@ -128,38 +130,31 @@ export async function listQuests(
       return failure('unauthenticated', 'This needs a signed-in user.');
     }
 
-    const overview = await listSpaceQuests({ spaceSlug: host.slug }, { db });
-    if (!overview) return failure('not_found', 'Space not found');
-    // Defence in depth: only the quests of the space that passed the policy.
-    const ofSpace = overview.quests.filter(
-      (quest) => quest.spaceId === host.id,
+    const limit = Math.min(Math.max(Math.trunc(input.paging.limit), 1), 100);
+    const offset = Math.max(Math.trunc(input.paging.offset), 0);
+    // Filters, counts and paging happen in the database, scoped to the one checked space.
+    const listing = await readQuestsListing(
+      { db },
+      {
+        spaceId: host.id,
+        mineOfPersonId: input.mine ? personId ?? undefined : undefined,
+        status: input.status,
+        includeArchived: input.includeArchived ?? false,
+        offset,
+        limit,
+      },
     );
-
-    const isLead = (quest: QuestRecord) =>
+    const page = listing.items;
+    const isLead = (quest: QuestListingRecord) =>
       personId !== null && quest.leadPersonId === personId;
-    const isMember = (quest: QuestRecord) =>
+    const isMember = (quest: QuestListingRecord) =>
       personId !== null &&
       (isLead(quest) ||
         quest.members.some((member) => member.personId === personId));
-
-    const narrowed = input.mine ? ofSpace.filter(isMember) : ofSpace;
     const counts: QuestCounts = {
-      active: 0,
-      proposed: 0,
-      paused: 0,
-      completed: 0,
-      archived: 0,
-      total: narrowed.length,
+      ...listing.counts,
+      total: Object.values(listing.counts).reduce((sum, n) => sum + n, 0),
     };
-    for (const quest of narrowed) counts[quest.status] += 1;
-
-    const matching = narrowed.filter((quest) => {
-      if (input.status) return quest.status === input.status;
-      return input.includeArchived || quest.status !== 'archived';
-    });
-    const offset = Math.max(Math.trunc(input.paging.offset), 0);
-    const limit = Math.min(Math.max(Math.trunc(input.paging.limit), 1), 100);
-    const page = matching.slice(offset, offset + limit);
 
     // The linked proposal counts only when its document belongs to this same space.
     const documentIds = [
@@ -171,16 +166,26 @@ export async function listQuests(
     ];
     const documents = await selectQuestProposalDocuments({ db }, documentIds);
 
+    const linkedOf = (quest: QuestListingRecord) => {
+      const document =
+        quest.proposalDocumentId !== null
+          ? documents.get(quest.proposalDocumentId)
+          : undefined;
+      return document && document.spaceId === host.id && document.slug
+        ? document
+        : null;
+    };
+
     let outcomes: Awaited<ReturnType<typeof readProposalOutcomeIds>> | null =
       null;
+    // The chain is read only for a proposal that will appear in the answer.
     const wantsVote =
       input.includeProposalStatus === true &&
       typeof host.web3SpaceId === 'number' &&
       page.some(
         (quest) =>
           quest.status === 'proposed' &&
-          quest.proposalDocumentId !== null &&
-          documents.get(quest.proposalDocumentId)?.web3ProposalId != null,
+          linkedOf(quest)?.web3ProposalId != null,
       );
     if (wantsVote) {
       try {
@@ -195,14 +200,7 @@ export async function listQuests(
     }
 
     const items = page.map((quest): QuestItem => {
-      const document =
-        quest.proposalDocumentId !== null
-          ? documents.get(quest.proposalDocumentId)
-          : undefined;
-      const linked =
-        document && document.spaceId === host.id && document.slug
-          ? document
-          : null;
+      const linked = linkedOf(quest);
       const lead = isLead(quest);
       return {
         slug: quest.slug,
@@ -217,9 +215,9 @@ export async function listQuests(
           token: ADDRESS.test(reward.token.trim()) ? null : reward.token,
         })),
         targetDate: quest.targetDate,
-        lead: stripViewerYouMarker(quest.leadName).trim(),
+        lead: quest.leadName,
         members: quest.members.map((member) => ({
-          name: stripViewerYouMarker(member.memberName).trim(),
+          name: member.memberName,
           role: member.roleLabel,
           responsibilities: member.responsibilities,
           isLead: member.isLead === true,
@@ -268,7 +266,7 @@ export async function listQuests(
       ok: true,
       data: {
         items,
-        total: matching.length,
+        total: listing.total,
         counts,
         asOf: new Date().toISOString(),
       },
