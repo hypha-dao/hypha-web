@@ -8,8 +8,11 @@ if (!PRIVY_APP_ID) {
 
 const PRIVY_JWKS_BASE = 'https://auth.privy.io/api/v1/apps';
 
-function getPrivyJwksUrls(): string[] {
-  const urls = [`${PRIVY_JWKS_BASE}/${PRIVY_APP_ID}/jwks.json`];
+// Never empty: the primary app's URL always comes first.
+function getPrivyJwksUrls(): [string, ...string[]] {
+  const urls: [string, ...string[]] = [
+    `${PRIVY_JWKS_BASE}/${PRIVY_APP_ID}/jwks.json`,
+  ];
   const extraIds = process.env.PRIVY_EXTRA_JWKS_APP_IDS;
   if (extraIds) {
     for (const id of extraIds.split(',')) {
@@ -37,8 +40,16 @@ async function fetchJwks(url: string): Promise<JWKSResponse> {
   return (await res.json()) as JWKSResponse;
 }
 
+// Cached at the CDN for a few minutes: keys rotate rarely, and Neon (which fetches this on
+// a short poll) would otherwise cost a function run each time. Vercel hides `s-maxage` and
+// `stale-while-revalidate` from the client; check `x-vercel-cache` and `age` instead.
 const CACHE_HEADERS = {
-  'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+  'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+};
+// A response that omits optional keys (a provider fetch failed) must not outlive a short
+// window, and is never served stale: tokens signed by an omitted key would fail meanwhile.
+const PARTIAL_CACHE_HEADERS = {
+  'Cache-Control': 'public, s-maxage=30',
 };
 
 export async function GET() {
@@ -51,8 +62,10 @@ export async function GET() {
     ]);
 
     const optional = await Promise.allSettled(optionalPrivyUrls.map(fetchJwks));
+    let partial = false;
     for (const result of optional) {
       if (result.status === 'rejected') {
+        partial = true;
         console.warn('Optional JWKS fetch failed:', result.reason);
       }
     }
@@ -71,7 +84,9 @@ export async function GET() {
       keys: results.flatMap((r) => r.keys || []),
     };
 
-    return NextResponse.json(combinedJwks, { headers: CACHE_HEADERS });
+    return NextResponse.json(combinedJwks, {
+      headers: partial ? PARTIAL_CACHE_HEADERS : CACHE_HEADERS,
+    });
   } catch (error) {
     console.error('Error fetching JWKS:', error);
     return NextResponse.json(
