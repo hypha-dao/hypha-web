@@ -571,57 +571,102 @@ export function MemberHomeThreadCard({
               {t('gotIt')}
             </Button>
           ) : null}
-          {!complete && !outcome && (ownDeadline || leadCta) ? (
-            <div className="flex items-stretch gap-2">
-              {ownDeadline ? (
-                <Button
-                  asChild
-                  {...choiceProps(
-                    'update',
-                    true,
-                    cn('min-w-0', assistant ? 'flex-1' : 'w-full'),
-                  )}
-                >
-                  <Link
-                    href={signalHref}
-                    onClick={() => {
-                      if (!confirm('update')) return;
-                      moveOn(true);
-                    }}
-                  >
-                    {t('updateThis')}
-                  </Link>
-                </Button>
-              ) : leadCta ? (
-                <Button
-                  type="button"
-                  {...choiceProps(
-                    leadCta,
-                    true,
-                    cn('min-w-0', assistant ? 'flex-1' : 'w-full'),
-                  )}
+          {(() => {
+            if (complete || outcome) return null;
+            const showPrimary = Boolean(ownDeadline || leadCta);
+            const showCompanion = Boolean(companionCta);
+            const showNotNow = Boolean(assistant);
+            // 2 actions (primary + not now): one row, not now under half.
+            // 3 actions: primary full width, then companion | not now.
+            const pairPrimaryWithNotNow =
+              showPrimary && showNotNow && !showCompanion;
+            const primaryClass = cn(
+              'min-w-0',
+              pairPrimaryWithNotNow ? 'flex-1' : 'w-full',
+            );
+            const notNowClass = 'w-[min(40%,9rem)] shrink-0';
+            const notNowButton = showNotNow ? (
+              <Button
+                type="button"
+                {...choiceProps('later', false, notNowClass)}
+                onClick={() => {
+                  if (!confirm('later')) return;
+                  ask(t('laterChosen', { title: item.title }));
+                }}
+              >
+                {t('notNow')}
+              </Button>
+            ) : null;
+            const primaryButton = ownDeadline ? (
+              <Button
+                asChild
+                {...choiceProps('update', true, primaryClass)}
+              >
+                <Link
+                  href={signalHref}
                   onClick={() => {
-                    if (!confirm(leadCta)) return;
-                    onCta(leadCta);
+                    if (!confirm('update')) return;
+                    moveOn(true);
                   }}
                 >
-                  {labelFor(leadCta)}
-                </Button>
-              ) : null}
-              {assistant ? (
-                <Button
-                  type="button"
-                  {...choiceProps('later', false, 'w-[min(40%,9rem)] shrink-0')}
-                  onClick={() => {
-                    if (!confirm('later')) return;
-                    ask(t('laterChosen', { title: item.title }));
-                  }}
-                >
-                  {t('notNow')}
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
+                  {t('updateThis')}
+                </Link>
+              </Button>
+            ) : leadCta ? (
+              <Button
+                type="button"
+                {...choiceProps(leadCta, true, primaryClass)}
+                onClick={() => {
+                  if (!confirm(leadCta)) return;
+                  onCta(leadCta);
+                }}
+              >
+                {labelFor(leadCta)}
+              </Button>
+            ) : null;
+            const companionButton = showCompanion ? (
+              <Button
+                type="button"
+                {...choiceProps(
+                  companionCta!,
+                  false,
+                  cn('min-w-0', showNotNow ? 'flex-1' : 'w-full'),
+                )}
+                onClick={() => {
+                  if (!confirm(companionCta!)) return;
+                  onCta(companionCta!);
+                }}
+              >
+                {labelFor(companionCta!)}
+              </Button>
+            ) : null;
+
+            return (
+              <>
+                {pairPrimaryWithNotNow ? (
+                  <div className="flex items-stretch gap-2">
+                    {primaryButton}
+                    {notNowButton}
+                  </div>
+                ) : (
+                  <>
+                    {primaryButton}
+                    {showCompanion && showNotNow ? (
+                      <div className="flex items-stretch gap-2">
+                        {companionButton}
+                        {notNowButton}
+                      </div>
+                    ) : (
+                      <>
+                        {companionButton}
+                        {notNowButton}
+                      </>
+                    )}
+                  </>
+                )}
+              </>
+            );
+          })()}
           {!complete && !outcome && !isSignal && assistant ? (
             <div
               className={cn(
@@ -663,31 +708,6 @@ export function MemberHomeThreadCard({
                 {t('helpMeThink')}
               </Button>
             </div>
-          ) : null}
-          {!complete && !outcome && companionCta ? (
-            <Button
-              type="button"
-              {...choiceProps(companionCta)}
-              onClick={() => {
-                if (!confirm(companionCta)) return;
-                onCta(companionCta);
-              }}
-            >
-              {labelFor(companionCta)}
-            </Button>
-          ) : null}
-          {/* Not now alone — only when there was no primary to sit beside. */}
-          {!complete && !outcome && assistant && !ownDeadline && !leadCta ? (
-            <Button
-              type="button"
-              {...choiceProps('later', false, 'w-[min(40%,9rem)]')}
-              onClick={() => {
-                if (!confirm('later')) return;
-                ask(t('laterChosen', { title: item.title }));
-              }}
-            >
-              {t('notNow')}
-            </Button>
           ) : null}
           {!complete ? (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
