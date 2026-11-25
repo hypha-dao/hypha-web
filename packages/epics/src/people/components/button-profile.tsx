@@ -133,8 +133,8 @@ function resolveNavItemIcon(href?: string) {
 }
 
 /**
- * Home / Messages / Wallet / Spaces / Network already sit in the mobile tab
- * bar. Keep them out of the profile sheet so the menu is not a second nav.
+ * Home / Messages / Wallet already sit in the builder mobile tab bar.
+ * Spaces and Network stay in the profile sheet so they remain reachable.
  */
 function isMobileTabBarNavHref(href?: string) {
   if (!href) return false;
@@ -143,9 +143,7 @@ function isMobileTabBarNavHref(href?: string) {
     href.includes('/home') ||
     href.includes('/messages') ||
     href.includes('/connections') ||
-    href.includes('/my-spaces') ||
-    href.includes('/my-wallet') ||
-    href.includes('/network')
+    href.includes('/my-wallet')
   );
 }
 
