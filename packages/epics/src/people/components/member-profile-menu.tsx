@@ -13,6 +13,7 @@ import {
   LogOutIcon,
   Moon,
   Sparkles,
+  Sun,
   User,
 } from 'lucide-react';
 import { useSpaceBySlug, type Person } from '@hypha-platform/core/client';
@@ -21,7 +22,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  Switch,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { localeMetadata } from '@hypha-platform/i18n/client';
@@ -49,9 +49,6 @@ const nameClass =
   'truncate text-2 font-medium leading-tight tracking-[-0.02em] text-foreground [font-family:var(--font-family-heading)]';
 const metaClass =
   'truncate font-sans text-1 font-normal leading-tight text-muted-foreground';
-/** Compact track — default Switch (w-9) reads too long in this menu. */
-const darkModeSwitchClass =
-  'h-4 w-7 [&>span]:size-3 data-[state=checked]:[&>span]:translate-x-3';
 
 function useMemberProfileSpaceLabel() {
   const pathname = usePathname() ?? '';
@@ -200,16 +197,22 @@ export function MemberProfileMenu({
             <>
               <div className="border-t border-border" />
               {onChangeThemeMode ? (
-                <div className={sheetItemClass}>
-                  <Moon className="craft-icon" aria-hidden />
-                  <span className="flex-1 font-medium">{t('darkMode')}</span>
-                  <Switch
-                    checked={dark}
-                    onCheckedChange={() => onChangeThemeMode()}
-                    aria-label={t('darkMode')}
-                    className={darkModeSwitchClass}
-                  />
-                </div>
+                <button
+                  type="button"
+                  className={sheetItemClass}
+                  onClick={() => onChangeThemeMode()}
+                >
+                  {dark ? (
+                    <Sun className="craft-icon" aria-hidden />
+                  ) : (
+                    <Moon className="craft-icon" aria-hidden />
+                  )}
+                  <span className="flex-1 font-medium">
+                    {dark
+                      ? tNav('switchToLightMode')
+                      : tNav('switchToDarkMode')}
+                  </span>
+                </button>
               ) : null}
               {language ? (
                 <div
@@ -306,23 +309,16 @@ export function MemberProfileMenu({
             {onChangeThemeMode ? (
               <DropdownMenuItem
                 className={menuItemClass}
-                onSelect={(event) => {
-                  event.preventDefault();
-                }}
-                onClick={(event) => {
-                  // Keep the menu open; the switch owns the toggle.
-                  event.preventDefault();
-                }}
+                onSelect={() => onChangeThemeMode()}
               >
-                <Moon className="craft-icon" aria-hidden />
-                <span className="flex-1 font-medium">{t('darkMode')}</span>
-                <Switch
-                  checked={dark}
-                  onCheckedChange={() => onChangeThemeMode()}
-                  onClick={(event) => event.stopPropagation()}
-                  aria-label={t('darkMode')}
-                  className={darkModeSwitchClass}
-                />
+                {dark ? (
+                  <Sun className="craft-icon" aria-hidden />
+                ) : (
+                  <Moon className="craft-icon" aria-hidden />
+                )}
+                <span className="flex-1 font-medium">
+                  {dark ? tNav('switchToLightMode') : tNav('switchToDarkMode')}
+                </span>
               </DropdownMenuItem>
             ) : null}
             {language ? (
