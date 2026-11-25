@@ -1,7 +1,10 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { SpaceTabAccessWrapper, useMemberExperience } from '@hypha-platform/epics';
+import {
+  SpaceTabAccessWrapper,
+  useMemberExperience,
+} from '@hypha-platform/epics';
 
 import { TabLoadingSkeleton } from '../../_components/tab-loading-skeleton';
 

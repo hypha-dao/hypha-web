@@ -1,11 +1,5 @@
-import {
-  MEMBER_TITLE_GAP,
-  MEMBER_TITLE_STACK,
-} from '@hypha-platform/epics';
 import { Wave } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-
-import { MEMBER_SCREEN_STACK } from '../../../_components/member-page-shell';
 
 type TabLoadingLayout =
   | 'overview'
@@ -21,6 +15,11 @@ type TabLoadingLayout =
 /** Same card width as MemberSpaceHome signal strip. */
 const MEMBER_HOME_CARD_WIDTH =
   'w-[min(22rem,calc((100%-2rem)/2.2))] max-md:w-[78%] min-w-[14rem]';
+
+/** Mirror member-type / member-page-shell tokens — keep this file server-safe. */
+const MEMBER_TITLE_GAP = 'gap-2';
+const MEMBER_TITLE_STACK = `flex w-full flex-col items-start ${MEMBER_TITLE_GAP} text-left`;
+const MEMBER_SCREEN_STACK = `flex w-full min-w-0 flex-col ${MEMBER_TITLE_GAP} py-4`;
 
 type TabLoadingSkeletonProps = {
   layout?: TabLoadingLayout;

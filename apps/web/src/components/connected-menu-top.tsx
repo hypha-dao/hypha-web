@@ -144,11 +144,11 @@ export function ConnectedMenuTop({
 
   // Members put Ask AI beside Messages and space identity in the page title;
   // builders keep Ask AI / spaces rail in the leading cluster.
-  const secondaryLeading = hideHyphaMark
-    ? undefined
-    : aiChatEnabled
-      ? <AiPanelTrigger />
-      : leadingAction;
+  const secondaryLeading = hideHyphaMark ? undefined : aiChatEnabled ? (
+    <AiPanelTrigger />
+  ) : (
+    leadingAction
+  );
   const { active: spacesRailActive } = useSpacesRailControl();
   const onHome = /\/(?:home|my-dashboard)\/?$/.test(pathname ?? '');
   const resolvedLeadingAction =
