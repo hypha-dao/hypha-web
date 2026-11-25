@@ -3635,6 +3635,12 @@
     "callShareQualityShow": "Afficher la résolution",
 
     "callShareQualityHide": "Masquer la résolution",
+    "callShareQualityPicker": "Qualité de réception",
+    "callShareQualityAuto": "Auto",
+    "callShareQualityNeedsResize": "agrandir pour utiliser",
+    "callShareQualityReasonAuto": "Auto : adaptée à votre vignette",
+    "callShareQualityReasonCapped": "Limitée à {label}",
+    "callShareQualityReasonNetwork": "Limitée par le réseau",
     "callParticipantMicOff": "Micro coupé",
     "callLeftAudio": "Vous avez quitté l'appel vocal.",
     "callLeftVideo": "Vous avez quitté l'appel vidéo.",

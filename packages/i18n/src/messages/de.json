@@ -4207,6 +4207,12 @@
     "callShareQualityShow": "Auflösung anzeigen",
 
     "callShareQualityHide": "Auflösung ausblenden",
+    "callShareQualityPicker": "Empfangsqualität",
+    "callShareQualityAuto": "Auto",
+    "callShareQualityNeedsResize": "zum Nutzen vergrößern",
+    "callShareQualityReasonAuto": "Auto: an deine Kachel angepasst",
+    "callShareQualityReasonCapped": "Begrenzt auf {label}",
+    "callShareQualityReasonNetwork": "Durch das Netzwerk begrenzt",
     "callParticipantMicOff": "Mikrofon aus",
     "callLeftAudio": "Du hast den Sprachanruf verlassen.",
     "callLeftVideo": "Du hast den Videoanruf verlassen.",

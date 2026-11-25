@@ -125,3 +125,45 @@ describe('formatCallShareResolution', () => {
     expect(formatCallShareResolution(0, 0)).toBeNull();
   });
 });
+
+describe('viewer cap and network limit (#2742)', () => {
+  it('a cap lowers the target and completes at the capped layer', () => {
+    const r = resolveCallShareQualityPhase({
+      ...base,
+      renderedWidth: 1920,
+      renderedHeight: 1080,
+      receivedWidth: 640,
+      receivedHeight: 360,
+      capWidth: 640,
+    });
+    expect(r.phase).toBe('done');
+    expect(r.targetWidth).toBe(640);
+    expect(r.limitedByNetwork).toBeUndefined();
+  });
+
+  it('a cap never raises the target', () => {
+    const r = resolveCallShareQualityPhase({
+      ...base,
+      renderedWidth: 960,
+      renderedHeight: 540,
+      capWidth: 1920,
+    });
+    expect(r.targetWidth).toBe(960);
+  });
+
+  it('flags a network limit only when time ran out below the target', () => {
+    const slow = resolveCallShareQualityPhase({
+      ...base,
+      elapsedMs: CALL_SHARE_QUALITY_IMPROVING_TIMEOUT_MS,
+    });
+    expect(slow.phase).toBe('done');
+    expect(slow.limitedByNetwork).toBe(true);
+    const sharp = resolveCallShareQualityPhase({
+      ...base,
+      receivedWidth: 960,
+      receivedHeight: 540,
+      elapsedMs: CALL_SHARE_QUALITY_IMPROVING_TIMEOUT_MS,
+    });
+    expect(sharp.limitedByNetwork).toBeUndefined();
+  });
+});

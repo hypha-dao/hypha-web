@@ -43,6 +43,8 @@ import {
 import { CallAudioVoiceWaves } from './call-audio-voice-waves';
 import { CallShareQualityOverlay } from './call-share-quality-overlay';
 import { useRemoteShareQuality } from './use-remote-share-quality';
+import { useRemoteShareQualityChoice } from './use-remote-share-quality-choice';
+import { buildCallShareQualityOptions } from './call-share-quality-options';
 import {
   CALL_PARTICIPANT_PROFILE_TIMEOUT_MS,
   resolveCallParticipantDisplayText,
@@ -102,6 +104,7 @@ import {
   feedKeyForActive,
   liveKitTrackFromCallFeed,
   publishedDimensionsFromCallFeed,
+  remotePublicationFromCallFeed,
 } from './call-livekit-feed-adapter';
 import type { CallFloatingReaction } from './use-call-reactions';
 
@@ -2710,11 +2713,18 @@ const FeedContent = ({
   }, [liveVideoTrack?.id, streamBindVersion, remoteShareLiveKitTrack]);
 
   const showVideoElement = hasVideo && !warmingVideoTrack;
+  const remoteShareChoice = useRemoteShareQualityChoice({
+    getPublication: () => remotePublicationFromCallFeed(feed),
+    shareKey: remotePublicationFromCallFeed(feed)?.trackSid,
+  });
   const remoteShareQuality = useRemoteShareQuality({
     videoRef: ref,
     enabled: Boolean(remoteShareLiveKitTrack) && showVideoElement,
     trackKey: `${liveVideoTrack?.id ?? ''}:${streamBindVersion}`,
     getPublishedWidth: () => publishedDimensionsFromCallFeed(feed)?.width,
+    getPublishedLayers: () =>
+      remotePublicationFromCallFeed(feed)?.trackInfo?.layers ?? [],
+    capWidth: remoteShareChoice.selectedLayer?.width,
   });
   /** Avatar until video paints — avoids black tiles while remote/local tracks warm up. */
   const showAudioScrim = !showVideoElement || !videoSurfaceReady;
@@ -2912,6 +2922,15 @@ const FeedContent = ({
             receivedHeight={remoteShareQuality.receivedHeight}
             compact={compactTileLayout || audioScrimLayout.panelDockTile}
             t={t}
+            picker={{
+              options: buildCallShareQualityOptions({
+                layers: remoteShareQuality.layers,
+                tileRequestWidth: remoteShareQuality.tileRequestWidth,
+              }),
+              selectedId: remoteShareChoice.selectedId,
+              limitedByNetwork: remoteShareQuality.limitedByNetwork,
+              onSelect: remoteShareChoice.select,
+            }}
           />
         ) : null}
         {showAudioScrim ? (

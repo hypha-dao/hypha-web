@@ -3649,6 +3649,12 @@
     "callShareQualityShow": "Mostrar resolución",
 
     "callShareQualityHide": "Ocultar resolución",
+    "callShareQualityPicker": "Calidad de recepción",
+    "callShareQualityAuto": "Auto",
+    "callShareQualityNeedsResize": "amplía para usar",
+    "callShareQualityReasonAuto": "Auto: ajustada a tu recuadro",
+    "callShareQualityReasonCapped": "Limitada a {label}",
+    "callShareQualityReasonNetwork": "Limitada por la red",
     "callParticipantMicOff": "Micrófono desactivado",
     "callLeftAudio": "Has salido de la llamada de voz.",
     "callLeftVideo": "Has salido de la videollamada.",
