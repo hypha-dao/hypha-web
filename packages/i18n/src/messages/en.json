@@ -4233,6 +4233,12 @@
     "callLayoutPip": "Video on top of share",
     "callRaiseHandBadgeOrder": "Hand raised (#{order})",
     "callParticipantMuted": "Muted",
+
+    "callShareQualityImproving": "Improving quality…",
+
+    "callShareQualityShow": "Show resolution",
+
+    "callShareQualityHide": "Hide resolution",
     "callParticipantMicOff": "Microphone off",
     "callLeftAudio": "You left the voice call.",
     "callLeftVideo": "You left the video call.",

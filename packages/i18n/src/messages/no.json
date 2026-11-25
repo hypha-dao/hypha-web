@@ -4202,6 +4202,12 @@
     "callLayoutPip": "Video oppå delingen",
     "callRaiseHandBadgeOrder": "Hånd rukket opp (#{order})",
     "callParticipantMuted": "Dempet",
+
+    "callShareQualityImproving": "Forbedrer kvaliteten…",
+
+    "callShareQualityShow": "Vis oppløsning",
+
+    "callShareQualityHide": "Skjul oppløsning",
     "callParticipantMicOff": "Mikrofon av",
     "callLeftAudio": "Du forlot talesamtalen.",
     "callLeftVideo": "Du forlot videosamtalen.",

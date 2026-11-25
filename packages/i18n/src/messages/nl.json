@@ -4203,6 +4203,12 @@
     "callLayoutPip": "Video bovenop delen",
     "callRaiseHandBadgeOrder": "Hand omhoog (#{order})",
     "callParticipantMuted": "Gedempt",
+
+    "callShareQualityImproving": "Kwaliteit wordt verbeterd…",
+
+    "callShareQualityShow": "Resolutie tonen",
+
+    "callShareQualityHide": "Resolutie verbergen",
     "callParticipantMicOff": "Microfoon uit",
     "callLeftAudio": "Je hebt het telefoongesprek verlaten.",
     "callLeftVideo": "Je hebt het videogesprek verlaten.",

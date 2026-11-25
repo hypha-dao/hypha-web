@@ -134,6 +134,11 @@ class LiveKitAdaptedCallFeed {
     return this.participant.getTrackPublication(this.trackSource)?.track;
   }
 
+  /** Highest resolution the sender publishes for this source (#2427 quality badge). */
+  getPublishedDimensions(): Track.Dimensions | undefined {
+    return this.participant.getTrackPublication(this.trackSource)?.dimensions;
+  }
+
   isVideoMuted(): boolean {
     if (this.trackSource === Track.Source.ScreenShare) {
       const pub = this.participant.getTrackPublication(
@@ -244,6 +249,12 @@ export function feedKeyForActive(feed: Pick<CallFeed, 'userId'>): string {
  * `buildCallFeedsFromLiveKitRoom` — the only feed source). Narrow back to it so callers can
  * reach the underlying LiveKit `Track` for `.attach()`.
  */
+export function publishedDimensionsFromCallFeed(
+  feed: CallFeed,
+): { width: number; height: number } | undefined {
+  return (feed as unknown as LiveKitAdaptedCallFeed).getPublishedDimensions?.();
+}
+
 export function liveKitTrackFromCallFeed(feed: CallFeed): Track | undefined {
   return (feed as unknown as LiveKitAdaptedCallFeed).getLiveKitTrack?.();
 }

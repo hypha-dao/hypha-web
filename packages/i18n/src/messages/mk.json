@@ -4184,6 +4184,12 @@
     "callLayoutPip": "Видео врз споделувањето",
     "callRaiseHandBadgeOrder": "Крената рака (#{order})",
     "callParticipantMuted": "Исклучен звук",
+
+    "callShareQualityImproving": "Подобрување на квалитетот…",
+
+    "callShareQualityShow": "Прикажи резолуција",
+
+    "callShareQualityHide": "Сокриј резолуција",
     "callParticipantMicOff": "Микрофонот е исклучен",
     "callLeftAudio": "Излезе од гласовниот повик.",
     "callLeftVideo": "Излезе од видео повикот.",
