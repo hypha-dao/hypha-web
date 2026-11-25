@@ -2,7 +2,7 @@
 
 import React from 'react';
 import useSWR from 'swr';
-import { useJwt } from '@hypha-platform/core/client';
+import { useJwt, POLL } from '@hypha-platform/core/client';
 
 export type UserEnergyCommunity = {
   spaceId: number;
@@ -53,7 +53,7 @@ export const useUserEnergy = (personSlug?: string) => {
       return (await response.json()) as UserEnergyResponse;
     },
     {
-      refreshInterval: 15000,
+      refreshInterval: POLL.BACKGROUND,
       shouldRetryOnError: false,
     },
   );

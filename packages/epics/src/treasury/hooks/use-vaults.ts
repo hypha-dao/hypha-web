@@ -1,5 +1,6 @@
 'use client';
 
+import { POLL } from '@hypha-platform/core/client';
 import React from 'react';
 import useSWR from 'swr';
 import { useParams } from 'next/navigation';
@@ -53,7 +54,7 @@ type UseVaultsReturn = {
 
 export const useVaults = ({
   spaceSlug,
-  refreshInterval = 10000,
+  refreshInterval = POLL.BACKGROUND,
   redeemableOnly = false,
 }: {
   spaceSlug?: string;

@@ -16,6 +16,7 @@ import {
   useJwt,
   useMe,
   type MemberIntelligence,
+  POLL,
 } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import { Button, Container, Heading } from '@hypha-platform/ui';
@@ -154,8 +155,8 @@ export function MemberHomePage({ lang }: { lang: Locale }) {
     isLoading: isLoadingFull,
     mutate,
   } = useSWR<MemberIntelligence | null>(fullKey, () => fetchHome('full'), {
-    refreshInterval: 10_000,
-    revalidateOnFocus: true,
+    refreshInterval: POLL.BACKGROUND,
+    revalidateOnFocus: false,
     keepPreviousData: false,
     isPaused: () => !jwtRef.current || jwtOwnerRef.current !== memberId,
     compare: sameMemberHome,

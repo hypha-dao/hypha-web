@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { mutate } from 'swr';
 import {
   ProposalOverlayShell,
   ModalStickyNavigation,
@@ -51,6 +52,17 @@ export const ProfileTransferFunds = ({
     personSlug,
     refreshInterval: 10000,
   });
+  // The history list now polls slowly, so refresh it right after a transfer
+  // together with the balances.
+  const updateAssetsAndHistory = React.useCallback(async () => {
+    await manualUpdate();
+    await mutate(
+      (key) =>
+        Array.isArray(key) &&
+        typeof key[0] === 'string' &&
+        key[0].startsWith(`/api/v1/people/${personSlug}/transactions`),
+    );
+  }, [manualUpdate, personSlug]);
   /**
    * Show every utility-class token the user holds + every credit-enabled token they
    * are eligible to draw on (member of any whitelisted space) — so credit-eligible
@@ -119,7 +131,7 @@ export const ProfileTransferFunds = ({
           peoples={peoples}
           spaces={spaces}
           tokens={tokens}
-          updateAssets={manualUpdate}
+          updateAssets={updateAssetsAndHistory}
         />
       </div>
     </ProposalOverlayShell>

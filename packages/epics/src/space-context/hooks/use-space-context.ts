@@ -1,5 +1,6 @@
 'use client';
 
+import { POLL } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
 import type {
   SpaceContextOverview,
@@ -142,7 +143,7 @@ export function useSpaceContext(spaceSlug: string | undefined) {
       // revalidates as soon as the vote shows executed.
       refreshInterval: (latest) =>
         latest?.sections.some((section) => section.status === 'proposed')
-          ? 5_000
+          ? POLL.LIVE
           : 0,
     },
   );
@@ -178,7 +179,7 @@ export function useSpaceContextSection(
       return (await response.json()) as SpaceContextSectionDetail;
     },
     // Other members and the section agent save drafts while the panel is open.
-    { refreshInterval: 20_000, revalidateOnFocus: true },
+    { refreshInterval: POLL.BACKGROUND, revalidateOnFocus: false },
   );
 
   return {

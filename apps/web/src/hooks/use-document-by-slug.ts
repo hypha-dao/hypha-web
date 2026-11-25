@@ -1,6 +1,6 @@
 'use client';
 
-import { Document, fetchJson } from '@hypha-platform/core/client';
+import { Document, fetchJson, POLL } from '@hypha-platform/core/client';
 import React from 'react';
 import useSWR, { mutate } from 'swr';
 
@@ -22,7 +22,7 @@ export const useDocumentBySlug = (
     ([endpoint]) => fetchJson<Document>(endpoint, undefined, 'document'),
     {
       revalidateOnFocus: true,
-      refreshInterval: 10000,
+      refreshInterval: POLL.ACTIVE,
       refreshWhenHidden: false,
     },
   );
