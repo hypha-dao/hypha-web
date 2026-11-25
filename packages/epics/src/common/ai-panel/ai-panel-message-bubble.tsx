@@ -879,8 +879,8 @@ export function AiPanelMessageBubble({
   return (
     <div
       className={cn(
-        // Mark centres on the whole bubble. Narrower wrap → more lines →
-        // the H mark sits mid-copy instead of against the first line.
+        // Mark centres on the visible copy. Copy/hover chrome is out of flow
+        // so it does not pull the mark toward the first line.
         'flex items-center gap-2.5',
         isUser && 'flex-row-reverse',
       )}
@@ -918,7 +918,7 @@ export function AiPanelMessageBubble({
         className={cn(
           // Mentions-dense stack: expertise header → bubble (gap-0.5).
           // Cap width in ch so welcome/assistant lines wrap early on wide pages.
-          'group flex min-w-0 flex-col gap-0.5',
+          'group relative flex min-w-0 flex-col gap-0.5',
           isUser
             ? 'max-w-[85%] items-end'
             : isWelcome
@@ -1229,8 +1229,8 @@ export function AiPanelMessageBubble({
             </span>
           )}
         </div>
-        {!isUser && !isStreaming && (
-          <div className="mt-0.5 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        {!isUser && !isStreaming && !isWelcome && (
+          <div className="absolute left-0 top-full mt-0.5 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
             <button
               type="button"
               onClick={handleCopy}
