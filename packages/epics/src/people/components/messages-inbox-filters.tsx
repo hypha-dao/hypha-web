@@ -195,9 +195,9 @@ const MEMBER_TAB_LABEL: Record<MemberInboxTab, string> = {
 };
 
 /**
- * All / Direct / Groups / Channels on every width. Members and builders both
- * use this so a phone can switch without opening the category list. A wide
- * screen keeps the tabs beside the list.
+ * All / Direct / Groups / Channels. Members use this on every width. Builders
+ * use it below `lg` so a phone never opens the category list; at `lg+` they
+ * keep {@link MessagesInboxFilters} with collapsible Spaces.
  */
 export function MemberInboxTabs({
   value,

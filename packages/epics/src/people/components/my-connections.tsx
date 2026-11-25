@@ -1910,8 +1910,21 @@ export function MyConnections({
   const { isMember: memberExperience } = useMemberExperience();
   /** Members on a space messages page use the four compact tabs. */
   const memberSpaceInbox = Boolean(spaceSlug) && memberExperience;
-  // Builders get the same four tabs so a phone never opens the category list.
-  const builderInboxTabs = !memberExperience && !isPanel;
+  // Below lg: builders use All/Direct/Groups/Channels. At lg+: the category
+  // list with collapsible Spaces (same as before the mobile-tabs change).
+  const [phoneInbox, setPhoneInbox] = useState(() =>
+    typeof window !== 'undefined'
+      ? !window.matchMedia('(min-width: 64rem)').matches
+      : false,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 64rem)');
+    const sync = () => setPhoneInbox(!mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+  const builderInboxTabs = !memberExperience && !isPanel && phoneInbox;
   const useInboxTabs = memberSpaceInbox || builderInboxTabs;
   const locale = useLocale();
   const { user } = useAuthentication();
