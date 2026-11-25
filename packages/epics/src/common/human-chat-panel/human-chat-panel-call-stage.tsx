@@ -2905,12 +2905,12 @@ const FeedContent = ({
             aria-label={ariaLabel}
           />
         ) : null}
-        {remoteShareLiveKitTrack && showVideoElement && videoSurfaceReady ? (
+        {remoteShareLiveKitTrack && showVideoElement ? (
           <CallShareQualityOverlay
             phase={remoteShareQuality.phase}
             receivedWidth={remoteShareQuality.receivedWidth}
             receivedHeight={remoteShareQuality.receivedHeight}
-            compact={compactTileLayout}
+            compact={compactTileLayout || audioScrimLayout.panelDockTile}
             t={t}
           />
         ) : null}
