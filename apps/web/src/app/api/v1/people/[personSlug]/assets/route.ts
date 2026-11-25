@@ -435,7 +435,8 @@ export async function GET(
           );
           let amount: number;
           if (isEnergyToken) {
-            amount = unitsFromRaw(energyBalanceRaw, chainDecimals);
+            // NRG raw units use display decimals (2), not contract decimals (6).
+            amount = unitsFromRaw(energyBalanceRaw, displayDecimals);
           } else {
             amount =
               holding?.amount == null

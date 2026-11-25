@@ -27,19 +27,22 @@ export function splitSignalMedia(input?: {
   attachments?: SignalMediaItem[] | null;
 }): SignalMediaDraft {
   const attachments = input?.attachments ?? [];
-  const images = attachments.filter((item) =>
+  const attachedImages = attachments.filter((item) =>
     isImageAttachment(item.url, item.name),
   );
   const documents = attachments.filter(
     (item) => !isImageAttachment(item.url, item.name),
   );
   const lead = input?.leadImage?.trim();
-  if (lead && !images.some((item) => item.url === lead)) {
-    images.unshift({
-      name: lead.split('/').pop() || 'image',
-      url: lead,
-    });
-  }
+  const images = lead
+    ? [
+        {
+          name: lead.split('/').pop() || 'image',
+          url: lead,
+        },
+        ...attachedImages.filter((item) => item.url !== lead),
+      ]
+    : attachedImages;
   return { images, documents };
 }
 

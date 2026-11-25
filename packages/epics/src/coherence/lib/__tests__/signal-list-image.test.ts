@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { signalListImage } from '../../utils/signal-media';
+import { signalListImage, splitSignalMedia } from '../../utils/signal-media';
 
 describe('signalListImage', () => {
   it('prefers the lead image', () => {
@@ -24,6 +24,18 @@ describe('signalListImage', () => {
         ],
       }),
     ).toBe('https://cdn.example.com/lead.jpg');
+    expect(
+      splitSignalMedia({
+        leadImage: 'https://cdn.example.com/lead.jpg',
+        attachments: [
+          { name: 'other.png', url: 'https://cdn.example.com/other.png' },
+          { name: 'lead.jpg', url: 'https://cdn.example.com/lead.jpg' },
+        ],
+      }).images.map((item) => item.url),
+    ).toEqual([
+      'https://cdn.example.com/lead.jpg',
+      'https://cdn.example.com/other.png',
+    ]);
   });
 
   it('uses the first image attachment when there is no lead image', () => {
