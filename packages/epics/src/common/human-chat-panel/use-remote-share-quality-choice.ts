@@ -1,19 +1,20 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { VideoQuality, type RemoteTrackPublication } from 'livekit-client';
 
 import {
   CALL_SHARE_QUALITY_AUTO,
+  layerOptionId,
   type CallShareQualityOption,
   type PublishedShareLayer,
 } from './call-share-quality-options';
-
-/**
- * Viewer's choice per share, keyed by publication sid so it survives the tile being remounted
- * (dock <-> stage) while the share lasts. A new share has a new sid, so the choice resets then.
- */
-const choiceBySid = new Map<string, PublishedShareLayer>();
+import {
+  getShareQualityChoice,
+  publishShareQualityPicker,
+  setShareQualityChoice,
+  useShareQualityChoiceVersion,
+} from './call-share-quality-store';
 
 /** Applies the cap to the publication: a layer's dimensions, or HIGH (= LiveKit's own default). */
 export function applyShareQualityChoice(
@@ -39,51 +40,73 @@ export type RemoteShareQualityChoice = {
 };
 
 /**
- * Receive-quality choice for one remote screenshare (#2742). Auto is the default and never calls
- * LiveKit, so users who never open the picker see no behaviour change.
+ * Receive-quality choice for one remote screenshare (#2742), kept per publication sid so it
+ * survives tile remounts (dock <-> stage <-> PiP) and resets with a new share. Auto is the default
+ * and never calls LiveKit, so users who never open the picker see no behaviour change.
  */
 export function useRemoteShareQualityChoice(options: {
   getPublication: () => RemoteTrackPublication | undefined;
   /** Publication sid; changes when a new share starts. */
   shareKey: string | undefined;
 }): RemoteShareQualityChoice {
-  const { shareKey } = options;
-  const [selectedLayer, setSelectedLayer] = useState<
-    PublishedShareLayer | undefined
-  >(() => (shareKey ? choiceBySid.get(shareKey) : undefined));
-  const [selectedId, setSelectedId] = useState<string>(CALL_SHARE_QUALITY_AUTO);
+  const { shareKey, getPublication } = options;
+  useShareQualityChoiceVersion();
+  const selectedLayer = getShareQualityChoice(shareKey);
+  const selectedId = selectedLayer
+    ? layerOptionId(selectedLayer)
+    : CALL_SHARE_QUALITY_AUTO;
 
-  // Re-sync when the share changes; re-apply a remembered cap after a remount.
-  useEffect(() => {
-    const stored = shareKey ? choiceBySid.get(shareKey) : undefined;
-    setSelectedLayer(stored);
-    setSelectedId(
-      stored
-        ? `layer:${Math.round(stored.width)}x${Math.round(stored.height)}`
-        : CALL_SHARE_QUALITY_AUTO,
-    );
-    const publication = options.getPublication();
-    if (stored && publication) applyShareQualityChoice(publication, stored);
-  }, [shareKey]);
-
-  const getPublication = options.getPublication;
   const select = useCallback(
     (option: CallShareQualityOption) => {
-      const publication = getPublication();
       const layer =
         option.kind === 'layer'
           ? { width: option.width, height: option.height }
           : undefined;
-      if (shareKey) {
-        if (layer) choiceBySid.set(shareKey, layer);
-        else choiceBySid.delete(shareKey);
-      }
-      setSelectedLayer(layer);
-      setSelectedId(option.id);
+      if (shareKey) setShareQualityChoice(shareKey, layer);
+      const publication = getPublication();
       if (publication) applyShareQualityChoice(publication, layer);
     },
     [getPublication, shareKey],
   );
 
   return { selectedId, selectedLayer, select };
+}
+
+/**
+ * Publishes this tile's picker to the call toolbar while the tile shows a remote share. Only
+ * re-publishes when what the menu shows changes (not on every render).
+ */
+export function usePublishShareQualityPicker(input: {
+  enabled: boolean;
+  shareKey: string | undefined;
+  options: CallShareQualityOption[];
+  selectedId: string;
+  select: (option: CallShareQualityOption) => void;
+}): void {
+  const { enabled, shareKey, options, selectedId } = input;
+  const selectRef = useRef(input.select);
+  selectRef.current = input.select;
+  const ownerRef = useRef<object>({});
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+  const signature = options
+    .map((o) =>
+      o.kind === 'layer' ? `${o.id}:${o.needsResize ? 1 : 0}` : o.id,
+    )
+    .join('|');
+
+  useEffect(() => {
+    const owner = ownerRef.current;
+    if (!enabled || !shareKey) {
+      publishShareQualityPicker(owner, null);
+      return;
+    }
+    publishShareQualityPicker(owner, {
+      shareKey,
+      options: optionsRef.current,
+      selectedId,
+      select: (option) => selectRef.current(option),
+    });
+    return () => publishShareQualityPicker(owner, null);
+  }, [enabled, shareKey, signature, selectedId]);
 }

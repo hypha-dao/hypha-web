@@ -43,7 +43,10 @@ import {
 import { CallAudioVoiceWaves } from './call-audio-voice-waves';
 import { CallShareQualityOverlay } from './call-share-quality-overlay';
 import { useRemoteShareQuality } from './use-remote-share-quality';
-import { useRemoteShareQualityChoice } from './use-remote-share-quality-choice';
+import {
+  usePublishShareQualityPicker,
+  useRemoteShareQualityChoice,
+} from './use-remote-share-quality-choice';
 import { buildCallShareQualityOptions } from './call-share-quality-options';
 import {
   CALL_PARTICIPANT_PROFILE_TIMEOUT_MS,
@@ -2726,6 +2729,16 @@ const FeedContent = ({
       remotePublicationFromCallFeed(feed)?.trackInfo?.layers ?? [],
     capWidth: remoteShareChoice.selectedLayer?.width,
   });
+  usePublishShareQualityPicker({
+    enabled: Boolean(remoteShareLiveKitTrack) && showVideoElement,
+    shareKey: remotePublicationFromCallFeed(feed)?.trackSid,
+    options: buildCallShareQualityOptions({
+      layers: remoteShareQuality.layers,
+      tileRequestWidth: remoteShareQuality.tileRequestWidth,
+    }),
+    selectedId: remoteShareChoice.selectedId,
+    select: remoteShareChoice.select,
+  });
   /** Avatar until video paints — avoids black tiles while remote/local tracks warm up. */
   const showAudioScrim = !showVideoElement || !videoSurfaceReady;
   const showParticipantVideoLabel = showVideoElement && !isPip;
@@ -2922,14 +2935,11 @@ const FeedContent = ({
             receivedHeight={remoteShareQuality.receivedHeight}
             compact={compactTileLayout || audioScrimLayout.panelDockTile}
             t={t}
-            picker={{
-              options: buildCallShareQualityOptions({
-                layers: remoteShareQuality.layers,
-                tileRequestWidth: remoteShareQuality.tileRequestWidth,
-              }),
-              selectedId: remoteShareChoice.selectedId,
+            reason={{
+              manualLabel: remoteShareChoice.selectedLayer
+                ? `${Math.round(remoteShareChoice.selectedLayer.height)}p`
+                : undefined,
               limitedByNetwork: remoteShareQuality.limitedByNetwork,
-              onSelect: remoteShareChoice.select,
             }}
           />
         ) : null}
