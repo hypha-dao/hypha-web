@@ -6,6 +6,8 @@ export type PickerSpace = {
   /** Database space id: what the grant stores. */
   id: number;
   title: string;
+  /** Unique per space: tells apart spaces that share a title. */
+  slug: string;
   logoUrl: string | null;
 };
 
@@ -47,6 +49,7 @@ export async function loadPickerSpaces(
     return result.data.items.map((space) => ({
       id: space.id,
       title: space.title,
+      slug: space.slug,
       logoUrl: space.logoUrl ?? null,
     }));
   } catch {

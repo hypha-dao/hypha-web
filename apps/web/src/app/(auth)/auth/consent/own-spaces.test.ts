@@ -17,8 +17,20 @@ describe('loadPickerSpaces', () => {
       ok: true,
       data: {
         items: [
-          { id: 1, title: 'Hypha', parentId: null, logoUrl: 'https://x/a.png' },
-          { id: 2, title: 'Hypha Platform', parentId: 1, logoUrl: null },
+          {
+            id: 1,
+            title: 'Hypha',
+            slug: 'hypha',
+            parentId: null,
+            logoUrl: 'https://x/a.png',
+          },
+          {
+            id: 2,
+            title: 'Hypha Platform',
+            slug: 'hypha-platform',
+            parentId: 1,
+            logoUrl: null,
+          },
         ],
       },
     });
@@ -29,8 +41,18 @@ describe('loadPickerSpaces', () => {
       expect.anything(),
     );
     expect(result).toEqual([
-      { id: 1, title: 'Hypha', logoUrl: 'https://x/a.png' },
-      { id: 2, title: 'Hypha Platform', logoUrl: null },
+      {
+        id: 1,
+        title: 'Hypha',
+        slug: 'hypha',
+        logoUrl: 'https://x/a.png',
+      },
+      {
+        id: 2,
+        title: 'Hypha Platform',
+        slug: 'hypha-platform',
+        logoUrl: null,
+      },
     ]);
   });
 
