@@ -18,7 +18,9 @@ import {
   resolveInboxPlace,
   conversationInSpace,
   memberConversationInSpace,
+  builderInboxTabCounts,
   memberInboxTabCounts,
+  rowMatchesBuilderInboxTab,
   rowMatchesMemberInboxTab,
   rowMatchesInboxFilter,
   type InboxContext,
@@ -107,6 +109,34 @@ describe('messages inbox filters', () => {
     expect(counts.direct).toEqual({ total: 1, unread: 1 });
     expect(counts.groups).toEqual({ total: 1, unread: 0 });
     expect(counts.channels).toEqual({ total: 2, unread: 2 });
+  });
+
+  it('folds space, ecosystem, and network into builder Channels', () => {
+    expect(rowMatchesBuilderInboxTab('dm', 'direct')).toBe(true);
+    expect(rowMatchesBuilderInboxTab('group', 'groups')).toBe(true);
+    for (const kind of [
+      'space',
+      'space-public',
+      'signal',
+      'quest',
+      'proposal',
+      'context',
+      'ecosystem',
+      'network',
+    ] as const) {
+      expect(rowMatchesBuilderInboxTab(kind, 'channels')).toBe(true);
+    }
+    expect(rowMatchesBuilderInboxTab('dm', 'channels')).toBe(false);
+    expect(rowMatchesBuilderInboxTab('group', 'channels')).toBe(false);
+
+    const counts = builderInboxTabCounts([
+      { kind: 'dm', unread: 1 },
+      { kind: 'space', unread: 0 },
+      { kind: 'ecosystem', unread: 2 },
+      { kind: 'network', unread: 1 },
+    ]);
+    expect(counts.all).toEqual({ total: 4, unread: 4 });
+    expect(counts.channels).toEqual({ total: 3, unread: 3 });
   });
 
   it('keeps a member space inbox inside that space', () => {

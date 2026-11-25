@@ -155,12 +155,14 @@ import {
   conversationInSpace,
   inboxFilterCounts,
   memberConversationInSpace,
+  builderInboxTabCounts,
   memberInboxTabCounts,
   isInboxDirectConversation,
   inboxListWindow,
   INBOX_LIST_PAGE,
   isInboxFilter,
   peopleInboxKind,
+  rowMatchesBuilderInboxTab,
   rowMatchesInboxFilter,
   rowMatchesMemberInboxTab,
   type InboxChannelKind,
@@ -1906,8 +1908,11 @@ export function MyConnections({
   const tCommon = useTranslations('Common');
   const { person: me, isLoading: meLoading } = useMe();
   const { isMember: memberExperience } = useMemberExperience();
-  /** Members on a space messages page. Builders and funders keep the full filters. */
+  /** Members on a space messages page use the four compact tabs. */
   const memberSpaceInbox = Boolean(spaceSlug) && memberExperience;
+  // Builders get the same four tabs so a phone never opens the category list.
+  const builderInboxTabs = !memberExperience && !isPanel;
+  const useInboxTabs = memberSpaceInbox || builderInboxTabs;
   const locale = useLocale();
   const { user } = useAuthentication();
   const { jwt } = useJwt();
@@ -2772,8 +2777,14 @@ export function MyConnections({
         memberCounts: null,
       };
     }
-    if (memberSpaceInbox && spaceSlug && section === 'messages' && !picking) {
-      const memberCounts = memberInboxTabCounts([
+    if (useInboxTabs && section === 'messages' && !picking) {
+      const matchTab = memberSpaceInbox
+        ? rowMatchesMemberInboxTab
+        : rowMatchesBuilderInboxTab;
+      const countTabs = memberSpaceInbox
+        ? memberInboxTabCounts
+        : builderInboxTabCounts;
+      const memberCounts = countTabs([
         ...countedDirect.map((row) => ({
           kind: row.inbox?.kind ?? 'dm',
           unread: row.unread,
@@ -2792,8 +2803,7 @@ export function MyConnections({
           ? sortConversationsByLastMessage(
               scopedChannels.filter(
                 (row) =>
-                  row.inbox != null &&
-                  rowMatchesMemberInboxTab(row.inbox.kind, 'channels'),
+                  row.inbox != null && matchTab(row.inbox.kind, 'channels'),
               ),
             )
           : sortConversationsByLastMessage([
@@ -2842,6 +2852,7 @@ export function MyConnections({
     section,
     spaceSlug,
     t,
+    useInboxTabs,
   ]);
   function selectMemberTab(next: MemberInboxTab) {
     setMemberTab(next);
@@ -2953,7 +2964,7 @@ export function MyConnections({
       (hasMorePeople &&
         !needle &&
         section !== 'archived' &&
-        !(memberSpaceInbox && memberTab !== 'direct' && memberTab !== 'all') &&
+        !(useInboxTabs && memberTab !== 'direct' && memberTab !== 'all') &&
         (picking || inboxFilter === 'all' || inboxFilter === 'direct')));
   useEffect(() => {
     const root = inboxListRef.current;
@@ -2982,13 +2993,13 @@ export function MyConnections({
     section === 'archived'
       ? t('tabs.archived')
       : section === 'messages' && !picking
-      ? isPanel || (memberSpaceInbox && memberTab === 'all')
+      ? isPanel || (useInboxTabs && memberTab === 'all')
         ? t('inbox.allTitle')
-        : memberSpaceInbox && memberTab === 'direct'
+        : useInboxTabs && memberTab === 'direct'
         ? t('inbox.directTitle')
-        : memberSpaceInbox && memberTab === 'groups'
+        : useInboxTabs && memberTab === 'groups'
         ? t('inbox.memberGroups')
-        : memberSpaceInbox && memberTab === 'channels'
+        : useInboxTabs && memberTab === 'channels'
         ? t('inbox.memberChannels')
         : t(`inbox.${inboxFilter}Title`)
       : t('people');
@@ -3361,13 +3372,13 @@ export function MyConnections({
                 // in view instead of leaving with the page.
                 'narrow-scrollbar w-full shrink-0',
                 'lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:self-start lg:min-h-0 lg:bg-page-background',
-                memberSpaceInbox ? 'lg:w-40' : 'lg:w-80',
-                memberSpaceInbox || !(picking || inboxChannelOpen)
+                useInboxTabs ? 'lg:w-40' : 'lg:w-80',
+                useInboxTabs || !(picking || inboxChannelOpen)
                   ? 'lg:flex-none'
                   : 'hidden lg:block',
               )}
             >
-              {memberSpaceInbox && inboxView.memberCounts ? (
+              {useInboxTabs && inboxView.memberCounts ? (
                 <MemberInboxTabs
                   value={memberTab}
                   counts={inboxView.memberCounts}
@@ -3384,9 +3395,9 @@ export function MyConnections({
           ) : null}
           <div
             id="member-inbox-panel"
-            role={memberSpaceInbox ? 'tabpanel' : undefined}
+            role={useInboxTabs ? 'tabpanel' : undefined}
             aria-labelledby={
-              memberSpaceInbox ? `member-inbox-tab-${memberTab}` : undefined
+              useInboxTabs ? `member-inbox-tab-${memberTab}` : undefined
             }
             data-messages-list-frame=""
             className={cn(
@@ -3400,15 +3411,12 @@ export function MyConnections({
                 section === 'messages' &&
                 !picking &&
                 !inboxChannelOpen &&
-                !memberSpaceInbox
+                !useInboxTabs
                 ? 'hidden lg:flex'
                 : 'flex',
             )}
           >
-            {section === 'messages' &&
-            !picking &&
-            !memberSpaceInbox &&
-            !isPanel ? (
+            {section === 'messages' && !picking && !useInboxTabs && !isPanel ? (
               <button
                 type="button"
                 aria-label={tCommon('back')}
@@ -3630,7 +3638,7 @@ export function MyConnections({
                       ? picking || section === 'messages'
                         ? t('noMembersMatchSearch')
                         : t('noMatches')
-                      : memberSpaceInbox && memberTab !== 'direct'
+                      : useInboxTabs && memberTab !== 'direct'
                       ? t('inbox.empty')
                       : showChannelTags && inboxFilter !== 'direct'
                       ? t('inbox.empty')

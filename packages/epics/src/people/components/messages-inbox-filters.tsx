@@ -195,9 +195,9 @@ const MEMBER_TAB_LABEL: Record<MemberInboxTab, string> = {
 };
 
 /**
- * The same four categories on every width. A phone shows them as one row
- * above the list, so opening a conversation is a single tap. A wide screen
- * keeps them beside the list.
+ * All / Direct / Groups / Channels on every width. Members and builders both
+ * use this so a phone can switch without opening the category list. A wide
+ * screen keeps the tabs beside the list.
  */
 export function MemberInboxTabs({
   value,

@@ -347,8 +347,28 @@ export function rowMatchesMemberInboxTab(
   return rowMatchesInboxFilter(kind, 'spaces');
 }
 
-export function memberInboxTabCounts(
+/**
+ * Builder inbox tabs. Channels fold every non-DM/group conversation —
+ * space rooms and nested threads, plus ecosystem and network rooms —
+ * so a phone can switch without opening the full category list.
+ */
+export function rowMatchesBuilderInboxTab(
+  kind: InboxChannelKind,
+  tab: MemberInboxTab,
+): boolean {
+  if (tab === 'all') return true;
+  if (tab === 'direct') return kind === 'dm';
+  if (tab === 'groups') return kind === 'group';
+  return (
+    rowMatchesInboxFilter(kind, 'spaces') ||
+    kind === 'ecosystem' ||
+    kind === 'network'
+  );
+}
+
+function inboxTabCountsFor(
   rows: readonly { kind: InboxChannelKind; unread: number }[],
+  matches: (kind: InboxChannelKind, tab: MemberInboxTab) => boolean,
 ): Record<MemberInboxTab, { total: number; unread: number }> {
   const counts = Object.fromEntries(
     MEMBER_INBOX_TABS.map((tab) => [tab, { total: 0, unread: 0 }]),
@@ -356,7 +376,7 @@ export function memberInboxTabCounts(
   for (const row of rows) {
     const unread = row.unread > 0 ? row.unread : 0;
     for (const tab of MEMBER_INBOX_TABS) {
-      if (!rowMatchesMemberInboxTab(row.kind, tab)) continue;
+      if (!matches(row.kind, tab)) continue;
       counts[tab].total += 1;
       counts[tab].unread += unread;
     }
@@ -364,6 +384,17 @@ export function memberInboxTabCounts(
   return counts;
 }
 
+export function memberInboxTabCounts(
+  rows: readonly { kind: InboxChannelKind; unread: number }[],
+): Record<MemberInboxTab, { total: number; unread: number }> {
+  return inboxTabCountsFor(rows, rowMatchesMemberInboxTab);
+}
+
+export function builderInboxTabCounts(
+  rows: readonly { kind: InboxChannelKind; unread: number }[],
+): Record<MemberInboxTab, { total: number; unread: number }> {
+  return inboxTabCountsFor(rows, rowMatchesBuilderInboxTab);
+}
 export function rowMatchesInboxFilter(
   kind: InboxChannelKind,
   filter: InboxFilter,
