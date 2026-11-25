@@ -69,6 +69,7 @@ export * from './tokens';
 export * from './event';
 export * from './transfers';
 export * from './coherence';
+export * from './origin';
 export * from './coherence-upvotes';
 export * from './matrix-user-link';
 export * from './token-updates';
