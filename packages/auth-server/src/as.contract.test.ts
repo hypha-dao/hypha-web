@@ -62,6 +62,7 @@ run('authorization server: protocol, gate, revocation, storage', () => {
       clientId: h.CLIENT_ID,
       scopes: expect.arrayContaining(['spaces:read']),
       aud: [h.RESOURCE],
+      spaceGrants: 'all',
     });
     await expect(
       verifyAccessToken(token, {

@@ -59,6 +59,16 @@ describe('discovery HEAD and consent binding', () => {
     sessionUser?: string | null;
   }) =>
     ({
+      config: { secret: 'handler-test-secret-'.padEnd(48, 'x') },
+      // An approval must be refused before anything is stored: touching the database fails the test.
+      pool: {
+        query: async () => {
+          throw new Error('database used');
+        },
+        connect: async () => {
+          throw new Error('database used');
+        },
+      },
       auth: {
         handler: opts.handler,
         api: {
@@ -131,17 +141,39 @@ describe('discovery HEAD and consent binding', () => {
     );
     const res = await handle(
       consent({
-        accept: true,
-        scope: 'spaces:read',
+        accept: false,
+        space_grants: [1],
         oauth_query: 'x',
         expected_person: 'did:privy:a',
       }),
     );
     expect(res.status).toBe(200);
-    expect(seen).toEqual({
-      accept: true,
-      scope: 'spaces:read',
-      oauth_query: 'x',
-    });
+    // Neither the account field nor the space choice reaches the library.
+    expect(seen).toEqual({ accept: false, oauth_query: 'x' });
+  });
+
+  it('an approval whose authorization query is not signed is refused before any grant is stored', async () => {
+    let called = 0;
+    const handle = make(
+      fakeServer({
+        handler: async () => {
+          called += 1;
+          return new Response('{}', { status: 200 });
+        },
+        sessionUser: 'did:privy:a',
+      }),
+    );
+    const res = await handle(
+      consent({
+        accept: true,
+        scope: 'spaces:read',
+        space_grants: 'all',
+        oauth_query: 'client_id=https%3A%2F%2Fapp.example%2Fc.json&sig=forged',
+        expected_person: 'did:privy:a',
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe('invalid_signature');
+    expect(called).toBe(0);
   });
 });

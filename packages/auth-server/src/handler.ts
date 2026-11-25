@@ -11,6 +11,14 @@ import { corsPreflight, withCors } from './cors';
 import { authServerErrorPage } from './error-page';
 import { guardRegistration, narrowRegisteredClient } from './registration';
 import { logOnboardingStep, onboardingStepOf } from './onboarding-log';
+import { verifyOAuthQueryParams } from '@better-auth/oauth-provider';
+import {
+  GrantError,
+  type GrantValue,
+  assertSpacesExist,
+  parseGrantInput,
+  writeGrant,
+} from './grants';
 
 /**
  * The only HTTP surface the server exposes. Everything else Better Auth ships (client
@@ -205,13 +213,75 @@ async function handleConsent(
   if (!session || session.user.id !== expected)
     return refuse(409, 'account_changed');
   delete body.expected_person;
+  const spaceGrants = body.space_grants;
+  delete body.space_grants;
+
+  // Which spaces the app may read. Only an approval carries one, and the choice is stored for
+  // the person of the session and the client of the SIGNED authorization query: the app cannot
+  // choose or change it (it is not part of the query) and a body naming another person or
+  // client is not read. The choice is checked before the library runs but only written once the
+  // library has accepted the consent, and before the response (which carries the code) is
+  // returned: a refused approval never touches the stored grant, and the code cannot be
+  // exchanged before the browser has received it.
+  let pending: {
+    personId: string;
+    clientId: string;
+    value: GrantValue;
+  } | null = null;
+  if (body.accept === true) {
+    const oauthQuery =
+      typeof body.oauth_query === 'string' ? body.oauth_query : '';
+    const clientId = new URLSearchParams(oauthQuery).get('client_id') ?? '';
+    if (!clientId) return refuse(400, 'invalid_request');
+    // The choice only means something next to the scope that is approved: an approval has to
+    // name it (the library would otherwise grant everything the query asked for).
+    if (typeof body.scope !== 'string' || !body.scope.trim())
+      return refuse(400, 'invalid_request');
+    if (!(await verifyOAuthQueryParams(oauthQuery, server.config.secret)))
+      return refuse(400, 'invalid_signature');
+    try {
+      const value = parseGrantInput(spaceGrants);
+      if (value !== 'all') await assertSpacesExist(server.pool, value);
+      // Without the read scope there is nothing to limit, and an existing refresh token may
+      // still carry it: leave the stored grant alone rather than replace it.
+      const approvesRead = body.scope.split(/\s+/).includes('spaces:read');
+      if (approvesRead)
+        pending = { personId: session.user.id, clientId, value };
+    } catch (error) {
+      if (error instanceof GrantError) return refuse(400, error.code);
+      throw error;
+    }
+  }
+
   const headers = new Headers(request.headers);
   headers.delete('content-length');
-  return server.auth.handler(
+  const response = await server.auth.handler(
     new Request(request.url, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
     }),
   );
+  if (pending && response.ok) {
+    try {
+      await writeGrant(
+        server.pool,
+        pending.personId,
+        pending.clientId,
+        pending.value,
+      );
+    } catch {
+      // The code in this response is never delivered and the previous grant stays in force. The
+      // library has already stored the consent, which would let the next authorization skip the
+      // picker and use that previous grant: drop it (best effort) so the person is asked again.
+      await server.pool
+        .query(
+          'delete from as_oauth_consent where "userId" = $1 and "clientId" = $2',
+          [pending.personId, pending.clientId],
+        )
+        .catch(() => undefined);
+      return refuse(500, 'server_error');
+    }
+  }
+  return response;
 }

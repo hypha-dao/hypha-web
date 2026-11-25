@@ -4201,6 +4201,12 @@
     "callRaiseHandBadgeOrder": "Hand erhoben (#{order})",
     "callRaisedHandsTitle": "Erhobene Hände",
     "callParticipantMuted": "Stumm",
+
+    "callShareQualityImproving": "Qualität wird verbessert…",
+
+    "callShareQualityShow": "Auflösung anzeigen",
+
+    "callShareQualityHide": "Auflösung ausblenden",
     "callParticipantMicOff": "Mikrofon aus",
     "callLeftAudio": "Du hast den Sprachanruf verlassen.",
     "callLeftVideo": "Du hast den Videoanruf verlassen.",
@@ -5967,7 +5973,7 @@
       "scopes": {
         "spacesRead": {
           "title": "Hypha-Spaces lesen",
-          "detail": "Nur Lesen: Diese App kann alles lesen, was du in deinen Spaces auf Hypha sehen kannst: die Spaces, die Mitglieder, Vorschläge und Stimmen (Signale und Quests folgen). Sie kann nichts ändern. Was sie liest, wird an den Anbieter der KI-App gesendet, der es erhält."
+          "detail": "Nur Lesen: Diese App kann die Spaces lesen, die du unten erlaubst: ihre Details, deine Mitgliedschaft, Vorschläge, deine Stimmen, Signale und Quests. Sie kann nichts ändern. Was sie liest, wird an den Anbieter der KI-App gesendet, der es erhält."
         },
         "agreementsVote": {
           "title": "Abstimmungen für deine Freigabe vorbereiten",
@@ -5981,6 +5987,24 @@
         "unknown": {
           "detail": "Eine unbekannte Berechtigung."
         }
+      },
+      "spaces": {
+        "title": "Welche Spaces darf diese App lesen?",
+        "explicit": {
+          "title": "Nur die Spaces, die ich auswähle",
+          "detail": "Spaces, denen du später beitrittst, sind nicht enthalten."
+        },
+        "all": {
+          "title": "Alle meine Spaces",
+          "detail": "Alles, was du auf Hypha sehen kannst, auch Spaces, denen du später beitrittst."
+        },
+        "note": "Die App kann nie mehr sehen als du. Was sie liest, wird an den Anbieter der KI-App gesendet.",
+        "filter": "Deine Spaces filtern",
+        "selectAll": "Alle auswählen",
+        "selectNone": "Keine auswählen",
+        "limit": "Du bist in mehr als {max} Spaces, deshalb sind nur die ersten {max} ausgewählt. Um jeden Space einzuschließen, wähle „Alle meine Spaces“.",
+        "none": "Du bist noch in keinem Space Mitglied. Wähle stattdessen „Alle meine Spaces“ oder tritt zuerst einem Space bei.",
+        "unavailable": "Deine Spaces konnten gerade nicht geladen werden. Du kannst trotzdem „Alle meine Spaces“ wählen."
       }
     }
   }

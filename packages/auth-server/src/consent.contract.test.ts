@@ -10,7 +10,9 @@ import {
 import { resetRegistrationLimiter } from './registration';
 
 const run = h.TEST_DB_URL ? describe : describe.skip;
-const MCP = 'http://localhost:4000/mcp';
+// Not the hosted MCP resource (that one accepts reads only, E52): these tests cover the generic
+// write-scope consent mechanics, which need a resource that allows every scope.
+const MCP = 'http://localhost:4000/tools';
 const CB = 'http://127.0.0.1:33418/callback';
 const ALL = 'spaces:read agreements:vote offline_access';
 const TIER_A = 'tier-a-app';

@@ -183,3 +183,57 @@ describe('authorizeRequest: guard, then resolver, then rate slot', () => {
     expect(order).toEqual([]);
   });
 });
+
+describe('authorizeRequest: the space grants of the token reach the resolver', () => {
+  const claimsSeen = async (extra: Record<string, unknown>) => {
+    let seen: unknown;
+    const { deps: d } = deps({
+      resolve: async (claims) => {
+        seen = claims;
+        return { ok: true, caller: { kind: 'user' } } as never;
+      },
+    });
+    const r = await authorizeRequest(
+      request(await issuer.sign(AUDIENCE, { extra })),
+      surface,
+      d,
+    );
+    return { r, seen: seen as { spaceGrants?: number[] | null } | undefined };
+  };
+
+  it('"all" becomes null (no restriction beyond the person\'s own rights)', async () => {
+    const { seen } = await claimsSeen({ space_grants: 'all' });
+    expect(seen?.spaceGrants).toBeNull();
+  });
+
+  it('a list is passed as it is, and an empty list stays empty (grants nothing)', async () => {
+    expect(
+      (await claimsSeen({ space_grants: [4, 9] })).seen?.spaceGrants,
+    ).toEqual([4, 9]);
+    expect((await claimsSeen({ space_grants: [] })).seen?.spaceGrants).toEqual(
+      [],
+    );
+  });
+
+  it.each([
+    ['missing (a token from before G2a)', { space_grants: undefined }],
+    ['null', { space_grants: null }],
+    ['strings', { space_grants: ['4'] }],
+    [
+      'oversized',
+      { space_grants: Array.from({ length: 201 }, (_, i) => i + 1) },
+    ],
+  ])(
+    'a claim that is %s is a 401 and the resolver never runs',
+    async (_n, extra) => {
+      const { r, seen } = await claimsSeen(extra);
+      expect(r.ok).toBe(false);
+      if (r.ok) return;
+      expect(r.response.status).toBe(401);
+      expect(r.response.headers.get('www-authenticate')).toContain(
+        'invalid_token',
+      );
+      expect(seen).toBeUndefined();
+    },
+  );
+});

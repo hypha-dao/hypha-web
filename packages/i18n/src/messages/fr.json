@@ -3629,6 +3629,12 @@
     "callRaiseHandBadgeOrder": "Main levée (#{order})",
     "callRaisedHandsTitle": "Mains levées",
     "callParticipantMuted": "Muet",
+
+    "callShareQualityImproving": "Amélioration de la qualité…",
+
+    "callShareQualityShow": "Afficher la résolution",
+
+    "callShareQualityHide": "Masquer la résolution",
     "callParticipantMicOff": "Micro coupé",
     "callLeftAudio": "Vous avez quitté l'appel vocal.",
     "callLeftVideo": "Vous avez quitté l'appel vidéo.",
@@ -5964,7 +5970,7 @@
       "scopes": {
         "spacesRead": {
           "title": "Lire les spaces Hypha",
-          "detail": "Lecture seule : cette application peut lire tout ce que vous voyez dans vos spaces sur Hypha : les spaces, les membres, les propositions et les votes (les signaux et les quests arrivent). Elle ne peut rien modifier. Ce qu’elle lit est envoyé au fournisseur de l’application d’IA, qui le recevra."
+          "detail": "Lecture seule : cette application peut lire les espaces que vous autorisez ci-dessous : leurs détails, votre adhésion, les propositions, vos votes, les signaux et les quêtes. Elle ne peut rien modifier. Ce qu'elle lit est envoyé au fournisseur de l'application d'IA, qui le recevra."
         },
         "agreementsVote": {
           "title": "Préparer des votes à approuver",
@@ -5978,6 +5984,24 @@
         "unknown": {
           "detail": "Une autorisation inconnue."
         }
+      },
+      "spaces": {
+        "title": "Quels espaces cette application peut-elle lire ?",
+        "explicit": {
+          "title": "Seulement les espaces que je choisis",
+          "detail": "Les espaces que vous rejoindrez plus tard ne sont pas inclus."
+        },
+        "all": {
+          "title": "Tous mes espaces",
+          "detail": "Tout ce que vous pouvez voir sur Hypha, y compris les espaces que vous rejoindrez plus tard."
+        },
+        "note": "L'application ne peut jamais voir plus que vous. Ce qu'elle lit est envoyé au fournisseur de l'application d'IA.",
+        "filter": "Filtrer vos espaces",
+        "selectAll": "Tout sélectionner",
+        "selectNone": "Tout désélectionner",
+        "limit": "Vous êtes dans plus de {max} espaces, donc seuls les {max} premiers sont sélectionnés. Pour inclure tous les espaces, choisissez « Tous mes espaces ».",
+        "none": "Vous n'êtes encore membre d'aucun espace. Choisissez plutôt « Tous mes espaces » ou rejoignez d'abord un espace.",
+        "unavailable": "Vos espaces n'ont pas pu être chargés pour le moment. Vous pouvez quand même choisir « Tous mes espaces »."
       }
     }
   }
