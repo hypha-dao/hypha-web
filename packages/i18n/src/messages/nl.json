@@ -6004,8 +6004,7 @@
         "selectNone": "Niets selecteren",
         "limit": "Je zit in meer dan {max} spaces, dus alleen de eerste {max} zijn geselecteerd. Kies „Al mijn spaces” om elke space mee te nemen.",
         "none": "Je bent nog van geen enkele space lid. Kies in plaats daarvan „Al mijn spaces” of word eerst lid van een space.",
-        "unavailable": "Je spaces konden nu niet worden geladen. Je kunt nog steeds „Al mijn spaces” kiezen.",
-        "subOf": "(in {parent})"
+        "unavailable": "Je spaces konden nu niet worden geladen. Je kunt nog steeds „Al mijn spaces” kiezen."
       }
     }
   }

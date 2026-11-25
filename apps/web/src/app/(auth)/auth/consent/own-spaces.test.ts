@@ -12,7 +12,7 @@ vi.mock('@hypha-platform/core/server', () => ({
 import { loadPickerSpaces } from './own-spaces';
 
 describe('loadPickerSpaces', () => {
-  it('lists sub-spaces too, and labels them with their parent', async () => {
+  it('lists sub-spaces too', async () => {
     listSpaces.mockResolvedValue({
       ok: true,
       data: {
@@ -29,8 +29,8 @@ describe('loadPickerSpaces', () => {
       expect.anything(),
     );
     expect(result).toEqual([
-      { id: 1, title: 'Hypha', parentTitle: null, logoUrl: 'https://x/a.png' },
-      { id: 2, title: 'Hypha Platform', parentTitle: 'Hypha', logoUrl: null },
+      { id: 1, title: 'Hypha', logoUrl: 'https://x/a.png' },
+      { id: 2, title: 'Hypha Platform', logoUrl: null },
     ]);
   });
 

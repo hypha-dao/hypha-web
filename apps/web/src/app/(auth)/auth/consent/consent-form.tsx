@@ -27,7 +27,6 @@ type Scope = {
 type PickerSpace = {
   id: number;
   title: string;
-  parentTitle: string | null;
   logoUrl: string | null;
 };
 
@@ -144,10 +143,7 @@ export function ConsentForm({
   const needsSpaces = showPicker && mode === 'spaces' && chosen.size === 0;
   const needle = filter.trim().toLowerCase();
   const visibleSpaces = (pickerSpaces ?? []).filter(
-    (x) =>
-      !needle ||
-      x.title.toLowerCase().includes(needle) ||
-      (x.parentTitle ?? '').toLowerCase().includes(needle),
+    (x) => !needle || x.title.toLowerCase().includes(needle),
   );
 
   return (
@@ -305,14 +301,6 @@ export function ConsentForm({
                         </Avatar>
                         <label htmlFor={`space-${space.id}`} className="text-2">
                           {space.title}
-                          {space.parentTitle ? (
-                            <span className="text-1 text-neutral-11">
-                              {' '}
-                              {t('consent.spaces.subOf', {
-                                parent: space.parentTitle,
-                              })}
-                            </span>
-                          ) : null}
                         </label>
                       </li>
                     ))}
