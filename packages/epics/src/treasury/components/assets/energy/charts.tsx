@@ -310,19 +310,19 @@ export const BarChart = ({
             );
           })}
 
-          {/* Hover bands (capture pointer) */}
-          {labels.map((_, i) => (
+          {/* Hover / focus bands */}
+          {labels.map((label, i) => (
             <rect
               key={`band-${i}`}
+              data-chart-band=""
               x={PAD_L + slot * i}
               y={PAD_T}
               width={slot}
               height={INNER_H}
               fill={hovered === i ? 'currentColor' : 'transparent'}
               fillOpacity={hovered === i ? 0.05 : 0}
-              onMouseEnter={() => setHovered(i)}
-              onMouseLeave={() => setHovered((cur) => (cur === i ? null : cur))}
               style={{ cursor: 'pointer' }}
+              {...categoryBandProps(i, count, label, setHovered)}
             />
           ))}
         </svg>
@@ -360,6 +360,12 @@ export const BarChart = ({
           <Legend series={series} />
         </div>
       ) : null}
+      <ChartReadingsTable
+        labels={labels}
+        series={series}
+        formatValue={fmt}
+        caption={resolvedTotalLabel}
+      />
     </div>
   );
 };
@@ -394,6 +400,88 @@ const markerIndices = (values: number[]) => {
   marks.add(peak);
   return [...marks];
 };
+
+/** Hover / focus hit target for a category band (mouse + keyboard). */
+function categoryBandProps(
+  index: number,
+  count: number,
+  label: string,
+  setActive: React.Dispatch<React.SetStateAction<number | null>>,
+) {
+  return {
+    tabIndex: 0 as const,
+    role: 'button' as const,
+    'aria-label': label,
+    onMouseEnter: () => setActive(index),
+    onMouseLeave: () =>
+      setActive((current) => (current === index ? null : current)),
+    onFocus: () => setActive(index),
+    onBlur: () => setActive((current) => (current === index ? null : current)),
+    onKeyDown: (event: React.KeyboardEvent<SVGRectElement>) => {
+      if (count <= 0) return;
+      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+        event.preventDefault();
+        const next = (index + 1) % count;
+        setActive(next);
+        (
+          event.currentTarget.parentElement?.querySelectorAll<SVGRectElement>(
+            '[data-chart-band]',
+          )[next] ?? null
+        )?.focus();
+      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        const next = (index - 1 + count) % count;
+        setActive(next);
+        (
+          event.currentTarget.parentElement?.querySelectorAll<SVGRectElement>(
+            '[data-chart-band]',
+          )[next] ?? null
+        )?.focus();
+      } else if (event.key === 'Escape') {
+        setActive(null);
+        event.currentTarget.blur();
+      }
+    },
+  };
+}
+
+function ChartReadingsTable({
+  labels,
+  series,
+  formatValue,
+  caption,
+}: {
+  labels: string[];
+  series: ChartSeries[];
+  formatValue: (value: number) => string;
+  caption: string;
+}) {
+  return (
+    <table className="sr-only">
+      <caption>{caption}</caption>
+      <thead>
+        <tr>
+          <th scope="col">Period</th>
+          {series.map((item) => (
+            <th key={item.key} scope="col">
+              {item.label}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {labels.map((label, index) => (
+          <tr key={`${label}-${index}`}>
+            <th scope="row">{label}</th>
+            {series.map((item) => (
+              <td key={item.key}>{formatValue(item.values[index] ?? 0)}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
 
 export type LineChartProps = {
   series: ChartSeries[];
@@ -536,20 +624,18 @@ export const LineChart = ({
                   </text>
                 ) : null,
               )}
-          {labels.map((_, index) => (
+          {labels.map((label, index) => (
             <rect
               key={`band-${index}`}
+              data-chart-band=""
               x={PAD_L + slot * index}
               y={PAD_T}
               width={slot}
               height={INNER_H}
               fill={hovered === index ? 'currentColor' : 'transparent'}
               fillOpacity={hovered === index ? 0.04 : 0}
-              onMouseEnter={() => setHovered(index)}
-              onMouseLeave={() =>
-                setHovered((current) => (current === index ? null : current))
-              }
               style={{ cursor: 'pointer' }}
+              {...categoryBandProps(index, count, label, setHovered)}
             />
           ))}
         </svg>
@@ -599,29 +685,12 @@ export const LineChart = ({
           </div>
         ))}
       </div>
-      <table className="sr-only">
-        <caption>Chart readings</caption>
-        <thead>
-          <tr>
-            <th scope="col">Period</th>
-            {series.map((item) => (
-              <th key={item.key} scope="col">
-                {item.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {labels.map((label, index) => (
-            <tr key={`${label}-${index}`}>
-              <th scope="row">{label}</th>
-              {series.map((item) => (
-                <td key={item.key}>{fmt(item.values[index] ?? 0)}</td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <ChartReadingsTable
+        labels={labels}
+        series={series}
+        formatValue={fmt}
+        caption="Chart readings"
+      />
     </div>
   );
 };
