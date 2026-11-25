@@ -5997,8 +5997,7 @@
         "selectNone": "Não selecionar nenhum",
         "limit": "Você está em mais de {max} espaços, por isso só os primeiros {max} estão selecionados. Para incluir todos os espaços, escolha “Todos os meus espaços”.",
         "none": "Você ainda não é membro de nenhum espaço. Escolha “Todos os meus espaços” ou entre primeiro num espaço.",
-        "unavailable": "Não foi possível carregar os seus espaços agora. Você ainda pode escolher “Todos os meus espaços”.",
-        "subOf": "(em {parent})"
+        "unavailable": "Não foi possível carregar os seus espaços agora. Você ainda pode escolher “Todos os meus espaços”."
       }
     }
   }

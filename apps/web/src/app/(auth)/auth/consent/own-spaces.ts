@@ -6,8 +6,8 @@ export type PickerSpace = {
   /** Database space id: what the grant stores. */
   id: number;
   title: string;
-  /** Title of the parent space, shown next to a sub-space (no inheritance: each is its own row). */
-  parentTitle: string | null;
+  /** Unique per space: tells apart spaces that share a title. */
+  slug: string;
   logoUrl: string | null;
 };
 
@@ -35,6 +35,9 @@ export async function loadPickerSpaces(
     const result = await listSpaces(
       {
         mine: true,
+        // Sub-spaces are spaces of their own (a grant never reaches down a tree), so they have
+        // to be listed too; the list's default is top-level spaces only.
+        parentOnly: false,
         authoritative: true,
         omitFlagArchived: true,
         titleOrder: 'asc',
@@ -43,15 +46,11 @@ export async function loadPickerSpaces(
       { db },
     );
     if (!result.ok) return null;
-    const titleById = new Map(
-      result.data.items.map((space) => [space.id, space.title]),
-    );
     return result.data.items.map((space) => ({
       id: space.id,
       title: space.title,
+      slug: space.slug,
       logoUrl: space.logoUrl ?? null,
-      parentTitle:
-        space.parentId != null ? titleById.get(space.parentId) ?? null : null,
     }));
   } catch {
     return null;

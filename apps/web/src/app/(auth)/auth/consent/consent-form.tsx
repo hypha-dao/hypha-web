@@ -27,7 +27,7 @@ type Scope = {
 type PickerSpace = {
   id: number;
   title: string;
-  parentTitle: string | null;
+  slug: string;
   logoUrl: string | null;
 };
 
@@ -147,7 +147,7 @@ export function ConsentForm({
     (x) =>
       !needle ||
       x.title.toLowerCase().includes(needle) ||
-      (x.parentTitle ?? '').toLowerCase().includes(needle),
+      x.slug.toLowerCase().includes(needle),
   );
 
   return (
@@ -304,15 +304,10 @@ export function ConsentForm({
                           </AvatarFallback>
                         </Avatar>
                         <label htmlFor={`space-${space.id}`} className="text-2">
-                          {space.title}
-                          {space.parentTitle ? (
-                            <span className="text-1 text-neutral-11">
-                              {' '}
-                              {t('consent.spaces.subOf', {
-                                parent: space.parentTitle,
-                              })}
-                            </span>
-                          ) : null}
+                          {space.title}{' '}
+                          <span className="text-1 text-neutral-11">
+                            {space.slug}
+                          </span>
                         </label>
                       </li>
                     ))}
