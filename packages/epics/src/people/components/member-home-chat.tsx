@@ -1581,8 +1581,22 @@ export function MemberHomeChat({
         }
         frozenHomeCards.current.delete(message.id);
       }
-      const item = pinnedHomeItem(cardItems, homeMessages, index, intelligence);
+      let item = pinnedHomeItem(cardItems, homeMessages, index, intelligence);
       if (!item) return;
+      // A continue reply that names the next person must not keep the acted
+      // card from the previous step — prefer an open match under the same words.
+      if (actedKeySet.has(memberHomeThreadItemKey(item))) {
+        const openItems = cardItems.filter(
+          (entry) => !actedKeySet.has(memberHomeThreadItemKey(entry)),
+        );
+        const open = homeItemForMessage(openItems, message, intelligence);
+        if (
+          open &&
+          memberHomeThreadItemKey(open) !== memberHomeThreadItemKey(item)
+        ) {
+          item = open;
+        }
+      }
       map.set(message.id, item);
       if (!streamingThis) {
         frozenHomeCards.current.set(message.id, {

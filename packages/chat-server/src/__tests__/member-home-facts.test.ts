@@ -606,6 +606,37 @@ describe('formatMemberHomeFacts', () => {
     expect(brief.text).not.toMatch(/Card for this reply:/);
   });
 
+  it('re-presents the next waiting card after an action even when it was already shown', () => {
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          home.proposals[0]!,
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Marco Rossi',
+          },
+        ],
+      },
+      {
+        acted: ['proposal:path'],
+        alreadyShown: ['proposal:path', 'proposal:bridge'],
+        resumed: true,
+        asked:
+          'I carried out the recommended action on "Open the path". Continue with the next.',
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'bridge' });
+    expect(brief.text).toContain('slug=bridge');
+    expect(brief.text).toMatch(/Card for this reply:/);
+    expect(brief.text).not.toMatch(/already covered what is open/i);
+  });
+
   it('skips a title already placed when they ask where they can be useful', () => {
     const brief = formatMemberHomeFacts(
       {

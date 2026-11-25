@@ -483,19 +483,23 @@ export function formatMemberHomeFacts(
   const freeFlowAsk =
     Boolean(options?.asked?.trim()) && !listAsk && !shareTurn && !guidedWalk;
   // Guided walks pick the next waiting item. When every one was already
-  // placed, a useful/decision/continue ask must not re-brief the same item
-  // in a loop. A decision chip never re-opens an already-placed vote and
-  // never falls through to a signal. Free-flow never attaches a card.
+  // placed, a useful/decision/soft-continue ask must not re-brief the same
+  // item in a loop. After they carry out an action (resumed), re-present the
+  // next waiting card even if it was introduced earlier — otherwise the reply
+  // briefs the person with no card underneath. A decision chip never re-opens
+  // an already-placed vote and never falls through to a signal. Free-flow
+  // never attaches a card.
   const spoken = (() => {
     if (askedItem && stillOpen(askedItem)) return askedItem;
     if (decisionAsk) return unspokenDecision ?? null;
     if (freeFlowAsk) return null;
-    return (
-      unspoken.find(stillOpen) ??
-      (!shareTurn && !lookAsk && !continueAsk && !usefulAsk
-        ? stillWaiting.find(stillOpen) ?? null
-        : null)
-    );
+    const nextWaiting = unspoken.find(stillOpen) ?? null;
+    if (nextWaiting) return nextWaiting;
+    if (options?.resumed) return stillWaiting.find(stillOpen) ?? null;
+    if (!shareTurn && !lookAsk && !continueAsk && !usefulAsk) {
+      return stillWaiting.find(stillOpen) ?? null;
+    }
+    return null;
   })();
   const looked = lookAsk
     ? memberHomeThreadItemForMessage(listMemberHomeThreadCatalog(home), {
