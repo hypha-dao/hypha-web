@@ -7,6 +7,14 @@ import {
   signalOrchestratorQueue,
 } from '@hypha-platform/storage-postgres';
 import type { DbConfig } from '../../server';
+import { jobOrigin } from '../../origin';
+
+/**
+ * This job's own name, recorded as the origin of every signal it writes (#2724). The job writes
+ * with creatorId = null on the system path; the authed override (tests, manual runs) still
+ * records the job as the path.
+ */
+export const SIGNAL_ORCHESTRATOR_JOB = 'signal-orchestrator';
 import { COHERENCE_TAGS } from '../coherence-tags';
 import type { OrgMemoryAsset } from '../../governance/server/get-org-memory-by-space-slug';
 import { getOrgMemoryBySpaceSlug } from '../../governance/server/get-org-memory-by-space-slug';
@@ -706,7 +714,7 @@ export async function processSignalOrchestratorBatch(
               priority: candidate.priority,
               tags: candidate.tags,
             },
-            { db },
+            { db, origin: jobOrigin(SIGNAL_ORCHESTRATOR_JOB) },
           )
         : await createAiSignalForSpaceBySlug(
             {
@@ -718,7 +726,7 @@ export async function processSignalOrchestratorBatch(
               priority: candidate.priority,
               tags: candidate.tags,
             },
-            { db },
+            { db, origin: jobOrigin(SIGNAL_ORCHESTRATOR_JOB) },
           );
       if (!local.ok) {
         await saveDispatch(
@@ -831,10 +839,13 @@ export async function processSignalOrchestratorBatch(
               sourceAssetKeys: extractSourceAssetKeys(lock.payload),
             };
             const relay = useSystemIdentity
-              ? await relaySystemAiSignalToEcosystemSpace(relayInput, { db })
+              ? await relaySystemAiSignalToEcosystemSpace(relayInput, {
+                  db,
+                  origin: jobOrigin(SIGNAL_ORCHESTRATOR_JOB),
+                })
               : await relayAiSignalToEcosystemSpace(
                   { ...relayInput, authToken: callerAuthToken as string },
-                  { db },
+                  { db, origin: jobOrigin(SIGNAL_ORCHESTRATOR_JOB) },
                 );
 
             await saveDispatch(

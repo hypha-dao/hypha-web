@@ -2,6 +2,7 @@
 
 import { getDb } from '../../common/server/get-db';
 import { findSelf } from '../../people/server/queries';
+import { appOrigin } from '../../origin';
 import {
   CreateCoherenceInput,
   PatchCoherenceTaskBySlugInput,
@@ -210,12 +211,14 @@ export async function createCoherenceAction(
       'Could not resolve authenticated user for create coherence',
     );
   }
+  // The origin comes from this entry point, never from `data` (which the browser supplies);
+  // createCoherence also ignores any key it does not list, so `data` cannot set one.
   const newSignal = await createCoherence(
     {
       ...data,
       creatorId: creatorIdForAuthenticatedCreate(self.id, data.creatorId),
     },
-    { db },
+    { db, origin: appOrigin() },
   );
   if (newSignal.spaceId != null) {
     await notifySignalAssigned({

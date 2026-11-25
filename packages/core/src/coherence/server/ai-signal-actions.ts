@@ -7,6 +7,7 @@ import { getDb, web3Client } from '../../common/server';
 import { findSelf } from '../../people/server/queries';
 import { checkSpaceAccessForSpace, findSpaceBySlug } from '../../space/server';
 import { DbConfig } from '../../server';
+import type { Origin } from '../../origin';
 import {
   checkEcosystemRelayAllowed,
   createSignalInSpace,
@@ -189,7 +190,7 @@ export async function createAiSignalForSpaceBySlug(
     tags,
     lang,
   }: CreateAiSignalInput,
-  { db }: DbConfig,
+  { db, origin }: DbConfig & { origin: Origin },
 ) {
   if (!authToken) {
     return { ok: false as const, error: 'authToken is required' };
@@ -229,7 +230,7 @@ export async function createAiSignalForSpaceBySlug(
       priority,
       tags,
     },
-    { db },
+    { db, origin },
   );
 
   const signalSlug = created.slug?.trim();
@@ -271,7 +272,7 @@ export async function relayAiSignalToEcosystemSpace(
     sourceAssetKeys,
     lang,
   }: RelayAiSignalInput,
-  { db }: DbConfig,
+  { db, origin }: DbConfig & { origin: Origin },
 ) {
   if (!authToken) {
     return { ok: false as const, error: 'authToken is required' };
@@ -342,7 +343,7 @@ export async function relayAiSignalToEcosystemSpace(
       priority,
       tags,
     },
-    { db },
+    { db, origin },
   );
 
   const signalSlug = created.slug?.trim();

@@ -1,5 +1,6 @@
 import { findSpaceBySlug } from '../../space/server';
 import type { DbConfig } from '../../server';
+import type { Origin } from '../../origin';
 import {
   buildAiSignalNavigation,
   getSpacePaymentEligibility,
@@ -61,7 +62,7 @@ export async function createSystemAiSignalForSpaceBySlug(
     tags,
     lang,
   }: CreateSystemAiSignalInput,
-  { db }: DbConfig,
+  { db, origin }: DbConfig & { origin: Origin },
 ) {
   const host = await findSpaceBySlug({ slug: spaceSlug }, { db });
   if (!host) {
@@ -76,7 +77,7 @@ export async function createSystemAiSignalForSpaceBySlug(
 
   const created = await createSignalInSpace(
     { host, creatorId: null, title, description, type, priority, tags },
-    { db },
+    { db, origin },
   );
 
   const signalSlug = created.slug?.trim();
@@ -117,7 +118,7 @@ export async function relaySystemAiSignalToEcosystemSpace(
     sourceAssetKeys,
     lang,
   }: RelaySystemAiSignalInput,
-  { db }: DbConfig,
+  { db, origin }: DbConfig & { origin: Origin },
 ) {
   const [source, target] = await Promise.all([
     findSpaceBySlug({ slug: sourceSpaceSlug }, { db }),
@@ -165,7 +166,7 @@ export async function relaySystemAiSignalToEcosystemSpace(
       priority,
       tags,
     },
-    { db },
+    { db, origin },
   );
 
   const signalSlug = created.slug?.trim();
