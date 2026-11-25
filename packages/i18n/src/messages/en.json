@@ -5995,7 +5995,7 @@
       "scopes": {
         "spacesRead": {
           "title": "Read Hypha spaces",
-          "detail": "Read-only: this app can read everything you can see in your spaces on Hypha: the spaces, who is a member, proposals and votes (signals and quests are coming). It cannot change anything. What it reads is sent to the provider of the AI app, who will receive it."
+          "detail": "Read-only: this app can read the spaces you allow below: their details, your membership, proposals, your votes, signals and quests. It cannot change anything. What it reads is sent to the provider of the AI app, who will receive it."
         },
         "agreementsVote": {
           "title": "Prepare votes for you to approve",
@@ -6009,6 +6009,25 @@
         "unknown": {
           "detail": "An unrecognised permission."
         }
+      },
+      "spaces": {
+        "title": "Which spaces can this app read?",
+        "explicit": {
+          "title": "Only the spaces I choose",
+          "detail": "Spaces you join later are not included."
+        },
+        "all": {
+          "title": "All my spaces",
+          "detail": "Everything you can see on Hypha, including spaces you join later."
+        },
+        "note": "The app can never see more than you can. What it reads is sent to the provider of the AI app.",
+        "filter": "Filter your spaces",
+        "selectAll": "Select all",
+        "selectNone": "Select none",
+        "limit": "You are in more than {max} spaces, so only the first {max} are selected. To include every space, choose “All my spaces”.",
+        "none": "You are not a member of any space yet. Choose “All my spaces” instead, or join a space first.",
+        "unavailable": "Your spaces could not be loaded right now. You can still choose “All my spaces”.",
+        "subOf": "(in {parent})"
       }
     }
   }

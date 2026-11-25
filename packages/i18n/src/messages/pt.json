@@ -5972,7 +5972,7 @@
       "scopes": {
         "spacesRead": {
           "title": "Ler os spaces do Hypha",
-          "detail": "Só leitura: esta app pode ler tudo o que você vê nos seus spaces no Hypha: os spaces, quem é membro, propostas e votos (sinais e quests estão a chegar). Não pode alterar nada. O que lê é enviado ao fornecedor da app de IA, que o receberá."
+          "detail": "Somente leitura: este app pode ler os espaços que você permitir abaixo: seus detalhes, a sua participação, propostas, os seus votos, sinais e missões. Ele não pode alterar nada. O que ele lê é enviado ao fornecedor do app de IA, que o receberá."
         },
         "agreementsVote": {
           "title": "Preparar votos para aprovar",
@@ -5986,6 +5986,25 @@
         "unknown": {
           "detail": "Uma permissão desconhecida."
         }
+      },
+      "spaces": {
+        "title": "Que espaços este app pode ler?",
+        "explicit": {
+          "title": "Apenas os espaços que eu escolher",
+          "detail": "Espaços em que você entrar mais tarde não estão incluídos."
+        },
+        "all": {
+          "title": "Todos os meus espaços",
+          "detail": "Tudo o que você pode ver no Hypha, incluindo espaços em que entrar mais tarde."
+        },
+        "note": "O app nunca pode ver mais do que você. O que ele lê é enviado ao fornecedor do app de IA.",
+        "filter": "Filtrar os seus espaços",
+        "selectAll": "Selecionar todos",
+        "selectNone": "Não selecionar nenhum",
+        "limit": "Você está em mais de {max} espaços, por isso só os primeiros {max} estão selecionados. Para incluir todos os espaços, escolha “Todos os meus espaços”.",
+        "none": "Você ainda não é membro de nenhum espaço. Escolha “Todos os meus espaços” ou entre primeiro num espaço.",
+        "unavailable": "Não foi possível carregar os seus espaços agora. Você ainda pode escolher “Todos os meus espaços”.",
+        "subOf": "(em {parent})"
       }
     }
   }

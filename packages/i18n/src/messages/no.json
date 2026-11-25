@@ -5978,7 +5978,7 @@
       "scopes": {
         "spacesRead": {
           "title": "Lese Hypha-spaces",
-          "detail": "Bare lesing: denne appen kan lese alt du kan se i spacene dine på Hypha: spacene, hvem som er medlem, forslag og stemmer (signaler og quests kommer). Den kan ikke endre noe. Det den leser, sendes til leverandøren av AI-appen, som mottar det."
+          "detail": "Skrivebeskyttet: Denne appen kan lese områdene du tillater nedenfor: detaljene deres, medlemskapet ditt, forslag, stemmene dine, signaler og oppdrag. Den kan ikke endre noe. Det den leser, sendes til leverandøren av KI-appen, som mottar det."
         },
         "agreementsVote": {
           "title": "Forberede stemmer du kan godkjenne",
@@ -5992,6 +5992,25 @@
         "unknown": {
           "detail": "En ukjent tillatelse."
         }
+      },
+      "spaces": {
+        "title": "Hvilke områder kan denne appen lese?",
+        "explicit": {
+          "title": "Bare områdene jeg velger",
+          "detail": "Områder du blir med i senere, er ikke inkludert."
+        },
+        "all": {
+          "title": "Alle områdene mine",
+          "detail": "Alt du kan se på Hypha, også områder du blir med i senere."
+        },
+        "note": "Appen kan aldri se mer enn du kan. Det den leser, sendes til leverandøren av KI-appen.",
+        "filter": "Filtrer områdene dine",
+        "selectAll": "Velg alle",
+        "selectNone": "Fjern alle valg",
+        "limit": "Du er med i mer enn {max} områder, så bare de første {max} er valgt. Velg «Alle områdene mine» for å inkludere alle.",
+        "none": "Du er ikke medlem av noe område ennå. Velg «Alle områdene mine» i stedet, eller bli med i et område først.",
+        "unavailable": "Områdene dine kunne ikke lastes akkurat nå. Du kan fortsatt velge «Alle områdene mine».",
+        "subOf": "(i {parent})"
       }
     }
   }

@@ -1,4 +1,5 @@
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from 'jose';
+import { SPACE_GRANTS_CLAIM, parseGrantClaim, type GrantValue } from './grants';
 import {
   AUTH_SERVER_API_BASE_PATH,
   AUTH_SERVER_JWKS_PATH,
@@ -12,6 +13,11 @@ export type VerifiedAccessToken = {
   clientId: string;
   scopes: string[];
   aud: string[];
+  /**
+   * What the person granted this client (`space_grants` claim): `'all'`, or the database space
+   * ids. A token without a valid claim is refused (never read as "all").
+   */
+  spaceGrants: GrantValue;
 };
 
 export type VerifyAccessTokenOptions = {
@@ -90,9 +96,13 @@ export async function verifyAccessToken(
     if (typeof payload.sub !== 'string' || typeof clientId !== 'string') {
       throw new Error('missing claims');
     }
+    // Fail closed: a missing, malformed or oversized grant claim is an invalid token.
+    const spaceGrants = parseGrantClaim(payload[SPACE_GRANTS_CLAIM]);
+    if (spaceGrants === null) throw new Error('invalid space grants');
     return {
       sub: payload.sub,
       clientId,
+      spaceGrants,
       scopes:
         typeof payload.scope === 'string'
           ? payload.scope.split(' ').filter(Boolean)
