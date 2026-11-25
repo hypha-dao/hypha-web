@@ -1541,8 +1541,27 @@ export function MemberHomeChat({
       }
       // The people, spaces, and token chips already have their own panel.
       // A tool call on that turn must not pin the next signal underneath.
-      const asked = widgetKindFor(userTextBefore(homeMessages, index));
+      const priorAsk = userTextBefore(homeMessages, index);
+      const asked = widgetKindFor(priorAsk);
       if (asked === 'people' || asked === 'spaces' || asked === 'tokens') {
+        return;
+      }
+      // Free-flow conversation stays text-only unless the model explicitly
+      // placed a card tool. Speech matching must not pin a waiting proposal
+      // under an open question.
+      const priorUser = (() => {
+        for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
+          const earlier = homeMessages[cursor];
+          if (earlier?.role === 'user') return earlier;
+        }
+        return null;
+      })();
+      const guidedAsk =
+        Boolean(priorUser?.metadata?.homeArrival) ||
+        homeUserAskExpectsCard(priorAsk);
+      const toolCard = messageHasHomeCardTool(message);
+      if (!guidedAsk && !toolCard) {
+        frozenHomeCards.current.delete(message.id);
         return;
       }
       const streamingThis = isStreaming && message.id === lastMessage?.id;
@@ -1619,24 +1638,33 @@ export function MemberHomeChat({
   // setMessages looped into React #185; the crash remount then hit #310.
   useEffect(() => {
     if (!opened.current) return;
-    const persisted = homeMessages.map((message) => {
+    const persisted = homeMessages.map((message, index) => {
+      const item = cardsByMessageId.get(message.id);
+      if (item) {
+        return {
+          ...message,
+          metadata: {
+            ...message.metadata,
+            homeItem: { kind: item.kind, slug: item.slug },
+          },
+        };
+      }
+      // Drop speech-matched cards that free-flow replies must not keep.
       const existing = message.metadata?.homeItem;
       if (
+        message.role === 'assistant' &&
         existing &&
-        (existing.kind === 'proposal' || existing.kind === 'signal') &&
-        existing.slug
+        !messageHasHomeCardTool(message) &&
+        !homeUserAskExpectsCard(userTextBefore(homeMessages, index))
       ) {
-        return message;
+        const rest = { ...message.metadata };
+        delete rest.homeItem;
+        return {
+          ...message,
+          metadata: Object.keys(rest).length > 0 ? rest : undefined,
+        };
       }
-      const item = cardsByMessageId.get(message.id);
-      if (!item) return message;
-      return {
-        ...message,
-        metadata: {
-          ...message.metadata,
-          homeItem: { kind: item.kind, slug: item.slug },
-        },
-      };
+      return message;
     });
     writeHomeThread(persisted);
   }, [cardsByMessageId, homeMessages]);
@@ -2016,13 +2044,15 @@ export function MemberHomeChat({
               message.id === homeMessages[homeMessages.length - 1]?.id;
             const priorAsk = userTextBefore(homeMessages, index);
             const listAsk = widgetKindFor(priorAsk);
+            const guidedAsk = homeUserAskExpectsCard(priorAsk);
             const expectsCard =
               message.role === 'assistant' &&
               listAsk !== 'people' &&
               listAsk !== 'spaces' &&
               listAsk !== 'tokens' &&
-              (messageExpectsHomeCard(message) ||
-                (streamingThis && homeUserAskExpectsCard(priorAsk)));
+              (messageHasHomeCardTool(message) ||
+                (guidedAsk &&
+                  (messageExpectsHomeCard(message) || streamingThis)));
             // Stream words immediately. A pending card must not blank the bubble.
             const visibleText = text;
             const awaitingCard =
