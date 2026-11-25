@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
-import { MessagesSquare, Wallet } from 'lucide-react';
+import { MessagesSquare, Sparkles, Wallet } from 'lucide-react';
 import {
   getEnergyCommunityTokensForSpace,
   useSpaceBySlug,
@@ -64,6 +64,7 @@ function useMemberBarSpaceSlug(): string | null {
 export function MemberTopBar({ personSlug }: MemberTopBarProps) {
   const tMember = useTranslations('MemberMenu');
   const tConnections = useTranslations('Connections');
+  const tAi = useTranslations('AiPanel');
   const params = useParams<{ lang?: string }>();
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
   const slug = useMemberBarSpaceSlug();
@@ -92,7 +93,10 @@ export function MemberTopBar({ personSlug }: MemberTopBarProps) {
     open: chatOpen,
     toggle: toggleChat,
     requestMemberInbox,
+    requestMemberSpaceAi,
+    memberSpaceAiRequested,
   } = useHumanChatPanel();
+  const aiOpen = chatOpen && memberSpaceAiRequested;
 
   const minted = useMemo(() => {
     const catalogue: MemberMintedToken[] = getEnergyCommunityTokensForSpace(
@@ -149,6 +153,14 @@ export function MemberTopBar({ personSlug }: MemberTopBarProps) {
     requestMemberInbox();
   };
 
+  const openSpaceAi = () => {
+    if (aiOpen) {
+      toggleChat();
+      return;
+    }
+    requestMemberSpaceAi();
+  };
+
   return (
     <div className="flex items-center gap-1.5 sm:gap-2" data-member-top-bar>
       {pill && amount && walletHref ? (
@@ -171,6 +183,17 @@ export function MemberTopBar({ personSlug }: MemberTopBarProps) {
           </span>
         </Link>
       ) : null}
+      <button
+        type="button"
+        onClick={openSpaceAi}
+        aria-expanded={aiOpen}
+        className={APP_CHROME_ICON_TRIGGER}
+        title={aiOpen ? tAi('closeAiPanel') : tMember('askThisSpace')}
+        aria-label={aiOpen ? tAi('closeAiPanel') : tMember('askThisSpace')}
+        data-testid="member-ai-panel-trigger"
+      >
+        <Sparkles className="craft-icon" />
+      </button>
       <span className="relative inline-flex">
         <button
           type="button"

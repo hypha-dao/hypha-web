@@ -100,14 +100,12 @@ export function SpacesRailProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/** Same Spaces menu as the desktop home title — mobile members only. */
-function MemberMobileSpaceSwitcher() {
+function useMemberTopBarSpace() {
   const tNavigation = useTranslations('Navigation');
   const pathname = usePathname() ?? '';
   const searchParams = useSearchParams();
   const named = useMemberNamedSpaces();
   const [recent, setRecent] = useState<string[]>(() => readRecentSpaceSlugs());
-  const [open, setOpen] = useState(false);
 
   useEffect(() => subscribeRecentSpaceSlugs(setRecent), []);
 
@@ -129,8 +127,15 @@ function MemberMobileSpaceSwitcher() {
     space ?? namedSpace,
     resolvedTheme === 'dark' ? 'dark' : 'light',
   );
-
   const label = title || tNavigation('mySpaces');
+
+  return { label, iconUrl, mySpacesLabel: tNavigation('mySpaces') };
+}
+
+/** Mobile members — name + chevron opens the Spaces list. */
+function MemberMobileSpaceSwitcher() {
+  const { label, iconUrl, mySpacesLabel } = useMemberTopBarSpace();
+  const [open, setOpen] = useState(false);
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -138,7 +143,7 @@ function MemberMobileSpaceSwitcher() {
         <button
           type="button"
           className="flex min-w-0 max-w-[min(12rem,46vw)] items-center gap-1.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase"
-          aria-label={tNavigation('mySpaces')}
+          aria-label={mySpacesLabel}
           data-testid="member-spaces-switcher"
         >
           <SpaceSwitcherMark iconUrl={iconUrl} alt="" />
@@ -159,11 +164,26 @@ function MemberMobileSpaceSwitcher() {
   );
 }
 
+/** Desktop members — place identity only; switching lives in the AI panel header. */
+function MemberDesktopSpaceLabel() {
+  const { label, iconUrl } = useMemberTopBarSpace();
+
+  return (
+    <div
+      className="flex min-w-0 max-w-[min(12rem,46vw)] items-center gap-1.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase"
+      data-testid="member-spaces-label"
+    >
+      <SpaceSwitcherMark iconUrl={iconUrl} alt="" />
+      <span className="min-w-0 truncate">{label}</span>
+    </div>
+  );
+}
+
 /**
  * Top-bar control for the spaces list.
  * Builders/funders: circle that opens the rail (small screens).
- * Members: always show the Spaces name dropdown. The left AI rail stays
- * closed for members, so this is how they see and switch spaces.
+ * Members: dropdown on small screens; static space name on desktop (the
+ * chevron would duplicate the AI panel header switcher).
  */
 export function SpacesRailTopToggle() {
   const { active, open, toggle } = useSpacesRailControl();
@@ -171,7 +191,16 @@ export function SpacesRailTopToggle() {
   const { isMember } = useMemberExperience();
 
   if (isMember) {
-    return <MemberMobileSpaceSwitcher />;
+    return (
+      <>
+        <div className="xl:hidden">
+          <MemberMobileSpaceSwitcher />
+        </div>
+        <div className="hidden xl:block">
+          <MemberDesktopSpaceLabel />
+        </div>
+      </>
+    );
   }
 
   if (!active) return null;

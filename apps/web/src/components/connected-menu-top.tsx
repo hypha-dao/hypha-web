@@ -142,11 +142,16 @@ export function ConnectedMenuTop({
   const suppressDefaultLogo = aiChatEnabled && isSpaceRoute;
   const { overlayVisible } = useAiPanel();
 
-  const secondaryLeading = aiChatEnabled ? <AiPanelTrigger /> : leadingAction;
+  // Members put Ask AI beside Messages; builders keep it in the leading cluster.
+  const secondaryLeading = hideHyphaMark
+    ? undefined
+    : aiChatEnabled
+      ? <AiPanelTrigger />
+      : leadingAction;
   const { active: spacesRailActive } = useSpacesRailControl();
   const onHome = /\/(?:home|my-dashboard)\/?$/.test(pathname ?? '');
-  // Members always need the leading cluster — Hypha mark is hidden, so the
-  // Spaces switcher is the only place-identity in the top bar.
+  // Members still need the leading cluster for space place-identity (Hypha mark
+  // is hidden). The interactive Spaces dropdown stays mobile-only.
   const resolvedLeadingAction =
     hideHyphaMark || spacesRailActive || secondaryLeading ? (
       <div

@@ -218,44 +218,16 @@ export function AiSidebarTrigger() {
 
 export function AiPanelTrigger() {
   const { open, openAiPanel, closeAiPanel, setAiOverlayVisible } = useAiPanel();
-  const {
-    open: rightOpen,
-    closeHumanChatPanel,
-    requestMemberSpaceAi,
-    memberSpaceAiRequested,
-    toggle: toggleHumanChat,
-  } = useHumanChatPanel();
+  const { open: rightOpen, closeHumanChatPanel } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
   const pathname = usePathname();
   const isNetworkAi = isNetworkAiPath(pathname);
   const mutuallyExclusive = useMutuallyExclusivePanels();
   const t = useTranslations('AiPanel');
-  const tMember = useTranslations('MemberMenu');
   const { isMember } = useMemberExperience();
 
-  // Members ask the space in the right dock — the left AI rail stays closed.
-  if (isMember) {
-    const open = rightOpen && memberSpaceAiRequested;
-    return (
-      <button
-        type="button"
-        onClick={() => {
-          if (open) {
-            toggleHumanChat();
-            return;
-          }
-          requestMemberSpaceAi();
-        }}
-        aria-expanded={open}
-        className={APP_CHROME_ICON_TRIGGER}
-        title={open ? t('closeAiPanel') : tMember('askThisSpace')}
-        aria-label={open ? t('closeAiPanel') : tMember('askThisSpace')}
-        data-testid="member-ai-panel-trigger"
-      >
-        <Sparkles className="craft-icon" />
-      </button>
-    );
-  }
+  // Members open Ask from MemberTopBar (left of Messages), not the leading cluster.
+  if (isMember) return null;
 
   if (!isSpace && !isNetworkAi) {
     return null;
