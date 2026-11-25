@@ -34,14 +34,15 @@ async function sendChunk(chunk: [string, Entry][]) {
   const query = chunk.map(([slug]) => encodeURIComponent(slug)).join(',');
   try {
     const { voters, failed = [] } = await fetchJson<BatchResponse>(
-      `/api/v1/documents/voters?slugs=${query}`,
+      `/api/v1/proposal-voters?slugs=${query}`,
       undefined,
       'proposal voters',
     );
     for (const [slug, entry] of chunk) {
       if (failed.includes(slug)) {
         entry.reject(httpError(502, 'Failed to fetch proposal voters'));
-      } else if (voters[slug]) {
+      } else if (Object.hasOwn(voters, slug) && Array.isArray(voters[slug])) {
+        // Own entries only: `constructor` must not resolve to an inherited function.
         entry.resolve(voters[slug]);
       } else {
         // Same shape as the single-proposal route's 404, so callers see no change.

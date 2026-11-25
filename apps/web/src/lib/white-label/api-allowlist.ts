@@ -33,6 +33,9 @@ export const WL_API_READ_ALLOWLIST: readonly string[] = [
   '/api/v1/events',
   '/api/v1/spaces',
   '/api/v1/documents/:documentSlug/voters',
+  // The same, for several proposals at once (`?slugs=`); a separate path so no
+  // document slug can clash with it. Own Space's proposals only on a host.
+  '/api/v1/proposal-voters',
   // `documents/:documentSlug` (a proposal's own row): own Space's documents only
   // on a host (guard in the route); the row has no email or sub.
   '/api/v1/documents/:documentSlug',

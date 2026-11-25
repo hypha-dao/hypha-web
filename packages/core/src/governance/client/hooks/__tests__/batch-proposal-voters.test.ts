@@ -43,7 +43,7 @@ describe('fetchProposalVoters', () => {
     await flush();
 
     expect(fn).toHaveBeenCalledTimes(1);
-    expect(urlsOf(fn)[0]).toBe('/api/v1/documents/voters?slugs=a,b,c');
+    expect(urlsOf(fn)[0]).toBe('/api/v1/proposal-voters?slugs=a,b,c');
     expect(await results).toEqual([[voter(1)], [], []]);
   });
 
@@ -57,7 +57,7 @@ describe('fetchProposalVoters', () => {
     ]);
     await flush();
 
-    expect(urlsOf(fn)).toEqual(['/api/v1/documents/voters?slugs=a']);
+    expect(urlsOf(fn)).toEqual(['/api/v1/proposal-voters?slugs=a']);
     expect(await results).toEqual([[voter(1)], [voter(1)]]);
   });
 
@@ -73,8 +73,8 @@ describe('fetchProposalVoters', () => {
     await second;
 
     expect(urlsOf(fn)).toEqual([
-      '/api/v1/documents/voters?slugs=a',
-      '/api/v1/documents/voters?slugs=b',
+      '/api/v1/proposal-voters?slugs=a',
+      '/api/v1/proposal-voters?slugs=b',
     ]);
   });
 
@@ -84,7 +84,7 @@ describe('fetchProposalVoters', () => {
     const result = fetchProposalVoters('a b');
     await flush();
     await result;
-    expect(urlsOf(fn)[0]).toBe('/api/v1/documents/voters?slugs=a%20b');
+    expect(urlsOf(fn)[0]).toBe('/api/v1/proposal-voters?slugs=a%20b');
   });
 
   it('splits more than the cap into several requests', async () => {
@@ -121,6 +121,16 @@ describe('fetchProposalVoters', () => {
 
     expect(await a).toEqual([voter(1)]);
     expect((await goneResult).status).toBe(404);
+  });
+
+  it('rejects an inherited property name like a missing slug, not resolving a function', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok({ a: [voter(1)] })));
+    const a = fetchProposalVoters('a');
+    const ctor = fetchProposalVoters('constructor').catch((e) => e);
+    await flush();
+
+    expect(await a).toEqual([voter(1)]);
+    expect((await ctor).status).toBe(404);
   });
 
   it('rejects only a slug whose chain read failed, with a retryable 502', async () => {

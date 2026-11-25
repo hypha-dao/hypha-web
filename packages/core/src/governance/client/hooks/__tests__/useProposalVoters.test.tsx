@@ -48,7 +48,7 @@ describe('useProposalVoters', () => {
     expect(result.current.voters).toEqual([{ id: 1 }]);
     expect(fn).toHaveBeenCalledTimes(1);
     expect(String(fn.mock.calls[0]?.[0])).toBe(
-      '/api/v1/documents/voters?slugs=doc',
+      '/api/v1/proposal-voters?slugs=doc',
     );
     await act(async () => {
       await vi.advanceTimersByTimeAsync(POLL.ACTIVE);
@@ -57,14 +57,12 @@ describe('useProposalVoters', () => {
   });
 
   it('cards mounted together share one request', async () => {
-    const fn = vi
-      .fn()
-      .mockImplementation(async () =>
-        Response.json({
-          voters: { a: [{ id: 1 }], b: [{ id: 2 }] },
-          failed: [],
-        }),
-      );
+    const fn = vi.fn().mockImplementation(async () =>
+      Response.json({
+        voters: { a: [{ id: 1 }], b: [{ id: 2 }] },
+        failed: [],
+      }),
+    );
     vi.stubGlobal('fetch', fn);
     const a = renderHook(() => useProposalVoters('a'), {
       wrapper: wrapperWith(),

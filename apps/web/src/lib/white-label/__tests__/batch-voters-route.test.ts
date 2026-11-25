@@ -28,7 +28,7 @@ vi.mock('@hypha-platform/core/client', () => ({
 }));
 
 import { NextRequest } from 'next/server';
-import { GET } from '../../../app/api/v1/documents/voters/route';
+import { GET } from '../../../app/api/v1/proposal-voters/route';
 import { resetMappedHostScopeCache } from '../mapped-host-scope';
 import { WL_SPACE_HEADER } from '../constants';
 
@@ -47,7 +47,7 @@ const person = (id: number, address: string) => ({
 const get = (slugs: string | null, mapped = false) =>
   GET(
     new NextRequest(
-      `https://app.example/api/v1/documents/voters${
+      `https://app.example/api/v1/proposal-voters${
         slugs === null ? '' : `?slugs=${slugs}`
       }`,
       { headers: mapped ? { [WL_SPACE_HEADER]: 'own-space' } : {} },
@@ -76,7 +76,7 @@ beforeEach(() => {
   findPeopleByWeb3Addresses.mockResolvedValue([person(1, A), person(2, B)]);
 });
 
-describe('GET /api/v1/documents/voters', () => {
+describe('GET /api/v1/proposal-voters', () => {
   it('rejects a missing, empty or oversized slug list', async () => {
     expect((await get(null)).status).toBe(400);
     expect((await get(',,')).status).toBe(400);
@@ -127,6 +127,19 @@ describe('GET /api/v1/documents/voters', () => {
     const body = await (await get('p1,draft,nope')).json();
     expect(Object.keys(body.voters)).toEqual(['p1']);
     expect(body.failed).toEqual([]);
+  });
+
+  it('treats prototype-like slugs as ordinary slugs', async () => {
+    findManyDocuments.mockResolvedValue([
+      { slug: '__proto__', spaceId: 7, web3ProposalId: 1 },
+      { slug: 'constructor', spaceId: 7, web3ProposalId: 2 },
+    ]);
+    const body = await (await get('__proto__,constructor,toString')).json();
+    expect(Object.keys(body.voters).sort()).toEqual([
+      '__proto__',
+      'constructor',
+    ]);
+    expect(body.voters.constructor).toHaveLength(1);
   });
 
   it('keeps a proposal with no voters as an empty list', async () => {

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getProposalVoters, publicClient } from '@hypha-platform/core/client';
 import { findPeopleByWeb3Addresses } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import { resolveMappedHostScope } from '../../../../../lib/white-label/mapped-host-scope';
+import { resolveMappedHostScope } from '../../../../lib/white-label/mapped-host-scope';
 
 /** Most proposals one request may ask for. The client splits larger sets. */
 const MAX_SLUGS = 25;
@@ -109,7 +109,8 @@ export async function GET(request: NextRequest) {
       people.map((person) => [person.address?.toLowerCase() ?? '', person]),
     );
 
-    const voters: Record<string, Voter[]> = {};
+    // No prototype: any slug (`__proto__`, `constructor`) is an ordinary key.
+    const voters: Record<string, Voter[]> = Object.create(null);
     for (const [slug, { yes, no }] of chainVoters) {
       voters[slug] = [...yes, ...no].flatMap((address) => {
         const person = personByAddress.get(address);
