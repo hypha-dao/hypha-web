@@ -162,7 +162,7 @@ function MemberHomeSkeleton() {
           <MemberHomeCardSkeleton className="hidden lg:flex" delayMs={160} />
         </div>
       </section>
-      <section className="mt-2 box-border w-full min-w-0 sm:mt-4">
+      <section className="mt-6 box-border w-full min-w-0 sm:mt-8">
         <div className="border-b border-border pb-2">
           <header className={MEMBER_TITLE_STACK}>
             <Pulse text className="h-3 w-32" delayMs={100} />

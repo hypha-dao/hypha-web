@@ -402,7 +402,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
 
       <section
         aria-label={t('askSpace', { name: askName })}
-        className="mt-2 box-border w-full min-w-0 sm:mt-4"
+        className="mt-6 box-border w-full min-w-0 sm:mt-8"
         data-member-home-ask=""
       >
         <div className="border-b border-border pb-2">
