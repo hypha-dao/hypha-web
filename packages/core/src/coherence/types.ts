@@ -1,3 +1,4 @@
+import type { OriginView } from '../origin';
 import {
   CoherencePriority,
   COHERENCE_PRIORITIES,
@@ -201,6 +202,11 @@ export type Coherence = {
   capitals: CapitalKey[];
   /** Present on list/detail API responses; not stored on the row itself. */
   upvotes?: CoherenceUpvoteSummary;
+  /**
+   * Which path created the signal (#2724): kind and the self-declared client name, never the
+   * client id. Absent on objects built in the browser before the server answered.
+   */
+  origin?: OriginView;
 };
 
 export enum Environment {

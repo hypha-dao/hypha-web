@@ -36,6 +36,11 @@ import {
 } from '../../network/capital-columns';
 import { pickCoherenceUpdateFields } from '../coherence-update-fields';
 import { signalSlugMatchesSpaceSlug } from '../signal-slug';
+import {
+  originToColumns,
+  originViewFromColumns,
+  type Origin,
+} from '../../origin';
 
 export async function assertCanEditCoherence(
   { slug, requesterPersonId }: { slug: string; requesterPersonId: number },
@@ -128,10 +133,25 @@ export const createCoherence = async (
     dueAt: inputDueAt,
     sharedWithNetwork,
     capitals,
-    ...rest
+    type,
+    title,
+    description,
+    roomId,
+    archived,
+    tags,
+    messages,
+    views,
+    indicativePayouts,
+    leadImage,
+    videoUrl,
+    attachments,
+    source,
+    externalId,
   }: CreateCoherenceInput,
-  { db }: { db: DatabaseInstance },
+  { db, origin }: { db: DatabaseInstance; origin: Origin },
 ) => {
+  // Validate the origin first: the server sets it from the path, never from the input.
+  const originColumnValues = originToColumns(origin);
   if (creatorId === undefined) {
     throw new Error('creatorId is required to create coherence');
   }
@@ -174,6 +194,8 @@ export const createCoherence = async (
     progressStatus ??= DEFAULT_SIGNAL_PROGRESS_STATUS;
   }
 
+  // Values are listed one by one: keys a caller adds to the input (an origin, an id, a
+  // timestamp) never reach the insert. `source` and `externalId` pass through as before.
   const [newSignal] = await db
     .insert(coherences)
     .values({
@@ -186,7 +208,21 @@ export const createCoherence = async (
       board: inputBoard ?? defaultBoard,
       dueAt: inputDueAt ?? null,
       sharedWithNetwork: sharedWithNetwork ?? false,
-      ...rest,
+      type,
+      title,
+      description,
+      roomId,
+      archived,
+      tags,
+      messages,
+      views,
+      indicativePayouts,
+      leadImage,
+      videoUrl,
+      attachments,
+      source,
+      externalId,
+      ...originColumnValues,
     })
     .returning();
 
@@ -200,7 +236,18 @@ export const createCoherence = async (
     await writeCoherenceCapitals(db, newSignal.id, capitals);
   }
 
-  return { ...newSignal, capitals: capitals ?? [] };
+  // Entity and origin come back as two separate parts; the client id is not returned.
+  const {
+    originKind,
+    originClientId: _originClientId,
+    originClientLabel,
+    ...entity
+  } = newSignal;
+  return {
+    ...entity,
+    capitals: capitals ?? [],
+    origin: originViewFromColumns({ originKind, originClientLabel }),
+  };
 };
 
 export const updateCoherenceBySlug = async (
