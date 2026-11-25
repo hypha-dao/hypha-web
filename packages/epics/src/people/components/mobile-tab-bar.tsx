@@ -160,9 +160,7 @@ export function MobileTabBar({
   const { isAuthenticated, logout } = useAuthentication();
   const { resolvedTheme, setTheme } = useTheme();
   const [createOpen, setCreateOpen] = useState(false);
-  const [homeView, setHomeView] = useState<'ai' | 'classic' | 'field' | 'energy'>(
-    'ai',
-  );
+  const [homeView, setHomeView] = useState<HomeView>('ai');
   const [mounted, setMounted] = useState(false);
   const unreadCount = useMessagesScreenCount();
 
