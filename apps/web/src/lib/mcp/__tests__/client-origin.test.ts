@@ -25,6 +25,12 @@ describe('lookupClientName', () => {
     ).toBe('Cursor');
   });
 
+  it('runs the query once', async () => {
+    const db = dbReturning({ rows: [{ name: 'Claude' }] });
+    await lookupClientName('c', { db });
+    expect(db.execute).toHaveBeenCalledTimes(1);
+  });
+
   it('gives null for a missing, blank or failed lookup', async () => {
     expect(
       await lookupClientName('c', { db: dbReturning({ rows: [] }) }),

@@ -41,12 +41,15 @@ export type OriginColumns = {
 /** A name is self-declared by clients: strip control characters, collapse spaces, cap it. */
 function cleanLabel(value: string | null | undefined): string | null {
   if (value == null) return null;
-  const cleaned = value
+  const collapsed = value
     // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u001f\u007f-\u009f]/g, ' ')
     .replace(/\s+/g, ' ')
-    .trim()
+    .trim();
+  // Count and cut by code point (the database counts characters, and a UTF-16 slice can split an emoji).
+  const cleaned = Array.from(collapsed)
     .slice(0, ORIGIN_CLIENT_LABEL_MAX)
+    .join('')
     .trim();
   return cleaned.length > 0 ? cleaned : null;
 }
@@ -55,7 +58,7 @@ function cleanId(value: string | number | null | undefined): string | null {
   if (value == null) return null;
   const id = String(value).trim();
   if (id.length === 0) return null;
-  if (id.length > ORIGIN_CLIENT_ID_MAX) {
+  if (Array.from(id).length > ORIGIN_CLIENT_ID_MAX) {
     throw new Error(
       `Origin client id exceeds ${ORIGIN_CLIENT_ID_MAX} characters`,
     );
@@ -151,14 +154,14 @@ export function assertOrigin(value: unknown): Origin {
   if (id !== null && (typeof id !== 'string' || id.trim().length === 0)) {
     throw new Error('Invalid origin client id');
   }
-  if (id !== null && id.length > ORIGIN_CLIENT_ID_MAX) {
+  if (id !== null && Array.from(id).length > ORIGIN_CLIENT_ID_MAX) {
     throw new Error('Origin client id is too long');
   }
   if (
     label !== null &&
     (typeof label !== 'string' ||
       label.trim().length === 0 ||
-      label.length > ORIGIN_CLIENT_LABEL_MAX)
+      Array.from(label).length > ORIGIN_CLIENT_LABEL_MAX)
   ) {
     throw new Error('Invalid origin client label');
   }
@@ -199,13 +202,20 @@ const ORIGIN_COLUMN_KEYS = [
 ] as const;
 
 /** Entity and origin come back as two separate parts: drop the origin columns from a row. */
-export function splitOriginColumns<T extends OriginColumns>(
+/** Database rows type the kind as a plain string; the view validates it. */
+type OriginColumnsRow = {
+  originKind: string;
+  originClientId: string | null;
+  originClientLabel: string | null;
+};
+
+export function splitOriginColumns<T extends OriginColumnsRow>(
   row: T,
-): { entity: Omit<T, keyof OriginColumns>; origin: OriginView } {
+): { entity: Omit<T, keyof OriginColumnsRow>; origin: OriginView } {
   const entity = { ...row } as Record<string, unknown>;
   for (const key of ORIGIN_COLUMN_KEYS) delete entity[key];
   return {
-    entity: entity as Omit<T, keyof OriginColumns>,
+    entity: entity as Omit<T, keyof OriginColumnsRow>,
     origin: originViewFromColumns(row),
   };
 }

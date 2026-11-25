@@ -29,10 +29,12 @@ export async function lookupClientName(
 ): Promise<string | null> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    const query = db.execute(
-      sql`select name from as_oauth_client where "clientId" = ${clientId} limit 1`,
+    // A Drizzle query runs again on every .then/.catch, so settle it into one real promise.
+    const query = Promise.resolve(
+      db.execute(
+        sql`select name from as_oauth_client where "clientId" = ${clientId} limit 1`,
+      ),
     );
-    query.catch(() => undefined);
     const timeout = new Promise<null>((resolve) => {
       timer = setTimeout(() => resolve(null), timeoutMs);
     });

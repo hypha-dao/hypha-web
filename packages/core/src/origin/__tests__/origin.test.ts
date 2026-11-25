@@ -91,6 +91,23 @@ describe('origin constructors', () => {
     ).toBeNull();
   });
 
+  it('does not cut an emoji in half when capping a name', () => {
+    const name = 'a'.repeat(ORIGIN_CLIENT_LABEL_MAX - 1) + '😀😀';
+    const origin = mcpClientOrigin({ clientId: 'c', clientName: name });
+    expect(origin.clientLabel).toBe(
+      'a'.repeat(ORIGIN_CLIENT_LABEL_MAX - 1) + '😀',
+    );
+    expect(() => assertOrigin(origin)).not.toThrow();
+    const emojiOnly = mcpClientOrigin({
+      clientId: 'c',
+      clientName: '😀'.repeat(300),
+    });
+    expect(Array.from(emojiOnly.clientLabel ?? '')).toHaveLength(
+      ORIGIN_CLIENT_LABEL_MAX,
+    );
+    expect(() => assertOrigin(emojiOnly)).not.toThrow();
+  });
+
   it('needs a client id where the kind requires one, and caps it', () => {
     expect(() => mcpClientOrigin({ clientId: '  ' })).toThrow();
     expect(() => spaceKeyOrigin({ keyId: '', source: 's' })).toThrow();
@@ -171,6 +188,8 @@ describe('origin columns', () => {
       originClientLabel: 'Claude',
     };
     const { entity, origin } = splitOriginColumns(row);
+    // Database rows type the kind as a plain string.
+    splitOriginColumns({ ...row, originKind: 'mcp_client' as string });
     expect(entity).toEqual({ id: 1, title: 't' });
     expect(origin).toEqual({ kind: 'mcp_client', clientLabel: 'Claude' });
   });
