@@ -203,6 +203,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
         {authLoading || isLoading || (!data && !error) ? (
           <div
             className="flex snap-x items-stretch gap-4 overflow-hidden"
+            aria-busy="true"
             aria-hidden
           >
             {[0, 1, 2].map((index) => (
@@ -214,15 +215,15 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
                   index === 2 && 'hidden lg:flex',
                 )}
               >
-                <div className={cn(HOME_CARD_IMAGE, 'bg-accent-3')} />
+                <div className={cn(HOME_CARD_IMAGE, 'bg-foreground/[0.08]')} />
                 <div className="mt-1 flex flex-1 flex-col gap-1.5">
-                  <div className="h-2.5 w-14 bg-accent-3/60" />
-                  <div className="h-4 w-4/5 bg-accent-3/60" />
-                  <div className="h-2.5 w-full bg-accent-3/50" />
-                  <div className="h-2.5 w-5/6 bg-accent-3/50" />
+                  <div className="h-2.5 w-14 bg-foreground/[0.08]" />
+                  <div className="h-4 w-4/5 bg-foreground/[0.08]" />
+                  <div className="h-2.5 w-full bg-foreground/[0.06]" />
+                  <div className="h-2.5 w-5/6 bg-foreground/[0.06]" />
                   <div className="mt-auto flex items-center gap-2 border-t border-border pt-3">
-                    <div className="h-[36px] w-20 bg-accent-3/60" />
-                    <div className="h-[34px] w-14 bg-accent-3/60" />
+                    <div className="h-[36px] w-20 bg-foreground/[0.08]" />
+                    <div className="h-[36px] w-14 bg-foreground/[0.08]" />
                   </div>
                 </div>
               </div>

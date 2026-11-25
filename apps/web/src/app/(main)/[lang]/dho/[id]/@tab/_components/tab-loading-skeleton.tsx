@@ -1,5 +1,11 @@
+import {
+  MEMBER_TITLE_GAP,
+  MEMBER_TITLE_STACK,
+} from '@hypha-platform/epics';
 import { Wave } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+
+import { MEMBER_SCREEN_STACK } from '../../../_components/member-page-shell';
 
 type TabLoadingLayout =
   | 'overview'
@@ -12,9 +18,9 @@ type TabLoadingLayout =
   | 'treasury'
   | 'rows';
 
-/** Matches MemberSpaceHome card width (lovable: (100% - 24px) / 2.2). */
+/** Same card width as MemberSpaceHome signal strip. */
 const MEMBER_HOME_CARD_WIDTH =
-  'w-[min(100%,calc((100%-24px)/2.2))] max-md:w-[82%] min-w-[240px]';
+  'w-[min(22rem,calc((100%-2rem)/2.2))] max-md:w-[78%] min-w-[14rem]';
 
 type TabLoadingSkeletonProps = {
   layout?: TabLoadingLayout;
@@ -108,54 +114,59 @@ function MemberHomeCardSkeleton({
         className,
       )}
     >
-      <Pulse className="mb-2.5 aspect-video w-full" delayMs={delayMs} />
-      <div className="flex flex-1 flex-col gap-2">
-        <Pulse className="h-2.5 w-16" delayMs={delayMs + 30} />
-        <Pulse className="h-5 w-4/5" delayMs={delayMs + 50} />
-        <Pulse className="h-3 w-full" delayMs={delayMs + 70} />
-        <Pulse className="h-3 w-5/6" delayMs={delayMs + 90} />
-        <div className="mt-auto flex items-center gap-2.5 border-t border-border pt-4">
-          <Pulse className="h-[36px] w-24" delayMs={delayMs + 110} />
-          <Pulse className="h-[34px] w-16" delayMs={delayMs + 130} />
+      <Pulse className="mb-2.5 aspect-[16/9] w-full" delayMs={delayMs} />
+      <div className="mt-1 flex flex-1 flex-col gap-1.5">
+        <Pulse className="h-2.5 w-14" delayMs={delayMs + 30} />
+        <Pulse className="h-4 w-4/5" delayMs={delayMs + 50} />
+        <Pulse className="h-2.5 w-full" delayMs={delayMs + 70} />
+        <Pulse className="h-2.5 w-5/6" delayMs={delayMs + 90} />
+        <div className="mt-auto flex items-center gap-2 border-t border-border pt-3">
+          <Pulse className="h-[36px] w-20" delayMs={delayMs + 110} />
+          <Pulse className="h-[36px] w-14" delayMs={delayMs + 130} />
         </div>
       </div>
     </div>
   );
 }
 
-/** Same shape as MemberSpaceHome: title row, signal strip, ask panel. */
+/** Same shape as MemberSpaceHome: title stack, signal strip, ask panel. */
 function MemberHomeSkeleton() {
   return (
     <div
-      className="flex w-full min-w-0 flex-col gap-2 py-4"
+      className={MEMBER_SCREEN_STACK}
+      aria-busy="true"
+      aria-live="polite"
       aria-hidden
       data-member-home-skeleton=""
     >
-      <section className="flex min-w-0 flex-col gap-2">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-4">
+      <section className={`flex min-w-0 flex-col ${MEMBER_TITLE_GAP}`}>
+        <header className={MEMBER_TITLE_STACK}>
+          <div className="flex w-full items-center justify-between gap-4">
             <Pulse text className="h-3 w-28" />
             <Pulse className="h-3 w-28" delayMs={40} />
           </div>
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex w-full items-center justify-between gap-4">
             <Pulse text className="h-8 w-56 max-w-full sm:h-9 sm:w-72" />
-            <div className="hidden items-center gap-1.5 md:flex">
+            <div className="hidden shrink-0 items-center gap-1.5 md:flex">
               <Pulse className="h-[36px] w-[36px]" delayMs={60} />
               <Pulse className="h-[36px] w-[36px]" delayMs={80} />
             </div>
           </div>
-        </div>
-        <div className="flex snap-x items-stretch gap-5 overflow-hidden">
+        </header>
+        <div className="flex snap-x items-stretch gap-4 overflow-hidden">
           <MemberHomeCardSkeleton />
           <MemberHomeCardSkeleton className="hidden md:flex" delayMs={80} />
           <MemberHomeCardSkeleton className="hidden lg:flex" delayMs={160} />
         </div>
       </section>
-      <section className="min-w-0">
-        <Pulse
-          className="h-[28rem] w-full border border-border"
-          delayMs={120}
-        />
+      <section className="mt-2 box-border w-full min-w-0 sm:mt-4">
+        <div className="border-b border-border pb-2">
+          <header className={MEMBER_TITLE_STACK}>
+            <Pulse text className="h-3 w-32" delayMs={100} />
+            <Pulse text className="h-8 w-48 max-w-full" delayMs={120} />
+          </header>
+        </div>
+        <Pulse className="mt-0 h-[24rem] w-full min-h-[24rem]" delayMs={140} />
       </section>
     </div>
   );
