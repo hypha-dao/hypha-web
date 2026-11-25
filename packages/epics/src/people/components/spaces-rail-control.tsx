@@ -100,7 +100,7 @@ export function SpacesRailTopToggle() {
   return (
     <button
       type="button"
-      className={cn(APP_CHROME_ICON_TRIGGER, 'xl:hidden')}
+      className={cn(APP_CHROME_ICON_TRIGGER, 'lg:hidden')}
       aria-label={t('spacesRail')}
       aria-expanded={open}
       aria-controls={SPACES_RAIL_ID}

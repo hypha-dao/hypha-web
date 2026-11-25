@@ -155,7 +155,7 @@ export function ConnectedMenuTop({
     spacesRailActive || secondaryLeading ? (
       <div
         className={`flex items-center gap-1.5 sm:gap-2${
-          secondaryLeading || onHome ? '' : ' xl:hidden'
+          secondaryLeading || onHome ? '' : ' lg:hidden'
         }`}
       >
         <SpacesRailTopToggle />

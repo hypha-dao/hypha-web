@@ -3536,7 +3536,7 @@ export function AiLeftPanel({
       {recentSpaces.length > 0 ? (
         <div
           className={
-            spaceSettingsItem ? 'max-xl:hidden' : 'mt-auto max-xl:hidden'
+            spaceSettingsItem ? 'max-lg:hidden' : 'mt-auto max-lg:hidden'
           }
         >
           {renderRecentSpacesSection('collapsed', 'recent-collapsed')}
@@ -3549,7 +3549,7 @@ export function AiLeftPanel({
   const collapsedRailBody = (
     <>
       {isAiOpen ? (
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:hidden">
           <MobileSpacesSubnav lang={lang} activeSlug={spaceSlug} embedded />
         </div>
       ) : null}

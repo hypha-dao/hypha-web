@@ -507,7 +507,7 @@ export function PanelWrapLayout({
   // Desktop conversation sits beside the icon rail, so the left track is
   // rail + panel. The hamburger menu still replaces the rail and stays 320px.
   // Below md the sheet stays full width and does not reserve a rail column.
-  // Collapsed icon rail hides below xl via Sidebar CSS (spaces rail owns that band).
+  // Collapsed icon rail hides below lg via Sidebar CSS (mobile tab bar owns that band).
   const dockIconRailBesideAi =
     !isOnboarding && !isMobileViewport && leftOpen && !leftOverlayVisible;
   const leftIconRailPx = dockIconRailBesideAi ? LEFT_SIDEBAR_ICON_WIDTH_PX : 0;

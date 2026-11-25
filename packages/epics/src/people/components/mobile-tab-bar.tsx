@@ -87,7 +87,7 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
-      if (!window.matchMedia('(max-width: 1279px)').matches) return;
+      if (!window.matchMedia('(max-width: 1023px)').matches) return;
       const anchor = (event.target as Element | null)?.closest?.('a');
       if (!(anchor instanceof HTMLAnchorElement)) return;
       const href = anchor.getAttribute('href') ?? '';
@@ -99,7 +99,7 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!window.matchMedia('(max-width: 1279px)').matches) return;
+    if (!window.matchMedia('(max-width: 1023px)').matches) return;
     if (!pathname.includes('/dho/')) return;
     if (sessionStorage.getItem(SPACE_SLIDE_KEY) !== '1') return;
     sessionStorage.removeItem(SPACE_SLIDE_KEY);
@@ -112,7 +112,7 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
     <div
       className={cn(
         showSpacesRail &&
-          'max-xl:flex max-xl:w-full max-xl:min-w-0 max-xl:flex-col',
+          'max-lg:flex max-lg:w-full max-lg:min-w-0 max-lg:flex-col',
         slideIn &&
           'max-md:animate-in max-md:slide-in-from-right max-md:duration-300 max-md:ease-out',
       )}
@@ -120,7 +120,7 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
       {showSpacesRail ? (
         // One row under the header circle — same chrome as the top toggle,
         // not a side column that floats next to the page.
-        <div className="w-full shrink-0 xl:hidden">
+        <div className="w-full shrink-0 lg:hidden">
           <MobileSpacesSubnav lang={lang} activeSlug={spaceSlug} layout="row" />
         </div>
       ) : null}
@@ -319,7 +319,7 @@ export function MobileTabBar({
     <>
       <div
         className={cn(
-          'fixed inset-x-0 z-[35] flex flex-col border-t border-border bg-page-background transition-transform duration-300 ease-out xl:hidden',
+          'fixed inset-x-0 z-[35] flex flex-col border-t border-border bg-page-background transition-transform duration-300 ease-out lg:hidden',
           !createOpen && 'pointer-events-none',
         )}
         style={{
@@ -372,7 +372,7 @@ export function MobileTabBar({
       </div>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-page-background xl:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-page-background lg:hidden"
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
@@ -562,7 +562,7 @@ export function MobileCreateButton() {
   return (
     <button
       type="button"
-      className="grid h-[36px] w-[36px] place-items-center text-foreground xl:hidden"
+      className="grid h-[36px] w-[36px] place-items-center text-foreground lg:hidden"
       aria-label={t('create')}
       onClick={() => window.dispatchEvent(new Event(OPEN_MOBILE_CREATE))}
     >

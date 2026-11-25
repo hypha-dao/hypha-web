@@ -6,7 +6,7 @@
  * On mobile the AI / chat sidebars are Sheets: there is no gap node, and the
  * main column is full width. Falling back to the desktop icon-rail width
  * (72px) insets the sticky banner over the content and looks like a floating
- * card. Measured gap width 0 (icon rail collapsed below xl) is the same.
+ * card. Measured gap width 0 (icon rail collapsed below lg) is the same.
  */
 
 export type ResolveSidebarInsetPxInput = {
@@ -30,7 +30,7 @@ export function resolveSidebarInsetPx(
   if (Number.isFinite(input.measuredPx) && input.measuredPx > 0) {
     return `${Math.round(input.measuredPx)}px`;
   }
-  // Gap exists but collapsed (e.g. icon rail `max-xl:!w-0`). Do not use the
+  // Gap exists but collapsed (e.g. icon rail `max-lg:!w-0`). Do not use the
   // desktop icon fallback — that would inset fixed chrome over full-width content.
   if (input.hasGapNodes) {
     return '0px';

@@ -233,7 +233,7 @@ export function MemberHomePeople({
   if (!notice) return null;
 
   return (
-    <p className="text-1 text-error-11 @min-[68rem]/home:hidden" role="alert">
+    <p className="text-1 text-error-11 @min-[60rem]/home:hidden" role="alert">
       {notice}
     </p>
   );
