@@ -564,15 +564,23 @@ export const ButtonProfile = ({
             />
           </button>
           <SheetContent
-            side="right"
+            side="bottom"
             closeLabel={tCommon('close')}
             className={cn(
-              'w-[calc(100vw-1rem)] max-w-[560px] rounded-none border-l border-border p-0 shadow-none',
+              'inset-x-0 bottom-0 flex max-h-[min(90dvh,40rem)] w-full flex-col gap-0',
+              'rounded-t-2xl border-x-0 border-b-0 border-t border-border p-0 shadow-none',
               'bg-background-2 font-sans text-foreground',
+              'pb-[env(safe-area-inset-bottom,0px)]',
             )}
           >
+            <div
+              className="flex shrink-0 justify-center pt-2.5 pb-1"
+              aria-hidden
+            >
+              <span className="h-1 w-10 rounded-full bg-border" />
+            </div>
             {memberProfileMenu('sheet') ?? (
-              <div className="flex h-full flex-col">
+              <div className="flex min-h-0 flex-1 flex-col">
                 <div className="border-b border-border">
                   <div className="flex items-center gap-2.5 px-3 py-2">
                     <PersonAvatar
@@ -603,7 +611,7 @@ export const ButtonProfile = ({
                   ) : null}
                 </div>
 
-                <div className="flex-1 overflow-y-auto">
+                <div className="min-h-0 flex-1 overflow-y-auto">
                   {trailingBeforeProfile ? (
                     <>
                       <div className="px-3 py-2">{trailingBeforeProfile}</div>
