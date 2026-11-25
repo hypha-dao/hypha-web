@@ -5,7 +5,7 @@
  * through a reviewed PR with a snapshot update (`__tests__/descriptions.snapshot.test.ts`),
  * a `DESCRIPTIONS_VERSION` bump and a line in `CHANGELOG.md`.
  */
-export const DESCRIPTIONS_VERSION = '1.6.0';
+export const DESCRIPTIONS_VERSION = '1.7.0';
 
 export const SERVER_NAME = 'hypha';
 export const SERVER_TITLE = 'Hypha';
@@ -154,6 +154,8 @@ export const TOOLS = {
       'Never guess a slug: find the space with `hypha_list_spaces` and `query` first.',
       'Results depend on the user’s permissions; a space the user may not see is reported as not found.',
       'Each item also carries a legacy `taskFields` group, and the inputs `status`, `board`, `assignedToMe` and `overdue` filter on it; ignore both unless the user asks about task-like fields.',
+      'Each item has an `origin`: the path that created it, recorded by Hypha and never editable. `kind` is one of `app` (the Hypha app), `hypha_assistant` (Hypha’s chat assistant acting for a person), `mcp_client` (an AI client), `api_client` (an app acting for a person), `space_key` (a community app writing with a space key), `hypha_intelligence` (Hypha’s background jobs), `hypha_platform` (Hypha reacting to an event) or `unknown` (created before the origin was recorded). `clientName` is the name the client gave itself: unverified, not proof of who it is.',
+      'For `space_key` signals, the creator is the author the community app named; Hypha does not verify it.',
       'Read-only.',
       UNTRUSTED_LINE,
     ].join(' '),
@@ -162,6 +164,8 @@ export const TOOLS = {
         'Legacy, from when signals doubled as tasks; kept for the migration period. The task status (and its category), the board, the assignees’ display names, the due date and whether it has passed. Not part of what a signal is.',
       legacySummary:
         'Legacy, from when signals doubled as tasks; kept for the migration period: counts by task status and board, overdue and unassigned signals, and the names of the statuses and boards.',
+      origin:
+        'The path that created this signal, recorded by Hypha and never editable. `clientName` is self-declared by the client and unverified; null when there is no client.',
     },
     params: {
       spaceSlug: 'The space slug, as returned by `hypha_list_spaces`.',
