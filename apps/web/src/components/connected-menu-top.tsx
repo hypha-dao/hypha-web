@@ -142,8 +142,9 @@ export function ConnectedMenuTop({
   const suppressDefaultLogo = aiChatEnabled && isSpaceRoute;
   const { overlayVisible } = useAiPanel();
 
-  // Members put Ask AI beside Messages and space identity in the page title;
-  // builders keep Ask AI / spaces rail in the leading cluster.
+  // Members put Ask AI beside Messages; builders keep Ask AI in the leading
+  // cluster. Members still need the leading slot on small screens for the
+  // Spaces dropdown (desktop place identity stays in the page eyebrow).
   const secondaryLeading = hideHyphaMark ? undefined : aiChatEnabled ? (
     <AiPanelTrigger />
   ) : (
@@ -152,10 +153,10 @@ export function ConnectedMenuTop({
   const { active: spacesRailActive } = useSpacesRailControl();
   const onHome = /\/(?:home|my-dashboard)\/?$/.test(pathname ?? '');
   const resolvedLeadingAction =
-    spacesRailActive || secondaryLeading ? (
+    hideHyphaMark || spacesRailActive || secondaryLeading ? (
       <div
         className={`flex items-center gap-1.5 sm:gap-2${
-          secondaryLeading || onHome ? '' : ' lg:hidden'
+          hideHyphaMark || secondaryLeading || onHome ? '' : ' lg:hidden'
         }`}
       >
         <SpacesRailTopToggle />
