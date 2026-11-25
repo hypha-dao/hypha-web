@@ -80,7 +80,8 @@ export function SpaceContentGutter({
     <div
       data-space-scroll-hold=""
       className={cn(
-        'mt-[2px] min-w-0 flex-1 md:mt-[6px]',
+        // Cancel layout `pt-4 md:pt-5` so the plate + mycelium meet the menu.
+        '-mt-4 min-w-0 flex-1 md:-mt-5',
         MEMBER_CONTENT_GUTTER,
         className,
       )}
