@@ -11,6 +11,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { commonDateFields } from './shared';
+import { originChecks, originColumns } from './origin';
 import { spaces } from './space';
 import { people } from './people';
 import { documents } from './document';
@@ -92,9 +93,11 @@ export const spaceQuests = pgTable(
     deliverablesEnabled: boolean('deliverables_enabled')
       .notNull()
       .default(false),
+    ...originColumns,
     ...commonDateFields,
   },
   (table) => [
+    ...originChecks(table, 'space_quests'),
     uniqueIndex('space_quests_space_slug_unique').on(table.spaceId, table.slug),
     index('space_quests_space_id_idx').on(table.spaceId),
     index('space_quests_proposal_document_id_idx').on(table.proposalDocumentId),
@@ -211,9 +214,13 @@ export const spaceQuestUpdates = pgTable(
     text: text('text').notNull(),
     links: jsonb('links').$type<QuestUpdateLinkItem[]>().notNull().default([]),
     change: jsonb('change').$type<QuestUpdateChangePayload | null>(),
+    ...originColumns,
     ...commonDateFields,
   },
-  (table) => [index('space_quest_updates_quest_id_idx').on(table.questId)],
+  (table) => [
+    ...originChecks(table, 'space_quest_updates'),
+    index('space_quest_updates_quest_id_idx').on(table.questId),
+  ],
 );
 
 export type SpaceQuestDraft = InferSelectModel<typeof spaceQuestDrafts>;
