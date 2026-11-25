@@ -129,7 +129,6 @@ export const useSpaceEnergy = (spaceSlug: string | undefined) => {
     },
     {
       refreshInterval: POLL.BACKGROUND,
-      revalidateOnFocus: false,
       shouldRetryOnError: false,
     },
   );

@@ -54,7 +54,6 @@ export const useUserEnergy = (personSlug?: string) => {
     },
     {
       refreshInterval: POLL.BACKGROUND,
-      revalidateOnFocus: false,
       shouldRetryOnError: false,
     },
   );
