@@ -343,14 +343,14 @@ export function MemberHome({
       <div className="flex min-h-0 w-full min-w-0 flex-1 flex-row overflow-hidden">
         <div
           className={cn(
-            'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden @min-[68rem]/home:grid @min-[68rem]/home:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] @min-[68rem]/home:grid-rows-[minmax(0,1fr)] @min-[68rem]/home:gap-x-0 @min-[80rem]/home:grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)_minmax(16rem,20rem)]',
+            'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden @min-[68rem]/home:grid @min-[68rem]/home:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] @min-[68rem]/home:grid-rows-[minmax(0,1fr)] @min-[68rem]/home:gap-x-0 @min-[80rem]/home:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(16rem,20rem)]',
             (showField || showEnergy) && 'max-xl:overflow-y-auto',
           )}
         >
           <aside
             aria-label={t('panelSpaces')}
             className={cn(
-              'member-home-pane narrow-scrollbar col-start-1 row-start-1 hidden min-h-0 min-w-0 flex-col gap-4 overflow-x-hidden overflow-y-auto border-t border-border px-5 py-4 @min-[80rem]/home:flex @min-[80rem]/home:w-full @min-[80rem]/home:max-w-[18rem] @min-[80rem]/home:border-r @min-[80rem]/home:border-t-0',
+              'member-home-pane narrow-scrollbar col-start-1 row-start-1 hidden min-h-0 min-w-0 flex-col gap-4 overflow-x-hidden overflow-y-auto border-t border-border px-5 py-4 @min-[80rem]/home:flex @min-[80rem]/home:w-full @min-[80rem]/home:border-r @min-[80rem]/home:border-t-0',
               showField &&
                 'max-xl:flex max-xl:shrink-0 max-xl:overflow-visible max-xl:border-0 max-xl:px-5',
             )}
