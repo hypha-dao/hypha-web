@@ -350,7 +350,7 @@ export function MemberHome({
           <aside
             aria-label={t('panelSpaces')}
             className={cn(
-              'member-home-pane narrow-scrollbar col-start-1 row-start-1 hidden min-h-0 min-w-0 flex-col gap-4 overflow-x-hidden overflow-y-auto border-t border-border px-5 py-4 @min-[80rem]/home:flex @min-[80rem]/home:w-full @min-[80rem]/home:border-r @min-[80rem]/home:border-t-0',
+              'member-home-pane narrow-scrollbar col-start-1 row-start-1 hidden min-h-0 min-w-0 flex-col gap-4 overflow-x-hidden overflow-y-auto border-t border-border px-5 py-4 @min-[80rem]/home:flex @min-[80rem]/home:w-full @min-[80rem]/home:border-t-0',
               showField &&
                 'max-xl:flex max-xl:shrink-0 max-xl:overflow-visible max-xl:border-0 max-xl:px-5',
             )}
