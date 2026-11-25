@@ -4,6 +4,7 @@ import { useMemo, useRef } from 'react';
 import useSWR from 'swr';
 import { ChevronLeft, ChevronRight, Radio, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   DEFAULT_SPACE_LEAD_IMAGE,
@@ -23,12 +24,14 @@ import {
   MEMBER_TITLE_GAP,
   MEMBER_TITLE_STACK,
   MemberEyebrow,
+  OptimizedAvatarImage,
   SignalUpvoteButton,
   signalVotingSpaceId,
   spaceAskShortName,
   useHumanChatPanel,
   useSignalSpaceMembership,
   useSignalVotingMode,
+  resolveSpaceDisplayLogoUrl,
 } from '@hypha-platform/epics';
 import { MEMBER_SCREEN_STACK } from '../../../../../_components/member-page-shell';
 import { SidebarProvider } from '@hypha-platform/ui';
@@ -90,6 +93,7 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
   const stripRef = useRef<HTMLDivElement>(null);
   const { getAccessToken, isLoading: authLoading } = useAuthentication();
   const { person } = useMe();
+  const { resolvedTheme } = useTheme();
   const viewerKey = person?.slug?.trim() || person?.address?.trim() || 'anon';
   const { open, mode, coherenceSlug, coherenceChannel, openCoherenceChat } =
     useHumanChatPanel();
@@ -102,6 +106,10 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
       : null;
   const spaceTitle = space?.title?.trim() || t('yourSpace');
   const askName = spaceAskShortName(spaceTitle) || t('yourSpace');
+  const spaceMarkUrl = resolveSpaceDisplayLogoUrl(
+    space,
+    resolvedTheme === 'dark' ? 'dark' : 'light',
+  );
   const spaceHeader =
     safeImage(space?.leadImage ?? null) ??
     (spaceLoading ? null : DEFAULT_SPACE_LEAD_IMAGE);
@@ -168,7 +176,28 @@ export function MemberSpaceHome({ spaceSlug }: { spaceSlug: string }) {
         {/* Same eyebrow → title rhythm as MemberSpacePageTitle. */}
         <header className={MEMBER_TITLE_STACK}>
           <div className="flex w-full items-center justify-between gap-4">
-            <MemberEyebrow>{spaceTitle}</MemberEyebrow>
+            <MemberEyebrow
+              leading={
+                <span className="size-3.5 shrink-0 overflow-hidden rounded-full bg-foreground/10">
+                  <OptimizedAvatarImage
+                    src={spaceMarkUrl ?? undefined}
+                    alt=""
+                    pixelSize={14}
+                    className="h-full w-full object-cover"
+                    fallback={
+                      <span
+                        className="flex h-full w-full items-center justify-center text-[9px] font-medium text-muted-foreground"
+                        aria-hidden
+                      >
+                        {spaceTitle.trim().charAt(0).toUpperCase() || '?'}
+                      </span>
+                    }
+                  />
+                </span>
+              }
+            >
+              {spaceTitle}
+            </MemberEyebrow>
             <MemberEyebrow icon={Radio}>{t('communitySignals')}</MemberEyebrow>
           </div>
           <div className="flex w-full items-center justify-between gap-4">

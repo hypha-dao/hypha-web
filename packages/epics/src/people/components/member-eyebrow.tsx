@@ -10,6 +10,8 @@ type MemberEyebrowProps = {
   children: ReactNode;
   /** Lucide (or compatible) icon rendered before the label. */
   icon?: ElementType | null;
+  /** Custom leading mark (e.g. space logo). Wins over `icon` when set. */
+  leading?: ReactNode;
   className?: string;
 };
 
@@ -20,6 +22,7 @@ type MemberEyebrowProps = {
 export function MemberEyebrow({
   children,
   icon: Icon,
+  leading,
   className,
 }: MemberEyebrowProps) {
   return (
@@ -30,7 +33,9 @@ export function MemberEyebrow({
         className,
       )}
     >
-      {Icon ? (
+      {leading != null ? (
+        leading
+      ) : Icon ? (
         <Icon
           className="size-3.5 shrink-0 text-muted-foreground"
           strokeWidth={1.5}

@@ -142,7 +142,10 @@ function MemberHomeSkeleton() {
       <section className={`flex min-w-0 flex-col ${MEMBER_TITLE_GAP}`}>
         <header className={MEMBER_TITLE_STACK}>
           <div className="flex w-full items-center justify-between gap-4">
-            <Pulse text className="h-3 w-28" />
+            <div className="flex min-w-0 items-center gap-1.5">
+              <Pulse className="size-3.5 shrink-0 rounded-full" />
+              <Pulse text className="h-3 w-28" />
+            </div>
             <Pulse className="h-3 w-28" delayMs={40} />
           </div>
           <div className="flex w-full items-center justify-between gap-4">
