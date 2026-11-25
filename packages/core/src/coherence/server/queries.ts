@@ -77,6 +77,9 @@ function completeCoherenceRow(
     | 'videoUrl'
     | 'attachments'
     | 'sharedWithNetwork'
+    | 'originKind'
+    | 'originClientId'
+    | 'originClientLabel'
   >,
 ): Coherence {
   return {
@@ -88,6 +91,10 @@ function completeCoherenceRow(
     videoUrl: null,
     attachments: [],
     sharedWithNetwork: false,
+    // A database without the origin columns yet (a preview before its migration) reads as unknown.
+    originKind: 'unknown',
+    originClientId: null,
+    originClientLabel: null,
   };
 }
 
