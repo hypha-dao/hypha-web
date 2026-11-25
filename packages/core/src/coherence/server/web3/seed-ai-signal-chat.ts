@@ -84,6 +84,7 @@ export async function seedAiSignalDescriptionAsAgent({
   const tags = Array.isArray(signal.tags) ? signal.tags.map(String) : [];
   if (
     !isAiAuthoredSignal({
+      originKind: signal.originKind,
       tags,
       title: signal.title,
       description: signal.description,

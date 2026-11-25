@@ -4,6 +4,8 @@
  * from the viewer's Matrix account, so it showed up as them.
  */
 
+import { isAiOrigin, originViewFromColumns } from '../origin';
+
 export type AiSignalTimelineEvent = {
   eventId: string;
   sender: string;
@@ -19,11 +21,21 @@ const SIGNAL_TEAM_MARKERS = [
   '[hypha:signal-team-request]',
 ];
 
+/**
+ * The stored origin decides first (#2724): an AI path (`hypha_assistant`, `hypha_intelligence`,
+ * `mcp_client`) is AI-written, every other known path is not. Only rows written before origin
+ * existed (`unknown`, or no origin given) fall back to the tag and text heuristics.
+ */
 export function isAiAuthoredSignal(input: {
+  originKind?: string | null;
   tags?: readonly string[] | null;
   title?: string | null;
   description?: string | null;
 }): boolean {
+  const origin = originViewFromColumns({ originKind: input.originKind });
+  if (input.originKind != null && origin.kind !== 'unknown') {
+    return isAiOrigin(origin);
+  }
   if (
     (input.tags ?? []).some((tag) => tag.trim().toLowerCase() === 'ai signal')
   ) {
