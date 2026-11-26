@@ -63,6 +63,8 @@ run('authorization server: protocol, gate, revocation, storage', () => {
       scopes: expect.arrayContaining(['spaces:read']),
       aud: [h.RESOURCE],
       spaceGrants: 'all',
+      // The name from the client's metadata document (client_name claim).
+      clientName: 'Test AI App',
     });
     await expect(
       verifyAccessToken(token, {
