@@ -54,24 +54,38 @@ function isBackgroundJobDescription(description: string): boolean {
     );
 }
 
+/** The ecosystem space a relayed signal came from, for a recorded AI origin or a legacy row. */
+export function signalRelaySourceSlug({
+  origin,
+  description,
+}: Pick<SignalCreatorMetaInput, 'origin' | 'description'>): string | null {
+  if (origin && origin.kind !== 'unknown' && !isAiOrigin(origin)) return null;
+  return parseRelaySourceSpaceSlug(description);
+}
+
 /**
- * Who the creator slot shows (#2724). The stored origin decides first: an AI path shows the AI
- * label (a relay keeps its source-space label, a job its job label), every other known path
- * shows the person. Only rows written before origin existed (`unknown`, or no origin) fall back
- * to the legacy tag, title and description heuristics.
+ * Who the creator slot shows (#2724). With a recorded origin, the stored person is the creator
+ * whatever path wrote the signal: the path is shown apart, as the signal's origin. Only a signal
+ * with no person falls back to a label (the AI label, the job label or the relay source). Rows
+ * written before origin existed (`unknown`, or no origin) keep the legacy tag, title and
+ * description heuristics.
  */
 export function resolveSignalCreatorKind({
   origin,
+  creatorId,
   description,
   title,
   tags,
-}: Pick<SignalCreatorMetaInput, 'origin' | 'description' | 'title' | 'tags'>): {
+}: Pick<SignalCreatorMetaInput, 'origin' | 'description' | 'title' | 'tags'> & {
+  creatorId?: number | null;
+}): {
   kind: SignalCreatorKind;
   relaySourceSpaceSlug: string | null;
 } {
   const relaySlug = parseRelaySourceSpaceSlug(description);
   if (origin && origin.kind !== 'unknown') {
-    if (!isAiOrigin(origin))
+    const hasPerson = typeof creatorId === 'number' && creatorId > 0;
+    if (hasPerson || !isAiOrigin(origin))
       return { kind: 'person', relaySourceSpaceSlug: null };
     if (relaySlug) return { kind: 'relay', relaySourceSpaceSlug: relaySlug };
     return {
@@ -125,14 +139,22 @@ export function useSignalCreatorMeta({
     [createdAtDate, dateFnsLocale],
   );
 
-  const { kind: creatorKind, relaySourceSpaceSlug } = React.useMemo(
-    () => resolveSignalCreatorKind({ origin, description, title, tags }),
-    [origin, description, title, tags],
+  const { kind: creatorKind } = React.useMemo(
+    () =>
+      resolveSignalCreatorKind({ origin, creatorId, description, title, tags }),
+    [origin, creatorId, description, title, tags],
+  );
+  const relaySourceSpaceSlug = React.useMemo(
+    () => signalRelaySourceSlug({ origin, description }),
+    [origin, description],
   );
 
   const { space: relaySourceSpace } = useSpaceBySlug(
     relaySourceSpaceSlug ?? '',
   );
+  const relaySourceLabel = relaySourceSpaceSlug
+    ? relaySourceSpace?.title || relaySourceSpaceSlug
+    : null;
 
   const creatorLabel = React.useMemo(() => {
     if (creatorKind === 'relay') {
@@ -202,5 +224,7 @@ export function useSignalCreatorMeta({
   return {
     creatorDisplayName: creatorDisplayName.trim() || null,
     createdAtRelative,
+    /** Display name of the ecosystem space a relayed signal came from, or null. */
+    relaySourceLabel,
   };
 }
