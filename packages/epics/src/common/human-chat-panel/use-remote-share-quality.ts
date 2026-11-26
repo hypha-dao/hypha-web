@@ -4,13 +4,14 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 
 import {
   adaptiveRequestDensity,
-  adaptiveRequestWidthPx,
+  adaptiveRequestSize,
   normalizePublishedLayers,
+  servedShareLayer,
   type PublishedShareLayer,
+  type ShareTileRequest,
 } from './call-share-quality-options';
 import {
   resolveCallShareQualityPhase,
-  resolveRenderedContentWidthPx,
   type CallShareQualityPhase,
 } from './call-share-quality-state';
 
@@ -20,8 +21,8 @@ export type RemoteShareQuality = {
   receivedHeight: number;
   /** Gave up waiting while still below the target (network or sender limit). */
   limitedByNetwork: boolean;
-  /** Width `adaptiveStream` asks the server for, from the current tile size. */
-  tileRequestWidth: number;
+  /** Size `adaptiveStream` asks the server for, from the current tile box. */
+  tileRequest: ShareTileRequest;
   /** Layers the sender publishes, smallest first. */
   layers: PublishedShareLayer[];
 };
@@ -33,7 +34,7 @@ const IDLE: RemoteShareQuality = {
   receivedWidth: 0,
   receivedHeight: 0,
   limitedByNetwork: false,
-  tileRequestWidth: 0,
+  tileRequest: { width: 0, height: 0 },
   layers: [],
 };
 
@@ -86,6 +87,14 @@ export function useRemoteShareQuality(options: {
       }
       const devicePixelRatio =
         el.ownerDocument.defaultView?.devicePixelRatio ?? 1;
+      const layers = normalizePublishedLayers(
+        getPublishedLayersRef.current?.(),
+      );
+      const tileRequest = adaptiveRequestSize(
+        el.clientWidth,
+        el.clientHeight,
+        devicePixelRatio,
+      );
       const result = resolveCallShareQualityPhase({
         receivedWidth: el.videoWidth,
         receivedHeight: el.videoHeight,
@@ -97,29 +106,16 @@ export function useRemoteShareQuality(options: {
         publishedWidth: getPublishedWidthRef.current(),
         elapsedMs: Date.now() - startedAt,
         capWidth,
+        servedLayerWidth: servedShareLayer(layers, tileRequest)?.width,
       });
-      const contentCssWidth =
-        resolveRenderedContentWidthPx({
-          renderedWidth: el.clientWidth,
-          renderedHeight: el.clientHeight,
-          receivedWidth: el.videoWidth,
-          receivedHeight: el.videoHeight,
-          devicePixelRatio: 1,
-        }) || 0;
-      const tileRequestWidth = adaptiveRequestWidthPx(
-        contentCssWidth,
-        devicePixelRatio,
-      );
-      const layers = normalizePublishedLayers(
-        getPublishedLayersRef.current?.(),
-      );
       const limitedByNetwork = Boolean(result.limitedByNetwork);
       setQuality((prev) =>
         prev.phase === result.phase &&
         prev.receivedWidth === el.videoWidth &&
         prev.receivedHeight === el.videoHeight &&
         prev.limitedByNetwork === limitedByNetwork &&
-        prev.tileRequestWidth === tileRequestWidth &&
+        prev.tileRequest.width === tileRequest.width &&
+        prev.tileRequest.height === tileRequest.height &&
         sameLayers(prev.layers, layers)
           ? prev
           : {
@@ -127,7 +123,7 @@ export function useRemoteShareQuality(options: {
               receivedWidth: el.videoWidth,
               receivedHeight: el.videoHeight,
               limitedByNetwork,
-              tileRequestWidth,
+              tileRequest,
               layers,
             },
       );

@@ -14,6 +14,12 @@ export const CALL_SHARE_QUALITY_IMPROVING_TIMEOUT_MS = 10_000;
 /** Received width must reach this share of the target to count as sharp. */
 const SHARP_ENOUGH_RATIO = 0.98;
 
+/**
+ * Against the copy the server should send, a looser match: copies keep the size listed when the
+ * share started, and a shared window that shrank since then sends a little less.
+ */
+const SERVED_LAYER_RATIO = 0.9;
+
 export type CallShareQualityInput = {
   /** `video.videoWidth` / `videoHeight` — resolution actually decoded (0 before the first frame). */
   receivedWidth: number;
@@ -28,6 +34,8 @@ export type CallShareQualityInput = {
   elapsedMs: number;
   /** Viewer's manual cap in pixels of width (#2742); lowers the target, never raises it. */
   capWidth?: number;
+  /** Width of the copy the server sends for this tile (`servedShareLayer`), when known. */
+  servedLayerWidth?: number;
 };
 
 export type CallShareQualityResult = {
@@ -83,8 +91,14 @@ export function resolveCallShareQualityPhase(
   if (input.capWidth && input.capWidth > 0) {
     targetWidth = Math.min(targetWidth, input.capWidth);
   }
+  let ratio = SHARP_ENOUGH_RATIO;
+  if (input.servedLayerWidth && input.servedLayerWidth < targetWidth) {
+    // The tile only justifies a smaller copy: that copy arriving is as sharp as it gets.
+    targetWidth = input.servedLayerWidth;
+    ratio = SERVED_LAYER_RATIO;
+  }
 
-  if (input.receivedWidth >= targetWidth * SHARP_ENOUGH_RATIO) {
+  if (input.receivedWidth >= targetWidth * ratio) {
     return { phase: 'done', targetWidth };
   }
   if (timedOut) {

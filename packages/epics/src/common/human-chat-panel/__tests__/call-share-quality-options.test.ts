@@ -3,10 +3,11 @@ import { describe, expect, it } from 'vitest';
 import {
   CALL_SHARE_QUALITY_AUTO,
   adaptiveRequestDensity,
-  adaptiveRequestWidthPx,
+  adaptiveRequestSize,
   buildCallShareQualityOptions,
   normalizePublishedLayers,
   resolveCallShareQualityReason,
+  servedShareLayer,
 } from '../call-share-quality-options';
 import { resolveCallShareQualityPhase } from '../call-share-quality-state';
 
@@ -37,45 +38,44 @@ describe('normalizePublishedLayers', () => {
   });
 });
 
-describe('adaptiveRequestWidthPx', () => {
-  it("uses the screen's real density (the room sets pixelDensity: 'screen')", () => {
-    expect(adaptiveRequestWidthPx(800, 1)).toBe(800);
-    expect(adaptiveRequestWidthPx(800, 1.5)).toBe(1200);
-    expect(adaptiveRequestWidthPx(800, 2)).toBe(1600);
+describe('adaptiveRequestSize', () => {
+  it("uses the whole box at the screen's real density (pixelDensity: 'screen')", () => {
+    expect(adaptiveRequestSize(800, 450, 1)).toEqual({
+      width: 800,
+      height: 450,
+    });
+    expect(adaptiveRequestSize(800, 450, 1.5)).toEqual({
+      width: 1200,
+      height: 675,
+    });
     expect(adaptiveRequestDensity(0)).toBe(1);
   });
+});
 
-  it('a 150% laptop with a 1100 px wide tile can use full size, not only 720p', () => {
-    const o = buildCallShareQualityOptions({
-      layers: [
-        { width: 640, height: 360 },
-        { width: 1280, height: 720 },
-        { width: 1920, height: 1080 },
-      ],
-      tileRequestWidth: adaptiveRequestWidthPx(1100, 1.5),
+describe('servedShareLayer', () => {
+  it('picks the smallest copy covering both width and height', () => {
+    // Full view on the preview: a 1275 x 815 box received 1080p, since 720p is not tall enough.
+    expect(servedShareLayer(layers, { width: 1275, height: 815 })).toEqual({
+      width: 1920,
+      height: 1080,
     });
-    const full = o.find((x) => x.kind === 'layer' && x.height === 1080);
-    expect(full).toMatchObject({ needsResize: false });
-  });
-
-  it('a share that arrives at the requested width is done, not limited by network', () => {
-    const result = resolveCallShareQualityPhase({
-      receivedWidth: 1920,
-      receivedHeight: 1080,
-      renderedWidth: 960,
-      renderedHeight: 540,
-      devicePixelRatio: adaptiveRequestDensity(2),
-      publishedWidth: 1920,
-      elapsedMs: 15_000,
+    expect(servedShareLayer(layers, { width: 1210, height: 645 })).toEqual({
+      width: 1280,
+      height: 720,
     });
-    expect(result.phase).toBe('done');
-    expect(result.limitedByNetwork).toBeFalsy();
+    expect(servedShareLayer(layers, { width: 4000, height: 2000 })).toEqual({
+      width: 1920,
+      height: 1080,
+    });
   });
 });
 
 describe('buildCallShareQualityOptions', () => {
   it('lists Auto then layers from largest down, labelled by height', () => {
-    const o = buildCallShareQualityOptions({ layers, tileRequestWidth: 1920 });
+    const o = buildCallShareQualityOptions({
+      layers,
+      tileRequest: { width: 1920, height: 1080 },
+    });
     expect(o.map((x) => x.id)).toEqual([
       CALL_SHARE_QUALITY_AUTO,
       'layer:1920x1080',
@@ -90,45 +90,97 @@ describe('buildCallShareQualityOptions', () => {
     expect(o.every((x) => x.kind === 'auto' || !x.needsResize)).toBe(true);
   });
 
-  it('marks sizes the tile could use but the network does not deliver', () => {
+  const flags = (o: ReturnType<typeof buildCallShareQualityOptions>) =>
+    o
+      .filter((x) => x.kind === 'layer')
+      .map((x) => (x.kind === 'layer' ? [x.label, x.needsResize] : []));
+
+  it('a box wider than 720p is tall enough for 1080p even if narrower', () => {
+    // The preview bug: 1920x1080 arriving while 1080p showed as unavailable.
     const o = buildCallShareQualityOptions({
       layers,
-      tileRequestWidth: 1920,
-      networkLimitedAtWidth: 1280,
+      tileRequest: { width: 1275, height: 815 },
     });
-    const flags = o
-      .filter((x) => x.kind === 'layer')
-      .map((x) =>
-        x.kind === 'layer'
-          ? [x.label, x.needsResize, Boolean(x.limitedByNetwork)]
-          : [],
-      );
-    expect(flags).toEqual([
-      ['1080p', false, true],
-      ['720p', false, false],
-      ['360p', false, false],
+    expect(flags(o)).toEqual([
+      ['1080p', false],
+      ['720p', false],
+      ['360p', false],
     ]);
   });
 
-  it('marks layers the tile is too small for', () => {
-    const o = buildCallShareQualityOptions({ layers, tileRequestWidth: 500 });
-    const flags = o
-      .filter((x) => x.kind === 'layer')
-      .map((x) => (x.kind === 'layer' ? [x.label, x.needsResize] : []));
-    // 500 px is not above the 640 layer, so 720p and 1080p need a bigger tile; 360p never does.
-    expect(flags).toEqual([
+  it('marks layers the box is too small for', () => {
+    const o = buildCallShareQualityOptions({
+      layers,
+      tileRequest: { width: 500, height: 280 },
+    });
+    expect(flags(o)).toEqual([
       ['1080p', true],
       ['720p', true],
       ['360p', false],
     ]);
   });
 
+  it('never marks the copy that is arriving, even after the shared window shrank', () => {
+    const o = buildCallShareQualityOptions({
+      layers,
+      tileRequest: { width: 1210, height: 645 },
+      receivedHeight: 1000,
+    });
+    expect(flags(o)[0]).toEqual(['1080p', false]);
+  });
+
   it('only Auto when no layers are known; unknown tile disables nothing', () => {
-    expect(
-      buildCallShareQualityOptions({ layers: [], tileRequestWidth: 0 }),
-    ).toEqual([{ id: CALL_SHARE_QUALITY_AUTO, kind: 'auto' }]);
-    const o = buildCallShareQualityOptions({ layers, tileRequestWidth: 0 });
+    expect(buildCallShareQualityOptions({ layers: [] })).toEqual([
+      { id: CALL_SHARE_QUALITY_AUTO, kind: 'auto' },
+    ]);
+    const o = buildCallShareQualityOptions({ layers });
     expect(o.every((x) => x.kind === 'auto' || !x.needsResize)).toBe(true);
+  });
+});
+
+describe('resolveCallShareQualityPhase with the served copy', () => {
+  it('a share that arrives at the requested width is done, not limited by network', () => {
+    const result = resolveCallShareQualityPhase({
+      receivedWidth: 1920,
+      receivedHeight: 1080,
+      renderedWidth: 960,
+      renderedHeight: 540,
+      devicePixelRatio: adaptiveRequestDensity(2),
+      publishedWidth: 1920,
+      elapsedMs: 15_000,
+    });
+    expect(result.phase).toBe('done');
+    expect(result.limitedByNetwork).toBeFalsy();
+  });
+
+  it('a shrunken window sending a bit less than the listed copy is not limited by network', () => {
+    // Preview: the 360p copy was listed 540 wide, 501 arrived in a small window.
+    const result = resolveCallShareQualityPhase({
+      receivedWidth: 501,
+      receivedHeight: 333,
+      renderedWidth: 600,
+      renderedHeight: 400,
+      devicePixelRatio: 1,
+      publishedWidth: 1620,
+      elapsedMs: 15_000,
+      servedLayerWidth: 540,
+    });
+    expect(result.phase).toBe('done');
+    expect(result.limitedByNetwork).toBeFalsy();
+  });
+
+  it('still flags a copy that does not arrive', () => {
+    const result = resolveCallShareQualityPhase({
+      receivedWidth: 640,
+      receivedHeight: 360,
+      renderedWidth: 1600,
+      renderedHeight: 900,
+      devicePixelRatio: 1,
+      publishedWidth: 1920,
+      elapsedMs: 15_000,
+      servedLayerWidth: 1920,
+    });
+    expect(result.limitedByNetwork).toBe(true);
   });
 });
 

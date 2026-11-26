@@ -4,7 +4,6 @@ export * from './use-matrix-user-ids-by-privy-subs';
 export * from './use-matrix-user-ids-by-person-ids';
 export * from './use-space-group-call';
 export * from './screenshare-publish-settings';
-export * from './screenshare-diagnostics';
 export {
   MATRIX_RTC_SESSION_EVENT,
   type MatrixRtcSessionLike,

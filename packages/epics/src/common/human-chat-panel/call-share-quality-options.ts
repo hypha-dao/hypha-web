@@ -20,10 +20,8 @@ export type CallShareQualityOption =
       height: number;
       /** e.g. "1080p" */
       label: string;
-      /** The tile is too small for this layer to be served; enlarge it first. */
+      /** The tile is too small for this layer to be served (or the network holds it back). */
       needsResize: boolean;
-      /** The tile is big enough but this size is not arriving: the network is the limit. */
-      limitedByNetwork?: boolean;
     };
 
 export function layerOptionId(layer: PublishedShareLayer): string {
@@ -56,30 +54,56 @@ export function adaptiveRequestDensity(devicePixelRatio: number): number {
   return devicePixelRatio > 0 ? devicePixelRatio : 1;
 }
 
-/** Width the server is asked for by `adaptiveStream`: CSS pixels times that density. */
-export function adaptiveRequestWidthPx(
-  contentWidthCssPx: number,
+export type ShareTileRequest = { width: number; height: number };
+
+/**
+ * Size `adaptiveStream` asks the server for: the whole video box (letterbox included) times that
+ * density, as livekit-client's `updateDimensions` does.
+ */
+export function adaptiveRequestSize(
+  boxWidthCssPx: number,
+  boxHeightCssPx: number,
   devicePixelRatio: number,
-): number {
-  return contentWidthCssPx * adaptiveRequestDensity(devicePixelRatio);
+): ShareTileRequest {
+  const density = adaptiveRequestDensity(devicePixelRatio);
+  return { width: boxWidthCssPx * density, height: boxHeightCssPx * density };
+}
+
+function covers(layer: PublishedShareLayer, request: ShareTileRequest) {
+  return layer.width >= request.width && layer.height >= request.height;
 }
 
 /**
- * Options for the picker: Auto first, then published layers from the largest down. A layer needs a
- * bigger tile when the next smaller layer already covers the tile (the server serves the smallest
- * layer that covers the request; not stated in the LiveKit docs, to confirm on a real share).
+ * The copy the server sends for `request`: the smallest that covers it in both width and height,
+ * else the largest. Seen on a preview: a 1275 x 815 box got 1080p, not 720p (1280 x 720).
+ */
+export function servedShareLayer(
+  layers: ReadonlyArray<PublishedShareLayer>,
+  request: ShareTileRequest,
+): PublishedShareLayer | undefined {
+  const sorted = normalizePublishedLayers(layers);
+  return sorted.find((l) => covers(l, request)) ?? sorted[sorted.length - 1];
+}
+
+/** A received picture this close to a copy's listed size is that copy (a shared window may shrink). */
+const SAME_LAYER_RATIO = 0.9;
+
+/**
+ * Options for the picker: Auto first, then published layers from the largest down. A layer is
+ * unavailable when the next smaller one already covers the tile, unless it is the one arriving.
  */
 export function buildCallShareQualityOptions(input: {
   layers: ReadonlyArray<PublishedShareLayer>;
-  /** See `adaptiveRequestWidthPx`; 0 or unknown disables nothing. */
-  tileRequestWidth: number;
-  /**
-   * Width actually received when the tile gave up waiting for a sharper picture
-   * (`limitedByNetwork`); larger layers that the tile could use are marked as network-limited.
-   */
-  networkLimitedAtWidth?: number;
+  /** See `adaptiveRequestSize`; unknown or 0 disables nothing. */
+  tileRequest?: ShareTileRequest;
+  /** Height of the picture arriving now (`video.videoHeight`). */
+  receivedHeight?: number;
 }): CallShareQualityOption[] {
   const sorted = normalizePublishedLayers(input.layers);
+  const request = input.tileRequest;
+  const requestKnown = Boolean(
+    request && request.width > 0 && request.height > 0,
+  );
   const options: CallShareQualityOption[] = [
     { id: CALL_SHARE_QUALITY_AUTO, kind: 'auto' },
   ];
@@ -87,15 +111,14 @@ export function buildCallShareQualityOptions(input: {
     const layer = sorted[i];
     if (!layer) continue;
     const smaller = i > 0 ? sorted[i - 1] : undefined;
+    const arriving =
+      (input.receivedHeight ?? 0) >= layer.height * SAME_LAYER_RATIO;
     const needsResize =
-      input.tileRequestWidth > 0 &&
+      requestKnown &&
+      request !== undefined &&
       smaller !== undefined &&
-      input.tileRequestWidth <= smaller.width;
-    const limitedByNetwork =
-      !needsResize &&
-      input.networkLimitedAtWidth !== undefined &&
-      input.networkLimitedAtWidth > 0 &&
-      layer.width > input.networkLimitedAtWidth;
+      covers(smaller, request) &&
+      !arriving;
     options.push({
       id: layerOptionId(layer),
       kind: 'layer',
@@ -103,7 +126,6 @@ export function buildCallShareQualityOptions(input: {
       height: layer.height,
       label: `${Math.round(layer.height)}p`,
       needsResize,
-      ...(limitedByNetwork ? { limitedByNetwork: true } : {}),
     });
   }
   return options;

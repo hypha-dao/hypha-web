@@ -3,8 +3,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { VideoQuality, type RemoteTrackPublication } from 'livekit-client';
 
-import { recordShareDiagnostic } from '@hypha-platform/core/client';
-
 import {
   CALL_SHARE_QUALITY_AUTO,
   layerOptionId,
@@ -84,7 +82,7 @@ export function usePublishShareQualityPicker(input: {
   options: CallShareQualityOption[];
   selectedId: string;
   select: (option: CallShareQualityOption) => void;
-  /** Width this tile asks for (`tileRequestWidth`); the toolbar follows the largest tile. */
+  /** Width this tile asks for (`tileRequest.width`); the toolbar follows the largest tile. */
   tileWidth?: number;
 }): void {
   const { enabled, shareKey, options, selectedId, tileWidth } = input;
@@ -95,9 +93,7 @@ export function usePublishShareQualityPicker(input: {
   optionsRef.current = options;
   const signature = options
     .map((o) =>
-      o.kind === 'layer'
-        ? `${o.id}:${o.needsResize ? 1 : 0}${o.limitedByNetwork ? 'n' : ''}`
-        : o.id,
+      o.kind === 'layer' ? `${o.id}:${o.needsResize ? 1 : 0}` : o.id,
     )
     .join('|');
 
@@ -111,18 +107,6 @@ export function usePublishShareQualityPicker(input: {
     if (!enabled || !shareKey || !selectionMissing) return;
     selectRef.current({ id: CALL_SHARE_QUALITY_AUTO, kind: 'auto' });
   }, [enabled, shareKey, selectionMissing]);
-
-  useEffect(() => {
-    if (!enabled || !shareKey) return;
-    // Quality log (#2742): which sizes the menu offers and which need a bigger tile.
-    recordShareDiagnostic({
-      side: 'picker',
-      sid: shareKey,
-      options: signature,
-      selected: selectedId,
-      tileWidth,
-    });
-  }, [enabled, shareKey, signature, selectedId, tileWidth]);
 
   useEffect(() => {
     const owner = ownerRef.current;

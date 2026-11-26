@@ -6,14 +6,7 @@ import { ClientEvent, RoomEvent } from 'matrix-js-sdk';
 import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import type { Room as LiveKitRoom } from 'livekit-client';
 import { LocalAudioTrack, Track } from 'livekit-client';
-import {
-  getScreenSharePublishSettings,
-  publishScreenShare,
-} from './screenshare-publish-settings';
-import {
-  recordShareDiagnostic,
-  startShareDiagnostics,
-} from './screenshare-diagnostics';
+import { publishScreenShare } from './screenshare-publish-settings';
 import {
   MATRIX_RTC_SESSION_EVENT,
   type MatrixRtcSessionLike,
@@ -196,9 +189,9 @@ async function stopLiveKitLocalPublishing(lkRoom: LiveKitRoom): Promise<void> {
 }
 
 /*
- * Screenshare capture / publish options come from `screenshare-publish-settings.ts` (#2742): the
- * sharer's chosen size, frame rate, bitrate, smaller copies and codec, read when a share starts.
- * A low fallback copy always exists (#2425 decision 31).
+ * Screenshare capture / publish options live in `screenshare-publish-settings.ts` (#2742): up to
+ * 1440p, smaller copies picked from the shared size. A low fallback copy always exists (#2425
+ * decision 31).
  */
 
 const CAPTURE_START_STALL_MS = 10_000;
@@ -1412,22 +1405,12 @@ export function useSpaceGroupCall(
     async (lkRoom: LiveKitRoom) => {
       try {
         clearOrphanedMatrixScreenshareStreams(client);
-        const screenShareSettings = getScreenSharePublishSettings();
         try {
-          const started = await withEnhancedScreenshareCapture(
+          await withEnhancedScreenshareCapture(
             client,
-            () => publishScreenShare(lkRoom, screenShareSettings),
+            () => publishScreenShare(lkRoom),
             screenshareSurfaceModeRef.current,
           );
-          recordShareDiagnostic({
-            side: 'send-start',
-            settings: screenShareSettings,
-            source: started.source,
-            copies: started.publish.screenShareSimulcastLayers?.map(
-              (p) => p.height,
-            ),
-            options: started.publish,
-          });
         } catch (e) {
           clearOrphanedMatrixScreenshareStreams(client);
           syncLocalScreenshareState(lkRoom);
@@ -1576,19 +1559,17 @@ export function useSpaceGroupCall(
         setThreadContext(null);
       };
 
-      const detachMediaListeners = attachLiveKitRoomMediaListeners(lkRoom, {
-        onMediaChanged,
-        onActiveSpeakersChanged,
-        onDisconnected,
-        onReconnected: () => {
-          onMediaChanged();
+      liveKitListenerCleanupRef.current = attachLiveKitRoomMediaListeners(
+        lkRoom,
+        {
+          onMediaChanged,
+          onActiveSpeakersChanged,
+          onDisconnected,
+          onReconnected: () => {
+            onMediaChanged();
+          },
         },
-      });
-      const stopShareDiagnostics = startShareDiagnostics(lkRoom);
-      liveKitListenerCleanupRef.current = () => {
-        stopShareDiagnostics();
-        detachMediaListeners();
-      };
+      );
       syncActiveSpeakerFromRoom(lkRoom);
       syncLocalMuteState(lkRoom);
     },
