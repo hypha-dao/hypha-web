@@ -1,8 +1,10 @@
 'use client';
 
-import type { ElementType } from 'react';
+import { useState, type ElementType } from 'react';
 import {
   BookOpen,
+  ChevronDown,
+  ChevronRight,
   Circle,
   FileText,
   Globe2,
@@ -16,17 +18,28 @@ import {
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 
-import { INBOX_FILTERS, type InboxFilter } from './messages-inbox';
+import { type InboxFilter } from './messages-inbox';
 
-type FilterCounts = Record<InboxFilter, { total: number; unread: number }>;
-
-const NESTED = new Set<InboxFilter>([
+/** Channels, proposals, signals, quests, and context sit under Spaces. */
+const SPACE_FILTERS: readonly InboxFilter[] = [
   'rooms',
   'proposals',
   'signals',
   'quests',
   'context',
-]);
+];
+
+const TOP_FILTERS: readonly InboxFilter[] = [
+  'all',
+  'direct',
+  'spaces',
+  'ecosystem',
+  'network',
+];
+
+type FilterCounts = Record<InboxFilter, { total: number; unread: number }>;
+
+const NESTED = new Set<InboxFilter>(SPACE_FILTERS);
 
 /** Same marks the rest of the app already uses for these places. */
 const FILTER_ICONS: Record<InboxFilter, ElementType> = {
@@ -47,18 +60,21 @@ function FilterRow({
   selected,
   counts,
   onSelect,
+  shifted = false,
 }: {
   filter: InboxFilter;
   selected: boolean;
   counts: FilterCounts;
   onSelect: (filter: InboxFilter) => void;
+  /** Room for the Spaces chevron, so the mark lines up beside it. */
+  shifted?: boolean;
 }) {
   const t = useTranslations('Connections');
   const Icon = FILTER_ICONS[filter];
   const nested = NESTED.has(filter);
   const { total, unread } = counts[filter];
   const title = t(`inbox.${filter}Title`);
-  const body = t(`inbox.${filter}Body`);
+  const description = t(`inbox.${filter}Body`);
   const unreadLabel =
     unread > 0 ? t('unread', { count: unread > 99 ? 99 : unread }) : null;
 
@@ -69,8 +85,8 @@ function FilterRow({
       data-testid={`inbox-filter-${filter}`}
       onClick={() => onSelect(filter)}
       className={cn(
-        'flex w-full min-w-0 items-start gap-3 border-b border-border px-4 py-4 text-left hover:bg-accent-2',
-        nested && 'py-3 pl-8',
+        'flex w-full min-w-0 items-start gap-3 border-b border-border py-4 pr-4 text-left hover:bg-accent-2',
+        nested ? 'py-3 pl-12' : shifted ? 'pl-9' : 'px-4',
         selected && 'bg-accent-2',
       )}
     >
@@ -104,9 +120,68 @@ function FilterRow({
             ) : null}
           </span>
         </span>
-        <span className="mt-1 block text-2 text-muted-foreground">{body}</span>
+        <span className="mt-1 block text-2 text-muted-foreground">
+          {description}
+        </span>
       </span>
     </button>
+  );
+}
+
+function SpaceFilters({
+  value,
+  counts,
+  onChange,
+}: {
+  value: InboxFilter;
+  counts: FilterCounts;
+  onChange: (filter: InboxFilter) => void;
+}) {
+  const t = useTranslations('Connections');
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <div className="relative">
+        <button
+          type="button"
+          className="absolute top-4.5 left-4 z-10 flex size-4 items-center justify-center text-neutral-9 hover:text-foreground"
+          aria-expanded={open}
+          aria-controls="inbox-space-filters"
+          aria-label={t('inbox.spacesTitle')}
+          data-testid="inbox-spaces-toggle"
+          onClick={() => setOpen((current) => !current)}
+        >
+          {open ? (
+            <ChevronDown className="size-4" strokeWidth={1.5} aria-hidden />
+          ) : (
+            <ChevronRight className="size-4" strokeWidth={1.5} aria-hidden />
+          )}
+        </button>
+        <FilterRow
+          filter="spaces"
+          shifted
+          selected={value === 'spaces'}
+          counts={counts}
+          onSelect={(filter) => {
+            setOpen(true);
+            onChange(filter);
+          }}
+        />
+      </div>
+      {open ? (
+        <div id="inbox-space-filters">
+          {SPACE_FILTERS.map((filter) => (
+            <FilterRow
+              key={filter}
+              filter={filter}
+              selected={value === filter}
+              counts={counts}
+              onSelect={onChange}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -123,15 +198,24 @@ export function MessagesInboxFilters({
   return (
     <nav aria-label={t('inbox.filterLabel')} className="min-w-0 lg:w-full">
       <div className="border border-border bg-background">
-        {INBOX_FILTERS.map((filter) => (
-          <FilterRow
-            key={filter}
-            filter={filter}
-            selected={value === filter}
-            counts={counts}
-            onSelect={onChange}
-          />
-        ))}
+        {TOP_FILTERS.map((filter) =>
+          filter === 'spaces' ? (
+            <SpaceFilters
+              key={filter}
+              value={value}
+              counts={counts}
+              onChange={onChange}
+            />
+          ) : (
+            <FilterRow
+              key={filter}
+              filter={filter}
+              selected={value === filter}
+              counts={counts}
+              onSelect={onChange}
+            />
+          ),
+        )}
       </div>
     </nav>
   );
