@@ -3,6 +3,10 @@
 Every change to `index.ts` in this folder needs a `DESCRIPTIONS_VERSION` bump, a snapshot
 update and a line here (K31).
 
+## 1.7.0
+
+- `hypha_list_signals`: each item carries an `origin` (`kind` and the client's self-declared `clientName`, #2724). The text lists the kinds, says the name is unverified, and says that for `space_key` signals the creator is the author the app named, not verified by Hypha.
+
 ## 1.6.0
 
 - New tool `hypha_list_quests`: the quests of one space (commitments, with goal, scope, milestones, deliverables, members, health and the linked proposal). The text explains that `status` is as stored and a read never changes it, the `mine` and `text` inputs, and `includeProposalStatus`. The server instructions now say that quests carry a `url` too.

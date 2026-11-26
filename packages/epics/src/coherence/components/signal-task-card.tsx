@@ -123,6 +123,7 @@ export const SignalTaskCard = React.memo(function SignalTaskCard({
     description: signal.description,
     title: signal.title,
     tags: signal.tags,
+    origin: signal.origin,
   });
 
   const stopCardActivation = (event: React.SyntheticEvent) => {

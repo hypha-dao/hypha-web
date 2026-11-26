@@ -65,6 +65,7 @@ function SignalCardComponent({
   messages = 0,
   roomId,
   creatorId,
+  origin,
   assigneeIds,
   assigneeAcknowledgedAt,
   upvotes,
@@ -110,6 +111,7 @@ function SignalCardComponent({
     description,
     title,
     tags,
+    origin,
   });
   const priorityMeta = React.useMemo(
     () => COHERENCE_PRIORITY_OPTIONS.find((o) => o.priority === priority),

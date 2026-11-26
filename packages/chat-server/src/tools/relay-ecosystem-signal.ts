@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { relayAiSignalToEcosystemSpace } from '@hypha-platform/core/server';
+import {
+  hyphaAssistantOrigin,
+  relayAiSignalToEcosystemSpace,
+} from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import type { ChatRouteTool } from './types';
 import { sanitizeSlug } from '../system-prompt';
@@ -70,7 +73,8 @@ export function createRelayEcosystemSignalTool(
           sourceAssetKeys: parsed.data.source_asset_keys,
           lang: parsed.data.lang ?? defaultLocale ?? undefined,
         },
-        { db },
+        // Hypha's chat assistant acting for the signed-in person.
+        { db, origin: hyphaAssistantOrigin() },
       );
     },
   } satisfies ChatRouteTool<typeof inputSchema>;

@@ -3,6 +3,7 @@ import { getAllOrganizationSpacesForNodeById } from '../../space/server/web3';
 import type { DbConfig } from '../../server';
 import { CreateCoherenceInput } from '../types';
 import { createCoherence } from './mutations';
+import type { Origin } from '../../origin';
 
 /**
  * Not re-exported from `./index` / `@hypha-platform/core/server` — deliberately unreachable
@@ -93,7 +94,7 @@ export async function createSignalInSpace(
     priority: CreateCoherenceInput['priority'];
     tags?: string[];
   },
-  { db }: DbConfig,
+  { db, origin }: DbConfig & { origin: Origin },
 ) {
   const payload: CreateCoherenceInput = {
     creatorId,
@@ -105,5 +106,5 @@ export async function createSignalInSpace(
     archived: false,
     tags: normalizeTags(tags),
   };
-  return createCoherence(payload, { db });
+  return createCoherence(payload, { db, origin });
 }
