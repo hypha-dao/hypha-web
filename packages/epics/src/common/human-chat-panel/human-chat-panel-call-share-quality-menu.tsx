@@ -167,6 +167,10 @@ export function HumanChatPanelCallShareQualityMenu({
                     <span className="ml-1 text-xs opacity-80">
                       · {t('callShareQualityNeedsResize')}
                     </span>
+                  ) : option.kind === 'layer' && option.limitedByNetwork ? (
+                    <span className="ml-1 text-xs opacity-80">
+                      · {t('callShareQualityReasonNetwork')}
+                    </span>
                   ) : null}
                 </span>
                 {isSelected ? <Check className="h-4 w-4" aria-hidden /> : null}

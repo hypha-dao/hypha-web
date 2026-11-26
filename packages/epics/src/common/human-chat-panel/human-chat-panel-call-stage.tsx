@@ -2735,9 +2735,13 @@ const FeedContent = ({
     options: buildCallShareQualityOptions({
       layers: remoteShareQuality.layers,
       tileRequestWidth: remoteShareQuality.tileRequestWidth,
+      networkLimitedAtWidth: remoteShareQuality.limitedByNetwork
+        ? remoteShareQuality.receivedWidth
+        : undefined,
     }),
     selectedId: remoteShareChoice.selectedId,
     select: remoteShareChoice.select,
+    tileWidth: Math.round(remoteShareQuality.tileRequestWidth),
   });
   /** Avatar until video paints — avoids black tiles while remote/local tracks warm up. */
   const showAudioScrim = !showVideoElement || !videoSurfaceReady;

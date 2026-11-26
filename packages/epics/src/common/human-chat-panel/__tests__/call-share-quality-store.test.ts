@@ -38,4 +38,23 @@ describe('share quality store', () => {
     publishShareQualityPicker(tileB, null);
     expect(getShareQualityPicker()).toBeNull();
   });
+
+  it('shows the largest tile when several show a share', () => {
+    const full = {};
+    const small = {};
+    const base = { options: [], selectedId: 'auto', select: vi.fn() };
+    publishShareQualityPicker(full, {
+      ...base,
+      shareKey: 'TR_full',
+      tileWidth: 1800,
+    });
+    publishShareQualityPicker(small, {
+      ...base,
+      shareKey: 'TR_small',
+      tileWidth: 320,
+    });
+    expect(getShareQualityPicker()?.shareKey).toBe('TR_full');
+    publishShareQualityPicker(full, null);
+    expect(getShareQualityPicker()?.shareKey).toBe('TR_small');
+  });
 });

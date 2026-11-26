@@ -90,6 +90,26 @@ describe('buildCallShareQualityOptions', () => {
     expect(o.every((x) => x.kind === 'auto' || !x.needsResize)).toBe(true);
   });
 
+  it('marks sizes the tile could use but the network does not deliver', () => {
+    const o = buildCallShareQualityOptions({
+      layers,
+      tileRequestWidth: 1920,
+      networkLimitedAtWidth: 1280,
+    });
+    const flags = o
+      .filter((x) => x.kind === 'layer')
+      .map((x) =>
+        x.kind === 'layer'
+          ? [x.label, x.needsResize, Boolean(x.limitedByNetwork)]
+          : [],
+      );
+    expect(flags).toEqual([
+      ['1080p', false, true],
+      ['720p', false, false],
+      ['360p', false, false],
+    ]);
+  });
+
   it('marks layers the tile is too small for', () => {
     const o = buildCallShareQualityOptions({ layers, tileRequestWidth: 500 });
     const flags = o

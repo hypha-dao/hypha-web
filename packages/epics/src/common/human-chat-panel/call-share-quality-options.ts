@@ -22,6 +22,8 @@ export type CallShareQualityOption =
       label: string;
       /** The tile is too small for this layer to be served; enlarge it first. */
       needsResize: boolean;
+      /** The tile is big enough but this size is not arriving: the network is the limit. */
+      limitedByNetwork?: boolean;
     };
 
 export function layerOptionId(layer: PublishedShareLayer): string {
@@ -71,6 +73,11 @@ export function buildCallShareQualityOptions(input: {
   layers: ReadonlyArray<PublishedShareLayer>;
   /** See `adaptiveRequestWidthPx`; 0 or unknown disables nothing. */
   tileRequestWidth: number;
+  /**
+   * Width actually received when the tile gave up waiting for a sharper picture
+   * (`limitedByNetwork`); larger layers that the tile could use are marked as network-limited.
+   */
+  networkLimitedAtWidth?: number;
 }): CallShareQualityOption[] {
   const sorted = normalizePublishedLayers(input.layers);
   const options: CallShareQualityOption[] = [
@@ -84,6 +91,11 @@ export function buildCallShareQualityOptions(input: {
       input.tileRequestWidth > 0 &&
       smaller !== undefined &&
       input.tileRequestWidth <= smaller.width;
+    const limitedByNetwork =
+      !needsResize &&
+      input.networkLimitedAtWidth !== undefined &&
+      input.networkLimitedAtWidth > 0 &&
+      layer.width > input.networkLimitedAtWidth;
     options.push({
       id: layerOptionId(layer),
       kind: 'layer',
@@ -91,6 +103,7 @@ export function buildCallShareQualityOptions(input: {
       height: layer.height,
       label: `${Math.round(layer.height)}p`,
       needsResize,
+      ...(limitedByNetwork ? { limitedByNetwork: true } : {}),
     });
   }
   return options;
