@@ -5,6 +5,7 @@ import { Info, Loader2, X } from 'lucide-react';
 
 import { cn } from '@hypha-platform/ui-utils';
 
+import { resolveCallShareQualityReason } from './call-share-quality-options';
 import {
   formatCallShareResolution,
   type CallShareQualityPhase,
@@ -39,12 +40,19 @@ export function CallShareQualityOverlay({
   receivedHeight,
   compact,
   t,
+  reason,
 }: {
   phase: CallShareQualityPhase;
   receivedWidth: number;
   receivedHeight: number;
   /** Small windows (Document PiP, dock thumbnail): loader only, no resolution text. */
   compact?: boolean;
+  /** Short reason next to the resolution (#2742); omitted = resolution only, as in slice 1. */
+  reason?: {
+    /** Label of the viewer's cap ("720p"); undefined = Auto. */
+    manualLabel?: string;
+    limitedByNetwork: boolean;
+  };
   t: (key: string, values?: Record<string, string | number>) => string;
 }) {
   const [hidden, setHidden] = useState(false);
@@ -58,6 +66,21 @@ export function CallShareQualityOverlay({
 
   const resolution = formatCallShareResolution(receivedWidth, receivedHeight);
   const improving = phase === 'starting' || phase === 'improving';
+  const reasonKind = reason
+    ? resolveCallShareQualityReason({
+        phase,
+        manual: Boolean(reason.manualLabel),
+        limitedByNetwork: reason.limitedByNetwork,
+      })
+    : null;
+  const reasonText =
+    reasonKind === 'auto'
+      ? t('callShareQualityReasonAuto')
+      : reasonKind === 'capped' && reason?.manualLabel
+      ? t('callShareQualityReasonCapped', { label: reason.manualLabel })
+      : reasonKind === 'limited-by-network'
+      ? t('callShareQualityReasonNetwork')
+      : null;
 
   return (
     <div className="pointer-events-none absolute right-2 top-2 z-[9] flex max-w-[calc(100%-1rem)] flex-col items-end gap-1">
@@ -88,6 +111,9 @@ export function CallShareQualityOverlay({
             )}
           >
             <span className="tabular-nums">{resolution}</span>
+            {reasonText ? (
+              <span className="text-white/70">· {reasonText}</span>
+            ) : null}
             <button
               type="button"
               onClick={() => updateHidden(true)}

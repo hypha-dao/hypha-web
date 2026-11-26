@@ -26,12 +26,16 @@ export type CallShareQualityInput = {
   publishedWidth?: number;
   /** Time since the tile started showing this share (or was last resized). */
   elapsedMs: number;
+  /** Viewer's manual cap in pixels of width (#2742); lowers the target, never raises it. */
+  capWidth?: number;
 };
 
 export type CallShareQualityResult = {
   phase: CallShareQualityPhase;
   /** Width in device pixels the tile could show; undefined when it cannot be derived. */
   targetWidth?: number;
+  /** Gave up waiting while still below the target: the network or the sender is the limit. */
+  limitedByNetwork?: boolean;
 };
 
 /**
@@ -72,13 +76,19 @@ export function resolveCallShareQualityPhase(
   if (renderedTarget <= 0) {
     return { phase: 'done' };
   }
-  const targetWidth =
+  let targetWidth =
     input.publishedWidth && input.publishedWidth > 0
       ? Math.min(input.publishedWidth, renderedTarget)
       : renderedTarget;
+  if (input.capWidth && input.capWidth > 0) {
+    targetWidth = Math.min(targetWidth, input.capWidth);
+  }
 
-  if (input.receivedWidth >= targetWidth * SHARP_ENOUGH_RATIO || timedOut) {
+  if (input.receivedWidth >= targetWidth * SHARP_ENOUGH_RATIO) {
     return { phase: 'done', targetWidth };
+  }
+  if (timedOut) {
+    return { phase: 'done', targetWidth, limitedByNetwork: true };
   }
   return { phase: 'improving', targetWidth };
 }
