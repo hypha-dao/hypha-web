@@ -47,7 +47,7 @@ export function CallShareQualityOverlay({
   phase: CallShareQualityPhase;
   receivedWidth: number;
   receivedHeight: number;
-  /** Small windows (Document PiP, dock thumbnail): loader only, no resolution text. */
+  /** Small windows (Document PiP, dock thumbnail): resolution only, smaller, no reason text. */
   compact?: boolean;
   /** Short reason next to the resolution (#2742); omitted = resolution only, as in slice 1. */
   reason?: {
@@ -86,7 +86,7 @@ export function CallShareQualityOverlay({
 
   return (
     <div className="pointer-events-none absolute right-2 top-2 z-[9] flex max-w-[calc(100%-1rem)] flex-col items-end gap-1">
-      {!compact && resolution ? (
+      {resolution ? (
         hidden ? (
           <button
             type="button"
@@ -101,11 +101,12 @@ export function CallShareQualityOverlay({
         ) : (
           <div
             className={cn(
-              'pointer-events-auto flex items-center gap-1 rounded-full bg-black/55 py-0.5 pl-2.5 pr-1 text-xs text-white/90',
+              'pointer-events-auto flex items-center gap-1 rounded-full bg-black/55 py-0.5 pr-1 text-white/90',
+              compact ? 'pl-1.5 text-[10px] leading-4' : 'pl-2.5 text-xs',
             )}
           >
             <span className="tabular-nums">{resolution}</span>
-            {reasonText ? (
+            {reasonText && !compact ? (
               <span className="text-white/70">· {reasonText}</span>
             ) : null}
             <button
