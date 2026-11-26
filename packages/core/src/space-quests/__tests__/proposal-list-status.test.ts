@@ -28,6 +28,7 @@ function quest(
     leadPersonId: null,
     leadName: '',
     leadAvatarUrl: null,
+    origin: { kind: 'app', clientLabel: null },
     creatorPersonId: null,
     proposalDocumentId: null,
     proposalSlug: null,

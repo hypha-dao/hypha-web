@@ -77,7 +77,7 @@ describe('signal action responses keep the origin client id on the server (#2724
     const result = await run();
     expect(result).not.toHaveProperty('originClientId');
     expect(result).not.toHaveProperty('originKind');
-    expect(result.origin).toEqual({
+    expect(result?.origin).toEqual({
       kind: 'space_key',
       clientLabel: 'acaw-contest',
     });
