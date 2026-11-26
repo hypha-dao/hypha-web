@@ -48,7 +48,10 @@ describe('legacy signal fields', () => {
   });
 
   it('is one absolute insertion in the form and one nullable insertion on the page', () => {
-    const form = readFileSync(join(here, '../../create-signal-form.tsx'), 'utf8');
+    const form = readFileSync(
+      join(here, '../../create-signal-form.tsx'),
+      'utf8',
+    );
     const page = readFileSync(join(here, '../../signal-page.tsx'), 'utf8');
     const disclosure = readFileSync(
       join(here, '../legacy-signal-fields-form.tsx'),

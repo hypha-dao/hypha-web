@@ -4,11 +4,11 @@ How tests are organized in this repo, how to run them, and what CI runs.
 
 ## Three kinds of tests
 
-| Kind | Runner | Lives in | Name | Run with |
-|---|---|---|---|---|
-| Unit | Vitest | `src/**/__tests__/` next to the code under test | `*.test.ts` / `*.test.tsx` | `pnpm test` (CI, every PR) |
-| End-to-end | Playwright | `apps/web-e2e/src/` | `*.spec.ts` | `pnpm e2e` (local, needs the app on :3000) |
-| Contracts | Hardhat | `packages/storage-evm/test/` | `*.test.ts` | `npx hardhat test` in `packages/storage-evm` |
+| Kind       | Runner     | Lives in                                        | Name                       | Run with                                     |
+| ---------- | ---------- | ----------------------------------------------- | -------------------------- | -------------------------------------------- |
+| Unit       | Vitest     | `src/**/__tests__/` next to the code under test | `*.test.ts` / `*.test.tsx` | `pnpm test` (CI, every PR)                   |
+| End-to-end | Playwright | `apps/web-e2e/src/`                             | `*.spec.ts`                | `pnpm e2e` (local, needs the app on :3000)   |
+| Contracts  | Hardhat    | `packages/storage-evm/test/`                    | `*.test.ts`                | `npx hardhat test` in `packages/storage-evm` |
 
 `.spec.ts` is for Playwright only. A Vitest file is always `.test.ts(x)`.
 
@@ -37,10 +37,10 @@ Every `src/**/*.test.ts(x)` file in a package runs; there are no folder lists to
 
 Tests that need a real external service are excluded from `pnpm test` and named by what they need:
 
-| Suffix | Needs | Skips itself when |
-|---|---|---|
-| `*.db.integration.test.ts` | a Postgres database | `BRANCH_DB_URL` and `DEFAULT_DB_URL` are unset |
-| `*.browser.test.ts(x)` | a locally installed Chrome | Chrome is not found |
+| Suffix                     | Needs                      | Skips itself when                              |
+| -------------------------- | -------------------------- | ---------------------------------------------- |
+| `*.db.integration.test.ts` | a Postgres database        | `BRANCH_DB_URL` and `DEFAULT_DB_URL` are unset |
+| `*.browser.test.ts(x)`     | a locally installed Chrome | Chrome is not found                            |
 
 Run them with `pnpm test:integration` (root) or `pnpm --filter <package> test:integration`. Point database tests at a throwaway database, never production. CI does not run this tier.
 
