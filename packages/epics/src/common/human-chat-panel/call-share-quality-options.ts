@@ -47,15 +47,19 @@ export function normalizePublishedLayers(
 }
 
 /**
- * Width the server is asked for by `adaptiveStream`: CSS pixels times its pixel density
- * (1, or 2 on screens above 2x), not the full device pixel ratio.
+ * Pixel density `adaptiveStream` uses when none is set (livekit-client `getPixelDensity`): 1, or 2
+ * on screens above 2x. Not the full device pixel ratio.
  */
+export function adaptiveRequestDensity(devicePixelRatio: number): number {
+  return devicePixelRatio > 2 ? 2 : 1;
+}
+
+/** Width the server is asked for by `adaptiveStream`: CSS pixels times that density. */
 export function adaptiveRequestWidthPx(
   contentWidthCssPx: number,
   devicePixelRatio: number,
 ): number {
-  const density = devicePixelRatio > 2 ? 2 : 1;
-  return contentWidthCssPx * density;
+  return contentWidthCssPx * adaptiveRequestDensity(devicePixelRatio);
 }
 
 /**

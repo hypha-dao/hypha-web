@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 
 import {
+  adaptiveRequestDensity,
   adaptiveRequestWidthPx,
   normalizePublishedLayers,
   type PublishedShareLayer,
@@ -90,7 +91,9 @@ export function useRemoteShareQuality(options: {
         receivedHeight: el.videoHeight,
         renderedWidth: el.clientWidth,
         renderedHeight: el.clientHeight,
-        devicePixelRatio,
+        // Same density adaptiveStream requests at, so a share that arrives at the requested width
+        // counts as done (a 2x laptop is not "limited by network" at 1x).
+        devicePixelRatio: adaptiveRequestDensity(devicePixelRatio),
         publishedWidth: getPublishedWidthRef.current(),
         elapsedMs: Date.now() - startedAt,
         capWidth,

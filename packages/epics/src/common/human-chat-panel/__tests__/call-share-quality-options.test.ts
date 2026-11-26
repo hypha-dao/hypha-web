@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import {
   CALL_SHARE_QUALITY_AUTO,
+  adaptiveRequestDensity,
   adaptiveRequestWidthPx,
   buildCallShareQualityOptions,
   normalizePublishedLayers,
   resolveCallShareQualityReason,
 } from '../call-share-quality-options';
+import { resolveCallShareQualityPhase } from '../call-share-quality-state';
 
 const layers = [
   { width: 1920, height: 1080 },
@@ -40,6 +42,20 @@ describe('adaptiveRequestWidthPx', () => {
     expect(adaptiveRequestWidthPx(800, 1)).toBe(800);
     expect(adaptiveRequestWidthPx(800, 2)).toBe(800);
     expect(adaptiveRequestWidthPx(800, 3)).toBe(1600);
+  });
+
+  it('a 2x screen receiving the requested width is done, not limited by network', () => {
+    const result = resolveCallShareQualityPhase({
+      receivedWidth: 960,
+      receivedHeight: 540,
+      renderedWidth: 960,
+      renderedHeight: 540,
+      devicePixelRatio: adaptiveRequestDensity(2),
+      publishedWidth: 1920,
+      elapsedMs: 15_000,
+    });
+    expect(result.phase).toBe('done');
+    expect(result.limitedByNetwork).toBeFalsy();
   });
 });
 

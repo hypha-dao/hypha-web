@@ -95,6 +95,17 @@ export function usePublishShareQualityPicker(input: {
     )
     .join('|');
 
+  // The sharer can resize (e.g. a shared window) under the same sid, so the capped layer may no
+  // longer be published. Fall back to Auto rather than keep a cap the menu cannot show.
+  const selectionMissing =
+    selectedId !== CALL_SHARE_QUALITY_AUTO &&
+    options.length > 1 &&
+    !options.some((o) => o.id === selectedId);
+  useEffect(() => {
+    if (!enabled || !shareKey || !selectionMissing) return;
+    selectRef.current({ id: CALL_SHARE_QUALITY_AUTO, kind: 'auto' });
+  }, [enabled, shareKey, selectionMissing]);
+
   useEffect(() => {
     const owner = ownerRef.current;
     if (!enabled || !shareKey) {
