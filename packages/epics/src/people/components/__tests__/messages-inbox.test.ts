@@ -17,6 +17,7 @@ import {
   isInboxChannelKind,
   resolveInboxPlace,
   rowMatchesInboxFilter,
+  rowMatchesMobileInboxTab,
   type InboxContext,
 } from '../messages-inbox';
 
@@ -70,6 +71,33 @@ describe('messages inbox filters', () => {
     expect(rowMatchesInboxFilter('ecosystem', 'ecosystem')).toBe(true);
     expect(rowMatchesInboxFilter('network', 'network')).toBe(true);
     expect(rowMatchesInboxFilter('space', 'all')).toBe(true);
+  });
+
+  it('splits the phone list into All, Direct, Groups, and Channels', () => {
+    expect(rowMatchesMobileInboxTab('dm', 'direct')).toBe(true);
+    expect(rowMatchesMobileInboxTab('group', 'direct')).toBe(false);
+    expect(rowMatchesMobileInboxTab('group', 'groups')).toBe(true);
+    expect(rowMatchesMobileInboxTab('dm', 'groups')).toBe(false);
+    for (const kind of [
+      'space',
+      'space-public',
+      'ecosystem',
+      'network',
+    ] as const) {
+      expect(rowMatchesMobileInboxTab(kind, 'channels')).toBe(true);
+      expect(rowMatchesMobileInboxTab(kind, 'all')).toBe(true);
+    }
+    for (const kind of [
+      'signal',
+      'proposal',
+      'quest',
+      'context',
+      'dm',
+      'group',
+    ] as const) {
+      expect(rowMatchesMobileInboxTab(kind, 'channels')).toBe(false);
+      expect(rowMatchesMobileInboxTab(kind, 'all')).toBe(true);
+    }
   });
 
   it('treats proposal rooms as their own messages channel', () => {

@@ -1550,6 +1550,7 @@
     "archivedEmpty": "Os grupos arquivados aparecem aqui.",
     "inbox": {
       "allTitle": "Todas as mensagens",
+      "tabAll": "Todos",
       "allBody": "Caixa unificada de todos os contextos",
       "directTitle": "Direto",
       "directBody": "Conversas individuais e chats de grupo",

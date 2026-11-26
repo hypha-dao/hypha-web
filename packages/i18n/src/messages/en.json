@@ -169,6 +169,7 @@
     "archivedEmpty": "Archived groups show up here.",
     "inbox": {
       "allTitle": "All messages",
+      "tabAll": "All",
       "allBody": "Unified inbox across all contexts",
       "directTitle": "Direct",
       "directBody": "One-to-one conversations and group chats",

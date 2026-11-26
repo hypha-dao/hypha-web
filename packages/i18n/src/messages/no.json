@@ -769,6 +769,7 @@
     "archivedEmpty": "Arkiverte grupper vises her.",
     "inbox": {
       "allTitle": "Alle meldinger",
+      "tabAll": "Alle",
       "allBody": "Samlet innboks for alle sammenhenger",
       "directTitle": "Direkte",
       "directBody": "Én-til-én-samtaler og gruppechatter",

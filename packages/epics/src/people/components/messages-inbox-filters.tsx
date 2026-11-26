@@ -18,7 +18,11 @@ import {
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 
-import { type InboxFilter } from './messages-inbox';
+import {
+  MOBILE_INBOX_TABS,
+  type InboxFilter,
+  type MobileInboxTab,
+} from './messages-inbox';
 
 /** Channels, proposals, signals, quests, and context sit under Spaces. */
 const SPACE_FILTERS: readonly InboxFilter[] = [
@@ -181,6 +185,50 @@ function SpaceFilters({
           ))}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/** Phone categories. They sit on the conversation list, not on a screen before it. */
+export function MessagesInboxMobileTabs({
+  value,
+  onChange,
+}: {
+  value: MobileInboxTab;
+  onChange: (tab: MobileInboxTab) => void;
+}) {
+  const t = useTranslations('Connections');
+  return (
+    <div
+      role="tablist"
+      aria-label={t('inbox.filterLabel')}
+      className="flex h-11 w-full border border-border bg-neutral-3 lg:hidden"
+    >
+      {MOBILE_INBOX_TABS.map((tab) => {
+        const selected = value === tab;
+        return (
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            aria-selected={selected}
+            data-testid={`inbox-mobile-tab-${tab}`}
+            onClick={() => onChange(tab)}
+            className={cn(
+              'min-w-0 flex-1 text-2 text-foreground',
+              selected ? 'bg-background font-medium' : 'bg-transparent',
+            )}
+          >
+            {tab === 'all'
+              ? t('inbox.tabAll')
+              : tab === 'direct'
+              ? t('inbox.directTitle')
+              : tab === 'groups'
+              ? t('groups')
+              : t('inbox.roomsTitle')}
+          </button>
+        );
+      })}
     </div>
   );
 }

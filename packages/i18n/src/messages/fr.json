@@ -770,6 +770,7 @@
     "archivedEmpty": "Les groupes archivés apparaissent ici.",
     "inbox": {
       "allTitle": "Tous les messages",
+      "tabAll": "Tous",
       "allBody": "Boîte unifiée de tous les contextes",
       "directTitle": "Direct",
       "directBody": "Conversations individuelles et discussions de groupe",

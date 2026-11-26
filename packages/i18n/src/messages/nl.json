@@ -770,6 +770,7 @@
     "archivedEmpty": "Gearchiveerde groepen verschijnen hier.",
     "inbox": {
       "allTitle": "Alle berichten",
+      "tabAll": "Alle",
       "allBody": "Eén inbox voor alle contexten",
       "directTitle": "Direct",
       "directBody": "Een-op-een-gesprekken en groepschats",

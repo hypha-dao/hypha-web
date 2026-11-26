@@ -288,6 +288,31 @@ export function channelIsRelevantToMember(
   return false;
 }
 
+/** Phone list tabs. Channels are space rooms plus ecosystem and network. */
+export const MOBILE_INBOX_TABS = [
+  'all',
+  'direct',
+  'groups',
+  'channels',
+] as const;
+
+export type MobileInboxTab = (typeof MOBILE_INBOX_TABS)[number];
+
+export function rowMatchesMobileInboxTab(
+  kind: InboxChannelKind,
+  tab: MobileInboxTab,
+): boolean {
+  if (tab === 'all') return true;
+  if (tab === 'direct') return kind === 'dm';
+  if (tab === 'groups') return kind === 'group';
+  return (
+    kind === 'space' ||
+    kind === 'space-public' ||
+    kind === 'ecosystem' ||
+    kind === 'network'
+  );
+}
+
 export function rowMatchesInboxFilter(
   kind: InboxChannelKind,
   filter: InboxFilter,

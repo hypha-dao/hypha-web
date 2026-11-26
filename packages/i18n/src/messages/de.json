@@ -770,6 +770,7 @@
     "archivedEmpty": "Archivierte Gruppen erscheinen hier.",
     "inbox": {
       "allTitle": "Alle Nachrichten",
+      "tabAll": "Alle",
       "allBody": "Einheitlicher Posteingang über alle Kontexte",
       "directTitle": "Direkt",
       "directBody": "Einzelgespräche und Gruppenchats",

@@ -61,7 +61,6 @@ import { cn } from '@hypha-platform/ui-utils';
 import {
   ArrowUpRight,
   BookOpen,
-  ChevronLeft,
   Circle,
   FileText,
   Globe,
@@ -141,7 +140,10 @@ import {
   type MemberRow,
   type NewcomerCandidate,
 } from './member-connections';
-import { MessagesInboxFilters } from './messages-inbox-filters';
+import {
+  MessagesInboxFilters,
+  MessagesInboxMobileTabs,
+} from './messages-inbox-filters';
 import {
   channelRowsFromSnapshots,
   directInboxPlace,
@@ -155,10 +157,12 @@ import {
   isInboxFilter,
   peopleInboxKind,
   rowMatchesInboxFilter,
+  rowMatchesMobileInboxTab,
   type InboxChannelKind,
   type InboxContext,
   type InboxFilter,
   type JoinedChannelSnapshot,
+  type MobileInboxTab,
 } from './messages-inbox';
 import {
   clearInboxListSnapshot,
@@ -1963,6 +1967,15 @@ export function MyConnections({
   }, []);
   // Direct skips the all-channels merge on open (faster first paint).
   const [inboxFilter, setInboxFilter] = useState<InboxFilter>('direct');
+  const [mobileTab, setMobileTab] = useState<MobileInboxTab>('all');
+  const [isLargeInbox, setIsLargeInbox] = useState(false);
+  useLayoutEffect(() => {
+    const media = window.matchMedia('(min-width: 64rem)');
+    const apply = () => setIsLargeInbox(media.matches);
+    apply();
+    media.addEventListener('change', apply);
+    return () => media.removeEventListener('change', apply);
+  }, []);
   const [inboxVisibleCount, setInboxVisibleCount] = useState(INBOX_LIST_PAGE);
   /** Below the side-by-side layout, a channel tap replaces the menu with its messages. */
   const [inboxChannelOpen, setInboxChannelOpen] = useState(false);
@@ -2722,6 +2735,44 @@ export function MyConnections({
         row.inbox ? [{ kind: row.inbox.kind, unread: row.unread }] : [],
       ),
     ]);
+    if (section === 'messages' && !picking && !isLargeInbox) {
+      if (mobileTab === 'all') {
+        return {
+          rows: sortConversationsByLastMessage([
+            ...directForList,
+            ...channelRows,
+          ]),
+          counts,
+        };
+      }
+      if (mobileTab === 'channels') {
+        return {
+          rows: sortConversationsByLastMessage(
+            channelRows.filter(
+              (row) =>
+                row.inbox != null &&
+                rowMatchesMobileInboxTab(row.inbox.kind, 'channels'),
+            ),
+          ),
+          counts,
+        };
+      }
+      const peopleRows =
+        mobileTab === 'direct' && needle.length > 0
+          ? directForList
+          : directConversations;
+      return {
+        rows: sortConversationsByLastMessage(
+          peopleRows.filter((row) =>
+            rowMatchesMobileInboxTab(
+              row.inbox?.kind ?? peopleInboxKind(row),
+              mobileTab,
+            ),
+          ),
+        ),
+        counts,
+      };
+    }
     if (section !== 'messages' || picking || inboxFilter === 'direct') {
       return { rows: directForList, counts };
     }
@@ -2749,6 +2800,8 @@ export function MyConnections({
     client,
     inboxContext,
     inboxFilter,
+    isLargeInbox,
+    mobileTab,
     inboxMentionNames,
     needle,
     people,
@@ -2864,7 +2917,10 @@ export function MyConnections({
       (hasMorePeople &&
         !needle &&
         section !== 'archived' &&
-        (picking || inboxFilter === 'all' || inboxFilter === 'direct')));
+        (picking ||
+          (isLargeInbox
+            ? inboxFilter === 'all' || inboxFilter === 'direct'
+            : mobileTab === 'all' || mobileTab === 'direct'))));
   useEffect(() => {
     const root = inboxListRef.current;
     if (!root || section !== 'messages' || picking) return;
@@ -2892,7 +2948,15 @@ export function MyConnections({
     section === 'archived'
       ? t('tabs.archived')
       : section === 'messages' && !picking
-      ? t(`inbox.${inboxFilter}Title`)
+      ? isLargeInbox
+        ? t(`inbox.${inboxFilter}Title`)
+        : mobileTab === 'groups'
+        ? t('groups')
+        : mobileTab === 'channels'
+        ? t('inbox.roomsTitle')
+        : mobileTab === 'direct'
+        ? t('inbox.directTitle')
+        : t('inbox.allTitle')
       : t('people');
   const showChannelTags = section === 'messages' && !picking;
   const selectedPeople = useMemo(
@@ -3252,10 +3316,7 @@ export function MyConnections({
                 // Same sticky edge as the conversation list. Page scroll and
                 // the list's own scroll are unchanged. The unread counts stay
                 // in view instead of leaving with the page.
-                'narrow-scrollbar w-full shrink-0 lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:w-80 lg:self-start lg:min-h-0 lg:bg-page-background',
-                picking || inboxChannelOpen
-                  ? 'hidden lg:block'
-                  : 'lg:flex-none',
+                'narrow-scrollbar hidden w-full shrink-0 lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:block lg:w-80 lg:flex-none lg:self-start lg:min-h-0 lg:bg-page-background',
               )}
             >
               <MessagesInboxFilters
@@ -3268,32 +3329,23 @@ export function MyConnections({
           <div
             data-messages-list-frame=""
             className={cn(
-              'min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-visible lg:overflow-hidden',
+              'flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-visible lg:overflow-hidden',
               // Sticky + viewport height from MessagesViewportLock so the
               // list scrolls inside while the page still moves.
               'lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)]',
-              section === 'messages' && !picking && !inboxChannelOpen
-                ? 'hidden lg:flex'
-                : 'flex',
             )}
           >
-            {section === 'messages' && !picking ? (
-              <button
-                type="button"
-                aria-label={tCommon('back')}
-                className="flex shrink-0 items-center gap-1 self-start text-3 text-foreground lg:hidden"
-                onClick={() => setInboxChannelOpen(false)}
-              >
-                <ChevronLeft
-                  className="size-4 shrink-0"
-                  strokeWidth={1.5}
-                  aria-hidden
-                />
-                {t(`inbox.${inboxFilter}Title`)}
-              </button>
-            ) : null}
             <div className="flex min-h-0 flex-1 flex-col gap-3">
               <div className="flex shrink-0 flex-col gap-3">
+                {section === 'messages' && !picking ? (
+                  <MessagesInboxMobileTabs
+                    value={mobileTab}
+                    onChange={(next) => {
+                      setMobileTab(next);
+                      setInboxVisibleCount(INBOX_LIST_PAGE);
+                    }}
+                  />
+                ) : null}
                 <div className="flex items-center gap-2">
                   <label className="relative min-w-0 flex-1">
                     <span className="sr-only">{t('search')}</span>
@@ -3328,7 +3380,7 @@ export function MyConnections({
                       type="button"
                       variant="outline"
                       colorVariant="neutral"
-                      className="shrink-0 gap-1.5"
+                      className="shrink-0 gap-1.5 max-lg:tracking-[0.06em] max-lg:uppercase"
                       disabled={!isMatrixAvailable || people.length < 2}
                       onClick={() => setPicking(true)}
                     >
@@ -3499,7 +3551,10 @@ export function MyConnections({
                       ? picking || section === 'messages'
                         ? t('noMembersMatchSearch')
                         : t('noMatches')
-                      : showChannelTags && inboxFilter !== 'direct'
+                      : showChannelTags &&
+                        (isLargeInbox
+                          ? inboxFilter !== 'direct'
+                          : mobileTab !== 'direct')
                       ? t('inbox.empty')
                       : t('empty')}
                   </p>
