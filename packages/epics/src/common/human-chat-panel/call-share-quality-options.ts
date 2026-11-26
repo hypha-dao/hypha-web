@@ -47,11 +47,11 @@ export function normalizePublishedLayers(
 }
 
 /**
- * Pixel density `adaptiveStream` uses when none is set (livekit-client `getPixelDensity`): 1, or 2
- * on screens above 2x. Not the full device pixel ratio.
+ * Pixel density `adaptiveStream` requests at: the screen's real density, since the room sets
+ * `pixelDensity: 'screen'` (`createLiveKitRoom` in core).
  */
 export function adaptiveRequestDensity(devicePixelRatio: number): number {
-  return devicePixelRatio > 2 ? 2 : 1;
+  return devicePixelRatio > 0 ? devicePixelRatio : 1;
 }
 
 /** Width the server is asked for by `adaptiveStream`: CSS pixels times that density. */

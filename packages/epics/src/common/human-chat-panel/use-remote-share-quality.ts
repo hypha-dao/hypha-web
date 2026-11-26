@@ -92,7 +92,7 @@ export function useRemoteShareQuality(options: {
         renderedWidth: el.clientWidth,
         renderedHeight: el.clientHeight,
         // Same density adaptiveStream requests at, so a share that arrives at the requested width
-        // counts as done (a 2x laptop is not "limited by network" at 1x).
+        // counts as done and is never marked "limited by network".
         devicePixelRatio: adaptiveRequestDensity(devicePixelRatio),
         publishedWidth: getPublishedWidthRef.current(),
         elapsedMs: Date.now() - startedAt,

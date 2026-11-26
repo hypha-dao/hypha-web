@@ -196,16 +196,25 @@ async function stopLiveKitLocalPublishing(lkRoom: LiveKitRoom): Promise<void> {
  * `adaptiveStream`/`dynacast` mechanism only degrades layer selection correctly if a low
  * fallback layer actually exists — see #2425 decision 31. The 720p middle layer (#2742) gives
  * viewers on mid-size tiles or slower links a step between 360p and full size; livekit-client
- * only sends it when the capture is at least 960 px on its long side. The sharer can switch the
- * top layer to Smooth (30 fps, same resolution) live, see `call-share-send-mode.ts` in epics.
+ * only sends it when the capture is at least 960 px on its long side.
+ *
+ * Sharper text (#2742): livekit-client's default capture asks for 1920x1080, so larger screens were
+ * scaled down before encoding. The capture now goes up to 2560x1440 (smaller screens and windows
+ * keep their own size; nothing is scaled up), and the full-size layer gets a larger bitrate budget
+ * than the 1080p preset's 2.5 Mbps. Still 15 fps and `maintain-resolution`: on a short uplink frames
+ * drop, not pixels, and viewers on slow links get the 720p / 360p layers.
  */
+const SCREEN_SHARE_MAX_CAPTURE = { width: 2560, height: 1440, frameRate: 30 };
+const SCREEN_SHARE_TOP_ENCODING = { maxBitrate: 4_000_000, maxFramerate: 15 };
+
 const SCREEN_SHARE_CAPTURE_OPTIONS: ScreenShareCaptureOptions = {
   contentHint: 'detail',
+  resolution: SCREEN_SHARE_MAX_CAPTURE,
 };
 
 const SCREEN_SHARE_PUBLISH_OPTIONS: TrackPublishOptions = {
   simulcast: true,
-  screenShareEncoding: ScreenSharePresets.h1080fps15.encoding,
+  screenShareEncoding: SCREEN_SHARE_TOP_ENCODING,
   screenShareSimulcastLayers: [
     ScreenSharePresets.h360fps15,
     ScreenSharePresets.h720fps15,

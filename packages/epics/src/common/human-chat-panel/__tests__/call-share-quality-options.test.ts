@@ -38,16 +38,30 @@ describe('normalizePublishedLayers', () => {
 });
 
 describe('adaptiveRequestWidthPx', () => {
-  it('uses density 1 up to 2x screens and 2 above', () => {
+  it("uses the screen's real density (the room sets pixelDensity: 'screen')", () => {
     expect(adaptiveRequestWidthPx(800, 1)).toBe(800);
-    expect(adaptiveRequestWidthPx(800, 2)).toBe(800);
-    expect(adaptiveRequestWidthPx(800, 3)).toBe(1600);
+    expect(adaptiveRequestWidthPx(800, 1.5)).toBe(1200);
+    expect(adaptiveRequestWidthPx(800, 2)).toBe(1600);
+    expect(adaptiveRequestDensity(0)).toBe(1);
   });
 
-  it('a 2x screen receiving the requested width is done, not limited by network', () => {
+  it('a 150% laptop with a 1100 px wide tile can use full size, not only 720p', () => {
+    const o = buildCallShareQualityOptions({
+      layers: [
+        { width: 640, height: 360 },
+        { width: 1280, height: 720 },
+        { width: 1920, height: 1080 },
+      ],
+      tileRequestWidth: adaptiveRequestWidthPx(1100, 1.5),
+    });
+    const full = o.find((x) => x.kind === 'layer' && x.height === 1080);
+    expect(full).toMatchObject({ needsResize: false });
+  });
+
+  it('a share that arrives at the requested width is done, not limited by network', () => {
     const result = resolveCallShareQualityPhase({
-      receivedWidth: 960,
-      receivedHeight: 540,
+      receivedWidth: 1920,
+      receivedHeight: 1080,
       renderedWidth: 960,
       renderedHeight: 540,
       devicePixelRatio: adaptiveRequestDensity(2),

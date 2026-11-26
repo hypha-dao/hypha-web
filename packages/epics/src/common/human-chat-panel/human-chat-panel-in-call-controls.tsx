@@ -9,7 +9,6 @@ import {
   Circle,
   Disc,
   FileText,
-  Gauge,
   Loader2,
   Mic,
   MicOff,
@@ -49,9 +48,6 @@ import { HumanChatPanelCallReactPopover } from './human-chat-panel-call-react-po
 import type { CallFloatingReactionStyle } from './call-zoom-reaction-catalog';
 import { HumanChatPanelCallScreenshareMenu } from './human-chat-panel-call-screenshare-menu';
 import { HumanChatPanelCallShareQualityMenu } from './human-chat-panel-call-share-quality-menu';
-import type { Room as LiveKitRoom } from 'livekit-client';
-import { useShareSendMode } from './use-share-send-mode';
-import type { CallShareSendMode } from './call-share-send-mode';
 import {
   callAccentAlertActionButtonClassName,
   callAccentAlertText,
@@ -114,8 +110,6 @@ type HumanChatPanelInCallControlsProps = {
   onToggleRaiseHand?: () => void | Promise<void>;
   /** Sidebar leave-only chrome on mobile still exposes reactions (WCUX-REACT-4). */
   includeReactionsWhenLeaveOnly?: boolean;
-  /** LiveKit room, for the sharer's Detail / Smooth switch in the share toolbar (#2742). */
-  liveKitRoom?: LiveKitRoom | null;
 };
 
 /**
@@ -159,7 +153,6 @@ export function HumanChatPanelInCallControls({
   onSendReaction,
   onToggleRaiseHand,
   includeReactionsWhenLeaveOnly = false,
-  liveKitRoom = null,
 }: HumanChatPanelInCallControlsProps) {
   const t = useTranslations('HumanChatPanel');
   const isMobile = useIsMobile() ?? false;
@@ -179,9 +172,8 @@ export function HumanChatPanelInCallControls({
   /** Share toolbar overflow: record, mic setup and leave (they would not fit the narrow share dock / PiP). */
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [moreMenuView, setMoreMenuView] = useState<
-    'root' | 'capture' | 'audio' | 'shareQuality'
+    'root' | 'capture' | 'audio'
   >('root');
-  const shareSendMode = useShareSendMode(liveKitRoom, isScreensharing);
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
   const reactMenuContentRef = useRef<HTMLDivElement | null>(null);
   const reactMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -613,59 +605,6 @@ export function HumanChatPanelInCallControls({
         <ChevronLeft className="h-4 w-4" />
       </button>
     ) : null;
-  const shareSendModeLabel = (mode: CallShareSendMode) =>
-    mode === 'smooth' ? t('callShareSendSmooth') : t('callShareSendDetail');
-  const shareQualityMenuBody = (
-    <>
-      <div className="flex items-center gap-1">
-        {moreMenuBackButton}
-        <p
-          className={cn(
-            'py-1.5 text-sm font-semibold',
-            moreMenuBackButton ? 'pr-2' : 'px-2',
-          )}
-        >
-          {t('callShareSendQuality')}
-        </p>
-      </div>
-      <div className="-mx-0 my-1 h-px bg-neutral-6" />
-      {(['detail', 'smooth'] as const).map((mode) => (
-        <button
-          key={mode}
-          type="button"
-          role="menuitemradio"
-          aria-checked={shareSendMode.mode === mode}
-          disabled={shareSendMode.pending !== null}
-          onClick={() => shareSendMode.setMode(mode)}
-          className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-wait"
-        >
-          <span className="flex flex-col">
-            <span>{shareSendModeLabel(mode)}</span>
-            <span className="text-xs opacity-70">
-              {mode === 'smooth'
-                ? t('callShareSendSmoothHint')
-                : t('callShareSendDetailHint')}
-            </span>
-          </span>
-          {shareSendMode.pending === mode ? (
-            <Loader2
-              className="h-4 w-4 shrink-0 animate-spin motion-reduce:animate-none"
-              aria-label={t('callShareSendApplying')}
-            />
-          ) : shareSendMode.mode === mode && shareSendMode.pending === null ? (
-            <Check className={menuCheckIcon} />
-          ) : null}
-        </button>
-      ))}
-      {shareSendMode.failed ? (
-        <p role="status" className="px-2 pt-1 text-xs opacity-80">
-          {t('callShareSendFailed', {
-            mode: shareSendModeLabel(shareSendMode.mode),
-          })}
-        </p>
-      ) : null}
-    </>
-  );
   const audioMenuBody = (
     <>
       <div className="flex items-center gap-1">
@@ -1047,27 +986,6 @@ export function HumanChatPanelInCallControls({
         >
           {moreMenuView === 'root' ? (
             <>
-              {shareSendMode.available ? (
-                <>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => setMoreMenuView('shareQuality')}
-                    className={moreMenuItemClass}
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      <Gauge className="h-4 w-4" />
-                      {t('callShareSendQuality')}
-                    </span>
-                    <span className="text-xs opacity-70">
-                      {shareSendModeLabel(shareSendMode.mode)}
-                    </span>
-                  </button>
-                  {showAdvancedCallControls ? null : (
-                    <div className="-mx-0 my-1 h-px bg-neutral-6" />
-                  )}
-                </>
-              ) : null}
               {showAdvancedCallControls ? (
                 <>
                   <button
@@ -1118,8 +1036,6 @@ export function HumanChatPanelInCallControls({
             </>
           ) : moreMenuView === 'capture' ? (
             captureMenuBody
-          ) : moreMenuView === 'shareQuality' ? (
-            shareQualityMenuBody
           ) : (
             audioMenuBody
           )}
