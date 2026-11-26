@@ -507,7 +507,9 @@ describe('resolveQuestDraftTarget', () => {
     expect(scopeBoundaryLists('in scope foo out of scope')).toBeNull();
     expect(scopeBoundaryLists('within scope foo out of scope bar')).toBeNull();
     expect(scopeBoundaryLists('in scopes foo out of scope bar')).toBeNull();
-    expect(Date.now() - started).toBeLessThan(250);
+    // ~40 ms alone. A backtracking regex on these ~40k-char inputs takes
+    // seconds; 1 s keeps that signal without failing on a loaded CI runner.
+    expect(Date.now() - started).toBeLessThan(1000);
   });
 
   it('names the section a preserved suggestion still applies to', () => {

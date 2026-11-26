@@ -103,7 +103,8 @@ describe('isPeopleGroupChatRoom', () => {
           { userId: '@ada:hypha', membership: 'join', name: 'Ada Lovelace' },
           { userId: '@grace:hypha', membership: 'join', name: 'Grace Hopper' },
           {
-            userId: '@hypha_bot:hypha',
+            // A trusted bot: only configured / shared bot ids count as bots.
+            userId: '@hypha_bot_prod:matrix.hypha.earth',
             membership: 'join',
             name: 'hypha_bot',
           },

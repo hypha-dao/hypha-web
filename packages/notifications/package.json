@@ -3,7 +3,8 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@hypha-platform/config-typescript": "workspace:*"
+    "@hypha-platform/config-typescript": "workspace:*",
+    "@hypha-platform/config-vitest": "workspace:*"
   },
   "dependencies": {
     "@hypha-platform/core": "workspace:*",
@@ -18,5 +19,8 @@
     "./server": "./src/server.ts",
     "./ingest": "./src/ingest/index.ts",
     "./template": "./src/template/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
   }
 }

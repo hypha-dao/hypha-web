@@ -25,6 +25,7 @@
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
     "@hypha-platform/config-typescript": "workspace:*",
+    "@hypha-platform/config-vitest": "workspace:*",
     "@types/node": "^22.16.5",
     "@types/pg": "^8.11.13",
     "@types/ws": "^8.18.1",

@@ -19,6 +19,7 @@
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
     "@hypha-platform/config-typescript": "workspace:*",
+    "@hypha-platform/config-vitest": "workspace:*",
     "@modelcontextprotocol/client": "2.4.0",
     "@types/node": "^22.16.5",
     "typescript": "^5.7.3",
