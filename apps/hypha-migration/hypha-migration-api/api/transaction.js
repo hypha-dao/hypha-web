@@ -36,18 +36,24 @@ module.exports = async (req, res) => {
     try { body = JSON.parse(body); } catch { body = {}; }
   }
   body = body || {};
-  const uid = req.query.uid || body.uid;
-  const tx_id = req.query.tx_id || body.tx_id;
+  // Nonempty strings only — a JSON object uid would otherwise become Redis key
+  // tx:[object Object] and collide across requests.
+  const uid =
+    (typeof req.query.uid === 'string' && req.query.uid) ||
+    (typeof body.uid === 'string' && body.uid);
+  const tx_id =
+    (typeof req.query.tx_id === 'string' && req.query.tx_id) ||
+    (typeof body.tx_id === 'string' && body.tx_id);
 
   try {
     // POST: Store transaction ID (called by mobile wallet after signing)
     if (req.method === 'POST') {
-      if (!uid) {
+      if (typeof uid !== 'string' || uid.length === 0) {
         return res.status(400).json({ error: 'Missing uid parameter' });
       }
       
       const txId = tx_id;
-      if (!txId || txId === '{{tx}}') {
+      if (typeof txId !== 'string' || txId.length === 0 || txId === '{{tx}}') {
         return res.status(400).json({ error: 'Missing tx_id parameter' });
       }
 
@@ -66,7 +72,7 @@ module.exports = async (req, res) => {
 
     // GET: Retrieve transaction ID (called by web app polling)
     if (req.method === 'GET') {
-      if (!uid) {
+      if (typeof uid !== 'string' || uid.length === 0) {
         return res.status(400).json({ error: 'Missing uid parameter' });
       }
 
