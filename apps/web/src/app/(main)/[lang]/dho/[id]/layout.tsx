@@ -27,6 +27,8 @@ import { DhoStickySpaceChrome } from './_components/dho-sticky-space-chrome';
 import { SpaceMainNav } from './_components/space-main-nav';
 import { SpaceActivityGatedBanners } from './_components/space-activity-gated-banners';
 import { SpaceMembershipCtaUnderHero } from './_components/space-membership-cta-under-hero';
+import { HideForMembers } from './_components/hide-for-members';
+import { SpaceContentGutter } from '../../_components/member-page-shell';
 
 function sizedHeroBannerPreload(href: string) {
   if (!href || href === DEFAULT_SPACE_LEAD_IMAGE || isLikelyGifSrc(href)) {
@@ -108,9 +110,7 @@ export default async function DhoLayout({
           cover while the tab slot is a short loading skeleton. Padding on the
           flex scrollport does not extend scrollHeight.
         */}
-        <div
-          data-space-scroll-hold=""
-          className="mt-[2px] min-w-0 flex-1 px-4 md:mt-[6px] sm:px-5"
+        <SpaceContentGutter
           style={{ minHeight: 'var(--hypha-space-scroll-hold, 0px)' }}
         >
           {/* Overview portals the mycelium into this host. It stays behind the column:
@@ -124,120 +124,124 @@ export default async function DhoLayout({
             {/* React 19+: link rel="preload" is hoisted to document head.
                 Sized /_next/image URL only — never the UploadThing original. */}
             {sizedHeroBannerPreload(heroBannerImageHref)}
-            <DhoStickySpaceChrome
-              title={spaceFromDb.title}
-              logoUrl={accentLogoHref}
-              logoAlt={spaceFromDb.title}
-              defaultLogoSrc={DEFAULT_SPACE_AVATAR_IMAGE}
-              actionsSlot={
-                <>
-                  <SpaceSettingsButton
-                    href={`${getDhoPathAgreements(
-                      lang,
-                      daoSlug,
-                    )}/select-settings-action`}
-                    variant="chrome"
-                    className="me-3"
-                  />
-                  {web3SpaceId !== undefined && (
-                    <SubscriptionBadge
-                      web3SpaceId={web3SpaceId}
-                      className="rounded-none"
+            <HideForMembers>
+              <DhoStickySpaceChrome
+                title={spaceFromDb.title}
+                logoUrl={accentLogoHref}
+                logoAlt={spaceFromDb.title}
+                defaultLogoSrc={DEFAULT_SPACE_AVATAR_IMAGE}
+                actionsSlot={
+                  <>
+                    <SpaceSettingsButton
+                      href={`${getDhoPathAgreements(
+                        lang,
+                        daoSlug,
+                      )}/select-settings-action`}
+                      variant="chrome"
+                      className="me-3"
                     />
-                  )}
-                  <SpaceModeLabel
-                    web3SpaceId={web3SpaceId}
-                    isSandbox={spaceFlags.includes('sandbox')}
-                    isDemo={spaceFlags.includes('demo')}
-                    isArchived={compactBannerSpaceArchived}
-                    configPath={`${getDhoPathAgreements(
-                      lang,
-                      daoSlug,
-                    )}/space-configuration`}
-                    className={
-                      compactBannerSpaceArchived
-                        ? '[&_.border-error-8]:rounded-none [&_.border-error-8]:border-error-8! [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-foreground [&_.border-error-8]:hover:border-error-9! [&_.border-error-8]:hover:bg-transparent'
-                        : '[&_.border-accent-8]:rounded-none [&_.border-accent-8]:border-accent-8! [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-foreground [&_.border-accent-8]:hover:border-accent-9! [&_.border-accent-8]:hover:bg-transparent'
+                    {web3SpaceId !== undefined && (
+                      <SubscriptionBadge
+                        web3SpaceId={web3SpaceId}
+                        className="rounded-none"
+                      />
+                    )}
+                    <SpaceModeLabel
+                      web3SpaceId={web3SpaceId}
+                      isSandbox={spaceFlags.includes('sandbox')}
+                      isDemo={spaceFlags.includes('demo')}
+                      isArchived={compactBannerSpaceArchived}
+                      configPath={`${getDhoPathAgreements(
+                        lang,
+                        daoSlug,
+                      )}/space-configuration`}
+                      className={
+                        compactBannerSpaceArchived
+                          ? '[&_.border-error-8]:rounded-none [&_.border-error-8]:border-error-8! [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-foreground [&_.border-error-8]:hover:border-error-9! [&_.border-error-8]:hover:bg-transparent'
+                          : '[&_.border-accent-8]:rounded-none [&_.border-accent-8]:border-accent-8! [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-foreground [&_.border-accent-8]:hover:border-accent-9! [&_.border-accent-8]:hover:bg-transparent'
+                      }
+                    />
+                  </>
+                }
+                banner={
+                  <LiveSpaceHeroBanner
+                    web3SpaceId={spaceFromDb.web3SpaceId}
+                    spaceSlug={daoSlug}
+                    title={spaceFromDb.title}
+                    description={spaceFromDb.description}
+                    logoUrl={accentLogoHref}
+                    logoAlt={spaceFromDb.title}
+                    defaultLogoSrc={DEFAULT_SPACE_AVATAR_IMAGE}
+                    links={spaceFromDb.links}
+                    leadImageUrl={heroBannerImageHref}
+                    defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
+                    memberCount={null}
+                    agreementCount={null}
+                    createdOnText={
+                      <SpaceCreatedOnText createdAt={spaceFromDb.createdAt} />
+                    }
+                    membersLabel={tCommon('Members')}
+                    agreementsLabel={tCommon('Agreements')}
+                    descriptionLabel={tCommon('spaceBannerDescriptionAria', {
+                      title: spaceFromDb.title,
+                    })}
+                    revealMetaLabel={tCommon('spaceBannerRevealMeta')}
+                    footerTrailing={
+                      <>
+                        <SpaceSettingsButton
+                          href={`${getDhoPathAgreements(
+                            lang,
+                            daoSlug,
+                          )}/select-settings-action`}
+                          variant="hero"
+                          className="me-3"
+                        />
+                        {web3SpaceId !== undefined && (
+                          <SubscriptionBadge
+                            web3SpaceId={web3SpaceId}
+                            onHeroBackground
+                            className="rounded-none"
+                          />
+                        )}
+                        <SpaceModeLabel
+                          web3SpaceId={web3SpaceId}
+                          isSandbox={spaceFlags.includes('sandbox')}
+                          isDemo={spaceFlags.includes('demo')}
+                          isArchived={compactBannerSpaceArchived}
+                          configPath={`${getDhoPathAgreements(
+                            lang,
+                            daoSlug,
+                          )}/space-configuration`}
+                          className={
+                            compactBannerSpaceArchived
+                              ? '[&_.border-error-8]:rounded-none [&_.border-error-8]:border-error-8! [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-error-8]:hover:border-error-9! [&_.border-error-8]:hover:bg-transparent'
+                              : '[&_.border-accent-8]:rounded-none [&_.border-accent-8]:border-accent-8! [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8]:hover:border-accent-9! [&_.border-accent-8]:hover:bg-transparent'
+                          }
+                        />
+                      </>
+                    }
+                    beforeBanner={
+                      <SpaceCallJoinHeroBanner
+                        spaceSlug={daoSlug}
+                        chatRoomId={spaceFromDb.chatRoomId}
+                        web3SpaceId={web3SpaceId}
+                        spaceTitle={spaceFromDb.title}
+                      />
                     }
                   />
-                </>
-              }
-              banner={
-                <LiveSpaceHeroBanner
-                  web3SpaceId={spaceFromDb.web3SpaceId}
-                  spaceSlug={daoSlug}
-                  title={spaceFromDb.title}
-                  description={spaceFromDb.description}
-                  logoUrl={accentLogoHref}
-                  logoAlt={spaceFromDb.title}
-                  defaultLogoSrc={DEFAULT_SPACE_AVATAR_IMAGE}
-                  links={spaceFromDb.links}
-                  leadImageUrl={heroBannerImageHref}
-                  defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
-                  memberCount={null}
-                  agreementCount={null}
-                  createdOnText={
-                    <SpaceCreatedOnText createdAt={spaceFromDb.createdAt} />
-                  }
-                  membersLabel={tCommon('Members')}
-                  agreementsLabel={tCommon('Agreements')}
-                  descriptionLabel={tCommon('spaceBannerDescriptionAria', {
-                    title: spaceFromDb.title,
-                  })}
-                  revealMetaLabel={tCommon('spaceBannerRevealMeta')}
-                  footerTrailing={
-                    <>
-                      <SpaceSettingsButton
-                        href={`${getDhoPathAgreements(
-                          lang,
-                          daoSlug,
-                        )}/select-settings-action`}
-                        variant="hero"
-                        className="me-3"
-                      />
-                      {web3SpaceId !== undefined && (
-                        <SubscriptionBadge
-                          web3SpaceId={web3SpaceId}
-                          onHeroBackground
-                          className="rounded-none"
-                        />
-                      )}
-                      <SpaceModeLabel
-                        web3SpaceId={web3SpaceId}
-                        isSandbox={spaceFlags.includes('sandbox')}
-                        isDemo={spaceFlags.includes('demo')}
-                        isArchived={compactBannerSpaceArchived}
-                        configPath={`${getDhoPathAgreements(
-                          lang,
-                          daoSlug,
-                        )}/space-configuration`}
-                        className={
-                          compactBannerSpaceArchived
-                            ? '[&_.border-error-8]:rounded-none [&_.border-error-8]:border-error-8! [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-error-8]:hover:border-error-9! [&_.border-error-8]:hover:bg-transparent'
-                            : '[&_.border-accent-8]:rounded-none [&_.border-accent-8]:border-accent-8! [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8]:hover:border-accent-9! [&_.border-accent-8]:hover:bg-transparent'
-                        }
-                      />
-                    </>
-                  }
-                  beforeBanner={
-                    <SpaceCallJoinHeroBanner
-                      spaceSlug={daoSlug}
-                      chatRoomId={spaceFromDb.chatRoomId}
-                      web3SpaceId={web3SpaceId}
-                      spaceTitle={spaceFromDb.title}
-                    />
-                  }
-                />
-              }
-            />
+                }
+              />
+            </HideForMembers>
             <SpaceMainNav lang={lang} id={daoSlug} />
             <div className="mt-1 flex flex-col gap-3">
-              <SpaceActivityGatedBanners
-                web3SpaceId={web3SpaceId}
-                spaceDbId={spaceFromDb.id}
-                spaceSlug={daoSlug}
-                lang={lang}
-              />
+              <HideForMembers>
+                <SpaceActivityGatedBanners
+                  web3SpaceId={web3SpaceId}
+                  spaceDbId={spaceFromDb.id}
+                  spaceSlug={daoSlug}
+                  lang={lang}
+                />
+              </HideForMembers>
               {web3SpaceId !== undefined ? (
                 <SpaceMembershipCtaUnderHero
                   spaceId={spaceFromDb.id}
@@ -249,7 +253,7 @@ export default async function DhoLayout({
             {tab}
             {children}
           </div>
-        </div>
+        </SpaceContentGutter>
         {aside}
       </div>
     </SpaceAccentPortalBridge>

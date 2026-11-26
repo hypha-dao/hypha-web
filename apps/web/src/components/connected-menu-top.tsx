@@ -12,6 +12,7 @@ import {
   toNextImageOptimizerSrc,
   useAiPanel,
   AiPanelTrigger,
+  useMemberExperience,
   SpacesRailTopToggle,
   useSpacesRailControl,
 } from '@hypha-platform/epics';
@@ -63,6 +64,7 @@ export function ConnectedMenuTop({
   const { resolvedTheme } = useTheme();
   const params = useParams<{ lang?: string }>();
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
+  const { isMember: hideHyphaMark } = useMemberExperience();
   const activeSpaceSlug = useMemo(
     () => getDhoSpaceSlugFromPathname(pathname),
     [pathname],
@@ -140,14 +142,21 @@ export function ConnectedMenuTop({
   const suppressDefaultLogo = aiChatEnabled && isSpaceRoute;
   const { overlayVisible } = useAiPanel();
 
-  const secondaryLeading = aiChatEnabled ? <AiPanelTrigger /> : leadingAction;
+  // Members put Ask AI beside Messages; builders keep Ask AI in the leading
+  // cluster. Members still need the leading slot on small screens for the
+  // Spaces dropdown (desktop place identity stays in the page eyebrow).
+  const secondaryLeading = hideHyphaMark ? undefined : aiChatEnabled ? (
+    <AiPanelTrigger />
+  ) : (
+    leadingAction
+  );
   const { active: spacesRailActive } = useSpacesRailControl();
   const onHome = /\/(?:home|my-dashboard)\/?$/.test(pathname ?? '');
   const resolvedLeadingAction =
-    spacesRailActive || secondaryLeading ? (
+    hideHyphaMark || spacesRailActive || secondaryLeading ? (
       <div
         className={`flex items-center gap-1.5 sm:gap-2${
-          secondaryLeading || onHome ? '' : ' xl:hidden'
+          hideHyphaMark || secondaryLeading || onHome ? '' : ' lg:hidden'
         }`}
       >
         <SpacesRailTopToggle />
@@ -205,8 +214,14 @@ export function ConnectedMenuTop({
 
   return (
     <MenuTop
-      logoHref={useReplacementLogoNode ? undefined : logoHref}
-      logoNode={useReplacementLogoNode ? logoNode : undefined}
+      logoHref={hideHyphaMark || useReplacementLogoNode ? undefined : logoHref}
+      logoNode={
+        hideHyphaMark
+          ? undefined
+          : useReplacementLogoNode
+          ? logoNode
+          : undefined
+      }
       hrefTarget={hrefTarget}
       openMenuLabel={openMenuLabel}
       closeMenuLabel={closeMenuLabel}

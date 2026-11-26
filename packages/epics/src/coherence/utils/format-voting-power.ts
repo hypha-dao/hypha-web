@@ -55,7 +55,8 @@ export function formatVotingPowerExact(
   } catch {
     // Keep the ungrouped integer if the runtime cannot format a bigint.
   }
-  const trimmed = frac.replace(/0+$/, '');
+  // Cap fractional digits so tooltips stay readable (avoid raw wei dust).
+  const trimmed = frac.replace(/0+$/, '').slice(0, 4);
   if (!trimmed) return negative ? `-${grouped}` : grouped;
   const separator =
     new Intl.NumberFormat(locale)

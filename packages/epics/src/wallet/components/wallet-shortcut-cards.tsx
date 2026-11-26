@@ -39,7 +39,9 @@ function ShortcutCard({
   disabled,
 }: Omit<Shortcut, 'key'>) {
   const className = cn(
-    'flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-none border border-border bg-background px-2 text-center text-foreground hover:bg-neutral-2',
+    // Mobile: hug content — aspect-square in a 2-col grid made tiles huge.
+    // sm+: keep square tiles for the wider web grid.
+    'flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-none border border-border bg-background px-2 py-3 text-center text-foreground hover:bg-neutral-2 sm:aspect-square sm:gap-2 sm:py-0',
     disabled && 'pointer-events-none opacity-40',
   );
   const body = (

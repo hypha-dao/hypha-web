@@ -32,6 +32,7 @@ import {
   type Space,
 } from '@hypha-platform/core/client';
 import { SentTick } from './member-home-sent-tick';
+import { MEMBER_KPI } from './member-type';
 import type { AssetItem } from '../../treasury/hooks/use-user-assets';
 import {
   HYPHA_TOKEN_ADDRESS,
@@ -1201,10 +1202,7 @@ export function MemberHomeSendTokensWidget({
                       </button>
                     </div>
                   ) : null}
-                  <div
-                    className="text-8 leading-none tabular-nums tracking-[-0.04em]"
-                    style={{ fontFamily: 'var(--font-family-heading)' }}
-                  >
+                  <div className={`${MEMBER_KPI} tabular-nums`}>
                     <label className="sr-only" htmlFor={`${line.id}-amount`}>
                       {t('sendTokensAmount')}
                     </label>
@@ -1219,7 +1217,7 @@ export function MemberHomeSendTokensWidget({
                         }
                         updateLine(line.id, { amount: next });
                       }}
-                      className="box-border w-40 max-w-full min-w-[5rem] border border-neutral-7 bg-background px-3 py-2 text-center text-8 leading-none tracking-[-0.04em] text-foreground tabular-nums outline-none focus:border-neutral-8 dark:border-border dark:focus:border-white/40"
+                      className={`${MEMBER_KPI} box-border w-40 max-w-full min-w-[5rem] border border-neutral-7 bg-background px-3 py-2 text-center tabular-nums text-foreground outline-none focus:border-neutral-8 dark:border-border dark:focus:border-white/40`}
                     />
                     {tokens.length > 1 ? (
                       <Popover

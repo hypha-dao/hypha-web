@@ -49,6 +49,7 @@ import {
   sortConversationsByLastMessage,
   visibleMatrixMemberName,
   useJwt,
+  useMe,
   useMatrix,
   useMatrixUserIdsByPersonIds,
   usePeopleBySubs,
@@ -141,24 +142,35 @@ import {
   type MemberRow,
   type NewcomerCandidate,
 } from './member-connections';
-import { MessagesInboxFilters } from './messages-inbox-filters';
+import {
+  MemberInboxTabs,
+  MessagesInboxFilters,
+} from './messages-inbox-filters';
+import { useMemberExperience } from './member-experience';
 import {
   channelRowsFromSnapshots,
   directInboxPlace,
   inboxCoherenceSlug,
   inboxContextHref,
   inboxContextLine,
+  conversationInSpace,
   inboxFilterCounts,
+  memberConversationInSpace,
+  builderInboxTabCounts,
+  memberInboxTabCounts,
   isInboxDirectConversation,
   inboxListWindow,
   INBOX_LIST_PAGE,
   isInboxFilter,
   peopleInboxKind,
+  rowMatchesBuilderInboxTab,
   rowMatchesInboxFilter,
+  rowMatchesMemberInboxTab,
   type InboxChannelKind,
   type InboxContext,
   type InboxFilter,
   type JoinedChannelSnapshot,
+  type MemberInboxTab,
 } from './messages-inbox';
 import { GroupFaces } from './group-faces';
 import { MemberHomeMark } from './member-home-mark';
@@ -1846,15 +1858,75 @@ function sameChannelSnapshots(
   return true;
 }
 
+function rowsInSpace<
+  T extends {
+    inbox?: {
+      spaceSlug?: string | null;
+      ecosystemSlug?: string | null;
+    } | null;
+  },
+>(list: T[], spaceSlug: string | undefined): T[] {
+  if (!spaceSlug) return list;
+  return list.filter(
+    (row) => row.inbox != null && conversationInSpace(row.inbox, spaceSlug),
+  );
+}
+
+function rowsInMemberSpace<
+  T extends {
+    inbox?: {
+      kind: InboxChannelKind;
+      spaceSlug?: string | null;
+      ecosystemSlug?: string | null;
+    } | null;
+  },
+>(list: T[], spaceSlug: string, memberSpace: boolean): T[] {
+  if (!memberSpace) return rowsInSpace(list, spaceSlug);
+  return list.filter(
+    (row) =>
+      row.inbox != null && memberConversationInSpace(row.inbox, spaceSlug),
+  );
+}
+
 export function MyConnections({
   section = 'messages',
+  spaceSlug,
+  variant = 'page',
 }: {
   /** Messages is the conversation list. Suggestions and Archived are their own screens. */
   section?: 'messages' | 'suggestions' | 'archived';
+  /** When set, the list is this space's conversations. */
+  spaceSlug?: string;
+  /**
+   * `panel` — compact list for the member right-panel dock (no home strip,
+   * stacked filters, no desktop auto-open of the first row).
+   */
+  variant?: 'page' | 'panel';
 }) {
+  const isPanel = variant === 'panel';
   const t = useTranslations('Connections');
   const tChat = useTranslations('MemberHome');
   const tCommon = useTranslations('Common');
+  const { person: me, isLoading: meLoading } = useMe();
+  const { isMember: memberExperience } = useMemberExperience();
+  /** Members on a space messages page use the four compact tabs. */
+  const memberSpaceInbox = Boolean(spaceSlug) && memberExperience;
+  // Below lg: builders use All/Direct/Groups/Channels. At lg+: the category
+  // list with collapsible Spaces (same as before the mobile-tabs change).
+  const [phoneInbox, setPhoneInbox] = useState(() =>
+    typeof window !== 'undefined'
+      ? !window.matchMedia('(min-width: 64rem)').matches
+      : false,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 64rem)');
+    const sync = () => setPhoneInbox(!mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+  const builderInboxTabs = !memberExperience && !isPanel && phoneInbox;
+  const useInboxTabs = memberSpaceInbox || builderInboxTabs;
   const locale = useLocale();
   const { user } = useAuthentication();
   const { jwt } = useJwt();
@@ -1915,11 +1987,17 @@ export function MyConnections({
     setConversationBoundLookupToken(jwt);
     if (client && jwt?.trim()) refreshBoundChatRooms(client);
   }, [client, jwt]);
-  const { openCoherenceChat, coherenceRoomId, coherencePeerPerson } =
-    useHumanChatPanel();
+  const {
+    openCoherenceChat,
+    closeCoherenceChat,
+    coherenceRoomId,
+    coherenceSpaceSlug,
+    coherencePeerPerson,
+  } = useHumanChatPanel();
   const searchParams = useSearchParams();
   const debugRooms = searchParams.get('debugRooms') === '1';
   const openedDirectChatRef = useRef<string | null>(null);
+  const scopedMessagesSpaceRef = useRef<string | null>(null);
   const openChatRef = useRef<MemberHomeOpenChat | null>(null);
   /** After a filter tap, open the first row once the filtered list is ready. */
   const pendingSelectFirstInboxRef = useRef(false);
@@ -1943,6 +2021,7 @@ export function MyConnections({
   const [channels, setChannels] = useState<JoinedChannelSnapshot[]>([]);
   // Direct skips the all-channels merge on open (faster first paint).
   const [inboxFilter, setInboxFilter] = useState<InboxFilter>('direct');
+  const [memberTab, setMemberTab] = useState<MemberInboxTab>('all');
   const [inboxVisibleCount, setInboxVisibleCount] = useState(INBOX_LIST_PAGE);
   /** Below the side-by-side layout, a channel tap replaces the menu with its messages. */
   const [inboxChannelOpen, setInboxChannelOpen] = useState(false);
@@ -2019,13 +2098,37 @@ export function MyConnections({
     },
   );
   useEffect(() => {
+    if (spaceSlug) {
+      if (!meLoading && !memberExperience) setInboxFilter('spaces');
+      setPicking(false);
+      const selected = spaceSlug.trim().toLowerCase();
+      const previous = scopedMessagesSpaceRef.current;
+      scopedMessagesSpaceRef.current = selected;
+      if (previous === selected || !coherenceRoomId) return;
+      const recorded = coherenceSpaceSlug?.trim().toLowerCase() ?? '';
+      const requested = searchParams.get('chat')?.trim() ?? '';
+      // A chat query with no recorded space was opened for this page.
+      // Any other open chat belongs to the space we just left.
+      if (!recorded && requested === coherenceRoomId) return;
+      if (!recorded || recorded !== selected) closeCoherenceChat();
+      return;
+    }
+    scopedMessagesSpaceRef.current = null;
     try {
       const stored = window.sessionStorage.getItem(INBOX_FILTER_KEY);
       if (isInboxFilter(stored)) setInboxFilter(stored);
     } catch {
       // Private mode can block session storage. The default filter still works.
     }
-  }, []);
+  }, [
+    closeCoherenceChat,
+    coherenceRoomId,
+    coherenceSpaceSlug,
+    meLoading,
+    memberExperience,
+    searchParams,
+    spaceSlug,
+  ]);
   useEffect(() => {
     if (!inboxNavReady.current) {
       inboxNavReady.current = true;
@@ -2642,6 +2745,10 @@ export function MyConnections({
               channels,
               inboxContext ?? EMPTY_INBOX_CONTEXT,
               t('inbox.networkTitle'),
+              Date.now(),
+              memberSpaceInbox
+                ? { includeInactiveSpaceRooms: true }
+                : undefined,
             ) as ConnectionMemberRow[],
             needle,
           ).map((row) =>
@@ -2655,36 +2762,93 @@ export function MyConnections({
             ),
           )
         : [];
+    const scopedDirect = spaceSlug
+      ? rowsInMemberSpace(directForList, spaceSlug, memberSpaceInbox)
+      : directForList;
+    const scopedChannels = spaceSlug
+      ? rowsInMemberSpace(channelRows, spaceSlug, memberSpaceInbox)
+      : channelRows;
+    const countedDirect = spaceSlug
+      ? rowsInMemberSpace(directConversations, spaceSlug, memberSpaceInbox)
+      : directConversations;
     const counts = inboxFilterCounts([
-      ...directConversations.map((row) => ({
+      ...countedDirect.map((row) => ({
         kind: row.inbox?.kind ?? 'dm',
         unread: row.unread,
       })),
-      ...channelRows.flatMap((row) =>
+      ...scopedChannels.flatMap((row) =>
         row.inbox ? [{ kind: row.inbox.kind, unread: row.unread }] : [],
       ),
     ]);
+    // Side-panel dock: always the unified All list (no filter tabs).
+    if (isPanel && section === 'messages' && !picking) {
+      return {
+        rows: sortConversationsByLastMessage([
+          ...scopedDirect,
+          ...scopedChannels,
+        ]),
+        counts,
+        memberCounts: null,
+      };
+    }
+    if (useInboxTabs && section === 'messages' && !picking) {
+      const matchTab = memberSpaceInbox
+        ? rowMatchesMemberInboxTab
+        : rowMatchesBuilderInboxTab;
+      const countTabs = memberSpaceInbox
+        ? memberInboxTabCounts
+        : builderInboxTabCounts;
+      const memberCounts = countTabs([
+        ...countedDirect.map((row) => ({
+          kind: row.inbox?.kind ?? 'dm',
+          unread: row.unread,
+        })),
+        ...scopedChannels.flatMap((row) =>
+          row.inbox ? [{ kind: row.inbox.kind, unread: row.unread }] : [],
+        ),
+      ]);
+      const kindOf = (row: (typeof scopedDirect)[number]) => row.inbox?.kind;
+      const rows =
+        memberTab === 'direct'
+          ? scopedDirect.filter((row) => kindOf(row) === 'dm')
+          : memberTab === 'groups'
+          ? scopedDirect.filter((row) => kindOf(row) === 'group')
+          : memberTab === 'channels'
+          ? sortConversationsByLastMessage(
+              scopedChannels.filter(
+                (row) =>
+                  row.inbox != null && matchTab(row.inbox.kind, 'channels'),
+              ),
+            )
+          : sortConversationsByLastMessage([
+              ...scopedDirect,
+              ...scopedChannels,
+            ]);
+      return { rows, counts, memberCounts };
+    }
     if (section !== 'messages' || picking || inboxFilter === 'direct') {
-      return { rows: directForList, counts };
+      return { rows: scopedDirect, counts, memberCounts: null };
     }
     if (inboxFilter === 'all') {
       return {
         rows: sortConversationsByLastMessage([
-          ...directForList,
-          ...channelRows,
+          ...scopedDirect,
+          ...scopedChannels,
         ]),
         counts,
+        memberCounts: null,
       };
     }
     return {
       rows: sortConversationsByLastMessage(
-        channelRows.filter(
+        scopedChannels.filter(
           (row) =>
             row.inbox != null &&
             rowMatchesInboxFilter(row.inbox.kind, inboxFilter),
         ),
       ),
       counts,
+      memberCounts: null,
     };
   }, [
     channels,
@@ -2692,13 +2856,24 @@ export function MyConnections({
     inboxContext,
     inboxFilter,
     inboxMentionNames,
+    isPanel,
+    memberSpaceInbox,
+    memberTab,
     needle,
     people,
     peopleBySub,
     picking,
     section,
+    spaceSlug,
     t,
+    useInboxTabs,
   ]);
+  function selectMemberTab(next: MemberInboxTab) {
+    setMemberTab(next);
+    setInboxVisibleCount(INBOX_LIST_PAGE);
+    setInboxChannelOpen(true);
+  }
+
   function selectInboxFilter(next: InboxFilter) {
     if (picking) {
       setPicking(false);
@@ -2709,6 +2884,7 @@ export function MyConnections({
     setInboxFilter(next);
     setInboxVisibleCount(INBOX_LIST_PAGE);
     setInboxChannelOpen(true);
+    if (spaceSlug) return;
     try {
       window.sessionStorage.setItem(INBOX_FILTER_KEY, next);
     } catch {
@@ -2718,10 +2894,11 @@ export function MyConnections({
 
   // Desktop / iPad (lg+): select the first conversation in the new filter so
   // the side-by-side chat panel matches the list. Mobile stays on the list —
-  // auto-opening would skip the list and jump into fullscreen chat.
+  // auto-opening would skip the list and jump into fullscreen chat. The
+  // member right-panel dock always stays on the list until a row is tapped.
   useEffect(() => {
     if (!pendingSelectFirstInboxRef.current) return;
-    if (section !== 'messages' || picking) return;
+    if (section !== 'messages' || picking || isPanel) return;
     if (
       typeof window === 'undefined' ||
       !window.matchMedia('(min-width: 64rem)').matches
@@ -2733,7 +2910,7 @@ export function MyConnections({
     if (!first) return;
     pendingSelectFirstInboxRef.current = false;
     void openInboxRowRef.current?.(first);
-  }, [inboxFilter, inboxView.rows, picking, section]);
+  }, [inboxFilter, inboxView.rows, isPanel, picking, section]);
 
   // Newest chats stay first, so a new message lands in this first screen.
   // Filter badges and the nav count still use every row, including ones
@@ -2801,6 +2978,7 @@ export function MyConnections({
       (hasMorePeople &&
         !needle &&
         section !== 'archived' &&
+        !(useInboxTabs && memberTab !== 'direct' && memberTab !== 'all') &&
         (picking || inboxFilter === 'all' || inboxFilter === 'direct')));
   useEffect(() => {
     const root = inboxListRef.current;
@@ -2829,7 +3007,15 @@ export function MyConnections({
     section === 'archived'
       ? t('tabs.archived')
       : section === 'messages' && !picking
-      ? t(`inbox.${inboxFilter}Title`)
+      ? isPanel || (useInboxTabs && memberTab === 'all')
+        ? t('inbox.allTitle')
+        : useInboxTabs && memberTab === 'direct'
+        ? t('inbox.directTitle')
+        : useInboxTabs && memberTab === 'groups'
+        ? t('inbox.memberGroups')
+        : useInboxTabs && memberTab === 'channels'
+        ? t('inbox.memberChannels')
+        : t(`inbox.${inboxFilter}Title`)
       : t('people');
   const showChannelTags = section === 'messages' && !picking;
   const selectedPeople = useMemo(
@@ -3009,7 +3195,7 @@ export function MyConnections({
     groupMemberIds != null;
 
   async function startGroupChat() {
-    if (selectedPeople.length < 2 || starting) return;
+    if (spaceSlug || selectedPeople.length < 2 || starting) return;
     const memberIds = resolvedMatrixIdsForGroup(
       selectedPeople,
       personIdToMatrixUserId,
@@ -3087,16 +3273,23 @@ export function MyConnections({
   }
 
   return (
-    <div className="flex min-w-0 flex-col gap-6">
-      <MemberHomePeople
-        people={connections}
-        extraPersonIds={[...reachOutIds, ...peerPersonIds]}
-        chatSpaceSlug={home?.chatSpaceSlug ?? null}
-        fallbackName={t('someone')}
-        onOpenChatReady={(openChat) => {
-          openChatRef.current = openChat;
-        }}
-      />
+    <div
+      className={cn(
+        'flex min-w-0 flex-col',
+        isPanel ? 'h-full min-h-0 flex-1 gap-3 overflow-hidden' : 'gap-6',
+      )}
+    >
+      <div className={isPanel ? 'hidden' : undefined}>
+        <MemberHomePeople
+          people={connections}
+          extraPersonIds={[...reachOutIds, ...peerPersonIds]}
+          chatSpaceSlug={home?.chatSpaceSlug ?? null}
+          fallbackName={t('someone')}
+          onOpenChatReady={(openChat) => {
+            openChatRef.current = openChat;
+          }}
+        />
+      </div>
 
       {section === 'suggestions' ? (
         <section className="flex flex-col gap-3" aria-label={t('reachOut')}>
@@ -3178,10 +3371,12 @@ export function MyConnections({
           className={cn(
             'flex min-h-0 min-w-0 flex-1 flex-col gap-6',
             section === 'messages' &&
+              !isPanel &&
               'min-h-0 flex-1 gap-4 lg:flex-row lg:items-start lg:gap-6',
+            section === 'messages' && isPanel && 'gap-3 overflow-hidden',
           )}
         >
-          {section === 'messages' ? (
+          {section === 'messages' && !isPanel ? (
             <div
               ref={setInboxFiltersRef}
               data-messages-filters=""
@@ -3189,32 +3384,53 @@ export function MyConnections({
                 // Same sticky edge as the conversation list. Page scroll and
                 // the list's own scroll are unchanged. The unread counts stay
                 // in view instead of leaving with the page.
-                'narrow-scrollbar w-full shrink-0 lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:w-80 lg:self-start lg:min-h-0 lg:bg-page-background',
-                picking || inboxChannelOpen
-                  ? 'hidden lg:block'
-                  : 'lg:flex-none',
+                'narrow-scrollbar w-full shrink-0',
+                'lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:self-start lg:min-h-0 lg:bg-page-background',
+                useInboxTabs ? 'lg:w-40' : 'lg:w-80',
+                useInboxTabs || !(picking || inboxChannelOpen)
+                  ? 'lg:flex-none'
+                  : 'hidden lg:block',
               )}
             >
-              <MessagesInboxFilters
-                value={inboxFilter}
-                counts={inboxView.counts}
-                onChange={selectInboxFilter}
-              />
+              {useInboxTabs && inboxView.memberCounts ? (
+                <MemberInboxTabs
+                  value={memberTab}
+                  counts={inboxView.memberCounts}
+                  onChange={selectMemberTab}
+                />
+              ) : (
+                <MessagesInboxFilters
+                  value={inboxFilter}
+                  counts={inboxView.counts}
+                  onChange={selectInboxFilter}
+                />
+              )}
             </div>
           ) : null}
           <div
+            id="member-inbox-panel"
+            role={useInboxTabs ? 'tabpanel' : undefined}
+            aria-labelledby={
+              useInboxTabs ? `member-inbox-tab-${memberTab}` : undefined
+            }
             data-messages-list-frame=""
             className={cn(
-              'min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-visible lg:overflow-hidden',
+              'min-h-0 min-w-0 flex-1 flex-col gap-3',
+              isPanel
+                ? 'flex overflow-hidden'
+                : 'overflow-visible lg:overflow-hidden lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)]',
               // Sticky + viewport height from MessagesViewportLock so the
               // list scrolls inside while the page still moves.
-              'lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)]',
-              section === 'messages' && !picking && !inboxChannelOpen
+              !isPanel &&
+                section === 'messages' &&
+                !picking &&
+                !inboxChannelOpen &&
+                !useInboxTabs
                 ? 'hidden lg:flex'
                 : 'flex',
             )}
           >
-            {section === 'messages' && !picking ? (
+            {section === 'messages' && !picking && !useInboxTabs && !isPanel ? (
               <button
                 type="button"
                 aria-label={tCommon('back')}
@@ -3229,7 +3445,7 @@ export function MyConnections({
                 {t(`inbox.${inboxFilter}Title`)}
               </button>
             ) : null}
-            <div className="flex min-h-0 flex-1 flex-col gap-3">
+            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
               <div className="flex shrink-0 flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <label className="relative min-w-0 flex-1">
@@ -3250,7 +3466,7 @@ export function MyConnections({
                       className="h-10 w-full rounded-none border border-border bg-background pr-3 pl-10 text-2 text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-foreground focus-visible:ring-0"
                     />
                   </label>
-                  {section === 'archived' ? null : picking ? (
+                  {section === 'archived' || spaceSlug ? null : picking ? (
                     <Button
                       type="button"
                       variant="outline"
@@ -3401,7 +3617,7 @@ export function MyConnections({
                 </p>
               ) : null}
 
-              <div className="flex min-h-0 flex-1 flex-col gap-3">
+              <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
                 {listLoading || messagesEmptyPending ? (
                   <MemberListSkeleton
                     title={
@@ -3436,6 +3652,8 @@ export function MyConnections({
                       ? picking || section === 'messages'
                         ? t('noMembersMatchSearch')
                         : t('noMatches')
+                      : useInboxTabs && memberTab !== 'direct'
+                      ? t('inbox.empty')
                       : showChannelTags && inboxFilter !== 'direct'
                       ? t('inbox.empty')
                       : t('empty')}
@@ -3472,6 +3690,7 @@ export function MyConnections({
                     }}
                     onOpen={(row) => void openMember(row)}
                     scrollRef={inboxListRef}
+                    forceScroll={isPanel}
                     footer={
                       canLoadMoreInbox ? (
                         <li
@@ -3669,6 +3888,7 @@ function MemberList({
   onOpen,
   showChannelTags = false,
   scrollRef,
+  forceScroll = false,
   footer = null,
 }: {
   title: string;
@@ -3693,6 +3913,8 @@ function MemberList({
   showChannelTags?: boolean;
   /** Scrollport for the conversation rows. The title stays fixed above it. */
   scrollRef?: Ref<HTMLUListElement>;
+  /** Always scroll the list (member right-panel dock is narrower than `lg`). */
+  forceScroll?: boolean;
   footer?: ReactNode;
 }) {
   const tInbox = useTranslations('Connections');
@@ -3707,13 +3929,23 @@ function MemberList({
     [chainScroll, scrollRef],
   );
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-visible rounded-none border border-border bg-background lg:overflow-hidden">
+    <section
+      className={cn(
+        'flex min-h-0 flex-1 flex-col rounded-none border border-border bg-background',
+        forceScroll ? 'overflow-hidden' : 'overflow-visible lg:overflow-hidden',
+      )}
+    >
       <h2 className="shrink-0 border-b border-border px-4 py-3 text-1 tracking-[0.12em] text-neutral-11 uppercase">
         {title}
       </h2>
       <ul
         ref={setListRef}
-        className="narrow-scrollbar min-h-0 flex-1 overflow-visible lg:overflow-y-auto lg:overscroll-contain"
+        className={cn(
+          'narrow-scrollbar min-h-0 flex-1',
+          forceScroll
+            ? 'overflow-y-auto overscroll-contain'
+            : 'overflow-visible lg:overflow-y-auto lg:overscroll-contain',
+        )}
       >
         {rows.map((row) => {
           const previewText = previewForInboxDisplay(row.preview);

@@ -463,19 +463,43 @@ export function formatMemberHomeFacts(
   const unspokenDecision = openDecisions.find(
     (item) => !shownKeys.has(memberHomeThreadItemKey(item)),
   );
-  // A new waiting item comes first. When every one was already placed, a
-  // normal follow-up still carries that card — except a continue/return ask,
-  // which must not re-brief the same item in a loop. A decision chip never
-  // re-opens an already-placed vote and never falls through to a signal.
+  // Queue walk only — free-flow questions must not steal a waiting card.
+  const waitingAsk =
+    /\b(?:what else is waiting|what(?:'s| is) (?:still )?waiting|what still needs(?: me)?|anything else waiting)\b/i.test(
+      options?.asked ?? '',
+    );
+  const guidedWalk =
+    usefulAsk ||
+    decisionAsk ||
+    continueAsk ||
+    lookAsk ||
+    settingAside ||
+    waitingAsk ||
+    Boolean(options?.resumed) ||
+    Boolean(options?.notADecision) ||
+    Boolean(askedItem);
+  // Open chat: they asked something that is not a chip, a look, a named item,
+  // or a continue/resume. Answer in words only — no off-context card.
+  const freeFlowAsk =
+    Boolean(options?.asked?.trim()) && !listAsk && !shareTurn && !guidedWalk;
+  // Guided walks pick the next waiting item. When every one was already
+  // placed, a useful/decision/soft-continue ask must not re-brief the same
+  // item in a loop. After they carry out an action (resumed), re-present the
+  // next waiting card even if it was introduced earlier — otherwise the reply
+  // briefs the person with no card underneath. A decision chip never re-opens
+  // an already-placed vote and never falls through to a signal. Free-flow
+  // never attaches a card.
   const spoken = (() => {
     if (askedItem && stillOpen(askedItem)) return askedItem;
     if (decisionAsk) return unspokenDecision ?? null;
-    return (
-      unspoken.find(stillOpen) ??
-      (!shareTurn && !lookAsk && !continueAsk && !usefulAsk
-        ? stillWaiting.find(stillOpen) ?? null
-        : null)
-    );
+    if (freeFlowAsk) return null;
+    const nextWaiting = unspoken.find(stillOpen) ?? null;
+    if (nextWaiting) return nextWaiting;
+    if (options?.resumed) return stillWaiting.find(stillOpen) ?? null;
+    if (!shareTurn && !lookAsk && !continueAsk && !usefulAsk) {
+      return stillWaiting.find(stillOpen) ?? null;
+    }
+    return null;
   })();
   const looked = lookAsk
     ? memberHomeThreadItemForMessage(listMemberHomeThreadCatalog(home), {
@@ -549,6 +573,9 @@ export function formatMemberHomeFacts(
 
   const text = [
     listAsk ? listTurnLine(listAsk) : null,
+    freeFlowAsk
+      ? 'This turn is free conversation. Answer what they asked directly, in the Hypha AI voice. Three or four short sentences, then stop. Do not call show_member_home_item. Do not open a waiting item. Do not steer them onto the attention queue unless they ask for it. Waiting items below are context only.'
+      : null,
     usefulAsk
       ? 'This turn: they asked where they can be useful. Brief ONLY the one waiting item in this brief. Three or four short sentences about that one person and that one need, then stop. Call show_member_home_item once for that card. One item. One card. Forbidden, including close paraphrases: ranking people by shared spaces, "keeps showing up across the most spaces", bundling a roster person with a signal, offering to navigate to signals, inventing collaboration details not on the item line, a second topic. Do not use the connections roster for this reply.'
       : null,
@@ -583,7 +610,9 @@ export function formatMemberHomeFacts(
     'Never end a reply by handing the agenda back. Forbidden, including close paraphrases: "That\'s completely fine", "if you need any assistance", "if you want to explore something else", "if there\'s anything else you\'d like to discuss", "just let me know", "if there\'s another proposal", "another matter you\'d like to address", "a different aspect of". When this item is done and another is waiting, name that next item and call show_member_home_item for it. Do not ask what they would like to do.',
     "Call show_member_home_item with the slug on that item's line. The words introduce that same slug — same creator=, same space=. Never name one person and call the tool for another item. Never say a waiting proposal is not available, and never offer a different proposal instead. Do not ask what they think.",
     'If they say yes to helping someone, be glad for the person they are helping, using that person\'s name from the record, then name the next remaining item from that record the same way, including any token that record has. If spoken=he, say "he will appreciate it." If spoken=she, say "she will appreciate it." If the given name does not show he or she, say "they will appreciate it." Do not invent the person, the task, or the token. "Share signal", or saying they want to share one, is not that yes. A yes or a no on a decision is not you acting. Do not approve it, do not say you approved it, and do not ask what they would like to decide. Never say "You can now decide on the proposal card." The introduction and show_member_home_item for that same item are one reply. Do not name a second proposal. A proposal they have already voted on is absent from the waiting list. Do not ask them to vote on it, even if an earlier message did. When action=outcome the vote is closed. Use passed, participation, and unity exactly as written. When say= is present, keep that sentence and its percents. Stop. Do not say "You can now decide on the proposal card." Do not ask them to vote, approve, or look. The card says Got it, thank you. Do not invent the token. Every so often, not every turn, and only while several items remain: "Would you like to pause for now, or continue going through what still needs you?" If they pause, stop. If they continue, the next item immediately. When the list is done, say so in one line. Never vote, validate, accept, decline, or decide for them. Your words must be about the item in front of them. A share without the lines is not that item\'s completion, so do not spend the reply restating it. Do not call the tool for an item you are not talking about. The person uses the card.',
-    options?.visit === 'welcome_back' && !listAsk && !shareTurn
+    freeFlowAsk
+      ? null
+      : options?.visit === 'welcome_back' && !listAsk && !shareTurn
       ? `They just came back after being away. Welcome them back warmly by first name — glad, personal, not a status report. Name the time of day naturally from partOfDay=${
           options.partOfDay ?? 'day'
         } (say "this morning", "this afternoon", "this evening", or "tonight"). Then open what needs their attention now. Do not invent how long they were gone. Do not invent where they left off. Three or four short sentences, then stop.`
@@ -601,6 +630,15 @@ export function formatMemberHomeFacts(
             0,
             500,
           )}". Continue that conversation. One short clause that picks the thread up, then this item. Do not greet again. Do not invent a visit.`
+      : null,
+    freeFlowAsk && options?.prior?.trim()
+      ? `Where you left off. Your previous reply was: "${options.prior
+          .trim()
+          .replace(/"/g, "'")
+          .slice(
+            0,
+            500,
+          )}". Continue that conversation and answer what they just asked. Do not greet again. Do not open a waiting item. Do not call show_member_home_item.`
       : null,
     `Person: ${member}. First name: ${givenName(
       home.person,
@@ -689,7 +727,7 @@ export function formatMemberHomeFacts(
           /"/g,
           "'",
         )}". Call show_member_home_item once with this kind and slug. Do not describe a different person, even when another proposal has the same title.`
-      : recall
+      : recall && !freeFlowAsk
       ? `Card for this reply: kind=${recall.kind} slug=${recall.slug} title="${(
           recall.title ?? ''
         ).replace(
@@ -719,9 +757,11 @@ export function formatMemberHomeFacts(
       ? 'Post target. Do not read this record out:'
       : askedItem
       ? 'Waiting items are context only. This reply stays on the one they just asked about. Do not summarise the list:'
+      : freeFlowAsk
+      ? 'No card this turn. Waiting items below are context only — do not brief them unless they ask:'
       : 'The one item for this reply. There is no list to read out:',
     listAsk ? null : waitingLines,
-    !listAsk && !lookAsk && stillWaiting.length > 1
+    !listAsk && !lookAsk && !freeFlowAsk && stillWaiting.length > 1
       ? `${
           stillWaiting.length - 1
         } more are waiting. Withhold them. One at a time, and only the one relevant for this member.`
@@ -729,9 +769,14 @@ export function formatMemberHomeFacts(
     listAsk
       ? null
       : alreadyShown.length > 0
-      ? `Already placed in earlier replies: ${alreadyShown.join(
-          ', ',
-        )}. Do not pretend an item in this list is new. Prefer one that is not in this list when it is still waiting. This reply still has the card named above. Call show_member_home_item once for that card.`
+      ? freeFlowAsk ||
+        (!spoken && !(lookAsk && (looked || recalledItems[0])) && !recall)
+        ? `Already placed in earlier replies: ${alreadyShown.join(
+            ', ',
+          )}. Do not pretend an item in this list is new. This turn has no card. Do not call show_member_home_item.`
+        : `Already placed in earlier replies: ${alreadyShown.join(
+            ', ',
+          )}. Do not pretend an item in this list is new. Prefer one that is not in this list when it is still waiting. This reply still has the card named above. Call show_member_home_item once for that card.`
       : 'No card has been placed in this conversation yet.',
     actedKeys.size > 0
       ? `Carried out this visit. Do not open these again unless they ask: ${[
@@ -768,7 +813,9 @@ export function formatMemberHomeFacts(
   ]
     .filter((line): line is string => Boolean(line))
     .join('\n');
-  const broughtBack = settingAside
+  const broughtBack = freeFlowAsk
+    ? null
+    : settingAside
     ? spoken
     : lookAsk
     ? looked ?? recalledItems[0] ?? null

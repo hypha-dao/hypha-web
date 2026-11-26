@@ -7,6 +7,7 @@ import { SectionLoadMore } from '@hypha-platform/ui/server';
 import { MembersList } from './members-list';
 import { SpaceMemberInviteButton } from './space-member-invite-button';
 import { useMembersSection } from '../hooks/use-members-section';
+import { useMemberExperience } from './member-experience';
 import { ExitSpace, UseMembers, useSpaceMember } from '../../spaces';
 import { Empty } from '../../common';
 import { ActionGate } from '../../common/action-capabilities';
@@ -73,6 +74,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
   const params = useParams();
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
   const { person } = useMe();
+  const { isMember: memberDirectory } = useMemberExperience();
   const { isAuthenticated, canLogin } = useAuthentication();
   const { isDelegate } = useIsDelegate({
     spaceId: space?.web3SpaceId as number,
@@ -87,6 +89,114 @@ export const MembersSection: FC<MemberSectionProps> = ({
 
   const aiAgents = useMobilizedAiAgents(spaceSlug);
   const aiAgentCount = aiAgents.length;
+
+  if (memberDirectory) {
+    return (
+      <div className="flex w-full flex-col gap-4">
+        <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
+          <Input
+            type="search"
+            placeholder={tMembers('searchMembers')}
+            aria-label={tMembers('searchMembers')}
+            onChange={(event) => onUpdateSearch(event.target.value)}
+            leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+            className="w-full"
+          />
+          <div className="flex w-full items-center justify-end gap-2 lg:w-auto">
+            {isMember && spaceSlug ? (
+              <ActionGate
+                kind="member-action"
+                fullAppPath={`/${lang}/dho/${spaceSlug}/members`}
+                label={tMembers('inviteMember')}
+              >
+                <SpaceMemberInviteButton spaceSlug={spaceSlug} lang={lang} />
+              </ActionGate>
+            ) : null}
+            {canLogin ? (
+              <ActionGate
+                kind="member-action"
+                fullAppPath={`/${lang}/dho/${spaceSlug ?? ''}/members`}
+                label={tSpaces('exitSpace')}
+              >
+                <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
+              </ActionGate>
+            ) : null}
+            {canLogin && !isDelegate ? (
+              <ActionGate
+                kind="member-action"
+                fullAppPath={`/${lang}/dho/${spaceSlug ?? ''}/members`}
+                label={tMembers('delegateVoting')}
+              >
+                {canDelegateLink ? (
+                  <Link
+                    title={tooltipMessage || ''}
+                    className={isDisabled ? 'cursor-not-allowed' : ''}
+                    href={`${basePath}/${person!.slug}`}
+                    scroll={false}
+                  >
+                    <Button disabled={isDisabled || isMemberLoading}>
+                      {tMembers('delegateVoting')}
+                    </Button>
+                  </Link>
+                ) : (
+                  <div
+                    title={tooltipMessage || ''}
+                    className="cursor-not-allowed"
+                  >
+                    <Button disabled={isDisabled || isMemberLoading}>
+                      {tMembers('delegateVoting')}
+                    </Button>
+                  </div>
+                )}
+              </ActionGate>
+            ) : null}
+          </div>
+        </div>
+        {personCount === 0 && !isLoading ? (
+          <Empty>
+            <p>{tMembers('listIsEmpty')}</p>
+          </Empty>
+        ) : (
+          <div className="flex w-full flex-col gap-3">
+            {Array.from({ length: pages }).map((_, index) => (
+              <MembersList
+                basePath={basePath}
+                page={index + 1}
+                key={index}
+                useMembers={useMembers}
+                spaceId={space?.id}
+                spaceSlug={spaceSlug}
+                searchTerm={searchTerm}
+                refreshInterval={refreshInterval}
+                energySharingOnly={energySharingOnly}
+                entityFilter="member"
+              />
+            ))}
+          </div>
+        )}
+        {personCount === 0 ? null : (
+          <SectionLoadMore
+            onClick={loadMore}
+            disabled={
+              isLoading ||
+              (pagination &&
+                (pagination.totalPages === pages || !pagination.hasNextPage))
+            }
+            isLoading={isLoading}
+          >
+            <Text>
+              {isLoading
+                ? tMembers('loading')
+                : pagination &&
+                  (pagination.totalPages === pages || !pagination.hasNextPage)
+                ? tMembers('noMoreMembers')
+                : tMembers('loadMoreMembers')}
+            </Text>
+          </SectionLoadMore>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">

@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { MembersSection, SpaceTabAccessWrapper } from '@hypha-platform/epics';
 
 import { useMembers } from '@web/hooks/use-members';
-import { TabScreenTitle } from '@web/app/(main)/[lang]/dho/[id]/@tab/_components/tab-screen-title';
+import { MembersChrome } from '@web/app/(main)/[lang]/dho/[id]/@tab/members/_components/members-chrome';
 import {
   getWhiteLabelSpace,
   type WhiteLabelPageProps,
@@ -21,12 +21,11 @@ export default async function WhiteLabelMembersPage(
 
   return (
     <SpaceTabAccessWrapper spaceId={web3SpaceId} spaceSlug={slug}>
-      <div className="flex flex-col gap-4 py-4">
-        <TabScreenTitle
-          title={tCommon('Members')}
-          count={space.memberCount ?? null}
-          lang={lang}
-        />
+      <MembersChrome
+        title={tCommon('Members')}
+        count={space.memberCount ?? null}
+        lang={lang}
+      >
         {/* Person pages are not served here: the link opens the full app. */}
         <MembersSection
           basePath={`/${lang}/dho/${slug}/members/person`}
@@ -34,7 +33,7 @@ export default async function WhiteLabelMembersPage(
           spaceSlug={slug}
           refreshInterval={POLL.BACKGROUND}
         />
-      </div>
+      </MembersChrome>
     </SpaceTabAccessWrapper>
   );
 }

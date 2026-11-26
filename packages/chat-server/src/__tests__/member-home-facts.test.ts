@@ -571,15 +571,28 @@ describe('formatMemberHomeFacts', () => {
     expect(brief.text).not.toMatch(/Card for this reply:[\s\S]*slug=path/);
   });
 
-  it('still attaches the waiting card when every item was already placed', () => {
+  it('does not attach a waiting card on a free-flow follow-up', () => {
     const brief = formatMemberHomeFacts(home, {
       alreadyShown: ['proposal:path'],
       asked: 'ok',
     });
-    expect(brief.card).toEqual({ kind: 'proposal', slug: 'path' });
-    expect(brief.text).toMatch(/Card for this reply:[\s\S]*slug=path/);
-    expect(brief.text).toMatch(/Do not pretend an item in this list is new/);
-    expect(brief.text).toMatch(/Call show_member_home_item once for that card/);
+    expect(brief.card).toBeNull();
+    expect(brief.text).toMatch(/free conversation/i);
+    expect(brief.text).toMatch(/This turn is not a card/);
+    expect(brief.text).toMatch(/This turn has no card/);
+    expect(brief.text).not.toMatch(/Card for this reply:/);
+  });
+
+  it('answers a free-flow question without an off-context card', () => {
+    const brief = formatMemberHomeFacts(home, {
+      asked: 'I have a question.',
+      prior: 'Earlier we looked at Open the path.',
+    });
+    expect(brief.card).toBeNull();
+    expect(brief.text).toMatch(/free conversation/i);
+    expect(brief.text).toMatch(/Do not call show_member_home_item/);
+    expect(brief.text).toMatch(/answer what they just asked/i);
+    expect(brief.text).not.toMatch(/Card for this reply:/);
   });
 
   it('does not re-brief the same card on a continue when every item was already placed', () => {
@@ -591,6 +604,37 @@ describe('formatMemberHomeFacts', () => {
     expect(brief.text).toMatch(/already covered what is open/i);
     expect(brief.text).toMatch(/Do not call show_member_home_item/);
     expect(brief.text).not.toMatch(/Card for this reply:/);
+  });
+
+  it('re-presents the next waiting card after an action even when it was already shown', () => {
+    const brief = formatMemberHomeFacts(
+      {
+        ...home,
+        proposals: [
+          home.proposals[0]!,
+          {
+            ...home.proposals[0]!,
+            id: 10,
+            slug: 'bridge',
+            title: 'Build the bridge',
+            spaceSlug: 'hypha-energy',
+            spaceTitle: 'Hypha Energy',
+            creatorName: 'Marco Rossi',
+          },
+        ],
+      },
+      {
+        acted: ['proposal:path'],
+        alreadyShown: ['proposal:path', 'proposal:bridge'],
+        resumed: true,
+        asked:
+          'I carried out the recommended action on "Open the path". Continue with the next.',
+      },
+    );
+    expect(brief.card).toEqual({ kind: 'proposal', slug: 'bridge' });
+    expect(brief.text).toContain('slug=bridge');
+    expect(brief.text).toMatch(/Card for this reply:/);
+    expect(brief.text).not.toMatch(/already covered what is open/i);
   });
 
   it('skips a title already placed when they ask where they can be useful', () => {

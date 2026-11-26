@@ -138,8 +138,8 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   const showConnect = Boolean(onChat || onCall || onVideo);
 
   return (
-    <Card className="craft-card-interactive @container/member flex h-full w-full flex-col gap-2 p-3">
-      <div className="flex items-start gap-2.5">
+    <Card className="craft-card-interactive @container/member flex h-full w-full flex-col gap-1.5 p-3.5">
+      <div className="flex items-center gap-2.5">
         <PersonAvatar
           avatarSrc={avatarUrl}
           userName={nickname}
@@ -150,8 +150,8 @@ export const MemberCard: React.FC<MemberCardProps> = ({
           personId={id}
         />
 
-        <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
-          <div className="flex min-w-0 flex-col gap-0.5">
+        <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             {isPersonRole(primaryOrientation) ? (
               <PersonRoleBadge role={primaryOrientation} />
             ) : (
@@ -179,12 +179,56 @@ export const MemberCard: React.FC<MemberCardProps> = ({
               </p>
             </Skeleton>
 
-            <Skeleton height="16px" width="80px" loading={isLoading}>
-              <p className="craft-meta truncate">@{nickname}</p>
+            {/* Handle + location share one meta row so space icons keep the
+                right column to themselves without growing the card. */}
+            <Skeleton height="16px" width="180px" loading={isLoading}>
+              <div className="craft-meta flex min-w-0 items-center gap-2">
+                {nickname ? (
+                  <span className="shrink-0 truncate">@{nickname}</span>
+                ) : null}
+                {location ? (
+                  <span className="flex min-w-0 items-center gap-1 truncate">
+                    <SewingPinFilledIcon className="size-3.5 shrink-0" />
+                    <span className="truncate">{location}</span>
+                  </span>
+                ) : null}
+              </div>
             </Skeleton>
+            {localIsDelegate ? (
+              <span className="craft-meta font-medium">
+                {tCommon('delegatedVotingMemberLabel')}
+              </span>
+            ) : null}
+            {joinEvent || isLoadingEvents ? (
+              <Skeleton
+                width="96px"
+                height="16px"
+                loading={isLoading || isLoadingEvents}
+              >
+                {joinEvent ? (
+                  <span
+                    className="craft-meta block max-w-full truncate"
+                    title={format.dateTime(new Date(joinEvent.createdAt), {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  >
+                    {tCommon('joinedSpaceOn', {
+                      date: format.dateTime(
+                        new Date(joinEvent.createdAt),
+                        LOCAL_DATE_SHORT_FORMAT_OPTIONS,
+                      ),
+                    })}
+                  </span>
+                ) : null}
+              </Skeleton>
+            ) : null}
           </div>
 
-          <div className="flex w-[7.75rem] shrink-0 flex-col items-end gap-2 @min-[24rem]/member:w-auto @min-[24rem]/member:max-w-[16rem]">
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
             {localIsDelegate && canLogin ? (
               <ActionGate
                 kind="member-action"
@@ -229,57 +273,16 @@ export const MemberCard: React.FC<MemberCardProps> = ({
                 onVideo={onVideo}
               />
             ) : null}
-            <Skeleton width="96px" height="16px" loading={isLoading}>
-              <div className="craft-meta flex min-w-0 max-w-full items-center">
-                <SewingPinFilledIcon className="mr-1 size-3.5 shrink-0" />
-                <span className="truncate text-1">{location}</span>
-              </div>
-            </Skeleton>
-            <Skeleton
-              width="96px"
-              height="16px"
-              loading={isLoading || isLoadingEvents}
-            >
-              <div className="flex h-4 min-w-0 max-w-full items-center">
-                {joinEvent ? (
-                  <span
-                    className="craft-meta block max-w-full truncate"
-                    title={format.dateTime(new Date(joinEvent.createdAt), {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  >
-                    {tCommon('joinedSpaceOn', {
-                      date: format.dateTime(
-                        new Date(joinEvent.createdAt),
-                        LOCAL_DATE_SHORT_FORMAT_OPTIONS,
-                      ),
-                    })}
-                  </span>
-                ) : null}
-              </div>
-            </Skeleton>
+            <MemberSpaceIcons
+              spaces={memberSpaces}
+              overflowHref={overflowHref}
+              isLoading={Boolean(address) && (isLoading || spacesLoading)}
+              size={22}
+              maxVisible={3}
+              className="justify-end"
+            />
           </div>
         </div>
-      </div>
-      <div className="flex min-h-5 min-w-0 items-center justify-between gap-2">
-        {localIsDelegate ? (
-          <span className="craft-meta font-medium">
-            {tCommon('delegatedVotingMemberLabel')}
-          </span>
-        ) : (
-          <span />
-        )}
-        <MemberSpaceIcons
-          spaces={memberSpaces}
-          overflowHref={overflowHref}
-          isLoading={Boolean(address) && (isLoading || spacesLoading)}
-          size={minimize ? 24 : 28}
-          className="justify-end"
-        />
       </div>
     </Card>
   );
@@ -290,7 +293,7 @@ function stopCardNavigation(event: React.MouseEvent) {
   event.stopPropagation();
 }
 
-function MemberConnectActions({
+export function MemberConnectActions({
   chatLabel,
   callLabel,
   videoLabel,

@@ -217,6 +217,13 @@ export function applyPendingSignalUpvotes(
   void revalidateCoherences(trimmedSpace);
 }
 
+function isHomeSignalsKey(key: unknown, spaceSlug: string): boolean {
+  const url = Array.isArray(key) ? key[0] : key;
+  if (typeof url !== 'string') return false;
+  const marker = `/spaces/${encodeURIComponent(spaceSlug)}/coherences`;
+  return url.includes(marker);
+}
+
 function touchSignalVoteCache(spaceSlug: string): void {
   void mutate(
     (key) =>
@@ -225,6 +232,23 @@ function touchSignalVoteCache(spaceSlug: string): void {
       key[1] === spaceSlug,
     (current: Coherence[] | undefined) =>
       current?.length ? mergePendingSignalUpvotes(spaceSlug, current) : current,
+    { revalidate: false },
+  );
+  // Home strip uses a URL (or [url, viewer]) key, not COHERENCES_SWR_KEY.
+  void mutate(
+    (key) => isHomeSignalsKey(key, spaceSlug),
+    (current: { data?: Coherence[] } | Coherence[] | undefined) => {
+      if (Array.isArray(current)) {
+        return current.length
+          ? mergePendingSignalUpvotes(spaceSlug, current)
+          : current;
+      }
+      if (!current?.data?.length) return current;
+      return {
+        ...current,
+        data: mergePendingSignalUpvotes(spaceSlug, current.data),
+      };
+    },
     { revalidate: false },
   );
 }

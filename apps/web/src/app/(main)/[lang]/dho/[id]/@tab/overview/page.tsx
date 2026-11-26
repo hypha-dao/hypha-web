@@ -2,10 +2,10 @@ import { Locale } from '@hypha-platform/i18n';
 import {
   SPACE_DASHBOARD_BOARD_VALUE,
   SpaceInviteArrival,
-  SpaceTabAccessWrapper,
 } from '@hypha-platform/epics';
 
 import { SpaceOpsHome } from './_components/space-ops-home';
+import { SpaceOverviewAccess } from './_components/space-overview-access';
 import { SpaceOverviewEntry } from './_components/space-overview-entry';
 
 type PageProps = {
@@ -23,7 +23,7 @@ export default async function OrganisationPage(props: PageProps) {
     Boolean(searchParams.invite);
 
   return (
-    <SpaceTabAccessWrapper spaceSlug={id}>
+    <SpaceOverviewAccess spaceSlug={id}>
       <SpaceOverviewEntry spaceSlug={id} stay={stay}>
         {searchParams.invite ? (
           <div className="px-4 pt-4 sm:px-5">
@@ -35,6 +35,6 @@ export default async function OrganisationPage(props: PageProps) {
         ) : null}
         <SpaceOpsHome spaceSlug={id} />
       </SpaceOverviewEntry>
-    </SpaceTabAccessWrapper>
+    </SpaceOverviewAccess>
   );
 }

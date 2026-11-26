@@ -170,26 +170,29 @@ export function AiPanelMessages({
     showVotingMethodPicker,
   ]);
 
+  // Keep the opening welcome at the top of the thread once the user starts
+  // chatting — it is synthetic UI, not part of the model transcript.
+  const welcomeMessage = {
+    id: 'welcome',
+    role: 'assistant' as const,
+    parts: [
+      {
+        type: 'text' as const,
+        text: welcomeText ?? t('welcome'),
+      },
+    ],
+  };
   const displayMessages =
-    messages.length > 0
+    messages.length === 0
+      ? [welcomeMessage]
+      : messages.some((msg) => msg.id === 'welcome')
       ? messages
-      : [
-          {
-            id: 'welcome',
-            role: 'assistant' as const,
-            parts: [
-              {
-                type: 'text' as const,
-                text: welcomeText ?? t('welcome'),
-              },
-            ],
-          },
-        ];
+      : [welcomeMessage, ...messages];
 
   return (
     <div
       ref={containerRef}
-      className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-4 py-2"
+      className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-4 py-2 sm:px-5"
     >
       <div className="flex flex-col gap-2">
         {displayMessages.map((msg, index) => (

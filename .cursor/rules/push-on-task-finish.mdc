@@ -1,0 +1,15 @@
+---
+description: Commit and push whenever a discrete task is finished
+alwaysApply: true
+---
+
+# Push on task finish
+
+When a discrete implementation task is finished (UI fix, feature slice, bugfix),
+**commit and push to the current branch immediately** — do not wait to be asked.
+
+- Use the conventional-commits skill / repo commit style.
+- Push with `git push origin HEAD` (or `-u` if the branch has no upstream).
+- Do not leave finished work only in the working tree.
+- Still never force-push to main/master; still never amend pushed commits unless asked.
+- If the user says not to commit/push for a specific change, honor that exception.

@@ -751,18 +751,6 @@ export function AiPanelMessageBubble({
     fileParts.length === 0 &&
     renderedToolParts.length === 0 &&
     !generatedVisualsCard;
-  const isSingleLineAssistantText =
-    !isUser &&
-    !isStreaming &&
-    hasVisibleText &&
-    fileParts.length === 0 &&
-    renderedToolParts.length === 0 &&
-    !generatedVisualsCard &&
-    markdownBlocks.length === 1 &&
-    markdownBlocks[0]?.type === 'paragraph' &&
-    markdownBlocks[0].lines.length === 1 &&
-    (markdownBlocks[0].lines[0]?.length ?? 0) <= 110;
-
   const handleCopy = useCallback(async () => {
     if (!textContent) return;
     try {
@@ -886,25 +874,24 @@ export function AiPanelMessageBubble({
   });
 
   const showMobilizedAgents = !isUser && mobilizedAgents.length > 0;
-  const alignSingleLine = isSingleLineAssistantText && !showMobilizedAgents;
+  const isWelcome = message.id === 'welcome';
 
   return (
     <div
       className={cn(
-        // Top-align avatar + bubble so photo intrinsic size / stretch cannot
-        // inflate the message row (and the filled bubble) vertically.
-        'flex items-start gap-2',
+        // Mark centres on the visible copy. Copy/hover chrome is out of flow
+        // so it does not pull the mark toward the first line.
+        'flex items-center gap-2.5',
         isUser && 'flex-row-reverse',
-        alignSingleLine && 'items-center',
       )}
     >
       {isUser ? (
         chrome === 'quiet' && !userAvatarUrl?.trim() ? (
-          <div className="mt-px flex h-7 w-7 shrink-0 items-center justify-center self-start text-muted-foreground">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center text-muted-foreground">
             <User className="size-3.5" strokeWidth={1.25} aria-hidden />
           </div>
         ) : (
-          <div className="mt-px h-7 w-7 shrink-0 self-start overflow-hidden rounded-full">
+          <div className="h-7 w-7 shrink-0 overflow-hidden rounded-full">
             <PersonAvatar
               size="sm"
               avatarSrc={userAvatarUrl?.trim() || undefined}
@@ -915,12 +902,7 @@ export function AiPanelMessageBubble({
           </div>
         )
       ) : assistantAvatarSrc && !assistantImageFailed ? (
-        <div
-          className={cn(
-            'flex h-7 w-7 shrink-0 self-start items-center justify-center overflow-hidden rounded-full border-0 bg-transparent',
-            alignSingleLine ? 'mt-0' : 'mt-px',
-          )}
-        >
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border-0 bg-transparent">
           {/* eslint-disable-next-line @next/next/no-img-element -- space logo URLs are external / CDN */}
           <img
             src={assistantAvatarSrc}
@@ -930,15 +912,18 @@ export function AiPanelMessageBubble({
           />
         </div>
       ) : (
-        <MemberHomeMark
-          className={cn('h-8 w-8', alignSingleLine ? 'mt-0' : 'mt-px')}
-        />
+        <MemberHomeMark className="h-8 w-8 shrink-0" />
       )}
       <div
         className={cn(
-          // Mentions-dense stack: expertise header → bubble (gap-0.5)
-          'group flex max-w-[85%] min-w-0 flex-col gap-0.5',
-          isUser && 'items-end',
+          // Mentions-dense stack: expertise header → bubble (gap-0.5).
+          // Cap width in ch so welcome/assistant lines wrap early on wide pages.
+          'group relative flex min-w-0 flex-col gap-0.5',
+          isUser
+            ? 'max-w-[85%] items-end'
+            : isWelcome
+            ? 'w-full max-w-[42ch]'
+            : 'max-w-[min(100%,42ch)]',
         )}
       >
         {showMobilizedAgents ? (
@@ -1244,8 +1229,8 @@ export function AiPanelMessageBubble({
             </span>
           )}
         </div>
-        {!isUser && !isStreaming && (
-          <div className="mt-0.5 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        {!isUser && !isStreaming && !isWelcome && (
+          <div className="absolute left-0 top-full mt-0.5 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
             <button
               type="button"
               onClick={handleCopy}

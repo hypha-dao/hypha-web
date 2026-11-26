@@ -33,7 +33,7 @@ type Props = {
  * sticky DHO chrome see one scroll root instead of nested `overflow-y-auto` insets.
  *
  * Sidebars use `z-[50]` so they sit above `ProposalOverlayShell` scrim (`z-40`).
- * Collapsed icon rail hides below `xl` via Sidebar CSS (spaces rail owns that band).
+ * Collapsed icon rail hides below `lg` via Sidebar CSS (mobile tab bar owns that band).
  */
 export function PanelDualSidebarScrollBridge({
   leftOpen,

@@ -19,6 +19,7 @@ import {
   TabsContent,
 } from '@hypha-platform/ui';
 import { useFormatter, useTranslations } from 'next-intl';
+import { MEMBER_SCREEN_STACK } from '../../../_components/member-page-shell';
 import { TabScreenTitle } from '../@tab/_components/tab-screen-title';
 
 type TreasuryTabsProps = {
@@ -56,8 +57,12 @@ export function TreasuryTabs({
   const bankAccountCount = bankCustomerStatus?.hasCustomer ? 1 : 0;
 
   return (
-    <div className="flex w-full flex-col gap-4 py-4">
-      <TabScreenTitle title={tCommon('Treasury')} count={walletCount} />
+    <div className={MEMBER_SCREEN_STACK}>
+      <TabScreenTitle
+        title={tCommon('Treasury')}
+        screen="treasury"
+        count={walletCount}
+      />
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}

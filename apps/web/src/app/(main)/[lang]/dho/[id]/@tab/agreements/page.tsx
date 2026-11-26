@@ -7,6 +7,7 @@ import { DirectionType } from '@hypha-platform/core/client';
 import { getSpaceBySlug } from '@hypha-platform/core/server';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { MEMBER_SCREEN_STACK } from '../../../../_components/member-page-shell';
 import { TabScreenTitle } from '../_components/tab-screen-title';
 
 type PageProps = {
@@ -33,9 +34,10 @@ export default async function AgreementsPage(props: PageProps) {
 
   return (
     <SpaceTabAccessWrapper spaceId={web3SpaceId} spaceSlug={id}>
-      <div className="flex flex-col gap-4 py-4">
+      <div className={MEMBER_SCREEN_STACK}>
         <TabScreenTitle
           title={tCommon('Agreements')}
+          screen="decisions"
           count={spaceFromDb?.documentCount ?? null}
           lang={lang}
         />

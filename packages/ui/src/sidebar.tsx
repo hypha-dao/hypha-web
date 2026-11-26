@@ -324,10 +324,10 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
             offcanvasCollapsed
               ? '!w-0 !min-w-0 !max-w-0 grow-0 basis-0 overflow-hidden'
               : iconCollapsed && (variant === 'floating' || variant === 'inset')
-              ? '!w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))] grow-0 max-xl:!w-0'
+              ? '!w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))] grow-0 max-lg:!w-0'
               : iconCollapsed
-              ? // Below xl the mobile spaces rail owns left nav — collapse the gap.
-                '!w-(--sidebar-width-icon) grow-0 max-xl:!w-0 max-xl:!min-w-0 max-xl:!max-w-0'
+              ? // Below lg the mobile tab bar owns nav — collapse the gap.
+                '!w-(--sidebar-width-icon) grow-0 max-lg:!w-0 max-lg:!min-w-0 max-lg:!max-w-0'
               : 'w-(--sidebar-width) grow-0',
           )}
         />
@@ -339,17 +339,17 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
             // left/right calc can fail when --sidebar-width is a min() value.
             'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) translate-x-0 overflow-visible transition-[transform,width,bottom] duration-300 ease-out md:flex',
             side === 'left'
-              ? 'left-0 max-xl:!bottom-[var(--mobile-tab-offset,0px)] max-xl:!h-auto group-data-[collapsible=offcanvas]:-translate-x-full'
-              : 'right-0 max-xl:!bottom-[var(--mobile-tab-offset,0px)] max-xl:!h-auto group-data-[collapsible=offcanvas]:translate-x-full',
+              ? 'left-0 max-lg:!bottom-[var(--mobile-tab-offset,0px)] max-lg:!h-auto group-data-[collapsible=offcanvas]:-translate-x-full'
+              : 'right-0 max-lg:!bottom-[var(--mobile-tab-offset,0px)] max-lg:!h-auto group-data-[collapsible=offcanvas]:translate-x-full',
             // Adjust the padding for floating and inset variants.
             variant === 'floating' || variant === 'inset'
               ? 'p-2'
               : 'group-data-[side=left]:border-r group-data-[side=right]:border-l',
             iconCollapsed &&
               (variant === 'floating' || variant === 'inset'
-                ? '!w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)] max-xl:!hidden'
-                : // Hide collapsed icon rail below xl (spaces rail / tab bar take over).
-                  '!w-(--sidebar-width-icon) max-xl:!hidden'),
+                ? '!w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)] max-lg:!hidden'
+                : // Hide collapsed icon rail below lg (tab bar takes over).
+                  '!w-(--sidebar-width-icon) max-lg:!hidden'),
             className,
           )}
           {...props}

@@ -29,6 +29,7 @@ import {
   mergeMemberHomeMemory,
   isMemberHomeItemDecline,
   isMemberHomeItemDeferral,
+  isMemberHomeItemLook,
   memberHomeCardForSpeech,
   memberHomeSpeechConflictsWithItem,
   memberHomeThreadItemForMessage,
@@ -531,9 +532,14 @@ function homeTextIsOneLine(text: string) {
   return (text.match(/[.!?]/g)?.length ?? 0) <= 2;
 }
 
-/** From `lg`: ~3/4 of the screen, inset in the main pane, capped at 72rem. */
-export const HOME_CHAT_COLUMN =
-  'mx-auto w-full min-w-0 lg:max-w-[min(75%,75vw,72rem)]';
+/**
+ * Chat column fills the home main pane. Outer page margins live on the home
+ * shell — a max-width here left a dead band beside the right rail.
+ */
+export const HOME_CHAT_COLUMN = 'w-full min-w-0';
+
+/** Shared horizontal inset for chat body, chips, and composer. */
+export const HOME_CHAT_INSET = 'px-5 md:px-6';
 
 const HOME_LINK = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g;
 
@@ -614,6 +620,49 @@ function messageExpectsHomeCard(message: HomeMessage): boolean {
     return true;
   }
   return messageHasHomeCardTool(message);
+}
+
+/**
+ * Asks that walk the attention queue (chips, continue, look, set-aside).
+ * Free-flow questions must not show a card skeleton while the reply loads.
+ */
+function homeUserAskExpectsCard(asked: string): boolean {
+  const text = asked.trim();
+  if (!text) return false;
+  if (isMemberHomeItemLook(text)) return true;
+  if (isMemberHomeItemDeferral(text) || isMemberHomeItemDecline(text)) {
+    return true;
+  }
+  if (/carried out the recommended action/i.test(text)) return true;
+  if (/continue with what still needs me/i.test(text)) return true;
+  if (
+    /\b(?:what else is waiting|what(?:'s| is) (?:still )?waiting|what still needs(?: me)?|anything else waiting)\b/i.test(
+      text,
+    )
+  ) {
+    return true;
+  }
+  let chip = text.toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, ' ');
+  while (chip.startsWith('¿') || chip.startsWith('¡')) chip = chip.slice(1);
+  while (chip.endsWith('.') || chip.endsWith('!') || chip.endsWith('?')) {
+    chip = chip.slice(0, -1);
+  }
+  chip = chip.trim();
+  if (
+    /^(?:where can i be useful|i am on my home|i'm back on my home)\b/.test(
+      chip,
+    )
+  ) {
+    return true;
+  }
+  if (
+    chip === 'what needs a decision' ||
+    chip === 'where is my voice needed' ||
+    /\b(?:what needs a decision|needs a decision)\b/.test(text)
+  ) {
+    return true;
+  }
+  return false;
 }
 
 function scrollerTopForTarget(node: HTMLElement, target: Element) {
@@ -1492,8 +1541,27 @@ export function MemberHomeChat({
       }
       // The people, spaces, and token chips already have their own panel.
       // A tool call on that turn must not pin the next signal underneath.
-      const asked = widgetKindFor(userTextBefore(homeMessages, index));
+      const priorAsk = userTextBefore(homeMessages, index);
+      const asked = widgetKindFor(priorAsk);
       if (asked === 'people' || asked === 'spaces' || asked === 'tokens') {
+        return;
+      }
+      // Free-flow conversation stays text-only unless the model explicitly
+      // placed a card tool. Speech matching must not pin a waiting proposal
+      // under an open question.
+      const priorUser = (() => {
+        for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
+          const earlier = homeMessages[cursor];
+          if (earlier?.role === 'user') return earlier;
+        }
+        return null;
+      })();
+      const guidedAsk =
+        Boolean(priorUser?.metadata?.homeArrival) ||
+        homeUserAskExpectsCard(priorAsk);
+      const toolCard = messageHasHomeCardTool(message);
+      if (!guidedAsk && !toolCard) {
+        frozenHomeCards.current.delete(message.id);
         return;
       }
       const streamingThis = isStreaming && message.id === lastMessage?.id;
@@ -1532,8 +1600,22 @@ export function MemberHomeChat({
         }
         frozenHomeCards.current.delete(message.id);
       }
-      const item = pinnedHomeItem(cardItems, homeMessages, index, intelligence);
+      let item = pinnedHomeItem(cardItems, homeMessages, index, intelligence);
       if (!item) return;
+      // A continue reply that names the next person must not keep the acted
+      // card from the previous step — prefer an open match under the same words.
+      if (actedKeySet.has(memberHomeThreadItemKey(item))) {
+        const openItems = cardItems.filter(
+          (entry) => !actedKeySet.has(memberHomeThreadItemKey(entry)),
+        );
+        const open = homeItemForMessage(openItems, message, intelligence);
+        if (
+          open &&
+          memberHomeThreadItemKey(open) !== memberHomeThreadItemKey(item)
+        ) {
+          item = open;
+        }
+      }
       map.set(message.id, item);
       if (!streamingThis) {
         frozenHomeCards.current.set(message.id, {
@@ -1556,24 +1638,33 @@ export function MemberHomeChat({
   // setMessages looped into React #185; the crash remount then hit #310.
   useEffect(() => {
     if (!opened.current) return;
-    const persisted = homeMessages.map((message) => {
+    const persisted = homeMessages.map((message, index) => {
+      const item = cardsByMessageId.get(message.id);
+      if (item) {
+        return {
+          ...message,
+          metadata: {
+            ...message.metadata,
+            homeItem: { kind: item.kind, slug: item.slug },
+          },
+        };
+      }
+      // Drop speech-matched cards that free-flow replies must not keep.
       const existing = message.metadata?.homeItem;
       if (
+        message.role === 'assistant' &&
         existing &&
-        (existing.kind === 'proposal' || existing.kind === 'signal') &&
-        existing.slug
+        !messageHasHomeCardTool(message) &&
+        !homeUserAskExpectsCard(userTextBefore(homeMessages, index))
       ) {
-        return message;
+        const rest = { ...message.metadata };
+        delete rest.homeItem;
+        return {
+          ...message,
+          metadata: Object.keys(rest).length > 0 ? rest : undefined,
+        };
       }
-      const item = cardsByMessageId.get(message.id);
-      if (!item) return message;
-      return {
-        ...message,
-        metadata: {
-          ...message.metadata,
-          homeItem: { kind: item.kind, slug: item.slug },
-        },
-      };
+      return message;
     });
     writeHomeThread(persisted);
   }, [cardsByMessageId, homeMessages]);
@@ -1645,6 +1736,16 @@ export function MemberHomeChat({
     hasError: Boolean(error),
     liveReplyPending,
   });
+  const arrivalExpectsCard = (() => {
+    for (let i = homeMessages.length - 1; i >= 0; i -= 1) {
+      const message = homeMessages[i];
+      if (!message || message.role !== 'user') continue;
+      // Hidden arrival greet walks the queue — card skeleton fits.
+      if (message.metadata?.homeArrival) return true;
+      return homeUserAskExpectsCard(messageText(message));
+    }
+    return false;
+  })();
 
   for (const message of homeMessages) {
     if (seenMotionIds.current.has(message.id)) continue;
@@ -1870,7 +1971,9 @@ export function MemberHomeChat({
         className="narrow-scrollbar min-h-0 w-full min-w-0 flex-1 overflow-y-auto [overflow-anchor:none]"
         aria-label={t('conversation')}
       >
-        <div className={cn(HOME_CHAT_COLUMN, 'grid gap-4 px-5 py-4 md:px-4')}>
+        <div
+          className={cn(HOME_CHAT_COLUMN, HOME_CHAT_INSET, 'grid gap-4 py-4')}
+        >
           <MemberHomeActivationCard
             lang={lang}
             spaces={intelligence.expiringSpaces ?? []}
@@ -1939,14 +2042,17 @@ export function MemberHomeChat({
             const streamingThis =
               isStreaming &&
               message.id === homeMessages[homeMessages.length - 1]?.id;
-            const listAsk = widgetKindFor(userTextBefore(homeMessages, index));
+            const priorAsk = userTextBefore(homeMessages, index);
+            const listAsk = widgetKindFor(priorAsk);
+            const guidedAsk = homeUserAskExpectsCard(priorAsk);
             const expectsCard =
               message.role === 'assistant' &&
               listAsk !== 'people' &&
               listAsk !== 'spaces' &&
               listAsk !== 'tokens' &&
-              (messageExpectsHomeCard(message) ||
-                (streamingThis && cardItems.length > 0));
+              (messageHasHomeCardTool(message) ||
+                (guidedAsk &&
+                  (messageExpectsHomeCard(message) || streamingThis)));
             // Stream words immediately. A pending card must not blank the bubble.
             const visibleText = text;
             const awaitingCard =
@@ -2223,20 +2329,22 @@ export function MemberHomeChat({
               aria-live="polite"
               aria-busy="true"
             >
-              {/* Card first — then mark + words underneath, same as a live reply. */}
-              <div className="border border-border bg-background p-3 pl-11">
-                <HomeWave
-                  className="w-full"
-                  delayMs={80}
-                  style={{ height: 56 }}
-                />
-                <HomeWave className="mt-3 h-4 w-1/2" delayMs={150} />
-                <HomeWave className="mt-2 h-3 w-2/5" delayMs={200} />
-                <div className="mt-4 flex gap-2">
-                  <HomeWave className="h-10 w-28" delayMs={240} />
-                  <HomeWave className="h-10 w-24" delayMs={290} />
+              {/* Queue walks: card skeleton then mark + words. Free-flow: words only. */}
+              {arrivalExpectsCard ? (
+                <div className="border border-border bg-background p-3 pl-11">
+                  <HomeWave
+                    className="w-full"
+                    delayMs={80}
+                    style={{ height: 56 }}
+                  />
+                  <HomeWave className="mt-3 h-4 w-1/2" delayMs={150} />
+                  <HomeWave className="mt-2 h-3 w-2/5" delayMs={200} />
+                  <div className="mt-4 flex gap-2">
+                    <HomeWave className="h-10 w-28" delayMs={240} />
+                    <HomeWave className="h-10 w-24" delayMs={290} />
+                  </div>
                 </div>
-              </div>
+              ) : null}
               <div className="flex items-start gap-3">
                 <MemberHomeMark className="mt-0.5 h-8 w-8 shrink-0" />
                 <div className="grid min-w-0 flex-1 gap-2">
@@ -2250,22 +2358,22 @@ export function MemberHomeChat({
         </div>
       </div>
 
-      <div className={cn(HOME_CHAT_COLUMN, 'shrink-0 pt-2 pb-3')}>
+      <div
+        className={cn(HOME_CHAT_COLUMN, HOME_CHAT_INSET, 'shrink-0 pt-2 pb-3')}
+      >
         {dialogue && micNeedsGrant ? (
           <button
             type="button"
             onClick={() => {
               void voiceInterview.startListening();
             }}
-            className="px-5 pb-1 text-left text-1 text-neutral-11 md:px-4"
+            className="pb-1 text-left text-1 text-neutral-11"
           >
             {t('soundNeedsMic')}
           </button>
         ) : null}
-        <div className="px-5 pb-2 md:px-4">
-          {renderSuggestionChips('composer')}
-        </div>
-        <div className="mx-5 border border-border bg-background md:mx-4">
+        <div className="pb-2">{renderSuggestionChips('composer')}</div>
+        <div className="border border-border bg-background">
           <AiPanelChatBar
             value={input}
             onChange={setInput}

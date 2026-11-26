@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Suspense,
   useState,
   useCallback,
   useMemo,
@@ -13,22 +14,35 @@ import {
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useParams, usePathname, useRouter } from 'next/navigation';
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import {
   ArrowLeftRight,
+  Coins,
+  FileCheck2,
   Globe2,
+  House,
   LayoutGrid,
   Menu,
+  MessagesSquare,
   PanelLeftClose,
+  Radio,
   Rows3,
   Settings,
   Sparkles,
   Target,
+  UsersRound,
   Volume2,
   VolumeX,
+  Wallet,
+  Zap,
 } from 'lucide-react';
 import {
   Category,
@@ -92,6 +106,16 @@ import {
 } from '../people/components/member-home-view';
 import { MobileSpacesSubnav } from '../people/components/mobile-spaces-subnav';
 import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
+import { useMemberNamedSpaces } from '../network-exchange/use-member-named-spaces';
+import {
+  buildMemberMenu,
+  memberMenuGroup,
+  memberSurfaceSpaceQuery,
+  resolveMemberSpaceSlug,
+  type MemberMenuKey,
+} from '../people/components/member-menu';
+import { useMemberExperience } from '../people/components/member-experience';
+import { MemberHomeMark } from '../people/components/member-home-mark';
 import type { Locale } from '@hypha-platform/i18n';
 import { getLocaleFromPath } from './get-locale-from-path';
 import {
@@ -333,6 +357,16 @@ const NAV_CHROME_SURFACE_CLASS = 'bg-background-2 dark:bg-background-5';
 
 type AiLeftPanelProps = {
   enableSpaceMemory?: boolean;
+  /**
+   * `page` — member space home: conversation on the page (keeps ask title).
+   * `panel` — right-dock space AI: fills the host, no inner chrome header.
+   */
+  embed?: 'page' | 'panel';
+  /**
+   * Prefer this space over the route (member "Ask this space" from profile /
+   * messages when the path has no `/dho/` slug).
+   */
+  spaceSlugOverride?: string | null;
 };
 
 type NavItem = {
@@ -345,6 +379,130 @@ type NavItem = {
   external?: boolean;
   onSelect?: () => void;
 };
+
+const MEMBER_MENU_ICONS: Record<MemberMenuKey, ElementType> = {
+  home: House,
+  energy: Zap,
+  wallet: Wallet,
+  messages: MessagesSquare,
+  signals: Radio,
+  decisions: FileCheck2,
+  treasury: Coins,
+  members: UsersRound,
+};
+
+function MemberMenuSections({
+  mode,
+  keyPrefix,
+  renderItem,
+}: {
+  mode: 'expanded' | 'collapsed';
+  keyPrefix: string;
+  renderItem: (
+    item: NavItem,
+    mode: 'expanded' | 'collapsed',
+    keyPrefix: string,
+  ) => ReactNode;
+}) {
+  const pathname = usePathname() ?? '';
+  const searchParams = useSearchParams();
+  const params = useParams<{ lang?: string }>();
+  const lang = typeof params?.lang === 'string' ? params.lang : 'en';
+  const t = useTranslations('MemberMenu');
+  const named = useMemberNamedSpaces();
+  const [recent, setRecent] = useState<string[]>(() => readRecentSpaceSlugs());
+  useEffect(() => subscribeRecentSpaceSlugs(setRecent), []);
+  const pathSlug = getDhoSpaceSlugFromPathname(pathname) ?? null;
+  const slug = resolveMemberSpaceSlug({
+    pathSlug,
+    querySlug: memberSurfaceSpaceQuery(pathname, searchParams.get('space')),
+    memberSlugs: named.map((space) => space.slug),
+    recentSlugs: recent,
+  });
+  const { data: energy } = useSpaceEnergy(slug ?? undefined);
+  const items = buildMemberMenu({
+    lang,
+    spaceSlug: slug ?? '',
+    pathname,
+    energyEnabled: energy?.enabled === true,
+  });
+  const groups = [
+    { label: t('you'), items: memberMenuGroup(items, 'you') },
+    { label: t('community'), items: memberMenuGroup(items, 'community') },
+  ];
+  const toNav = (item: (typeof items)[number]): NavItem => ({
+    key: item.key,
+    label: t(item.key),
+    icon: MEMBER_MENU_ICONS[item.key],
+    href: item.href,
+    active: item.active,
+    disabled: !item.href,
+  });
+
+  if (mode === 'collapsed') {
+    return (
+      <SidebarGroup className="px-2 py-1 pt-2">
+        <SidebarGroupContent>
+          <SidebarMenu className="gap-2">
+            {items.map((item) => renderItem(toNav(item), mode, keyPrefix))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    );
+  }
+
+  return (
+    <>
+      {groups.map((group) => (
+        <SidebarGroup key={group.label} className="px-2 py-1 first:pt-2">
+          <SidebarGroupLabel className="pointer-events-none h-6 uppercase tracking-wide">
+            {group.label}
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-2">
+              {group.items.map((item) =>
+                renderItem(toNav(item), mode, keyPrefix),
+              )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      ))}
+    </>
+  );
+}
+
+/** Collapsed member menu control: the open space's icon, not the hamburger. */
+function MemberCollapsedSpaceIcon() {
+  const pathname = usePathname() ?? '';
+  const searchParams = useSearchParams();
+  const { resolvedTheme } = useTheme();
+  const named = useMemberNamedSpaces();
+  const [recent, setRecent] = useState<string[]>(() => readRecentSpaceSlugs());
+  useEffect(() => subscribeRecentSpaceSlugs(setRecent), []);
+  const slug = resolveMemberSpaceSlug({
+    pathSlug: getDhoSpaceSlugFromPathname(pathname) ?? null,
+    querySlug: memberSurfaceSpaceQuery(pathname, searchParams.get('space')),
+    memberSlugs: named.map((space) => space.slug),
+    recentSlugs: recent,
+  });
+  const { space } = useSpaceBySlug(slug ?? '');
+  const namedSpace = named.find((entry) => entry.slug === slug) ?? null;
+  const logo = resolveSpaceDisplayLogoUrl(
+    space ?? namedSpace,
+    resolvedTheme === 'dark' ? 'dark' : 'light',
+  );
+  if (!logo) {
+    return <MemberHomeMark className="pointer-events-none h-[22px] w-[22px]" />;
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={logo}
+      alt=""
+      className="pointer-events-none h-full w-full object-cover"
+    />
+  );
+}
 
 function formatChatStreamErrorMessage(error: unknown): string {
   const rawMessage =
@@ -370,7 +528,11 @@ function formatChatStreamErrorMessage(error: unknown): string {
   return rawMessage;
 }
 
-export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
+export function AiLeftPanel({
+  enableSpaceMemory = false,
+  embed,
+  spaceSlugOverride = null,
+}: AiLeftPanelProps) {
   const { isAuthenticated, isLoading, getAccessToken } = useAuthentication();
   const matrix = useMatrix();
   const params = useParams<{ id?: string; lang?: string }>();
@@ -384,8 +546,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     () => getDhoSpaceSlugFromPathname(pathname),
     [pathname],
   );
+  const overrideSlug = spaceSlugOverride?.trim() || null;
   /** Prefer pathname: AiLeftPanel mounts in root layout where `id` is often missing for `/dho/[id]/...` routes. */
-  const spaceSlug = spaceSlugFromPath ?? params?.id;
+  const spaceSlug = overrideSlug || spaceSlugFromPath || params?.id;
   const t = useTranslations('AiPanel');
   const tCommon = useTranslations('Common');
   const tModalAside = useTranslations('ModalAside');
@@ -494,6 +657,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     showAiOverlay,
     hideAiOverlay,
   } = useAiPanel();
+  const embedOnPage = embed === 'page' || embed === 'panel';
+  const embedInPanel = embed === 'panel';
+  const showingAi = embedOnPage || isAiOpen;
   const [micOn, setMicOn] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
   const [voiceReady, setVoiceReady] = useState(false);
@@ -513,7 +679,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, [voicePrefSlug]);
 
   const conversationOpen =
-    isAiOpen &&
+    showingAi &&
     !blockSpaceAiForActivityAccess &&
     !blockSpaceAiForInteraction &&
     (Boolean(spaceSlug?.trim()) || isMemberAiSurface);
@@ -530,6 +696,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     false,
   );
   const { person: me } = useMe();
+  const { isMember: memberExperience, orientation } = useMemberExperience();
   const { data: spaceEnergyData } = useSpaceEnergy(spaceSlugFromPath);
   const activeSpaceName =
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
@@ -918,7 +1085,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     // Member surfaces: the left panel is the network outlook. Home keeps the
     // personal prompts. Builder and funder keep their own network prompts.
     if (isMemberAiSurface) {
-      const orientation = me?.primaryOrientation;
       const ids =
         orientation === 'builder'
           ? [
@@ -954,18 +1120,18 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       card('spaceMemory'),
       card('valueFlows'),
     ];
-  }, [isMemberAiSurface, me?.primaryOrientation, spaceSlug, t]);
+  }, [isMemberAiSurface, orientation, spaceSlug, t]);
 
   const welcomeText = useMemo(() => {
     if (!isMemberAiSurface) return t('welcome');
-    if (me?.primaryOrientation === 'builder') {
+    if (orientation === 'builder') {
       return t('welcomeNetworkBuilder');
     }
-    if (me?.primaryOrientation === 'investor') {
+    if (orientation === 'investor') {
       return t('welcomeNetworkFunder');
     }
     return t('welcomeNetworkMember');
-  }, [isMemberAiSurface, me?.primaryOrientation, t]);
+  }, [isMemberAiSurface, orientation, t]);
 
   const handleOverlayClose = useCallback(() => {
     hideAiOverlay();
@@ -3280,17 +3446,32 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     showAiOverlay,
   ]);
   const shouldCloseFromTrigger = isAiOpen || overlayVisible;
+  // Members keep the space mark in place — never swap it for a hamburger.
+  const showSpaceMark = Boolean(memberExperience);
 
   const triggerButton = (
     <button
       type="button"
       onClick={handleTriggerClick}
-      className={MENU_TRIGGER_CANVAS_CLASS}
+      className={
+        showSpaceMark
+          ? 'box-border flex h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden rounded-full border-0 bg-transparent p-0 text-muted-foreground shadow-none outline-none ring-0'
+          : MENU_TRIGGER_CANVAS_CLASS
+      }
       aria-label={shouldCloseFromTrigger ? t('closePanel') : t('openPanel')}
     >
-      <Menu className="craft-icon pointer-events-none" />
+      {showSpaceMark ? (
+        <Suspense fallback={null}>
+          <MemberCollapsedSpaceIcon />
+        </Suspense>
+      ) : (
+        <Menu className="craft-icon pointer-events-none" />
+      )}
     </button>
   );
+  // Conversation header already has space identity + close. A leading slot
+  // would shift the logo (and for members would reintroduce a hamburger).
+  const headerLeftSlot = memberExperience ? undefined : triggerButton;
   const closeButton = shouldCloseFromTrigger ? (
     <button
       type="button"
@@ -3302,20 +3483,42 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       <PanelLeftClose className="craft-icon" />
     </button>
   ) : undefined;
+  // Right-dock and member home page own their titles — no nested header box.
+  const chromeHeader =
+    embedInPanel || (embedOnPage && memberExperience) ? null : (
+      <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
+        <AiPanelHeader
+          showCloseButton={false}
+          collapseLeftSlotAtMd={!isOnboardingPath}
+          leftSlot={headerLeftSlot}
+          rightSlot={closeButton}
+        />
+      </SidebarHeader>
+    );
 
   const collapsedRailHeaderClass = `flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center justify-center border-b border-border px-4 py-2 ${NAV_CHROME_SURFACE_CLASS}`;
   const collapsedRailContentClass = `relative overflow-visible ${NAV_CHROME_SURFACE_CLASS}`;
   const collapsedMenu = (
     <>
-      <SidebarGroup className="p-2 pt-4">
-        <SidebarGroupContent>
-          <SidebarMenu className="gap-2">
-            {menuNavItems.map((item) =>
-              renderSectionNavItem(item, 'collapsed', 'collapsed'),
-            )}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
+      {memberExperience ? (
+        <Suspense fallback={null}>
+          <MemberMenuSections
+            mode="collapsed"
+            keyPrefix="collapsed"
+            renderItem={renderSectionNavItem}
+          />
+        </Suspense>
+      ) : (
+        <SidebarGroup className="p-2 pt-4">
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-2">
+              {menuNavItems.map((item) =>
+                renderSectionNavItem(item, 'collapsed', 'collapsed'),
+              )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      )}
       {spaceSettingsItem ? (
         <SidebarGroup className="mt-auto p-2 pb-0">
           <SidebarGroupContent>
@@ -3333,7 +3536,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       {recentSpaces.length > 0 ? (
         <div
           className={
-            spaceSettingsItem ? 'max-xl:hidden' : 'mt-auto max-xl:hidden'
+            spaceSettingsItem ? 'max-lg:hidden' : 'mt-auto max-lg:hidden'
           }
         >
           {renderRecentSpacesSection('collapsed', 'recent-collapsed')}
@@ -3346,7 +3549,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const collapsedRailBody = (
     <>
       {isAiOpen ? (
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:hidden">
           <MobileSpacesSubnav lang={lang} activeSlug={spaceSlug} embedded />
         </div>
       ) : null}
@@ -3396,6 +3599,20 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   };
   const withDesktopIconRail = (conversation: ReactNode) => {
     if (isOnboardingPath) return conversation;
+    if (embedInPanel) {
+      return (
+        <div className="flex h-full min-h-0 w-full min-w-0 flex-col bg-background">
+          {conversation}
+        </div>
+      );
+    }
+    if (embedOnPage) {
+      return (
+        <div className="flex min-h-[24rem] w-full min-w-0 flex-col bg-transparent">
+          {conversation}
+        </div>
+      );
+    }
     return (
       <div className="flex h-full min-h-0 w-full flex-1">
         <div
@@ -3412,7 +3629,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     );
   };
 
-  if (!isAiOpen) {
+  if (!showingAi) {
     if (overlayVisible) {
       return (
         <>
@@ -3420,20 +3637,30 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             <AiPanelHeader
               className={NAV_CHROME_SURFACE_CLASS}
               showCloseButton={false}
-              leftSlot={triggerButton}
+              leftSlot={headerLeftSlot}
               rightSlot={closeButton}
             />
           </SidebarHeader>
           <SidebarContent className={NAV_CHROME_SURFACE_CLASS}>
-            <SidebarGroup className="p-2 pt-4">
-              <SidebarGroupContent>
-                <SidebarMenu className="gap-2">
-                  {menuNavItems.map((item) =>
-                    renderSectionNavItem(item, 'expanded', 'overlay'),
-                  )}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+            {memberExperience ? (
+              <Suspense fallback={null}>
+                <MemberMenuSections
+                  mode="expanded"
+                  keyPrefix="overlay"
+                  renderItem={renderSectionNavItem}
+                />
+              </Suspense>
+            ) : (
+              <SidebarGroup className="p-2 pt-4">
+                <SidebarGroupContent>
+                  <SidebarMenu className="gap-2">
+                    {menuNavItems.map((item) =>
+                      renderSectionNavItem(item, 'expanded', 'overlay'),
+                    )}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )}
             {spaceSettingsItem ? (
               <SidebarGroup className="mt-auto p-2 pb-0">
                 <SidebarGroupContent>
@@ -3462,14 +3689,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   if (isLoading) {
     return withDesktopIconRail(
       <>
-        <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
-          <AiPanelHeader
-            showCloseButton={false}
-            collapseLeftSlotAtMd={!isOnboardingPath}
-            leftSlot={triggerButton}
-            rightSlot={closeButton}
-          />
-        </SidebarHeader>
+        {chromeHeader}
         <SidebarContent className="flex flex-1 items-center justify-center bg-page-background dark:bg-background-2">
           <div className="text-sm text-muted-foreground">{t('loading')}</div>
         </SidebarContent>
@@ -3480,14 +3700,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   if (blockSpaceAiForActivityAccess) {
     return withDesktopIconRail(
       <>
-        <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
-          <AiPanelHeader
-            showCloseButton={false}
-            collapseLeftSlotAtMd={!isOnboardingPath}
-            leftSlot={triggerButton}
-            rightSlot={closeButton}
-          />
-        </SidebarHeader>
+        {chromeHeader}
         <SidebarContent className="flex flex-1 items-center justify-center bg-page-background px-6 dark:bg-background-2">
           <SpaceAccessDenied
             userState={userSpaceState}
@@ -3502,14 +3715,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   if (!isAuthenticated) {
     return withDesktopIconRail(
       <>
-        <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
-          <AiPanelHeader
-            showCloseButton={false}
-            collapseLeftSlotAtMd={!isOnboardingPath}
-            leftSlot={triggerButton}
-            rightSlot={closeButton}
-          />
-        </SidebarHeader>
+        {chromeHeader}
         <SidebarContent className="flex flex-1 items-center justify-center bg-page-background px-6 dark:bg-background-2">
           <SpaceAccessDenied
             userState={userSpaceState}
@@ -3523,14 +3729,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   return withDesktopIconRail(
     <>
-      <SidebarHeader className="bg-page-background dark:bg-background-2 p-0">
-        <AiPanelHeader
-          showCloseButton={false}
-          collapseLeftSlotAtMd={!isOnboardingPath}
-          leftSlot={triggerButton}
-          rightSlot={closeButton}
-        />
-      </SidebarHeader>
+      {chromeHeader}
       <SidebarContent className="bg-page-background dark:bg-background-2 min-h-0">
         {spaceSlug && blockSpaceAiForSubscription ? (
           <div className="mx-3 mt-3 shrink-0">
@@ -3598,7 +3797,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           messages={messages as ChatUIMessage[]}
           suggestionItems={suggestionItems}
           welcomeText={welcomeText}
-          showInlineSuggestions={!hasUserMessage && !blockSpaceAiForInteraction}
+          showInlineSuggestions={
+            !embedOnPage && !hasUserMessage && !blockSpaceAiForInteraction
+          }
           onSuggestionSelect={
             blockSpaceAiForInteraction ? undefined : handleSuggestionSelect
           }
@@ -3655,11 +3856,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         />
       </SidebarContent>
       <SidebarFooter className="relative z-20 overflow-visible bg-page-background p-0 dark:bg-background-2">
-        {hasUserMessage && !blockSpaceAiForInteraction ? (
+        {(embedOnPage || hasUserMessage) && !blockSpaceAiForInteraction ? (
           <AiPanelSuggestions
             items={suggestionItems}
             onSelect={handleSuggestionSelect}
             variant="tags"
+            wrap={embedOnPage}
           />
         ) : null}
         {dialogue && voiceInterview.voiceError ? (

@@ -15,7 +15,7 @@ describe('resolveSidebarInsetPx', () => {
     ).toBe('0px');
   });
 
-  it('does not use the icon-rail fallback when the gap measured 0 below xl', () => {
+  it('does not use the icon-rail fallback when the gap measured 0 below lg', () => {
     expect(
       resolveSidebarInsetPx({
         isOnboarding: false,

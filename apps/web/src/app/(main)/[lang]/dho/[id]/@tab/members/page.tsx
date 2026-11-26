@@ -7,7 +7,7 @@ import { getTranslations } from 'next-intl/server';
 import { useMembers } from '@web/hooks/use-members';
 
 import { getDhoPathMembers } from './constants';
-import { TabScreenTitle } from '../_components/tab-screen-title';
+import { MembersChrome } from './_components/members-chrome';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -26,19 +26,18 @@ export default async function MembershipPage(props: PageProps) {
 
   return (
     <SpaceTabAccessWrapper spaceId={web3SpaceId as number} spaceSlug={id}>
-      <div className="flex flex-col gap-4 py-4">
-        <TabScreenTitle
-          title={tCommon('Members')}
-          count={spaceFromDb?.memberCount ?? null}
-          lang={lang}
-        />
+      <MembersChrome
+        title={tCommon('Members')}
+        count={spaceFromDb?.memberCount ?? null}
+        lang={lang}
+      >
         <MembersSection
           basePath={`${basePath}/person`}
           useMembers={useMembers}
           spaceSlug={id}
           refreshInterval={POLL.BACKGROUND}
         />
-      </div>
+      </MembersChrome>
     </SpaceTabAccessWrapper>
   );
 }

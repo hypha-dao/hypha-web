@@ -3,11 +3,23 @@ import { cn } from '@hypha-platform/ui-utils';
 
 type TabLoadingLayout =
   | 'overview'
+  | 'member-home'
   | 'members'
   | 'agreements'
   | 'coherence'
+  | 'signal-detail'
+  | 'member-signal-detail'
   | 'treasury'
   | 'rows';
+
+/** Same card width as MemberSpaceHome signal strip. */
+const MEMBER_HOME_CARD_WIDTH =
+  'w-[min(22rem,calc((100%-2rem)/2.2))] max-md:w-[78%] min-w-[14rem]';
+
+/** Mirror member-type / member-page-shell tokens — keep this file server-safe. */
+const MEMBER_TITLE_GAP = 'gap-2';
+const MEMBER_TITLE_STACK = `flex w-full flex-col items-start ${MEMBER_TITLE_GAP} text-left`;
+const MEMBER_SCREEN_STACK = `flex w-full min-w-0 flex-col ${MEMBER_TITLE_GAP} py-4`;
 
 type TabLoadingSkeletonProps = {
   layout?: TabLoadingLayout;
@@ -83,6 +95,81 @@ function OverviewSkeleton() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function MemberHomeCardSkeleton({
+  delayMs = 0,
+  className,
+}: {
+  delayMs?: number;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        `flex min-w-0 ${MEMBER_HOME_CARD_WIDTH} shrink-0 flex-col border border-border bg-transparent p-3`,
+        className,
+      )}
+    >
+      <Pulse className="mb-2.5 aspect-[16/9] w-full" delayMs={delayMs} />
+      <div className="mt-1 flex flex-1 flex-col gap-1.5">
+        <Pulse className="h-2.5 w-14" delayMs={delayMs + 30} />
+        <Pulse className="h-4 w-4/5" delayMs={delayMs + 50} />
+        <Pulse className="h-2.5 w-full" delayMs={delayMs + 70} />
+        <Pulse className="h-2.5 w-5/6" delayMs={delayMs + 90} />
+        <div className="mt-auto flex items-center gap-2 border-t border-border pt-3">
+          <Pulse className="h-[36px] w-20" delayMs={delayMs + 110} />
+          <Pulse className="h-[36px] w-14" delayMs={delayMs + 130} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Same shape as MemberSpaceHome: title stack, signal strip, ask panel. */
+function MemberHomeSkeleton() {
+  return (
+    <div
+      className={MEMBER_SCREEN_STACK}
+      aria-busy="true"
+      aria-live="polite"
+      aria-hidden
+      data-member-home-skeleton=""
+    >
+      <section className={`flex min-w-0 flex-col ${MEMBER_TITLE_GAP}`}>
+        <header className={MEMBER_TITLE_STACK}>
+          <div className="flex w-full items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <Pulse className="size-3.5 shrink-0 rounded-full" />
+              <Pulse text className="h-3 w-28" />
+            </div>
+            <Pulse className="h-3 w-28" delayMs={40} />
+          </div>
+          <div className="flex w-full items-center justify-between gap-4">
+            <Pulse text className="h-8 w-56 max-w-full sm:h-9 sm:w-72" />
+            <div className="hidden shrink-0 items-center gap-1.5 md:flex">
+              <Pulse className="h-[36px] w-[36px]" delayMs={60} />
+              <Pulse className="h-[36px] w-[36px]" delayMs={80} />
+            </div>
+          </div>
+        </header>
+        <div className="flex snap-x items-stretch gap-4 overflow-hidden">
+          <MemberHomeCardSkeleton />
+          <MemberHomeCardSkeleton className="hidden md:flex" delayMs={80} />
+          <MemberHomeCardSkeleton className="hidden lg:flex" delayMs={160} />
+        </div>
+      </section>
+      <section className="mt-6 box-border w-full min-w-0 sm:mt-8">
+        <div className="border-b border-border pb-2">
+          <header className={MEMBER_TITLE_STACK}>
+            <Pulse text className="h-3 w-32" delayMs={100} />
+            <Pulse text className="h-8 w-48 max-w-full" delayMs={120} />
+          </header>
+        </div>
+        <Pulse className="mt-0 h-[24rem] w-full min-h-[24rem]" delayMs={140} />
+      </section>
     </div>
   );
 }
@@ -167,6 +254,63 @@ function CoherenceSkeleton() {
   );
 }
 
+/** Same shape as member SignalPage detail: back, type, title, byline, tags, actions, body. */
+function MemberSignalDetailSkeleton() {
+  return (
+    <div
+      className="flex w-full min-w-0 flex-col gap-6 py-2"
+      aria-hidden
+      data-member-signal-detail-skeleton=""
+    >
+      <Pulse className="h-4 w-20" />
+      <div className="flex min-w-0 flex-col gap-5">
+        <header className="flex min-w-0 flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Pulse className="h-6 w-20" delayMs={40} />
+            <Pulse className="h-4 w-12" delayMs={60} />
+          </div>
+          <Pulse text className="h-8 w-full max-w-xl" delayMs={80} />
+          <div className="flex items-center gap-2">
+            <Pulse className="size-6 shrink-0 rounded-full" delayMs={100} />
+            <Pulse className="h-3.5 w-48" delayMs={120} />
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <Pulse className="h-6 w-24" delayMs={140} />
+            <Pulse className="h-6 w-20" delayMs={160} />
+            <Pulse className="h-6 w-16" delayMs={180} />
+          </div>
+        </header>
+        <div className="flex flex-wrap items-center gap-2">
+          <Pulse className="h-9 w-24" delayMs={200} />
+          <Pulse className="h-9 w-36" delayMs={220} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Pulse className="h-3.5 w-full" delayMs={240} />
+          <Pulse className="h-3.5 w-11/12" delayMs={260} />
+          <Pulse className="h-3.5 w-4/5" delayMs={280} />
+          <Pulse className="h-3.5 w-2/3" delayMs={300} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Builder/funder signal detail: back + title card + body blocks. */
+function SignalDetailSkeleton() {
+  return (
+    <div className="flex flex-col gap-4 py-4" aria-hidden>
+      <Pulse className="h-4 w-28" />
+      <div className="flex flex-col gap-3 border border-border p-4">
+        <Pulse className="h-5 w-16" delayMs={40} />
+        <Pulse text className="h-7 w-3/4 max-w-lg" delayMs={80} />
+        <Pulse className="h-3.5 w-56" delayMs={120} />
+      </div>
+      <Pulse className="h-32 w-full" delayMs={160} />
+      <Pulse className="h-24 w-full" delayMs={200} />
+    </div>
+  );
+}
+
 function TreasurySkeleton({ showTitle }: { showTitle: boolean }) {
   return (
     <div className="flex flex-col gap-4 py-4" aria-hidden>
@@ -218,12 +362,18 @@ export function TabLoadingSkeleton({
     <div data-tab-loading="">
       {layout === 'overview' ? (
         <OverviewSkeleton />
+      ) : layout === 'member-home' ? (
+        <MemberHomeSkeleton />
       ) : layout === 'members' ? (
         <MembersSkeleton showTitle={showTitle} />
       ) : layout === 'agreements' ? (
         <AgreementsSkeleton showTitle={showTitle} />
       ) : layout === 'coherence' ? (
         <CoherenceSkeleton />
+      ) : layout === 'member-signal-detail' ? (
+        <MemberSignalDetailSkeleton />
+      ) : layout === 'signal-detail' ? (
+        <SignalDetailSkeleton />
       ) : layout === 'treasury' ? (
         <TreasurySkeleton showTitle={showTitle} />
       ) : (

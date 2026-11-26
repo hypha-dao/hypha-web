@@ -35,7 +35,13 @@ export function isMyWalletPath(pathname: string | null | undefined): boolean {
   return /^\/[^/]+\/my-wallet(?:\/|$)/.test(pathname);
 }
 
-/** Home, messages, my spaces, and my wallet, plus a space and the network. */
+/** `/{lang}/profile` and person profile pages. */
+export function isProfilePath(pathname: string | null | undefined): boolean {
+  if (!pathname) return false;
+  return /^\/[^/]+\/profile(?:\/|$)/.test(pathname);
+}
+
+/** Home, messages, my spaces, my wallet, profile, plus a space and the network. */
 export function showsHumanChatIcon(
   pathname: string | null | undefined,
   inSpace: boolean,
@@ -47,7 +53,8 @@ export function showsHumanChatIcon(
     isMemberHomePath(pathname) ||
     isConnectionsPath(pathname) ||
     isMySpacesPath(pathname) ||
-    isMyWalletPath(pathname)
+    isMyWalletPath(pathname) ||
+    isProfilePath(pathname)
   );
 }
 

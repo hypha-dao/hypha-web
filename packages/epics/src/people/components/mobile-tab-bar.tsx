@@ -7,16 +7,10 @@ import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
-  ArrowLeftRight,
   House,
-  LayoutDashboard,
-  LayoutGrid,
-  Globe2,
   MessagesSquare,
   Plus,
-  Rows3,
   Settings,
-  Sparkles,
   Zap,
   Wallet,
 } from 'lucide-react';
@@ -36,15 +30,6 @@ import type { SpaceSectionNavKey } from '../../common/space-section-nav';
 import { SPACE_SECTION_NAV_ICONS } from '../../common/space-section-nav-icons';
 import { isNetworkPath } from '../../common/use-is-space-context';
 import { NetworkQuickCreate } from '../../network-exchange/network-quick-create';
-import {
-  buildWalletSectionNavItems,
-  isWalletSectionNavActive,
-} from '../../wallet/components/wallet-section-nav';
-import {
-  buildMessagesSectionNavItems,
-  isMessagesSectionNavActive,
-  isMessagesSectionPath,
-} from './messages-section-nav';
 import { useSpaceEnergy } from '../../treasury/hooks/use-space-energy';
 import { useMemberEnergyCommunities } from './member-home-energy-panel';
 import {
@@ -54,10 +39,9 @@ import {
   type HomeView,
 } from './member-home-view';
 import { useMessagesScreenCount } from './my-connections';
-import {
-  shouldShowMessagesNav,
-  shouldShowSpacesScreen,
-} from './app-nav-visibility';
+import { shouldShowMessagesNav } from './app-nav-visibility';
+import { useMemberExperience } from './member-experience';
+import { MemberMobileNav } from './member-space-chrome';
 import { MobileSpacesSubnav } from './mobile-spaces-subnav';
 
 const OPEN_MOBILE_CREATE = 'hypha:open-mobile-create';
@@ -97,12 +81,13 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   const { open: isAiOpen } = useAiPanel();
   const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
   // While the AI panel is open the spaces list takes the left menu slot.
+  // Members still get this row: it is how they move to another space.
   const showSpacesRail = shouldShowMobileSpacesRail(pathname) && !isAiOpen;
   const [slideIn, setSlideIn] = useState(false);
 
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
-      if (!window.matchMedia('(max-width: 1279px)').matches) return;
+      if (!window.matchMedia('(max-width: 1023px)').matches) return;
       const anchor = (event.target as Element | null)?.closest?.('a');
       if (!(anchor instanceof HTMLAnchorElement)) return;
       const href = anchor.getAttribute('href') ?? '';
@@ -114,7 +99,7 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!window.matchMedia('(max-width: 1279px)').matches) return;
+    if (!window.matchMedia('(max-width: 1023px)').matches) return;
     if (!pathname.includes('/dho/')) return;
     if (sessionStorage.getItem(SPACE_SLIDE_KEY) !== '1') return;
     sessionStorage.removeItem(SPACE_SLIDE_KEY);
@@ -127,7 +112,7 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
     <div
       className={cn(
         showSpacesRail &&
-          'max-xl:flex max-xl:w-full max-xl:min-w-0 max-xl:flex-col',
+          'max-lg:flex max-lg:w-full max-lg:min-w-0 max-lg:flex-col',
         slideIn &&
           'max-md:animate-in max-md:slide-in-from-right max-md:duration-300 max-md:ease-out',
       )}
@@ -135,7 +120,7 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
       {showSpacesRail ? (
         // One row under the header circle — same chrome as the top toggle,
         // not a side column that floats next to the page.
-        <div className="w-full shrink-0 xl:hidden">
+        <div className="w-full shrink-0 lg:hidden">
           <MobileSpacesSubnav lang={lang} activeSlug={spaceSlug} layout="row" />
         </div>
       ) : null}
@@ -152,10 +137,6 @@ export function MobileTabBar({
   const t = useTranslations('Navigation');
   const tCommon = useTranslations('Common');
   const tCoherence = useTranslations('CoherenceTab');
-  const tNetwork = useTranslations('NetworkExchange');
-  const tMyWallet = useTranslations('MyWallet');
-  const tConnections = useTranslations('Connections');
-  const tHome = useTranslations('MemberHome');
   const tEnergy = useTranslations('MemberHome.energy');
   const tTreasury = useTranslations('TreasuryTab');
   const pathname = usePathname() ?? '';
@@ -163,17 +144,19 @@ export function MobileTabBar({
   const params = useParams<{ lang?: string }>();
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { person } = useMe();
-  const showMessages = shouldShowMessagesNav(person?.primaryOrientation);
-  const showSpaces = shouldShowSpacesScreen(person?.primaryOrientation);
-  const appTabCount = 3 + Number(showMessages) + Number(showSpaces);
+  const { orientation, isMember: memberNav } = useMemberExperience();
+  const showMessages = shouldShowMessagesNav(orientation);
   const onHome =
     pathname === `/${lang}/my-dashboard` ||
     pathname === `/${lang}/my-dashboard/` ||
     pathname === `/${lang}/home` ||
     pathname === `/${lang}/home/`;
   const { communities: energyCommunities } = useMemberEnergyCommunities(
-    onHome ? person?.slug : null,
+    person?.slug,
   );
+  const showEnergyTab = energyCommunities.length > 0;
+  // Home + Wallet, plus optional Energy / Messages.
+  const appTabCount = 2 + Number(showEnergyTab) + Number(showMessages);
   const { isAuthenticated, logout } = useAuthentication();
   const { resolvedTheme, setTheme } = useTheme();
   const [createOpen, setCreateOpen] = useState(false);
@@ -196,6 +179,14 @@ export function MobileTabBar({
     };
   }, []);
 
+  // Builder mobile home is AI-only; classic/field lived in the removed strip.
+  useEffect(() => {
+    if (memberNav || !onHome) return;
+    if (homeView === 'classic' || homeView === 'field') {
+      writeHomeView('ai');
+    }
+  }, [homeView, memberNav, onHome]);
+
   useEffect(() => {
     const openCreate = () => {
       setCreateOpen(true);
@@ -211,7 +202,8 @@ export function MobileTabBar({
   const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
   const { space } = useSpaceBySlug(spaceSlug ?? '');
   const { data: spaceEnergy } = useSpaceEnergy(spaceSlug);
-  const networkRoute = isNetworkPath(pathname);
+  // Secondary strip only on space detail pages. Home / wallet / messages /
+  // network no longer get a strip on builder mobile.
   const secondLevel = useMemo((): Array<{
     key: string;
     href: string;
@@ -222,165 +214,64 @@ export function MobileTabBar({
     external?: boolean;
     disabled?: boolean;
   }> => {
-    const homeRoute =
-      pathname === `/${lang}/my-dashboard` ||
-      pathname === `/${lang}/my-dashboard/` ||
-      pathname === `/${lang}/home` ||
-      pathname === `/${lang}/home/`;
-    if (homeRoute) {
-      const views: Array<{
-        key: HomeView;
-        label: string;
-        icon: typeof Sparkles;
-      }> = [
-        { key: 'ai', label: tHome('viewAi'), icon: Sparkles },
-        {
-          key: 'classic' as const,
-          label: tHome('viewClassic'),
-          icon: Rows3,
-        },
-        {
-          key: 'field' as const,
-          label: tHome('viewField'),
-          icon: LayoutDashboard,
-        },
-      ];
-      if (energyCommunities.length > 0) {
-        views.push({
-          key: 'energy',
-          label: tEnergy('title'),
-          icon: Zap,
-        });
+    if (!spaceSlug) return [];
+    const labelFor = (key: SpaceSectionNavKey): string => {
+      switch (key) {
+        case 'overview':
+          return tCommon('overview');
+        case 'agreements':
+          return tCommon('Agreements');
+        case 'quests':
+          return tCommon('quests');
+        case 'members':
+          return tCommon('Members');
+        case 'treasury':
+          return tCommon('Treasury');
+        case 'calendar':
+          return tCommon('Calendar');
+        case 'coherence':
+          return tCommon('Signals');
+        case 'pipeline':
+          return tCommon('Pipeline');
+        case 'energy':
+          return tCommon('Energy');
+        case 'rewards':
+          return tTreasury('rewardsSection.title');
+        case 'memory':
+          return tCoherence('spaceMemory');
+        case 'context':
+          return tCommon('context');
+        default:
+          return key;
       }
-      return views.map((view) => ({
-        key: view.key,
-        href: '',
-        label: view.label,
-        active: homeView === view.key,
-        onClick: () => writeHomeView(view.key),
-        icon: <view.icon className={subIconClass} strokeWidth={1.5} />,
-      }));
-    }
-    if (spaceSlug) {
-      const labelFor = (key: SpaceSectionNavKey): string => {
-        switch (key) {
-          case 'overview':
-            return tCommon('overview');
-          case 'agreements':
-            return tCommon('Agreements');
-          case 'quests':
-            return tCommon('quests');
-          case 'members':
-            return tCommon('Members');
-          case 'treasury':
-            return tCommon('Treasury');
-          case 'calendar':
-            return tCommon('Calendar');
-          case 'coherence':
-            return tCommon('Signals');
-          case 'pipeline':
-            return tCommon('Pipeline');
-          case 'energy':
-            return tCommon('Energy');
-          case 'rewards':
-            return tTreasury('rewardsSection.title');
-          case 'memory':
-            return tCoherence('spaceMemory');
-          case 'context':
-            return tCommon('context');
-          default:
-            return key;
-        }
+    };
+    return buildSpaceSectionNavItems({
+      lang,
+      spaceSlug,
+      pathname,
+      pipelineEnabled: Boolean(space?.pipelineEnabled),
+      energyEnabled: Boolean(spaceEnergy?.enabled),
+      coherenceEnabled: true,
+      memoryEnabled: spaceMemoryEnabled,
+    }).map((item) => {
+      const Icon = SPACE_SECTION_NAV_ICONS[item.key];
+      return {
+        key: item.key,
+        href: item.href,
+        label: labelFor(item.key),
+        active: item.active,
+        icon: <Icon className={subIconClass} strokeWidth={1.5} />,
       };
-      return buildSpaceSectionNavItems({
-        lang,
-        spaceSlug,
-        pathname,
-        pipelineEnabled: Boolean(space?.pipelineEnabled),
-        energyEnabled: Boolean(spaceEnergy?.enabled),
-        coherenceEnabled: true,
-        memoryEnabled: spaceMemoryEnabled,
-      }).map((item) => {
-        const Icon = SPACE_SECTION_NAV_ICONS[item.key];
-        return {
-          key: item.key,
-          href: item.href,
-          label: labelFor(item.key),
-          active: item.active,
-          icon: <Icon className={subIconClass} strokeWidth={1.5} />,
-        };
-      });
-    }
-    if (segmentActive(pathname, 'my-wallet')) {
-      const base = `/${lang}/my-wallet`;
-      return buildWalletSectionNavItems(base).map((item) => {
-        const Icon = item.icon;
-        return {
-          key: item.key,
-          href: item.href,
-          label: tMyWallet(item.labelKey),
-          active: isWalletSectionNavActive(item, pathname),
-          icon: <Icon className={subIconClass} strokeWidth={1.5} />,
-        };
-      });
-    }
-    if (isMessagesSectionPath(pathname)) {
-      const base = `/${lang}/messages`;
-      return buildMessagesSectionNavItems(base).map((item) => {
-        const Icon = item.icon;
-        return {
-          key: item.key,
-          href: item.href,
-          label: tConnections(item.labelKey),
-          active: isMessagesSectionNavActive(item, pathname),
-          icon: <Icon className={subIconClass} strokeWidth={1.5} />,
-        };
-      });
-    }
-    if (!networkRoute) return [];
-    const base = `/${lang}/network`;
-    const links = [
-      {
-        key: 'network',
-        label: tNetwork('navNetwork'),
-        href: base,
-        icon: Globe2,
-        exact: true,
-      },
-      {
-        key: 'exchange',
-        label: tNetwork('navExchange'),
-        href: `${base}/exchange`,
-        icon: ArrowLeftRight,
-      },
-    ] as const;
-    return links.map((link) => ({
-      key: link.key,
-      href: link.href,
-      label: link.label,
-      active:
-        'exact' in link && link.exact
-          ? pathname === base || pathname === `${base}/`
-          : pathname === link.href || pathname.startsWith(`${link.href}/`),
-      icon: <link.icon className={subIconClass} strokeWidth={1.5} />,
-    }));
+    });
   }, [
-    energyCommunities.length,
-    homeView,
     lang,
-    networkRoute,
     pathname,
     space?.pipelineEnabled,
     spaceEnergy?.enabled,
     spaceMemoryEnabled,
     spaceSlug,
-    tMyWallet,
-    tConnections,
     tCoherence,
-    tEnergy,
-    tHome,
     tCommon,
-    tNetwork,
     tTreasury,
   ]);
 
@@ -388,6 +279,7 @@ export function MobileTabBar({
   const showAppMenu = true;
 
   useEffect(() => {
+    if (memberNav) return;
     const px =
       (showAppMenu ? TAB_BAR_PX : 0) + (showSectionStrip ? SUB_NAV_PX : 0);
     document.documentElement.style.setProperty(
@@ -397,39 +289,37 @@ export function MobileTabBar({
     return () => {
       document.documentElement.style.removeProperty('--mobile-tab-offset');
     };
-  }, [showAppMenu, showSectionStrip]);
+  }, [memberNav, showAppMenu, showSectionStrip]);
 
   const dashboardHref = `/${lang}/home`;
   const connectionsHref = `/${lang}/messages`;
-  const spacesHref = `/${lang}/my-spaces`;
   const walletHref = `/${lang}/my-wallet`;
-  const networkHref = `/${lang}/network`;
   const profileHref = person?.slug
     ? `/${lang}/profile/${person.slug}`
     : `/${lang}/profile/signup`;
 
+  const energyHomeActive = !createOpen && onHome && homeView === 'energy';
   const dashboardActive =
     !createOpen &&
+    onHome &&
+    homeView !== 'energy' &&
     (segmentActive(pathname, 'my-dashboard') ||
       segmentActive(pathname, 'home'));
   const connectionsActive =
     !createOpen &&
     (segmentActive(pathname, 'messages') ||
       segmentActive(pathname, 'connections'));
-  const spacesActive =
-    !createOpen &&
-    (segmentActive(pathname, 'my-spaces') || segmentActive(pathname, 'dho'));
   const walletActive = !createOpen && segmentActive(pathname, 'my-wallet');
-  const networkActive = !createOpen && segmentActive(pathname, 'network');
 
   if (!mounted) return null;
+  if (memberNav) return <MemberMobileNav />;
   if (!showSectionStrip && !showAppMenu) return null;
 
   return createPortal(
     <>
       <div
         className={cn(
-          'fixed inset-x-0 z-[35] flex flex-col border-t border-border bg-page-background transition-transform duration-300 ease-out xl:hidden',
+          'fixed inset-x-0 z-[35] flex flex-col border-t border-border bg-page-background transition-transform duration-300 ease-out lg:hidden',
           !createOpen && 'pointer-events-none',
         )}
         style={{
@@ -482,7 +372,7 @@ export function MobileTabBar({
       </div>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-page-background xl:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-page-background lg:hidden"
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
@@ -492,13 +382,7 @@ export function MobileTabBar({
           <div
             className="flex justify-center gap-0.5 overflow-x-auto border-b border-border bg-background-2 px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{ height: SUB_NAV_PX }}
-            aria-label={
-              spaceSlug
-                ? t('mySpaces')
-                : isMessagesSectionPath(pathname)
-                ? tConnections('tabs.messages')
-                : t('network')
-            }
+            aria-label={t('mySpaces')}
           >
             {secondLevel.map((item) => {
               const className = cn(
@@ -575,9 +459,25 @@ export function MobileTabBar({
               label={t('myDashboard')}
               active={dashboardActive}
               prefetch={toLinkPrefetch(prefetchNav)}
-              onClick={() => setCreateOpen(false)}
+              onClick={() => {
+                setCreateOpen(false);
+                writeHomeView('ai');
+              }}
               icon={<House className={iconClass} strokeWidth={1.25} />}
             />
+            {showEnergyTab ? (
+              <TabLink
+                href={dashboardHref}
+                label={tEnergy('title')}
+                active={energyHomeActive}
+                prefetch={toLinkPrefetch(prefetchNav)}
+                onClick={() => {
+                  setCreateOpen(false);
+                  writeHomeView('energy');
+                }}
+                icon={<Zap className={iconClass} strokeWidth={1.25} />}
+              />
+            ) : null}
             {showMessages ? (
               <TabLink
                 href={connectionsHref}
@@ -595,30 +495,9 @@ export function MobileTabBar({
               href={walletHref}
               label={t('myWallet')}
               active={walletActive}
-              center
               prefetch={toLinkPrefetch(prefetchNav)}
               onClick={() => setCreateOpen(false)}
-              icon={
-                <Wallet className="block h-5 w-5 shrink-0" strokeWidth={1.25} />
-              }
-            />
-            {showSpaces ? (
-              <TabLink
-                href={spacesHref}
-                label={t('mySpaces')}
-                active={spacesActive}
-                prefetch={toLinkPrefetch(prefetchNav)}
-                onClick={() => setCreateOpen(false)}
-                icon={<LayoutGrid className={iconClass} strokeWidth={1.25} />}
-              />
-            ) : null}
-            <TabLink
-              href={networkHref}
-              label={t('network')}
-              active={networkActive}
-              prefetch={toLinkPrefetch(prefetchNav)}
-              onClick={() => setCreateOpen(false)}
-              icon={<Globe2 className={iconClass} strokeWidth={1.25} />}
+              icon={<Wallet className={iconClass} strokeWidth={1.25} />}
             />
           </div>
         ) : null}
@@ -683,7 +562,7 @@ export function MobileCreateButton() {
   return (
     <button
       type="button"
-      className="grid h-[36px] w-[36px] place-items-center text-foreground xl:hidden"
+      className="grid h-[36px] w-[36px] place-items-center text-foreground lg:hidden"
       aria-label={t('create')}
       onClick={() => window.dispatchEvent(new Event(OPEN_MOBILE_CREATE))}
     >

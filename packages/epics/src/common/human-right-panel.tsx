@@ -127,6 +127,8 @@ import {
 } from './human-chat-panel';
 import { HumanChatPanelTypingIndicator } from './human-chat-panel/human-chat-panel-typing-indicator';
 import { isSignalThreadJoin } from './human-chat-panel/signal-thread-join';
+import { MemberSignalDockPreview } from './human-chat-panel/member-signal-dock-preview';
+import { useMemberExperience } from '../people/components/member-experience';
 import { useChatRoomTyping } from './human-chat-panel/use-chat-room-typing';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
@@ -135,6 +137,9 @@ import { GroupFaces } from '../people/components/group-faces';
 import type { GroupFace } from '../people/components/member-connections';
 import { PersonAvatar } from '../people/components/person-avatar';
 import { MemberHomeMark } from '../people/components/member-home-mark';
+import { MemberInboxSidePanel } from '../people/components/member-inbox-side-panel';
+import { MemberSpaceAiSidePanel } from '../people/components/member-space-ai-side-panel';
+import { memberSurfaceSpaceQuery } from '../people/components/member-menu';
 import {
   chatRoomAliasLocalpart,
   computeAggregateUnreadMentionCount,
@@ -1051,6 +1056,9 @@ export function HumanRightPanel(props: HumanRightPanelProps) {
     spaceQuestDraft,
     questChatRequested,
     closeHumanChatPanel,
+    memberInboxRequested,
+    memberSpaceAiRequested,
+    mode,
   } = useHumanChatPanel();
   const routeSpaceSlug = getDhoSpaceSlugFromPathname(pathname) || '';
   const section =
@@ -1085,6 +1093,17 @@ export function HumanRightPanel(props: HumanRightPanelProps) {
       />
     );
   }
+
+  // Member "Ask this space": space AI conversation in the right dock.
+  if (memberSpaceAiRequested && mode !== 'coherence') {
+    return <MemberSpaceAiSidePanel onClose={closeHumanChatPanel} />;
+  }
+
+  // Member chat icon: conversations list until a row opens a coherence chat.
+  if (memberInboxRequested && mode !== 'coherence') {
+    return <MemberInboxSidePanel onClose={closeHumanChatPanel} />;
+  }
+
   return <HumanChatRightPanel {...props} />;
 }
 
@@ -1142,13 +1161,17 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     coherencePeerPerson,
     coherenceChannel,
     coherenceContextSectionKey,
+    coherenceSignalLeadImage,
+    coherenceSignalTypeLabel,
     open,
     closeCoherenceChat,
     openCoherenceChat,
     openHumanChatPanel,
     closeHumanChatPanel,
+    memberInboxRequested,
     setUnreadMentionCount,
   } = useHumanChatPanel();
+  const { isMember: memberExperience } = useMemberExperience();
   const chatModeRef = useRef(mode);
   chatModeRef.current = mode;
   // A Context section room opened from Messages is answered by that section's
@@ -1181,12 +1204,22 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     isPublic: coherencePublic,
   });
   const isStartConversation = isDirectConversation && !coherenceRoomId?.trim();
+  // Member wallet / messages `?space=` keeps that space's channel — not Network.
+  const memberSurfaceSpace = memberSurfaceSpaceQuery(
+    pathname,
+    searchParams?.get('space'),
+  );
   // Shared network room for Network and the member shell pages when no channel
   // is selected (Home / Messages / Wallet / My Spaces). A DM or inbox channel
-  // stays in coherence mode and does not hit this path. DHO routes keep their
-  // own space chat. The panel unmounts when closed on these shell pages, so
-  // this does not call ensureNetworkRoom in the background.
-  const isNetworkSpaceChat = isNetworkAiPath(pathname) && mode === 'space';
+  // stays in coherence mode and does not hit this path. DHO routes and a
+  // member surface `?space=` keep their own space chat. The panel unmounts
+  // when closed on these shell pages, so this does not call ensureNetworkRoom
+  // in the background.
+  const isNetworkSpaceChat =
+    isNetworkAiPath(pathname) &&
+    mode === 'space' &&
+    !memberSurfaceSpace &&
+    !routeSpaceSlug?.trim();
   // Network page space-mode is only the shared network room — never inherit a
   // leftover DHO slug (route or coherence) or space/ecosystem tabs appear with
   // that space's timeline under the Network chrome.
@@ -1195,8 +1228,14 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     : isNetworkSpaceChat
     ? undefined
     : coherencePublic
-    ? coherenceSpaceSlug?.trim() || routeSpaceSlug || undefined
-    : routeSpaceSlug || coherenceSpaceSlug?.trim() || undefined;
+    ? coherenceSpaceSlug?.trim() ||
+      routeSpaceSlug ||
+      memberSurfaceSpace ||
+      undefined
+    : routeSpaceSlug ||
+      memberSurfaceSpace ||
+      coherenceSpaceSlug?.trim() ||
+      undefined;
   const [spaceRoom, setSpaceRoom] = useState<'space' | 'ecosystem' | 'public'>(
     'space',
   );
@@ -1989,6 +2028,10 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     }
     signalDismissUntilClosedRef.current = false;
     closeCoherenceChat();
+    // Member conversations dock: Back returns to the list, panel stays open.
+    if (memberInboxRequested) {
+      return;
+    }
     if (isConnectionsPage) {
       closeHumanChatPanel();
       setOpenMobile(false);
@@ -1998,6 +2041,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     closeHumanChatPanel,
     coherenceSlug,
     isConnectionsPage,
+    memberInboxRequested,
     pathname,
     routeSpaceSlug,
     router,
@@ -6787,6 +6831,21 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                     spaceSlug={coherenceSpaceSlug?.trim() || spaceSlug || ''}
                     questSlug={coherenceSlug.trim()}
                     onThread={onHelperThread}
+                  />
+                ) : null}
+                {memberExperience &&
+                isSignalThread &&
+                coherenceTitle?.trim() ? (
+                  <MemberSignalDockPreview
+                    title={coherenceTitle.trim()}
+                    typeLabel={
+                      coherenceSignalTypeLabel ??
+                      (openSignalForCreator?.type
+                        ? String(openSignalForCreator.type)
+                            .replace(/[_-]+/g, ' ')
+                            .replace(/^\w/, (c) => c.toUpperCase())
+                        : null)
+                    }
                   />
                 ) : null}
                 {isJoining ? (

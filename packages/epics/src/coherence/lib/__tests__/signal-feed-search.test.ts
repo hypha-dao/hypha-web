@@ -180,6 +180,12 @@ describe('feed title search', () => {
     expect(filtersSource).toContain('rootClassName="min-w-0 flex-1"');
     expect(filtersSource).not.toContain('sm:max-w-sm');
     expect(filtersSource).toContain('flex flex-col gap-3');
+    // Filters above search; hairline under the search row.
+    expect(filtersSource.indexOf('signal-sort-pill')).toBeLessThan(
+      filtersSource.indexOf('signal-title-search'),
+    );
+    expect(filtersSource).toContain('border-b border-border pb-3');
+    expect(feedRowSource).toContain('signal-card-member-meta');
     expect(feedSource).toContain("t('newSignal')");
     expect(feedSource).toContain('coherence/new-signal');
     expect(feedSource).not.toContain("t('createSignal')");

@@ -8,12 +8,15 @@ const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root> & {
     displayValue?: boolean;
+    /** Accent follows space theme; ink is black/foreground for quiet chrome. */
+    tone?: 'accent' | 'ink';
   }
 >(
   (
     {
       className,
       displayValue = false,
+      tone = 'accent',
       disabled,
       value,
       defaultValue,
@@ -22,6 +25,14 @@ const Slider = React.forwardRef<
     },
     ref,
   ) => {
+    const fillClass =
+      tone === 'ink'
+        ? 'bg-foreground'
+        : 'bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_92%,transparent)]';
+    const thumbRingClass =
+      tone === 'ink'
+        ? 'ring-2 ring-foreground'
+        : 'ring-2 ring-[var(--space-accent,var(--color-accent-9))]';
     const [internalValue, setInternalValue] = React.useState(
       () => defaultValue?.[0] ?? 0,
     );
@@ -63,23 +74,20 @@ const Slider = React.forwardRef<
         */}
           <SliderPrimitive.Track
             className={cn(
-              'relative h-3 w-full grow overflow-hidden rounded-full',
-              'bg-muted/80 ring-1 ring-inset ring-border/60',
+              'relative h-1.5 w-full grow overflow-hidden rounded-none',
+              'bg-muted ring-1 ring-inset ring-border/60',
             )}
           >
             <SliderPrimitive.Range
-              className={cn(
-                'absolute h-full rounded-full',
-                /* Space-scoped routes mirror `--space-accent` on `:root` */
-                'bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_92%,transparent)]',
-              )}
+              className={cn('absolute h-full rounded-none', fillClass)}
             />
           </SliderPrimitive.Track>
           <SliderPrimitive.Thumb
             className={cn(
-              'block h-3.5 w-3.5 rounded-full border-2 border-background',
-              'bg-background shadow-md',
-              'ring-2 ring-[var(--space-accent,var(--color-accent-9))] ring-offset-2 ring-offset-background',
+              'block size-3.5 rounded-none border-2 border-background',
+              'bg-background shadow-none',
+              thumbRingClass,
+              'ring-offset-1 ring-offset-background',
               'transition-[transform,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
               'disabled:pointer-events-none disabled:opacity-50',
             )}

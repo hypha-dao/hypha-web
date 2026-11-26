@@ -31,6 +31,7 @@ import {
   signalVotingSpaceId,
   useSignalVotingMode,
 } from '../hooks/use-signal-voting-mode';
+import { prepareSignalDescriptionMarkdown } from '../utils/signal-description-markdown';
 import { countSignalMedia, splitSignalMedia } from '../utils/signal-media';
 import {
   signalDiscussionCount,
@@ -41,13 +42,23 @@ import { SignalCreatorActions } from './signal-creator-actions';
 import { useSignalMediaSummary } from './signal-media-chips';
 import { useSignalShortDate } from './signal-feed-row';
 import { SignalTypeBadge } from './signal-type-badge';
+import { SignalTagBadges } from './signal-tag-badges';
 import { SignalUpvoteButton } from './signal-upvote-button';
 import { useVoteEnabled } from '../../common/action-capabilities';
+import { useMemberExperience } from '../../people/components/member-experience';
+import {
+  MEMBER_EYEBROW,
+  MEMBER_PAGE_TITLE,
+} from '../../people/components/member-type';
 import { SignalVideoPlayer } from './signal-video-player';
 import { LegacySignalFieldsDetail } from './legacy-signal-fields/legacy-signal-fields-detail';
+import { legacySignalFieldsToShow } from './legacy-signal-fields/legacy-signal-fields';
+import {
+  PRIORITY_DOT_MARK_CLASS,
+  priorityDotClass,
+} from '../utils/signal-priority-styles';
 
-const SECTION_LABEL_CLASS =
-  'text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground';
+const SECTION_LABEL_CLASS = MEMBER_EYEBROW;
 
 /**
  * Column gap for Created by / Created / Last reply / Discussion.
@@ -124,22 +135,22 @@ const SIGNAL_DESCRIPTION_COMPONENTS: MarkdownComponents = {
     </h4>
   ),
   p: ({ children }: MarkdownChildren) => (
-    <p className="my-2 text-2 leading-relaxed text-foreground first:mt-0 last:mb-0">
+    <p className="my-2.5 text-2 leading-[1.7] text-foreground first:mt-0 last:mb-0">
       {children}
     </p>
   ),
   ul: ({ children }: MarkdownChildren) => (
-    <ul className="my-2 ml-0 list-outside list-disc pl-4 text-2 leading-relaxed text-foreground">
+    <ul className="my-3 ml-0 list-outside list-disc space-y-2.5 pl-5 text-2 leading-[1.7] text-foreground marker:text-muted-foreground">
       {children}
     </ul>
   ),
   ol: ({ children }: MarkdownChildren) => (
-    <ol className="my-2 ml-0 list-outside list-decimal pl-4 text-2 leading-relaxed text-foreground">
+    <ol className="my-3 ml-0 list-outside list-decimal space-y-2.5 pl-5 text-2 leading-[1.7] text-foreground marker:text-muted-foreground">
       {children}
     </ol>
   ),
   li: ({ children }: MarkdownChildren) => (
-    <li className="my-0.5">{children}</li>
+    <li className="pl-1 [&>p]:my-0">{children}</li>
   ),
   blockquote: ({ children }: MarkdownChildren) => (
     <blockquote className="my-2 border-l-2 border-border pl-3 text-2 italic text-muted-foreground">
@@ -147,7 +158,7 @@ const SIGNAL_DESCRIPTION_COMPONENTS: MarkdownComponents = {
     </blockquote>
   ),
   strong: ({ children }: MarkdownChildren) => (
-    <strong className="font-semibold">{children}</strong>
+    <strong className="font-semibold text-foreground">{children}</strong>
   ),
   em: ({ children }: MarkdownChildren) => (
     <em className="italic">{children}</em>
@@ -177,17 +188,28 @@ const SignalDescriptionBody = React.memo(function SignalDescriptionBody({
 }: {
   source: string;
 }) {
+  const markdown = React.useMemo(
+    () => prepareSignalDescriptionMarkdown(source),
+    [source],
+  );
   return (
     <MarkdownSuspense
       components={SIGNAL_DESCRIPTION_COMPONENTS}
       FallBack={<SignalDescriptionFallback />}
     >
-      {source}
+      {markdown}
     </MarkdownSuspense>
   );
 });
 
-function SignalMediaSection({ signal }: { signal: Coherence }) {
+function SignalMediaSection({
+  signal,
+  embedded = false,
+}: {
+  signal: Coherence;
+  /** Nested in the member detail — no second card chrome. */
+  embedded?: boolean;
+}) {
   const t = useTranslations('CoherenceTab');
   const { images, documents } = React.useMemo(
     () => splitSignalMedia(signal),
@@ -201,10 +223,18 @@ function SignalMediaSection({ signal }: { signal: Coherence }) {
   if (galleryCount === 0 && documents.length === 0) return null;
 
   return (
-    <section className="craft-card flex flex-col gap-4 p-5">
-      <h2 className={cn(SECTION_LABEL_CLASS, 'm-0')}>
-        {t('signalMedia')} · {galleryCount + documents.length}
-      </h2>
+    <section
+      className={
+        embedded
+          ? 'flex flex-col gap-4 border-t border-border pt-5'
+          : 'craft-card flex flex-col gap-4 p-5'
+      }
+    >
+      {embedded ? null : (
+        <h2 className={cn(SECTION_LABEL_CLASS, 'm-0')}>
+          {t('signalMedia')} · {galleryCount + documents.length}
+        </h2>
+      )}
       {galleryCount > 0 ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {video ? (
@@ -290,6 +320,7 @@ export function SignalPage({
   const format = useFormatter();
   const now = useNow({ updateInterval: 60_000 });
   const shortDate = useSignalShortDate();
+  const { isMember: memberExperience } = useMemberExperience();
 
   const { space } = useSpaceBySlug(spaceSlug);
   const {
@@ -436,6 +467,49 @@ export function SignalPage({
   const feedHref = `/${lang}/dho/${spaceSlug}/coherence`;
   if (!signal) {
     if (isSignalsLoading) {
+      if (memberExperience) {
+        return (
+          <div
+            className="flex w-full min-w-0 flex-col gap-6 py-2"
+            aria-busy
+            data-testid="signal-page-loading"
+            data-member-signal-detail
+          >
+            <Skeleton loading className="h-4 w-20 rounded-none" />
+            <div className="flex min-w-0 flex-col gap-5">
+              <header className="flex min-w-0 flex-col gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Skeleton loading className="h-6 w-20 rounded-none" />
+                  <Skeleton loading className="h-4 w-12 rounded-none" />
+                </div>
+                <Skeleton
+                  loading
+                  className="h-8 w-full max-w-xl rounded-none"
+                />
+                <div className="flex items-center gap-2">
+                  <Skeleton loading className="size-6 shrink-0 rounded-full" />
+                  <Skeleton loading className="h-3.5 w-48 rounded-none" />
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <Skeleton loading className="h-6 w-24 rounded-none" />
+                  <Skeleton loading className="h-6 w-20 rounded-none" />
+                  <Skeleton loading className="h-6 w-16 rounded-none" />
+                </div>
+              </header>
+              <div className="flex flex-wrap items-center gap-2">
+                <Skeleton loading className="h-9 w-24 rounded-none" />
+                <Skeleton loading className="h-9 w-36 rounded-none" />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Skeleton loading className="h-3.5 w-full rounded-none" />
+                <Skeleton loading className="h-3.5 w-11/12 rounded-none" />
+                <Skeleton loading className="h-3.5 w-4/5 rounded-none" />
+                <Skeleton loading className="h-3.5 w-2/3 rounded-none" />
+              </div>
+            </div>
+          </div>
+        );
+      }
       return (
         <div className="flex flex-col gap-4" aria-busy>
           <Skeleton loading className="h-4 w-48 rounded-none" />
@@ -505,6 +579,227 @@ export function SignalPage({
     .filter(Boolean)
     .join(' · ');
   const description = signal.description?.trim() ?? '';
+  const upvoteSummary = signalListUpvoteSummaryState({
+    hasSettledList: Boolean(coherences),
+    isLoading: isSignalsLoading,
+    hasError: signalsError != null,
+  });
+  const loadErrorBanner = signalsError ? (
+    <div
+      role="alert"
+      className="flex flex-wrap items-center justify-between gap-3 border border-error-6 bg-error-2 px-3 py-2 text-1 text-error-11"
+    >
+      <span>{t('signalLoadFailed')}</span>
+      <Button
+        type="button"
+        variant="outline"
+        colorVariant="neutral"
+        size="sm"
+        disabled={isRetrying}
+        onClick={() => void retryLoad()}
+      >
+        {t('signalLoadRetry')}
+      </Button>
+    </div>
+  ) : null;
+
+  if (memberExperience) {
+    const byline = [creatorDisplayName, created, discussion]
+      .filter(Boolean)
+      .join(' · ');
+    const { images: memberImages, documents: memberDocuments } =
+      splitSignalMedia(signal);
+    const memberVideo = resolveSignalVideo(signal.videoUrl);
+    const leadImage = memberImages[0] ?? null;
+    const moreImages = memberImages.slice(1);
+    const legacy = legacySignalFieldsToShow(signal);
+    const priority = legacy?.priority ?? null;
+    const priorityLabel = priority
+      ? t.has(`priorities.${priority}` as never)
+        ? t(`priorities.${priority}` as never)
+        : priority
+      : null;
+    const tags = legacy?.tags ?? [];
+
+    const hasRightMedia = Boolean(
+      leadImage || memberVideo || moreImages.length,
+    );
+
+    return (
+      <div
+        className="flex w-full min-w-0 flex-col gap-6 py-2"
+        data-testid="signal-page"
+        data-member-signal-detail
+      >
+        <nav aria-label={t('signals')}>
+          <Link
+            href={feedHref}
+            className="inline-flex items-center gap-1.5 text-1 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="craft-icon" aria-hidden />
+            {t('signals')}
+          </Link>
+        </nav>
+
+        {loadErrorBanner}
+
+        <article
+          className={cn(
+            'grid min-w-0 gap-8',
+            hasRightMedia &&
+              'lg:grid-cols-[minmax(0,1fr)_minmax(14rem,22rem)] lg:items-start',
+          )}
+        >
+          <div className="flex min-w-0 flex-col gap-5">
+            <header className="flex min-w-0 flex-col gap-3">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <SignalTypeBadge type={signal.type} variant="pill" />
+                {priority && priorityLabel ? (
+                  <span className="inline-flex items-center gap-1.5 text-1 text-muted-foreground">
+                    <span
+                      className={cn(
+                        PRIORITY_DOT_MARK_CLASS,
+                        priorityDotClass(priority),
+                      )}
+                      aria-hidden
+                    />
+                    <span className="sr-only">{t('priority')}: </span>
+                    {priorityLabel}
+                  </span>
+                ) : null}
+              </div>
+              <h1 className={MEMBER_PAGE_TITLE}>{signal.title}</h1>
+              <div className="flex min-w-0 flex-wrap items-center gap-2 text-1 text-muted-foreground">
+                <PersonAvatar
+                  size="sm"
+                  shape="circle"
+                  avatarSrc={creator?.avatarUrl ?? ''}
+                  userName={creatorDisplayName ?? undefined}
+                  personId={signal.creatorId ?? undefined}
+                />
+                <p className="m-0 min-w-0 break-words">{byline}</p>
+              </div>
+              {tags.length > 0 ? (
+                <SignalTagBadges
+                  tags={tags}
+                  maxVisible={tags.length}
+                  showHashPrefix={false}
+                />
+              ) : null}
+            </header>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {!canUpvote ? null : (
+                <SignalUpvoteButton
+                  slug={signal.slug}
+                  spaceSlug={spaceSlug}
+                  upvotes={signal.upvotes}
+                  votingMode={votingMode}
+                  votingModeStatus={votingModeStatus}
+                  onRetryVotingMode={retryVotingMode}
+                  isNonMember={isNonMember}
+                  isMembershipPending={isMembershipPending}
+                  refresh={refresh}
+                  archived={signal.archived}
+                  summaryState={upvoteSummary}
+                  layout="row"
+                  className="shrink-0"
+                />
+              )}
+              {humanChatEnabled ? (
+                <button
+                  type="button"
+                  data-testid="signal-open-discussion"
+                  onClick={openChat}
+                  className="box-border inline-flex h-[36px] min-h-[36px] shrink-0 items-center gap-1.5 border border-border bg-transparent px-3 text-1 font-medium leading-none text-foreground hover:bg-foreground/5"
+                >
+                  {t('openDiscussion')}
+                  <span aria-hidden>→</span>
+                </button>
+              ) : null}
+            </div>
+
+            {description ? (
+              <div className="text-2 text-foreground/90 [&_strong]:font-semibold [&_strong]:text-foreground">
+                <SignalDescriptionBody source={description} />
+              </div>
+            ) : null}
+
+            {memberDocuments.length > 0 ? (
+              <ul className="m-0 flex list-none flex-col gap-2 border-t border-border/70 p-0 pt-5">
+                {memberDocuments.map((doc) => (
+                  <li
+                    key={doc.url}
+                    className="flex items-center gap-3 border border-border/70 px-3 py-2"
+                  >
+                    <span className="text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+                      {fileExtension(doc.name, doc.url)}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-1 text-foreground">
+                      {doc.name}
+                    </span>
+                    <a
+                      href={doc.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      download
+                      className="inline-flex shrink-0 items-center gap-1 text-1 text-muted-foreground hover:text-foreground"
+                    >
+                      {t('signalDownload')}
+                      <Download className="craft-icon-sm" aria-hidden />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+
+          {hasRightMedia ? (
+            <aside className="flex min-w-0 flex-col gap-3">
+              {leadImage ? (
+                <a
+                  href={leadImage.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block w-full overflow-hidden border border-border/70"
+                >
+                  <img
+                    src={leadImage.url}
+                    alt={leadImage.name}
+                    className="aspect-[4/3] w-full object-cover"
+                  />
+                </a>
+              ) : memberVideo ? (
+                <div className="w-full overflow-hidden border border-border/70 bg-black">
+                  <div className="relative aspect-video w-full">
+                    <SignalVideoPlayer
+                      video={memberVideo}
+                      title={signal.title}
+                    />
+                  </div>
+                </div>
+              ) : null}
+              {moreImages.map((image) => (
+                <a
+                  key={image.url}
+                  href={image.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block w-full overflow-hidden border border-border/70"
+                >
+                  <img
+                    src={image.url}
+                    alt={image.name}
+                    className="aspect-[4/3] w-full object-cover"
+                  />
+                </a>
+              ))}
+            </aside>
+          ) : null}
+        </article>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-w-0 flex-col gap-4" data-testid="signal-page">
@@ -523,24 +818,7 @@ export function SignalPage({
         <span className="truncate text-foreground">{signal.title}</span>
       </nav>
 
-      {signalsError ? (
-        <div
-          role="alert"
-          className="flex flex-wrap items-center justify-between gap-3 border border-error-6 bg-error-2 px-3 py-2 text-1 text-error-11"
-        >
-          <span>{t('signalLoadFailed')}</span>
-          <Button
-            type="button"
-            variant="outline"
-            colorVariant="neutral"
-            size="sm"
-            disabled={isRetrying}
-            onClick={() => void retryLoad()}
-          >
-            {t('signalLoadRetry')}
-          </Button>
-        </div>
-      ) : null}
+      {loadErrorBanner}
 
       <section className={SIGNAL_PAGE_CARD_CLASS}>
         <div className={SIGNAL_PAGE_CARD_BODY_CLASS}>
@@ -563,11 +841,7 @@ export function SignalPage({
                   refresh={refresh}
                   archived={signal.archived}
                   variant="page"
-                  summaryState={signalListUpvoteSummaryState({
-                    hasSettledList: Boolean(coherences),
-                    isLoading: isSignalsLoading,
-                    hasError: signalsError != null,
-                  })}
+                  summaryState={upvoteSummary}
                   className="self-start"
                 />
               )}

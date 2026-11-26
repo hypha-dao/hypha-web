@@ -18,6 +18,7 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useFormatter, useTranslations } from 'next-intl';
+import { MEMBER_ROW_TITLE } from '../../people/components/member-type';
 import { SignalCardActions } from './signal-card-actions';
 import { SignalUpvoteControl } from './signal-upvote-control';
 import { SignalCreatorMeta } from './signal-creator-meta';
@@ -209,7 +210,12 @@ export function SignalListView({
                     className="min-w-0 flex-1 text-left"
                     onClick={() => onSignalClick?.(signal)}
                   >
-                    <span className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug tracking-tight text-foreground">
+                    <span
+                      className={cn(
+                        MEMBER_ROW_TITLE,
+                        'line-clamp-2 min-h-[2.5rem]',
+                      )}
+                    >
                       {signal.title}
                     </span>
                     <SignalCategoryTag type={signal.type} className="mt-1" />

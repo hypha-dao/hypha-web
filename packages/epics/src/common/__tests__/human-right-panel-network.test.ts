@@ -23,7 +23,8 @@ describe('network room join guard', () => {
 
   it('does not inherit a DHO space slug while the network room is the default', () => {
     expect(source).toContain('routeSpaceSlugFromLocation');
-    expect(source).toContain("isNetworkAiPath(pathname) && mode === 'space'");
+    expect(source).toContain('isNetworkAiPath(pathname)');
+    expect(source).toContain("mode === 'space'");
     expect(source).toContain(
       'Entering a network-default shell page clears leftover DHO / coherence',
     );
@@ -75,11 +76,21 @@ describe('network room join guard', () => {
   });
 
   it('treats Home, Messages, Wallet, and Spaces space mode as the network room', () => {
-    expect(source).toContain(
-      "const isNetworkSpaceChat = isNetworkAiPath(pathname) && mode === 'space'",
-    );
+    expect(source).toContain('isNetworkAiPath(pathname)');
+    expect(source).toContain("mode === 'space'");
+    expect(source).toContain('!memberSurfaceSpace');
     expect(source).toContain('!isNetworkSpaceChat');
     expect(source).toContain('Leaving those pages (e.g. into a DHO)');
+  });
+
+  it('keeps a member surface ?space= on the space channel, not Network', () => {
+    expect(source).toContain('memberSurfaceSpaceQuery');
+    expect(source).toContain('memberSurfaceSpace');
+  });
+
+  it('shows the member conversations list when the top-bar chat icon requests it', () => {
+    expect(source).toContain('memberInboxRequested');
+    expect(source).toContain('MemberInboxSidePanel');
   });
 
   it('closes a space signal through the route-transition helper', () => {

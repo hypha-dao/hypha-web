@@ -10,6 +10,7 @@ import {
 } from '@hypha-platform/feature-flags';
 import { Locale } from '@hypha-platform/i18n';
 import { redirect } from 'next/navigation';
+import { MEMBER_SCREEN_STACK } from '../../../../_components/member-page-shell';
 import { getDhoPathOverview } from '../overview/constants';
 
 type PageProps = {
@@ -45,7 +46,7 @@ export default async function CoherencePage(props: PageProps) {
       : 'mostupvoted';
   return (
     <SpaceTabAccessWrapper spaceSlug={id}>
-      <div className="flex flex-col gap-4 py-4">
+      <div className={MEMBER_SCREEN_STACK}>
         <ConnectedCoherenceBlock
           lang={lang}
           spaceSlug={id}

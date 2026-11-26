@@ -288,6 +288,113 @@ export function channelIsRelevantToMember(
   return false;
 }
 
+/** A conversation belongs to this space when the room is tagged with it. */
+export function conversationInSpace(
+  place: { spaceSlug?: string | null; ecosystemSlug?: string | null },
+  spaceSlug: string,
+): boolean {
+  const wanted = spaceSlug.trim().toLowerCase();
+  if (!wanted) return false;
+  const space = place.spaceSlug?.trim().toLowerCase() ?? '';
+  const ecosystem = place.ecosystemSlug?.trim().toLowerCase() ?? '';
+  return space === wanted || ecosystem === wanted;
+}
+
+/** Member space inbox. Same kinds as the full inbox, folded into four tabs. */
+export const MEMBER_INBOX_TABS = [
+  'all',
+  'direct',
+  'groups',
+  'channels',
+] as const;
+
+export type MemberInboxTab = (typeof MEMBER_INBOX_TABS)[number];
+
+/**
+ * A member's space inbox. A channel counts only when its own space is the
+ * one open now. A parent ecosystem tag does not pull in sibling spaces, and
+ * network and ecosystem rooms stay out. Direct chats and groups are not
+ * tagged with a space, so they stay unless a tag says they belong elsewhere.
+ */
+export function memberConversationInSpace(
+  place: {
+    kind: InboxChannelKind;
+    spaceSlug?: string | null;
+    ecosystemSlug?: string | null;
+  },
+  spaceSlug: string,
+): boolean {
+  if (place.kind === 'network' || place.kind === 'ecosystem') return false;
+  if (place.kind === 'dm' || place.kind === 'group') {
+    const tagged = place.spaceSlug?.trim() || place.ecosystemSlug?.trim();
+    if (!tagged) return true;
+    return conversationInSpace(place, spaceSlug);
+  }
+  const wanted = spaceSlug.trim().toLowerCase();
+  if (!wanted) return false;
+  return (place.spaceSlug?.trim().toLowerCase() ?? '') === wanted;
+}
+
+export function rowMatchesMemberInboxTab(
+  kind: InboxChannelKind,
+  tab: MemberInboxTab,
+): boolean {
+  if (tab === 'all') return true;
+  if (tab === 'direct') return kind === 'dm';
+  if (tab === 'groups') return kind === 'group';
+  // Same rooms the full inbox calls space channels: the space rooms plus
+  // the signal, quest, proposal, and context threads that live in a space.
+  return rowMatchesInboxFilter(kind, 'spaces');
+}
+
+/**
+ * Builder inbox tabs. Channels fold every non-DM/group conversation —
+ * space rooms and nested threads, plus ecosystem and network rooms —
+ * so a phone can switch without opening the full category list.
+ */
+export function rowMatchesBuilderInboxTab(
+  kind: InboxChannelKind,
+  tab: MemberInboxTab,
+): boolean {
+  if (tab === 'all') return true;
+  if (tab === 'direct') return kind === 'dm';
+  if (tab === 'groups') return kind === 'group';
+  return (
+    rowMatchesInboxFilter(kind, 'spaces') ||
+    kind === 'ecosystem' ||
+    kind === 'network'
+  );
+}
+
+function inboxTabCountsFor(
+  rows: readonly { kind: InboxChannelKind; unread: number }[],
+  matches: (kind: InboxChannelKind, tab: MemberInboxTab) => boolean,
+): Record<MemberInboxTab, { total: number; unread: number }> {
+  const counts = Object.fromEntries(
+    MEMBER_INBOX_TABS.map((tab) => [tab, { total: 0, unread: 0 }]),
+  ) as Record<MemberInboxTab, { total: number; unread: number }>;
+  for (const row of rows) {
+    const unread = row.unread > 0 ? row.unread : 0;
+    for (const tab of MEMBER_INBOX_TABS) {
+      if (!matches(row.kind, tab)) continue;
+      counts[tab].total += 1;
+      counts[tab].unread += unread;
+    }
+  }
+  return counts;
+}
+
+export function memberInboxTabCounts(
+  rows: readonly { kind: InboxChannelKind; unread: number }[],
+): Record<MemberInboxTab, { total: number; unread: number }> {
+  return inboxTabCountsFor(rows, rowMatchesMemberInboxTab);
+}
+
+export function builderInboxTabCounts(
+  rows: readonly { kind: InboxChannelKind; unread: number }[],
+): Record<MemberInboxTab, { total: number; unread: number }> {
+  return inboxTabCountsFor(rows, rowMatchesBuilderInboxTab);
+}
 export function rowMatchesInboxFilter(
   kind: InboxChannelKind,
   filter: InboxFilter,
@@ -740,6 +847,7 @@ export function channelRowsFromSnapshots(
   context: InboxContext,
   networkFallback: string,
   now = Date.now(),
+  options?: { includeInactiveSpaceRooms?: boolean },
 ): InboxChannelRow[] {
   const rows: InboxChannelRow[] = [];
   const logoBySlug = new Map(
@@ -773,7 +881,13 @@ export function channelRowsFromSnapshots(
       if (!snapshot.preview.trim() && snapshot.unread <= 0) continue;
     } else if (
       place.kind !== 'signal' &&
-      !channelHasRecentActivity(snapshot.lastTs, now)
+      !channelHasRecentActivity(snapshot.lastTs, now) &&
+      // Member space home asks for every space room, including a quiet one.
+      // The full inbox still hides those until they have a recent message.
+      !(
+        options?.includeInactiveSpaceRooms &&
+        (place.kind === 'space' || place.kind === 'space-public')
+      )
     ) {
       continue;
     }

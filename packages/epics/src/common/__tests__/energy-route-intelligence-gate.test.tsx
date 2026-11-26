@@ -99,7 +99,7 @@ function EnergyRouteTree() {
         use: [energyIntelligenceSWRMiddleware],
       }}
     >
-      {/* MobileContentFrame (`xl:hidden`) still mounts on desktop. */}
+      {/* MobileContentFrame (`lg:hidden`) still mounts on desktop. */}
       <MobileSpacesSubnav
         lang="en"
         activeSlug="ponta-do-sol-energy-community"

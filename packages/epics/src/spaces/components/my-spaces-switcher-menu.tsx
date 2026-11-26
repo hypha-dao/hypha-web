@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import useSWR from 'swr';
-import { useParams, usePathname } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { Address, Space, useMe } from '@hypha-platform/core/client';
@@ -31,6 +31,7 @@ export function MySpacesSwitcherMenu({
   const tSpaces = useTranslations('Spaces');
   const { resolvedTheme } = useTheme();
   const pathname = usePathname() ?? '';
+  const router = useRouter();
   const params = useParams<{ lang?: string }>();
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
   const { person } = useMe();
@@ -121,22 +122,38 @@ export function MySpacesSwitcherMenu({
     return () => cancelAnimationFrame(rafId);
   }, [open]);
 
-  const renderSpace = (space: Space) => (
-    <SpaceSwitcherOption
-      key={space.id}
-      href={
-        getDhoSpaceContextPath({
-          pathname,
-          lang,
-          spaceSlug: space.slug,
-        }) ?? `/${lang}/dho/${space.slug}/agreements`
-      }
-      title={space.title}
-      iconUrl={resolveSpaceDisplayLogoUrl(space, logoVariant)}
-      onClick={onSelect}
-      className="rounded-lg px-2 py-1.5 text-sm text-foreground hover:bg-background-4/70"
-    />
-  );
+  const renderSpace = (space: Space) => {
+    const href =
+      getDhoSpaceContextPath({
+        pathname,
+        lang,
+        spaceSlug: space.slug,
+      }) ?? `/${lang}/dho/${space.slug}/agreements`;
+    return (
+      <SpaceSwitcherOption
+        key={space.id}
+        href={href}
+        title={space.title}
+        iconUrl={resolveSpaceDisplayLogoUrl(space, logoVariant)}
+        onClick={(event) => {
+          onSelect?.();
+          // Let Link own modified clicks (new tab). Only push on a plain click.
+          if (
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey ||
+            event.button !== 0
+          ) {
+            return;
+          }
+          event.preventDefault();
+          router.push(href);
+        }}
+        className="rounded-lg px-2 py-1.5 text-sm text-foreground hover:bg-background-4/70"
+      />
+    );
+  };
 
   return (
     <div
