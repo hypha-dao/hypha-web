@@ -70,6 +70,7 @@ describe.skipIf(!HAS_DB)('signals queries (database)', () => {
             priority: 'medium',
             slug: `${PREFIX}-${key}`,
             creatorId: ada,
+            originKind: 'app',
             ...over,
           } as never)
           .returning({ id: tables.coherences.id })
