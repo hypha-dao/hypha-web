@@ -73,14 +73,12 @@ export function adaptiveRequestSize(
 const LAYER_SELECTION_TOLERANCE = 0.9;
 
 /**
- * livekit-server's rule (`GetQualityForDimension`): compare the short side only, height for a
- * landscape share and width for a portrait one, against the request times the tolerance.
+ * livekit-server's rule (`GetQualityForDimension`, checked on v1.13.3, the deployed version): with
+ * published copies it compares heights only, even for a portrait share, against the requested
+ * height times the tolerance.
  */
 function covers(layer: PublishedShareLayer, request: ShareTileRequest) {
-  const portrait = layer.width < layer.height;
-  const size = portrait ? layer.width : layer.height;
-  const requested = portrait ? request.width : request.height;
-  return size >= requested * LAYER_SELECTION_TOLERANCE;
+  return layer.height >= request.height * LAYER_SELECTION_TOLERANCE;
 }
 
 /**
