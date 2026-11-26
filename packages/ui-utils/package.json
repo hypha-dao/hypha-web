@@ -6,11 +6,13 @@
   "scripts": {
     "lint": "eslint .",
     "dev": "tailwindcss -i ./src/global.css -o ./dist/global.css --watch",
-    "build": "tailwindcss -i ./src/global.css -o ./dist/global.css"
+    "build": "tailwindcss -i ./src/global.css -o ./dist/global.css",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
     "@hypha-platform/config-typescript": "workspace:*",
+    "@hypha-platform/config-vitest": "workspace:*",
     "@tailwindcss/postcss": "^4.1.11",
     "tailwindcss": "^4.0.8"
   },

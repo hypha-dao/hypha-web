@@ -28,6 +28,13 @@
     "check-types": {
       "dependsOn": ["^check-types"]
     },
+    "test": {
+      "outputs": []
+    },
+    "test:integration": {
+      "cache": false,
+      "env": ["BRANCH_DB_URL", "DEFAULT_DB_URL"]
+    },
     "dev": {
       "cache": false,
       "persistent": true

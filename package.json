@@ -7,6 +7,8 @@
     "dev": "turbo run dev",
     "dev:web": "turbo run dev --filter=web --filter=@hypha-platform/ui-utils",
     "build": "turbo run build",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration",
     "start": "turbo run start",
     "migrate": "turbo run migrate",
     "generate": "turbo run generate",

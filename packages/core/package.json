@@ -6,11 +6,13 @@
   "scripts": {
     "lint": "eslint .",
     "test": "vitest run",
-    "generate-abi": "wagmi generate"
+    "generate-abi": "wagmi generate",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
-    "@hypha-platform/config-typescript": "workspace:*"
+    "@hypha-platform/config-typescript": "workspace:*",
+    "@hypha-platform/config-vitest": "workspace:*"
   },
   "dependencies": {
     "@hypha-platform/authentication": "workspace:*",
