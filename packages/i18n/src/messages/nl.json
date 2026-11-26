@@ -4222,6 +4222,7 @@
     "callShareSettingsFrameRate": "Beeldsnelheid",
     "callShareSettingsBitrate": "Maximale bitrate",
     "callShareSettingsLayers": "Kleinere kopieën voor kijkers",
+    "callShareSettingsLayersAuto": "Automatisch (op gedeelde grootte)",
     "callShareSettingsCodec": "Codec",
     "callShareSettingsNative": "Oorspronkelijk",
     "callShareSettingsReset": "Standaardwaarden herstellen",

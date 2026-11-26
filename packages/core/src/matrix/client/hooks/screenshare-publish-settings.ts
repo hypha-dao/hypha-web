@@ -3,6 +3,10 @@
 import { useSyncExternalStore } from 'react';
 import {
   ScreenSharePresets,
+  Track,
+  VideoPreset,
+  type LocalTrack,
+  type Room,
   type ScreenShareCaptureOptions,
   type TrackPublishOptions,
   type VideoCodec,
@@ -18,7 +22,13 @@ import {
 export type ScreenShareMaxSize = '1080p' | '1440p' | 'native';
 export type ScreenShareFrameRate = 15 | 30;
 export type ScreenShareBitrateMbps = 2.5 | 4 | 6 | 8;
-export type ScreenShareLayers = '360p' | '360p+720p';
+/** The smaller copies sent below the full size; `auto` picks them from the shared size. */
+export type ScreenShareLayers =
+  | 'auto'
+  | '360p'
+  | '360p+720p'
+  | '540p+1080p'
+  | '720p+1080p';
 export type ScreenShareCodec = 'vp8' | 'h264' | 'vp9' | 'av1';
 
 export type ScreenSharePublishSettings = {
@@ -33,7 +43,7 @@ export const SCREEN_SHARE_SETTING_CHOICES = {
   maxSize: ['1080p', '1440p', 'native'],
   frameRate: [15, 30],
   bitrateMbps: [2.5, 4, 6, 8],
-  layers: ['360p', '360p+720p'],
+  layers: ['auto', '360p', '360p+720p', '540p+1080p', '720p+1080p'],
   codec: ['vp8', 'h264', 'vp9', 'av1'],
 } as const satisfies {
   [K in keyof ScreenSharePublishSettings]: ReadonlyArray<
@@ -46,7 +56,7 @@ export const DEFAULT_SCREEN_SHARE_PUBLISH_SETTINGS: ScreenSharePublishSettings =
     maxSize: '1440p',
     frameRate: 15,
     bitrateMbps: 4,
-    layers: '360p+720p',
+    layers: 'auto',
     codec: 'vp8',
   };
 
@@ -60,36 +70,128 @@ const CAPTURE_SIZE: Record<
   native: { width: 0, height: 0 },
 };
 
+/** Copy presets by height. 540p sits between LiveKit's 360p and 720p screen presets. */
+const COPY_PRESETS: Record<number, VideoPreset> = {
+  360: ScreenSharePresets.h360fps15,
+  540: new VideoPreset(960, 540, 900_000, 15, 'medium'),
+  720: ScreenSharePresets.h720fps15,
+  1080: ScreenSharePresets.h1080fps15,
+};
+
+/** A share counts as "above 1080p" from here, so a 1200p screen does not get a near-equal 1080p copy. */
+const LARGE_SOURCE_MIN_HEIGHT = 1350;
+
 /**
- * Capture and publish options for a share. Smaller screens and windows keep their own size (the
- * size is an upper bound, nothing is scaled up). `maintain-resolution` and `contentHint: 'detail'`
- * stay fixed: on a short uplink frames drop, not pixels. VP9 and AV1 make the smaller copies inside
- * one stream (SVC), so `layers` only applies to VP8 and H.264; LiveKit adds a VP8 copy for viewers
- * whose browser cannot decode them.
+ * Heights of the smaller copies (#2742). Auto: a large share (e.g. 1440p) sends 1080p for most
+ * viewers and 540p for weak connections; 1080p or smaller sends 720p and 360p. Copies that are
+ * not clearly smaller than the shared picture are dropped, so a small window sends fewer.
+ * `sourceHeight` is the short side of the captured picture; unknown keeps the list as is.
  */
-export function buildScreenShareOptions(settings: ScreenSharePublishSettings): {
-  capture: ScreenShareCaptureOptions;
-  publish: TrackPublishOptions;
-} {
+export function screenShareCopyHeights(
+  layers: ScreenShareLayers,
+  sourceHeight?: number,
+): number[] {
+  const known = sourceHeight !== undefined && sourceHeight > 0;
+  let heights: number[];
+  if (layers === 'auto') {
+    heights =
+      known && sourceHeight >= LARGE_SOURCE_MIN_HEIGHT
+        ? [540, 1080]
+        : [360, 720];
+  } else {
+    heights = layers.split('+').map((part) => Number.parseInt(part, 10));
+  }
+  return known ? heights.filter((h) => h < sourceHeight * 0.9) : heights;
+}
+
+/** What the browser should capture: the max size is an upper bound, nothing is scaled up. */
+export function buildScreenShareCaptureOptions(
+  settings: ScreenSharePublishSettings,
+): ScreenShareCaptureOptions {
   // The capture runs at 30 fps either way (livekit-client's default); the encoder sets the rate.
-  const capture: ScreenShareCaptureOptions = {
+  return {
     contentHint: 'detail',
     resolution: { ...CAPTURE_SIZE[settings.maxSize], frameRate: 30 },
   };
-  const publish: TrackPublishOptions = {
+}
+
+/**
+ * Publish options for a share of `source` size. `maintain-resolution` stays fixed: on a short
+ * uplink frames drop, not pixels. VP9 and AV1 make their smaller copies inside one stream (SVC, at
+ * 1/2 and 1/4 of the full size), so `layers` only applies to VP8 and H.264; LiveKit adds a VP8
+ * copy for viewers whose browser cannot decode them.
+ */
+export function buildScreenSharePublishOptions(
+  settings: ScreenSharePublishSettings,
+  source?: { width: number; height: number },
+): TrackPublishOptions {
+  const sourceHeight = source
+    ? Math.min(source.width, source.height)
+    : undefined;
+  const copies = screenShareCopyHeights(settings.layers, sourceHeight)
+    .map((h) => COPY_PRESETS[h])
+    .filter((preset): preset is VideoPreset => preset !== undefined);
+  return {
     simulcast: true,
     videoCodec: settings.codec as VideoCodec,
     screenShareEncoding: {
       maxBitrate: Math.round(settings.bitrateMbps * 1_000_000),
       maxFramerate: settings.frameRate,
     },
-    screenShareSimulcastLayers:
-      settings.layers === '360p+720p'
-        ? [ScreenSharePresets.h360fps15, ScreenSharePresets.h720fps15]
-        : [ScreenSharePresets.h360fps15],
+    screenShareSimulcastLayers: copies,
     degradationPreference: 'maintain-resolution',
   };
-  return { capture, publish };
+}
+
+/**
+ * Starts a share in two steps so the copies can follow the picked surface: capture first (the
+ * browser picker), then publish with copies chosen from the captured size. Same steps as
+ * `setScreenShareEnabled(true)`, which picks the copies before it knows the size.
+ */
+type ScreenShareStart = {
+  source?: { width: number; height: number };
+  publish: TrackPublishOptions;
+};
+
+/** One start per room at a time, like LiveKit's own pending-publish guard (e.g. a double click). */
+const startsInFlight = new WeakMap<Room, Promise<ScreenShareStart>>();
+
+export function publishScreenShare(
+  room: Room,
+  settings: ScreenSharePublishSettings,
+): Promise<ScreenShareStart> {
+  const pending = startsInFlight.get(room);
+  if (pending) return pending;
+  const start = startScreenShare(room, settings).finally(() => {
+    startsInFlight.delete(room);
+  });
+  startsInFlight.set(room, start);
+  return start;
+}
+
+async function startScreenShare(
+  room: Room,
+  settings: ScreenSharePublishSettings,
+): Promise<ScreenShareStart> {
+  const tracks: LocalTrack[] = await room.localParticipant.createScreenTracks(
+    buildScreenShareCaptureOptions(settings),
+  );
+  try {
+    const video = tracks.find((t) => t.source === Track.Source.ScreenShare);
+    const size = video?.mediaStreamTrack.getSettings();
+    const source =
+      size?.width && size?.height
+        ? { width: size.width, height: size.height }
+        : undefined;
+    const publish = buildScreenSharePublishOptions(settings, source);
+    await Promise.all(
+      tracks.map((t) => room.localParticipant.publishTrack(t, publish)),
+    );
+    return { source, publish };
+  } catch (e) {
+    for (const t of tracks) t.stop();
+    throw e;
+  }
 }
 
 /** Keeps only known values, so an old or edited stored value falls back to the default. */

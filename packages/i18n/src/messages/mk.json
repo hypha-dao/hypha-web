@@ -4203,6 +4203,7 @@
     "callShareSettingsFrameRate": "Сликички во секунда",
     "callShareSettingsBitrate": "Максимален битрејт",
     "callShareSettingsLayers": "Помали копии за гледачите",
+    "callShareSettingsLayersAuto": "Автоматски (според споделената големина)",
     "callShareSettingsCodec": "Кодек",
     "callShareSettingsNative": "Изворна",
     "callShareSettingsReset": "Врати на стандардно",

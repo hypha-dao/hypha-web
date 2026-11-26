@@ -4221,6 +4221,7 @@
     "callShareSettingsFrameRate": "Bildefrekvens",
     "callShareSettingsBitrate": "Maks bitrate",
     "callShareSettingsLayers": "Mindre kopier for seere",
+    "callShareSettingsLayersAuto": "Auto (etter delt størrelse)",
     "callShareSettingsCodec": "Kodek",
     "callShareSettingsNative": "Opprinnelig",
     "callShareSettingsReset": "Tilbakestill til standard",

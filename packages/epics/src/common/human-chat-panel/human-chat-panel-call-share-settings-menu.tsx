@@ -83,7 +83,11 @@ export function HumanChatPanelCallShareSettingsMenu({
     }
     if (key === 'frameRate') return `${value} fps`;
     if (key === 'bitrateMbps') return `${value} Mbps`;
-    if (key === 'layers') return value === '360p' ? '360p' : '360p + 720p';
+    if (key === 'layers') {
+      return value === 'auto'
+        ? t('callShareSettingsLayersAuto')
+        : String(value).replace('+', ' + ');
+    }
     if (key === 'codec') {
       return value === 'h264' ? 'H.264' : String(value).toUpperCase();
     }

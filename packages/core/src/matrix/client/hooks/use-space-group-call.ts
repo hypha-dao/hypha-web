@@ -7,8 +7,8 @@ import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import type { Room as LiveKitRoom } from 'livekit-client';
 import { LocalAudioTrack, Track } from 'livekit-client';
 import {
-  buildScreenShareOptions,
   getScreenSharePublishSettings,
+  publishScreenShare,
 } from './screenshare-publish-settings';
 import {
   recordShareDiagnostic,
@@ -1412,24 +1412,21 @@ export function useSpaceGroupCall(
     async (lkRoom: LiveKitRoom) => {
       try {
         clearOrphanedMatrixScreenshareStreams(client);
-        const screenShareOptions = buildScreenShareOptions(
-          getScreenSharePublishSettings(),
-        );
+        const screenShareSettings = getScreenSharePublishSettings();
         try {
-          await withEnhancedScreenshareCapture(
+          const started = await withEnhancedScreenshareCapture(
             client,
-            () =>
-              lkRoom.localParticipant.setScreenShareEnabled(
-                true,
-                screenShareOptions.capture,
-                screenShareOptions.publish,
-              ),
+            () => publishScreenShare(lkRoom, screenShareSettings),
             screenshareSurfaceModeRef.current,
           );
           recordShareDiagnostic({
             side: 'send-start',
-            settings: getScreenSharePublishSettings(),
-            options: screenShareOptions,
+            settings: screenShareSettings,
+            source: started.source,
+            copies: started.publish.screenShareSimulcastLayers?.map(
+              (p) => p.height,
+            ),
+            options: started.publish,
           });
         } catch (e) {
           clearOrphanedMatrixScreenshareStreams(client);

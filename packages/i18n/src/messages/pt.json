@@ -3648,6 +3648,7 @@
     "callShareSettingsFrameRate": "Taxa de fotogramas",
     "callShareSettingsBitrate": "Taxa de bits máxima",
     "callShareSettingsLayers": "Cópias mais pequenas para quem vê",
+    "callShareSettingsLayersAuto": "Automático (pelo tamanho compartilhado)",
     "callShareSettingsCodec": "Codec",
     "callShareSettingsNative": "Nativo",
     "callShareSettingsReset": "Repor predefinições",

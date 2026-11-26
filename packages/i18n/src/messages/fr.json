@@ -3648,6 +3648,7 @@
     "callShareSettingsFrameRate": "Images par seconde",
     "callShareSettingsBitrate": "Débit maximal",
     "callShareSettingsLayers": "Copies plus petites pour les spectateurs",
+    "callShareSettingsLayersAuto": "Auto (selon la taille partagée)",
     "callShareSettingsCodec": "Codec",
     "callShareSettingsNative": "Native",
     "callShareSettingsReset": "Rétablir les valeurs par défaut",
