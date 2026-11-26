@@ -5,6 +5,8 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { useLocale } from 'next-intl';
 import {
   type Coherence,
+  isAiOrigin,
+  type OriginView,
   resolveSignalCreatorDisplayName,
   useMe,
   usePersonById,
@@ -15,7 +17,9 @@ import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 export type SignalCreatorMetaInput = Pick<
   Coherence,
   'creatorId' | 'createdAt' | 'description' | 'title' | 'tags'
->;
+> & { origin?: OriginView | null };
+
+export type SignalCreatorKind = 'person' | 'aiRole' | 'backgroundJob' | 'relay';
 
 function parseRelaySourceSpaceSlug(description: string): string | null {
   const marker = 'Relayed from ecosystem space:';
@@ -50,12 +54,51 @@ function isBackgroundJobDescription(description: string): boolean {
     );
 }
 
+/**
+ * Who the creator slot shows (#2724). The stored origin decides first: an AI path shows the AI
+ * label (a relay keeps its source-space label, a job its job label), every other known path
+ * shows the person. Only rows written before origin existed (`unknown`, or no origin) fall back
+ * to the legacy tag, title and description heuristics.
+ */
+export function resolveSignalCreatorKind({
+  origin,
+  description,
+  title,
+  tags,
+}: Pick<SignalCreatorMetaInput, 'origin' | 'description' | 'title' | 'tags'>): {
+  kind: SignalCreatorKind;
+  relaySourceSpaceSlug: string | null;
+} {
+  const relaySlug = parseRelaySourceSpaceSlug(description);
+  if (origin && origin.kind !== 'unknown') {
+    if (!isAiOrigin(origin))
+      return { kind: 'person', relaySourceSpaceSlug: null };
+    if (relaySlug) return { kind: 'relay', relaySourceSpaceSlug: relaySlug };
+    return {
+      kind: origin.kind === 'hypha_intelligence' ? 'backgroundJob' : 'aiRole',
+      relaySourceSpaceSlug: null,
+    };
+  }
+  if (relaySlug) return { kind: 'relay', relaySourceSpaceSlug: relaySlug };
+  if (
+    isBackgroundJobDescription(description) ||
+    isHighSignalUpdateTitle(title)
+  ) {
+    return { kind: 'backgroundJob', relaySourceSpaceSlug: null };
+  }
+  if ((tags ?? []).some((tag) => tag.trim().toLowerCase() === 'ai signal')) {
+    return { kind: 'aiRole', relaySourceSpaceSlug: null };
+  }
+  return { kind: 'person', relaySourceSpaceSlug: null };
+}
+
 export function useSignalCreatorMeta({
   creatorId,
   createdAt,
   description,
   title,
   tags,
+  origin,
 }: SignalCreatorMetaInput) {
   const locale = useLocale();
   const { person } = useMe();
@@ -82,34 +125,14 @@ export function useSignalCreatorMeta({
     [createdAtDate, dateFnsLocale],
   );
 
-  const hasAiSignalTag = React.useMemo(
-    () => (tags ?? []).some((tag) => tag.trim().toLowerCase() === 'ai signal'),
-    [tags],
-  );
-
-  const relaySourceSpaceSlug = React.useMemo(
-    () => parseRelaySourceSpaceSlug(description),
-    [description],
+  const { kind: creatorKind, relaySourceSpaceSlug } = React.useMemo(
+    () => resolveSignalCreatorKind({ origin, description, title, tags }),
+    [origin, description, title, tags],
   );
 
   const { space: relaySourceSpace } = useSpaceBySlug(
     relaySourceSpaceSlug ?? '',
   );
-
-  const isBackgroundJobSignal = React.useMemo(
-    () =>
-      isBackgroundJobDescription(description) || isHighSignalUpdateTitle(title),
-    [description, title],
-  );
-
-  const creatorKind = React.useMemo<
-    'person' | 'aiRole' | 'backgroundJob' | 'relay'
-  >(() => {
-    if (relaySourceSpaceSlug) return 'relay';
-    if (isBackgroundJobSignal) return 'backgroundJob';
-    if (hasAiSignalTag) return 'aiRole';
-    return 'person';
-  }, [relaySourceSpaceSlug, isBackgroundJobSignal, hasAiSignalTag]);
 
   const creatorLabel = React.useMemo(() => {
     if (creatorKind === 'relay') {

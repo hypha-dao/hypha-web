@@ -334,6 +334,7 @@ export function SignalPage({
     description: signal?.description ?? '',
     title: signal?.title ?? '',
     tags: signal?.tags ?? [],
+    origin: signal?.origin,
   });
   const { person: creator } = usePersonById({ id: signal?.creatorId });
   const mediaSummary = useSignalMediaSummary(

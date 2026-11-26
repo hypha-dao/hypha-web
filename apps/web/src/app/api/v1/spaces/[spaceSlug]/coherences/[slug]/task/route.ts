@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   authorizeSpacePanelInteraction,
-  normalizeCoherence,
   patchCoherenceTaskBySlugAction,
   resolveCoherenceTaskPatchContext,
   schemaPatchCoherenceTaskBySlug,
@@ -66,7 +65,7 @@ export async function PATCH(
     const updated = await patchCoherenceTaskBySlugAction(parsed.data, {
       authToken,
     });
-    return NextResponse.json(normalizeCoherence(updated));
+    return NextResponse.json(updated);
   } catch (error) {
     console.error('Failed to patch signal task:', error);
     const message =

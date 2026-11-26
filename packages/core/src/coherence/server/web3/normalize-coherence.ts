@@ -16,6 +16,19 @@ import {
 } from '../../signal-workflow';
 import { IndicativePayout, SignalAttachment } from '../../types';
 import { parseCapitalKeys } from '../../../network/capitals';
+import { originViewFromColumns, type OriginView } from '../../../origin';
+
+type OriginColumnKeys = 'originKind' | 'originClientId' | 'originClientLabel';
+
+/**
+ * A stored row, or what `createCoherence` returns (the origin already split off as a view).
+ * The origin columns are optional so a database without them yet still normalizes.
+ */
+export type NormalizeCoherenceInput = Omit<DbCoherence, OriginColumnKeys> &
+  Partial<Pick<DbCoherence, OriginColumnKeys>> & {
+    capitals?: unknown;
+    origin?: OriginView;
+  };
 
 function normalizeMediaUrl(value: unknown): string | null {
   if (typeof value !== 'string') return null;
@@ -72,8 +85,12 @@ export function normalizeCoherence({
   source,
   externalId,
   capitals,
+  originKind,
+  originClientId: _originClientId,
+  originClientLabel,
+  origin,
   ...rest
-}: DbCoherence & { capitals?: unknown }): Coherence {
+}: NormalizeCoherenceInput): Coherence {
   const signalType = canonicalSignalType(type);
   return {
     type: (COHERENCE_TYPES as readonly string[]).includes(signalType)
@@ -116,5 +133,7 @@ export function normalizeCoherence({
     externalId: externalId?.trim() || null,
     ...rest,
     capitals: parseCapitalKeys(capitals),
+    // Readers get the kind and the client name only; the client id never leaves the server.
+    origin: origin ?? originViewFromColumns({ originKind, originClientLabel }),
   };
 }

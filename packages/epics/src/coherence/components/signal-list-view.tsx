@@ -67,6 +67,7 @@ function SignalListCreatorMeta({ signal }: { signal: Coherence }) {
     description: signal.description,
     title: signal.title,
     tags: signal.tags,
+    origin: signal.origin,
   });
 
   return (

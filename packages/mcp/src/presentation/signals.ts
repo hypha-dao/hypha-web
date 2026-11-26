@@ -3,6 +3,7 @@ import type { SignalItem, SignalsSummary } from '@hypha-platform/core/server';
 import { TOOLS } from '../descriptions';
 import { sanitiseUserText } from '../sanitiser';
 import { userText } from './user-text';
+import { originSchema, presentOrigin } from './origin';
 
 export const SIGNAL_TYPES = [
   'Need',
@@ -74,6 +75,7 @@ export const signalItemSchema = z.object({
     isCreator: z.boolean(),
     vote: z.enum(['up', 'down']).nullable(),
   }),
+  origin: originSchema.describe(TOOLS.hypha_list_signals.fields.origin),
   userText: z.object({
     title: z.string().nullable(),
     /** Absent when `description` is `none`. */
@@ -148,6 +150,7 @@ export function presentSignal(
     })),
     upvotes: item.upvotes,
     viewer: item.viewer,
+    origin: presentOrigin(item.origin),
     userText: userText<UserTextKey>({
       title: { value: item.title, max: SIGNAL_TEXT_CAPS.title },
       description: {

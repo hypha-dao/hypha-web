@@ -68,6 +68,10 @@ export type SignalRow = {
   indicativePayouts: unknown;
   capitals: unknown;
   overdue: boolean;
+  /** Stored origin kind (#2724); the client id is not read. */
+  originKind: string;
+  /** Self-declared client name snapshot, or null. */
+  originClientLabel: string | null;
 };
 
 export type SignalUpvoteRow = {
@@ -236,7 +240,8 @@ export async function selectSignalsPage(
            ${iso('c.due_at')} as due_at,
            ${statusExpr} as status, ${boardExpr(workflow)} as board,
            c.assignee_ids, c.indicative_payouts, c.capitals,
-           ${overdueExpr} as overdue
+           ${overdueExpr} as overdue,
+           c.origin_kind, c.origin_client_label
     from coherences c
     left join people p on p.id = c.creator_id
     ${upvoteJoin}
@@ -266,6 +271,9 @@ export async function selectSignalsPage(
     indicativePayouts: row.indicative_payouts,
     capitals: row.capitals,
     overdue: row.overdue === true,
+    originKind: String(row.origin_kind ?? 'unknown'),
+    originClientLabel:
+      row.origin_client_label == null ? null : String(row.origin_client_label),
   }));
 }
 

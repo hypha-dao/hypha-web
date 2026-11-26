@@ -27,6 +27,42 @@ describe('isAiAuthoredSignal', () => {
       }),
     ).toBe(false);
   });
+
+  it('reads the stored origin first (#2724)', () => {
+    for (const originKind of [
+      'hypha_assistant',
+      'hypha_intelligence',
+      'mcp_client',
+    ]) {
+      expect(isAiAuthoredSignal({ originKind, tags: [] })).toBe(true);
+    }
+    // A known non-AI path is not AI-written, even with the tag or the job wording.
+    for (const originKind of [
+      'app',
+      'api_client',
+      'space_key',
+      'hypha_platform',
+    ]) {
+      expect(
+        isAiAuthoredSignal({
+          originKind,
+          tags: ['AI Signal'],
+          description:
+            'Recent space-memory activity indicates a coordination opportunity.',
+        }),
+      ).toBe(false);
+    }
+  });
+
+  it('falls back to the tag and text only for rows without a known origin', () => {
+    expect(
+      isAiAuthoredSignal({ originKind: 'unknown', tags: ['AI Signal'] }),
+    ).toBe(true);
+    expect(isAiAuthoredSignal({ originKind: 'unknown', tags: [] })).toBe(false);
+    expect(isAiAuthoredSignal({ originKind: null, tags: ['AI Signal'] })).toBe(
+      true,
+    );
+  });
 });
 
 describe('planAiSignalChatSignature', () => {
