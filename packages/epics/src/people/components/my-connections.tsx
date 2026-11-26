@@ -53,6 +53,7 @@ import {
   useMatrixUserIdsByPersonIds,
   usePeopleBySubs,
   type MemberIntelligence,
+  POLL,
 } from '@hypha-platform/core/client';
 import { listBoundChatRoomIdsAmongAction } from '@hypha-platform/core/matrix/server/actions';
 import { Badge, Button, Image } from '@hypha-platform/ui';
@@ -1455,7 +1456,7 @@ export function useMessagesScreenCount() {
       }
       return (await response.json()) as InboxContext;
     },
-    { refreshInterval: 60_000 },
+    { refreshInterval: POLL.SLOW },
   );
   const context = inboxContext ?? EMPTY_INBOX_CONTEXT;
   const [count, setCount] = useState(0);

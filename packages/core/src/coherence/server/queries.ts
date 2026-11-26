@@ -9,6 +9,7 @@ import {
   arrayOverlaps,
   desc,
   eq,
+  getTableColumns,
   isNotNull,
   lte,
   SQL,
@@ -67,6 +68,18 @@ function isMissingColumnError(error: unknown): boolean {
   return false;
 }
 
+type OriginColumnKeys = 'originKind' | 'originClientId' | 'originClientLabel';
+
+/** A database without the origin columns yet (a preview before its migration) reads as unknown. */
+function withUnknownOrigin(row: Omit<Coherence, OriginColumnKeys>): Coherence {
+  return {
+    ...row,
+    originKind: 'unknown',
+    originClientId: null,
+    originClientLabel: null,
+  };
+}
+
 function completeCoherenceRow(
   row: Omit<
     Coherence,
@@ -77,6 +90,9 @@ function completeCoherenceRow(
     | 'videoUrl'
     | 'attachments'
     | 'sharedWithNetwork'
+    | 'originKind'
+    | 'originClientId'
+    | 'originClientLabel'
   >,
 ): Coherence {
   return {
@@ -88,6 +104,10 @@ function completeCoherenceRow(
     videoUrl: null,
     attachments: [],
     sharedWithNetwork: false,
+    // A database without the origin columns yet (a preview before its migration) reads as unknown.
+    originKind: 'unknown',
+    originClientId: null,
+    originClientLabel: null,
   };
 }
 
@@ -174,13 +194,36 @@ export const findAllCoherences = async (
     // A full select asks for columns this database may not have yet, which
     // fails the whole list and leaves every filter count at 0.
     if (!isMissingColumnError(error)) throw error;
+  }
+
+  // First retry with every column that existed before the origin columns, so a database that
+  // only lacks those keeps its other values (lead image, attachments, sharing flag).
+  try {
+    const {
+      originKind,
+      originClientId,
+      originClientLabel,
+      ...preOriginColumns
+    } = getTableColumns(coherences);
+    void originKind;
+    void originClientId;
+    void originClientLabel;
     const rows = await db
-      .select(coreCoherenceColumns)
+      .select(preOriginColumns)
       .from(coherences)
       .where(where)
       .orderBy(order);
-    return attachCoherenceCapitals(db, rows.map(completeCoherenceRow));
+    return attachCoherenceCapitals(db, rows.map(withUnknownOrigin));
+  } catch (error) {
+    if (!isMissingColumnError(error)) throw error;
   }
+
+  const rows = await db
+    .select(coreCoherenceColumns)
+    .from(coherences)
+    .where(where)
+    .orderBy(order);
+  return attachCoherenceCapitals(db, rows.map(completeCoherenceRow));
 };
 
 export const findCoherenceById = async (

@@ -12,6 +12,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
 import { commonDateFields } from './shared';
+import { originChecks, originColumns } from './origin';
 import { spaces } from './space';
 import { people } from './people';
 
@@ -78,9 +79,11 @@ export const coherences = pgTable(
     source: text('source'),
     /** The external app's own identifier for the record, used for idempotency. */
     externalId: text('external_id'),
+    ...originColumns,
     ...commonDateFields,
   },
   (table) => [
+    ...originChecks(table, 'coherences'),
     index('search_index_coherences').using(
       'gin',
       sql`(

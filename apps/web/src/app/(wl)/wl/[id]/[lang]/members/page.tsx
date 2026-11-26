@@ -1,3 +1,4 @@
+import { POLL } from '@hypha-platform/core/client';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { MembersSection, SpaceTabAccessWrapper } from '@hypha-platform/epics';
@@ -31,7 +32,7 @@ export default async function WhiteLabelMembersPage(
           basePath={`/${lang}/dho/${slug}/members/person`}
           useMembers={useMembers}
           spaceSlug={slug}
-          refreshInterval={5000}
+          refreshInterval={POLL.BACKGROUND}
         />
       </div>
     </SpaceTabAccessWrapper>

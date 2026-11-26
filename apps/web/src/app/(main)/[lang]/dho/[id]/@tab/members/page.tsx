@@ -1,3 +1,4 @@
+import { POLL } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import { MembersSection, SpaceTabAccessWrapper } from '@hypha-platform/epics';
 import { getSpaceBySlug } from '@hypha-platform/core/server';
@@ -35,7 +36,7 @@ export default async function MembershipPage(props: PageProps) {
           basePath={`${basePath}/person`}
           useMembers={useMembers}
           spaceSlug={id}
-          refreshInterval={5000}
+          refreshInterval={POLL.BACKGROUND}
         />
       </div>
     </SpaceTabAccessWrapper>

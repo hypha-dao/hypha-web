@@ -4,6 +4,8 @@ import { act, renderHook } from '@testing-library/react';
 import { SWRConfig } from 'swr';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useProposalVoters } from '../useProposalVoters';
+import { BATCH_WINDOW_MS } from '../batch-proposal-voters';
+import { POLL } from '../../../../common/poll-intervals';
 
 const wrapperWith =
   (config: React.ComponentProps<typeof SWRConfig>['value'] = {}) =>
@@ -16,9 +18,16 @@ const wrapperWith =
       </SWRConfig>
     );
 
-const ok = (voters: unknown[]) => Response.json({ voters });
+const ok = (voters: unknown[], slug = 'doc') =>
+  Response.json({ voters: { [slug]: voters }, failed: [] });
 const fail = (status: number) =>
   new Response(JSON.stringify({ error: 'x' }), { status });
+
+/** The batch window, then the fetch and its state updates. */
+const settle = () =>
+  act(async () => {
+    await vi.advanceTimersByTimeAsync(BATCH_WINDOW_MS);
+  });
 
 describe('useProposalVoters', () => {
   beforeEach(() => {
@@ -29,20 +38,61 @@ describe('useProposalVoters', () => {
     vi.unstubAllGlobals();
   });
 
-  it('returns voters on 200 and keeps polling every 15 s', async () => {
+  it('returns voters on 200 and keeps polling on the active tier', async () => {
     const fn = vi.fn().mockImplementation(async () => ok([{ id: 1 }]));
     vi.stubGlobal('fetch', fn);
     const { result } = renderHook(() => useProposalVoters('doc'), {
       wrapper: wrapperWith(),
     });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(0);
-    });
+    await settle();
     expect(result.current.voters).toEqual([{ id: 1 }]);
     expect(fn).toHaveBeenCalledTimes(1);
+    expect(String(fn.mock.calls[0]?.[0])).toBe(
+      '/api/v1/proposal-voters?slugs=doc',
+    );
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(15000);
+      await vi.advanceTimersByTimeAsync(POLL.ACTIVE);
     });
+    expect(fn).toHaveBeenCalledTimes(2);
+  });
+
+  it('cards mounted together share one request', async () => {
+    const fn = vi.fn().mockImplementation(async () =>
+      Response.json({
+        voters: { a: [{ id: 1 }], b: [{ id: 2 }] },
+        failed: [],
+      }),
+    );
+    vi.stubGlobal('fetch', fn);
+    const a = renderHook(() => useProposalVoters('a'), {
+      wrapper: wrapperWith(),
+    });
+    const b = renderHook(() => useProposalVoters('b'), {
+      wrapper: wrapperWith(),
+    });
+    await settle();
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(a.result.current.voters).toEqual([{ id: 1 }]);
+    expect(b.result.current.voters).toEqual([{ id: 2 }]);
+  });
+
+  it('mutate() refetches this proposal at once (own vote shows without waiting for the poll)', async () => {
+    const responses = [() => ok([]), () => ok([{ id: 1, vote: 'yes' }])];
+    const fn = vi
+      .fn()
+      .mockImplementation(async () => (responses.shift() ?? responses[0]!)());
+    vi.stubGlobal('fetch', fn);
+    const { result } = renderHook(() => useProposalVoters('doc'), {
+      wrapper: wrapperWith(),
+    });
+    await settle();
+    expect(result.current.voters).toEqual([]);
+
+    await act(async () => {
+      void result.current.mutate();
+    });
+    await settle();
+    expect(result.current.voters).toEqual([{ id: 1, vote: 'yes' }]);
     expect(fn).toHaveBeenCalledTimes(2);
   });
 
@@ -52,9 +102,7 @@ describe('useProposalVoters', () => {
     const { result } = renderHook(() => useProposalVoters('doc'), {
       wrapper: wrapperWith({ shouldRetryOnError: false }),
     });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(0);
-    });
+    await settle();
     expect((result.current.error as { status?: number }).status).toBe(404);
     expect(result.current.voters).toBeUndefined();
     await act(async () => {
@@ -78,26 +126,24 @@ describe('useProposalVoters', () => {
     const { result } = renderHook(() => useProposalVoters('doc'), {
       wrapper: wrapperWith({ errorRetryInterval: 1000 }),
     });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(0);
-    });
+    await settle();
     expect(result.current.voters).toEqual([{ id: 1 }]);
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(15000); // poll -> 500
+      await vi.advanceTimersByTimeAsync(POLL.ACTIVE + BATCH_WINDOW_MS); // poll -> 500
     });
     expect((result.current.error as { status?: number }).status).toBe(500);
     expect(result.current.voters).toEqual([{ id: 1 }]); // stale data kept
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(5000); // error retry -> 200
+      await vi.advanceTimersByTimeAsync(5000 + BATCH_WINDOW_MS); // error retry -> 200
     });
     expect(result.current.error).toBeUndefined();
     expect(result.current.voters).toEqual([{ id: 2 }]);
 
     const calls = fn.mock.calls.length;
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(15000);
+      await vi.advanceTimersByTimeAsync(POLL.ACTIVE + BATCH_WINDOW_MS);
     });
     expect(fn.mock.calls.length).toBeGreaterThan(calls); // polling resumed
   });

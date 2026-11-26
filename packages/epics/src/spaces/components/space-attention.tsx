@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import {
   listSpaceAttentionLead,
   type MemberHomeThreadItem,
+  POLL,
 } from '@hypha-platform/core/client';
 import type { Locale } from '@hypha-platform/i18n';
 
@@ -63,9 +64,9 @@ export function SpaceAttention({
   const tCoherence = useTranslations('CoherenceTab');
   const { data, isLoading, mutate } = useMemberIntelligence(null, {
     // Votes and signal status changes land elsewhere; keep this tile fresh.
-    revalidateOnFocus: true,
+    revalidateOnFocus: false,
     revalidateOnReconnect: true,
-    refreshInterval: 30_000,
+    refreshInterval: POLL.BACKGROUND,
   });
 
   useEffect(() => {

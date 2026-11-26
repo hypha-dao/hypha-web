@@ -1,5 +1,6 @@
 'use client';
 
+import { POLL } from '../../../common/poll-intervals';
 import useSWR from 'swr';
 import { getTokenUpdateByDocumentIdAction } from '../../server/actions';
 
@@ -21,7 +22,7 @@ export const useTokenUpdateByDocumentId = ({
       getTokenUpdateByDocumentIdAction(docId as number, {
         authToken: token as string,
       }),
-    { refreshInterval: 10000 },
+    { refreshInterval: POLL.BACKGROUND, revalidateOnFocus: false },
   );
 
   return { tokenUpdate: data ?? undefined, isLoading, error, mutate };

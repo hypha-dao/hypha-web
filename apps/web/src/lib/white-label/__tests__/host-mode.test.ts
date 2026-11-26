@@ -693,6 +693,10 @@ describe('/api on a mapped host', () => {
     expect(real('GET', '/api/v1/documents/x/voters/extra')).toBe(false);
     // `documents/voters` is a document with the slug `voters`: the handler decides.
     expect(real('GET', '/api/v1/documents/voters')).toBe(true);
+    // The batched read has its own path; reads only, no extra segments.
+    expect(real('GET', '/api/v1/proposal-voters')).toBe(true);
+    expect(real('POST', '/api/v1/proposal-voters')).toBe(false);
+    expect(real('GET', '/api/v1/proposal-voters/x')).toBe(false);
     // The document row, with the trailing slash the hook sends, and the token registry.
     expect(real('GET', '/api/v1/documents/my-proposal-1a2b3c4d')).toBe(true);
     expect(real('GET', '/api/v1/documents/my-proposal-1a2b3c4d/')).toBe(true);

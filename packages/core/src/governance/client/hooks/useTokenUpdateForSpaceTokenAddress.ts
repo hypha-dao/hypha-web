@@ -1,5 +1,6 @@
 'use client';
 
+import { POLL } from '../../../common/poll-intervals';
 import useSWR from 'swr';
 import { getTokenUpdateForSpaceTokenAddressAction } from '../../server/actions';
 
@@ -24,7 +25,7 @@ export const useTokenUpdateForSpaceTokenAddress = ({
       getTokenUpdateForSpaceTokenAddressAction(sid as number, addr as string, {
         authToken: token as string,
       }),
-    { refreshInterval: 10000 },
+    { refreshInterval: POLL.BACKGROUND, revalidateOnFocus: false },
   );
 
   return { tokenUpdate: data ?? undefined, isLoading, error, mutate };

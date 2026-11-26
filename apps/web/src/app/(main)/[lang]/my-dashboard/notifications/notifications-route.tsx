@@ -5,7 +5,7 @@ import {
   useMemberIntelligence,
 } from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useJwt } from '@hypha-platform/core/client';
+import { useJwt, POLL } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import { Button } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
@@ -19,8 +19,8 @@ export function MemberHomeNotificationsRoute({ lang }: { lang: Locale }) {
   } = useAuthentication();
   const { jwt, isLoadingJwt } = useJwt();
   const { data, isLoading } = useMemberIntelligence(null, {
-    refreshInterval: 20_000,
-    revalidateOnFocus: true,
+    refreshInterval: POLL.BACKGROUND,
+    revalidateOnFocus: false,
   });
 
   if (isAuthLoading || isLoadingJwt) {
