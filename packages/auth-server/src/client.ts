@@ -3,6 +3,7 @@ export {
   AUTH_SERVER_CONSENT_PATH,
   AUTH_SERVER_LOGIN_PATH,
   AUTH_SERVER_SCOPES,
+  SCOPES_REQUIRING_SPACES_READ,
 } from './config';
 export { MAX_SPACE_GRANTS } from './grants';
 export { describeScope } from './scope-copy';

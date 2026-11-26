@@ -5996,6 +5996,11 @@
           "detail": "Dich bitten, in deinen Spaces über Vorschläge abzustimmen. Nichts wird abgegeben, bis du jede Stimme auf Hypha freigibst und mit deiner Wallet signierst.",
           "warning": "Hypha hat diese App nicht freigegeben. Wenn du das erlaubst, kann sie dich in deinem Namen zum Abstimmen auffordern. Erlaube es nur, wenn du dieser App vertraust und das selbst gestartet hast."
         },
+        "signalsWrite": {
+          "title": "Signale für dich erstellen",
+          "detail": "Neue Signale in den Spaces veröffentlichen, die du unten auswählst, in deinem Namen und als von dieser App stammend gekennzeichnet. Sie kann nichts bearbeiten oder löschen. Was sie erstellt, kannst du archivieren oder löschen. Nur ausgewählt, wenn du es ankreuzt.",
+          "warning": "Hypha hat diese App nicht freigegeben. Wenn du das erlaubst, kann sie in deinem Namen Signale in den Spaces unten veröffentlichen. Erlaube es nur, wenn du dieser App vertraust und das selbst gestartet hast."
+        },
         "offlineAccess": {
           "title": "Verbunden bleiben",
           "detail": "Diese App verbunden halten, ohne dass du dich erneut anmelden musst, bis du sie trennst."
@@ -6006,6 +6011,7 @@
       },
       "spaces": {
         "title": "Welche Spaces darf diese App lesen?",
+        "titleWithWrite": "In welchen Spaces darf diese App lesen und Signale veröffentlichen?",
         "explicit": {
           "title": "Nur die Spaces, die ich auswähle",
           "detail": "Spaces, denen du später beitrittst, sind nicht enthalten."

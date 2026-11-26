@@ -1,6 +1,7 @@
 import 'server-only';
 import {
   loadAuthServerConfig,
+  allowedScopesForResource,
   type AuthServerConfig,
   type AuthServerDisabled,
 } from '@hypha-platform/auth-server/server';
@@ -29,13 +30,14 @@ let authServer: AuthServerConfig | AuthServerDisabled | undefined;
 let mcpConfig: ReturnType<typeof loadMcpConfig> | undefined;
 
 function getMcpConfig() {
-  authServer ??= loadAuthServerConfig();
-  const view: AuthServerView = authServer.enabled
+  const as = (authServer ??= loadAuthServerConfig());
+  const view: AuthServerView = as.enabled
     ? {
         enabled: true,
-        issuer: authServer.issuer,
-        resources: authServer.resources,
-        allowedPersonIds: authServer.allowedPersonIds,
+        issuer: as.issuer,
+        resources: as.resources,
+        allowedPersonIds: as.allowedPersonIds,
+        scopesForResource: (resource) => allowedScopesForResource(resource, as),
       }
     : { enabled: false };
   return (mcpConfig ??= loadMcpConfig(process.env, view));

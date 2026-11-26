@@ -21,6 +21,7 @@ Names and meaning only; see `apps/web/.env.template` for the full comments.
 | `AUTH_SERVER_RESOURCES`          | Comma-separated resource indicators (RFC 8707) tokens may be issued for.                                                                   |
 | `AUTH_SERVER_CORS_ORIGINS`       | Comma-separated exact browser origins allowed to call the token (and, if on, registration) endpoints cross-origin. Default empty.          |
 | `AUTH_SERVER_DCR_ENABLED`        | `true` enables restricted dynamic client registration. Otherwise the register path is 404 and the metadata does not advertise it.          |
+| `MCP_WRITES_ENABLED`             | `true` lets the MCP resource accept `signals:write`. Otherwise it is not offered or issued for `/mcp`, and the next refresh drops it.      |
 
 It also reads the app's existing database and Privy settings. The tables come from migration `0103_auth_server.sql` (all prefixed `as_`).
 
@@ -40,7 +41,7 @@ ships (client management, userinfo, introspection, session listing) is blocked.
 
 ## Resources
 
-No resource is protected yet. A resource (for example the MCP server or the API) adopts `guardResource` from `@hypha-platform/auth-server/server` in its own route and is listed in `AUTH_SERVER_RESOURCES`; tokens are issued only for listed resources. One scope set applies to all resources for now.
+No resource is protected yet. A resource (for example the MCP server or the API) adopts `guardResource` from `@hypha-platform/auth-server/server` in its own route and is listed in `AUTH_SERVER_RESOURCES`; tokens are issued only for listed resources. Each resource belongs to a channel with its own list of accepted scopes (`allowedScopesForResource` in `src/config.ts`): the resource whose path is `/mcp` is the MCP channel (`spaces:read`, `offline_access`, plus `signals:write` while `MCP_WRITES_ENABLED` is `true`); every other resource is the API channel (`spaces:read`, `agreements:vote`, `offline_access`). The library applies the list at token time and at every refresh, and the consent page offers only those scopes.
 
 ## Clients and scopes
 
@@ -50,8 +51,14 @@ No resource is protected yet. A resource (for example the MCP server or the API)
 - **Onboarding log lines:** one line per authorize, consent and token step: `[auth-server:onboarding] client_kind=... step=... error=... redirect_host=...`. Built from an allow-list (`onboardingLogLine` in `src/redact.ts`): no token, code, free text, full redirect URL or email.
 - **Dynamically registered clients (optional):** anonymous public clients, capped, cleaned up after 7 days; the consent page shows the name as claimed, not proven.
 
-Scopes: `spaces:read`, `agreements:vote`, `offline_access`. The write scope (`agreements:vote`)
-starts unticked for clients that are not pre-approved. Access tokens last 10 minutes; refresh tokens
+Scopes: `spaces:read`, `agreements:vote`, `signals:write`, `offline_access`. The write scope
+`agreements:vote` starts unticked for clients that are not pre-approved; `signals:write` starts
+unticked for every client. `signals:write` acts in the spaces chosen under `spaces:read` (the same
+per-space grant), so an approval of it without `spaces:read` is refused, and a first authorize
+request that asks for it also asks for `spaces:read`.
+
+Access tokens carry `space_grants` (the chosen spaces) and `client_name` (the name the client
+declared for itself, cleaned and capped at 120 characters, unverified). Access tokens last 10 minutes; refresh tokens
 slide over 90 days. The approval link lasts 10 minutes, the authorization code 60 seconds.
 
 ## Language

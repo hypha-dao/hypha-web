@@ -1,6 +1,7 @@
 import {
   AUTH_SERVER_API_BASE_PATH,
   AUTH_SERVER_JWKS_PATH,
+  SCOPES_REQUIRING_SPACES_READ,
   type AuthServerConfig,
   type AuthServerDisabled,
 } from './config';
@@ -237,6 +238,16 @@ async function handleConsent(
     // name it (the library would otherwise grant everything the query asked for).
     if (typeof body.scope !== 'string' || !body.scope.trim())
       return refuse(400, 'invalid_request');
+    const approved = body.scope.split(/\s+/).filter(Boolean);
+    // A write scope that acts in the chosen spaces is approved only together with the read scope
+    // the spaces are chosen under: without it there would be no choice to act in.
+    if (
+      approved.some((scope) =>
+        (SCOPES_REQUIRING_SPACES_READ as readonly string[]).includes(scope),
+      ) &&
+      !approved.includes('spaces:read')
+    )
+      return refuse(400, 'invalid_request');
     if (!(await verifyOAuthQueryParams(oauthQuery, server.config.secret)))
       return refuse(400, 'invalid_signature');
     try {
@@ -244,7 +255,7 @@ async function handleConsent(
       if (value !== 'all') await assertSpacesExist(server.pool, value);
       // Without the read scope there is nothing to limit, and an existing refresh token may
       // still carry it: leave the stored grant alone rather than replace it.
-      const approvesRead = body.scope.split(/\s+/).includes('spaces:read');
+      const approvesRead = approved.includes('spaces:read');
       if (approvesRead)
         pending = { personId: session.user.id, clientId, value };
     } catch (error) {

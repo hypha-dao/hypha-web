@@ -5993,6 +5993,11 @@
           "detail": "Vous demander de voter sur des propositions dans vos spaces. Rien n’est émis tant que vous n’avez pas approuvé chaque vote sur Hypha et signé avec votre wallet.",
           "warning": "Hypha n’a pas approuvé cette application. Si vous l’autorisez, elle pourra vous demander de voter en votre nom. N’autorisez que si vous faites confiance à cette application et l’avez lancée vous-même."
         },
+        "signalsWrite": {
+          "title": "Créer des signaux pour vous",
+          "detail": "Publier de nouveaux signaux dans les espaces que vous choisissez ci-dessous, en votre nom et marqués comme provenant de cette application. Elle ne peut rien modifier ni supprimer. Vous pouvez archiver ou supprimer ce qu’elle crée. Non sélectionné sauf si vous cochez la case.",
+          "warning": "Hypha n’a pas approuvé cette application. Si vous l’autorisez, elle pourra publier des signaux en votre nom dans les espaces ci-dessous. N’autorisez que si vous faites confiance à cette application et l’avez lancée vous-même."
+        },
         "offlineAccess": {
           "title": "Rester connecté",
           "detail": "Garder cette application connectée sans vous redemander de vous connecter, jusqu’à ce que vous la déconnectiez."
@@ -6003,6 +6008,7 @@
       },
       "spaces": {
         "title": "Quels espaces cette application peut-elle lire ?",
+        "titleWithWrite": "Dans quels espaces cette application peut-elle lire et publier des signaux ?",
         "explicit": {
           "title": "Seulement les espaces que je choisis",
           "detail": "Les espaces que vous rejoindrez plus tard ne sont pas inclus."

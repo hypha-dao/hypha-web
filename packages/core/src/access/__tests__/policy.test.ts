@@ -7,7 +7,7 @@ vi.mock('../space-read-gate', () => ({
 }));
 vi.mock('../viewer-access', () => ({ filterSpacesForViewer: vi.fn() }));
 
-import { decideSpaceAccess } from '../policy';
+import { decideSpaceAccess, hasScope } from '../policy';
 
 const db = {} as never;
 const via = (spaceGrants: number[] | null) => ({
@@ -85,5 +85,36 @@ describe('AccessPolicy: decideSpaceAccess', () => {
       const d = await decideSpaceAccess(space, mcp(g as never), { db });
       expect(d.outcome).not.toBe('minimal');
     }
+  });
+});
+
+describe('hasScope', () => {
+  it('is true only for a caller through the authorization server whose token has the scope', () => {
+    expect(hasScope(mcp(), 'spaces:read')).toBe(true);
+    expect(hasScope(mcp(), 'signals:write')).toBe(false);
+    const writer = {
+      kind: 'user',
+      person: {},
+      address: '0x1',
+      via: { ...via(null), scopes: ['spaces:read', 'signals:write'] },
+    } as never;
+    expect(hasScope(writer, 'signals:write')).toBe(true);
+  });
+
+  it('fails closed for callers without via and for guests', () => {
+    const apiBearer = { kind: 'user', person: {}, address: '0x1' } as never;
+    expect(hasScope(apiBearer, 'signals:write')).toBe(false);
+    expect(hasScope(apiBearer, 'spaces:read')).toBe(false);
+    expect(hasScope({ kind: 'guest' }, 'signals:write')).toBe(false);
+  });
+
+  it('matches the exact scope, never a prefix or a part', () => {
+    const odd = {
+      kind: 'user',
+      person: {},
+      address: '0x1',
+      via: { ...via(null), scopes: ['signals:write:extra', 'signals'] },
+    } as never;
+    expect(hasScope(odd, 'signals:write')).toBe(false);
   });
 });

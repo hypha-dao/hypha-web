@@ -6,17 +6,19 @@
 export type ScopeCopyKey =
   | 'spacesRead'
   | 'agreementsVote'
+  | 'signalsWrite'
   | 'offlineAccess'
   | 'unknown';
 
 const KEYS: Record<string, ScopeCopyKey> = {
   'spaces:read': 'spacesRead',
   'agreements:vote': 'agreementsVote',
+  'signals:write': 'signalsWrite',
   offline_access: 'offlineAccess',
 };
 
 /** Scopes whose message has a `warning` entry (shown for write scopes of unapproved clients). */
-const HAS_WARNING = new Set<ScopeCopyKey>(['agreementsVote']);
+const HAS_WARNING = new Set<ScopeCopyKey>(['agreementsVote', 'signalsWrite']);
 
 export function describeScope(scope: string): {
   key: ScopeCopyKey;
