@@ -49,6 +49,7 @@ function setup(
       issuer: TEST_ISSUER,
       resources: [AUDIENCE],
       allowedPersonIds: new Set([TEST_PERSON]),
+      scopesSupported: ['spaces:read', 'offline_access'],
     },
   );
   const features = {

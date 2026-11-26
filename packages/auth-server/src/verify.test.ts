@@ -52,6 +52,31 @@ describe('verifyAccessToken', () => {
     ).rejects.toBeInstanceOf(AccessTokenError);
   });
 
+  it('returns the client name claim, or null when the token has none', async () => {
+    const { keys, privateKey } = await setup();
+    const opts = { audience: AUDIENCE, issuer: ISSUER, keys };
+    expect(
+      (await verifyAccessToken(await sign(privateKey), opts)).clientName,
+    ).toBeNull();
+    expect(
+      (
+        await verifyAccessToken(
+          await sign(privateKey, { client_name: ' Claude\nCode ' }),
+          opts,
+        )
+      ).clientName,
+    ).toBe('Claude Code');
+    // A malformed name never makes the token invalid.
+    expect(
+      (
+        await verifyAccessToken(
+          await sign(privateKey, { client_name: 42 }),
+          opts,
+        )
+      ).clientName,
+    ).toBeNull();
+  });
+
   it('returns the grant claim: "all" or the space ids', async () => {
     const { keys, privateKey } = await setup();
     const opts = { audience: AUDIENCE, issuer: ISSUER, keys };

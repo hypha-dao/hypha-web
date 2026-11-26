@@ -6,6 +6,7 @@ const AS: AuthServerView = {
   issuer: 'https://auth.example.com',
   resources: ['https://mcp.example.com/mcp'],
   allowedPersonIds: new Set(['p1']),
+  scopesSupported: ['spaces:read', 'offline_access'],
 };
 
 describe('loadMcpConfig', () => {
@@ -65,6 +66,20 @@ describe('loadMcpConfig', () => {
       resourceMetadataUrl:
         'https://mcp.example.com/.well-known/oauth-protected-resource/mcp',
     });
+  });
+
+  it('advertises exactly the scopes the authorization server lists for the MCP channel', () => {
+    expect(
+      loadMcpConfig({ MCP_SERVER_ENABLED: 'true' }, AS).active?.scopesSupported,
+    ).toEqual(['spaces:read', 'offline_access']);
+    const withWrites: AuthServerView = {
+      ...AS,
+      scopesSupported: ['spaces:read', 'offline_access', 'signals:write'],
+    };
+    expect(
+      loadMcpConfig({ MCP_SERVER_ENABLED: 'true' }, withWrites).active
+        ?.scopesSupported,
+    ).toEqual(['spaces:read', 'offline_access', 'signals:write']);
   });
 
   it('while off with no resource configured, it still knows its own host (so the unavailable answer works)', () => {
