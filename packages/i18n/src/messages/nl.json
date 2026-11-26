@@ -5931,7 +5931,8 @@
       "before": "Voor",
       "after": "Na",
       "showChanges": "Wijzigingen tonen",
-      "hideChanges": "Wijzigingen verbergen"
+      "hideChanges": "Wijzigingen verbergen",
+      "aiAgent": "AI-agent"
     },
     "milestones": {
       "status": {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  appOrigin,
   createSpaceQuest,
   questSchemaErrorPayload,
   schemaCreateSpaceQuest,
@@ -63,7 +64,7 @@ export async function POST(
         input: parsed.data,
         actor: auth.actor,
       },
-      { db },
+      { db, origin: appOrigin() },
     );
     if (!result.ok) return questWriteErrorResponse(result.error);
     return NextResponse.json(result.quest, { status: 201 });

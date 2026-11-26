@@ -20,6 +20,7 @@ import {
   type QuestListingRecord,
 } from '../../space-quests/server/list-quests-read';
 import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
+import type { OriginView } from '../../origin';
 
 export type ListQuestsInput = {
   spaceSlug: string;
@@ -82,6 +83,8 @@ export type QuestItem = {
   createdAt: string;
   updatedAt: string;
   viewer: { isLead: boolean; isMember: boolean };
+  /** The path that created the quest: kind and client name, never the client id. */
+  origin: OriginView;
 };
 
 export type QuestCounts = Record<QuestStatus, number> & { total: number };
@@ -259,6 +262,7 @@ export async function listQuests(
         createdAt: quest.createdAt,
         updatedAt: quest.updatedAt,
         viewer: { isLead: lead, isMember: isMember(quest) },
+        origin: quest.origin,
       };
     });
 

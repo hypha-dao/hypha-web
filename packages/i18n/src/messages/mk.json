@@ -5912,7 +5912,8 @@
       "before": "Пред",
       "after": "Потоа",
       "showChanges": "Прикажи промени",
-      "hideChanges": "Скриј промени"
+      "hideChanges": "Скриј промени",
+      "aiAgent": "AI агент"
     },
     "milestones": {
       "status": {

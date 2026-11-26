@@ -13,6 +13,7 @@ vi.mock('next-intl', () => ({
       'updates.after': 'After',
       'updates.showChanges': 'Show changes',
       'updates.hideChanges': 'Hide changes',
+      'updates.aiAgent': 'AI Agent',
     };
     return labels[key] ?? key;
   },
@@ -27,7 +28,7 @@ function update(
     authorName: 'Ada Lovelace',
     authorAvatarUrl: null,
     kind: 'post',
-    viaAgent: false,
+    origin: { kind: 'app', clientLabel: null },
     milestoneOrder: null,
     milestoneLabel: null,
     links: [],
@@ -239,5 +240,40 @@ describe('quest update card', () => {
     );
     expect(screen.getByText('Updated Scope.')).toBeTruthy();
     expect(screen.queryByTestId('quest-update-change')).toBeNull();
+  });
+
+  it('shows the AI Agent label from the origin, only for the AI paths (#2724)', () => {
+    const labelled = (kind: QuestUpdateRecord['origin']['kind']) => {
+      render(
+        <QuestUpdateCard
+          update={update({
+            id: 6,
+            text: 'Updated Goal.',
+            origin: { kind, clientLabel: null },
+          })}
+        />,
+      );
+      const found = screen.queryByTestId('quest-update-ai-label');
+      const text = found?.textContent ?? null;
+      cleanup();
+      if (text !== null) expect(text).toBe('✦ AI Agent');
+      return found !== null;
+    };
+    for (const kind of [
+      'hypha_assistant',
+      'mcp_client',
+      'hypha_intelligence',
+    ] as const) {
+      expect(labelled(kind)).toBe(true);
+    }
+    for (const kind of [
+      'app',
+      'api_client',
+      'space_key',
+      'hypha_platform',
+      'unknown',
+    ] as const) {
+      expect(labelled(kind)).toBe(false);
+    }
   });
 });

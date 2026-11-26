@@ -8,6 +8,7 @@ import {
   type SpaceQuest,
 } from '@hypha-platform/storage-postgres';
 import type { DbConfig } from '../../common/server/types';
+import { originViewFromColumns, type OriginView } from '../../origin';
 import { parseQuestCalendarDate } from '../calendar-date';
 import {
   isQuestHealthState,
@@ -74,6 +75,8 @@ export type QuestListingRecord = {
     lastUpdateAt: string | null;
     daysToTarget: number | null;
   };
+  /** The path that created the quest: kind and client name, never the client id. */
+  origin: OriginView;
   proposalDocumentId: number | null;
   acceptedAt: string | null;
   createdAt: string;
@@ -346,6 +349,7 @@ export async function readQuestsListing(
         updatesByQuest.get(row.id) ?? { week: 0, lastAt: null },
         now,
       ),
+      origin: originViewFromColumns(row),
       proposalDocumentId: row.proposalDocumentId ?? null,
       acceptedAt: toIso(row.acceptedAt),
       createdAt: toIso(row.createdAt) ?? '',

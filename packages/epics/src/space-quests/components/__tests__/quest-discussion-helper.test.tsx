@@ -53,6 +53,7 @@ function questFixture(): QuestRecord {
     leadName: 'Ada Lovelace',
     leadAvatarUrl: null,
     creatorPersonId: 7,
+    origin: { kind: 'app', clientLabel: null },
     proposalDocumentId: null,
     proposalSlug: null,
     proposalWeb3Id: null,

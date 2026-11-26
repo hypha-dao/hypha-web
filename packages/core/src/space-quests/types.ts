@@ -4,6 +4,7 @@ import type {
   QuestStatus,
   QuestUpdateKind,
 } from './constants';
+import type { OriginView } from '../origin';
 
 export type QuestReward = {
   amount: string;
@@ -77,8 +78,8 @@ export type QuestUpdateRecord = {
   authorName: string;
   authorAvatarUrl: string | null;
   kind: QuestUpdateKind;
-  /** Always false at ship (MCP out of this PR); agent-shaped rendering ready. */
-  viaAgent: boolean;
+  /** The path that wrote this update. Set by the server, never editable. */
+  origin: OriginView;
   milestoneOrder: number | null;
   milestoneLabel: string | null;
   text: string;
@@ -124,6 +125,8 @@ export type QuestRecord = {
   leadName: string;
   leadAvatarUrl: string | null;
   creatorPersonId: number | null;
+  /** The path that created the quest. Set by the server, never editable. */
+  origin: OriginView;
   proposalDocumentId: number | null;
   proposalSlug: string | null;
   proposalWeb3Id: number | null;

@@ -11,6 +11,10 @@ import { applyProposalStatusesToOverview } from '../proposal-list-status';
 import type { SpaceQuestsOverview } from '../types';
 import { listSpaceQuests } from './queries';
 import { activateSpaceQuestByDocumentId } from './mutations';
+import { platformOrigin } from '../../origin';
+
+/** The label of the quest updates this sync writes when it activates a quest. */
+export const QUEST_PROPOSAL_STATUS_SYNC_SOURCE = 'proposal-status-sync';
 
 /**
  * Sync proposed Quests with on-chain Agreements proposal outcomes.
@@ -25,6 +29,7 @@ export async function syncSpaceQuestProposalStatuses(
   if (!overview) return null;
 
   let changed = false;
+  const origin = platformOrigin(QUEST_PROPOSAL_STATUS_SYNC_SOURCE);
 
   // Activation commits before the Matrix room exists; retry rooms that failed.
   const missingRoom = overview.quests.flatMap((q) =>
@@ -33,7 +38,10 @@ export async function syncSpaceQuestProposalStatuses(
       : [],
   );
   for (const documentId of missingRoom) {
-    const count = await activateSpaceQuestByDocumentId({ documentId }, { db });
+    const count = await activateSpaceQuestByDocumentId(
+      { documentId },
+      { db, origin },
+    );
     if (count > 0) changed = true;
   }
 
@@ -83,7 +91,7 @@ export async function syncSpaceQuestProposalStatuses(
     if (withStatus.status === 'accepted') {
       const count = await activateSpaceQuestByDocumentId(
         { documentId: doc.id },
-        { db },
+        { db, origin },
       );
       if (count > 0) changed = true;
     }
