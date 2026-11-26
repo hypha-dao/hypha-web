@@ -3,7 +3,7 @@ import {
   CLIENT_NAME_MAX,
   clientNameClaim,
   parseClientNameClaim,
-} from './client-name';
+} from '../client-name';
 
 describe('client_name claim', () => {
   it('mints the declared name, trimmed and with whitespace collapsed', () => {

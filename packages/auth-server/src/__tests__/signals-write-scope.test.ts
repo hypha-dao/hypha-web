@@ -11,9 +11,9 @@ import {
   channelForResource,
   loadAuthServerConfig,
   scopesForChannel,
-} from './config';
-import { describeScope } from './scope-copy';
-import { withImpliedScopes } from './auth';
+} from '../config';
+import { describeScope } from '../scope-copy';
+import { withImpliedScopes } from '../auth';
 
 const MCP = 'https://mcp.example.com/mcp';
 const API = 'https://api.example.com/v2';
@@ -154,7 +154,7 @@ describe('consent text of signals:write', () => {
   const read = (locale: string) => {
     const consent = JSON.parse(
       readFileSync(
-        new URL(`../../i18n/src/messages/${locale}.json`, import.meta.url),
+        new URL(`../../../i18n/src/messages/${locale}.json`, import.meta.url),
         'utf8',
       ),
     ).AuthServer.consent;

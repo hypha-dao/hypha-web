@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { createLocalJWKSet, decodeJwt } from 'jose';
-import * as h from './testing/harness';
-import { verifyAccessToken } from './verify';
-import { loadConsentRequest } from './consent';
-import { SPACE_GRANTS_CLAIM } from './grants';
-import { CLIENT_NAME_CLAIM } from './client-name';
+import * as h from '../testing/harness';
+import { verifyAccessToken } from '../verify';
+import { loadConsentRequest } from '../consent';
+import { SPACE_GRANTS_CLAIM } from '../grants';
+import { CLIENT_NAME_CLAIM } from '../client-name';
 
 const run = h.TEST_DB_URL ? describe : describe.skip;
 const SECRET = 'signals-write-contract-secret-'.padEnd(48, 'x');
