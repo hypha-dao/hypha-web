@@ -29,7 +29,15 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  const { uid, tx_id } = req.query;
+  // Hypha Wallet strips the query string and POSTs a JSON body {uid, tx_id}
+  // (see hypha-wallet sign_transaction_callback_service.dart), so accept both.
+  let body = req.body;
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body); } catch { body = {}; }
+  }
+  body = body || {};
+  const uid = req.query.uid || body.uid;
+  const tx_id = req.query.tx_id || body.tx_id;
 
   try {
     // POST: Store transaction ID (called by mobile wallet after signing)
@@ -38,8 +46,8 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'Missing uid parameter' });
       }
       
-      const txId = tx_id || req.body?.tx_id;
-      if (!txId) {
+      const txId = tx_id;
+      if (!txId || txId === '{{tx}}') {
         return res.status(400).json({ error: 'Missing tx_id parameter' });
       }
 
@@ -84,4 +92,3 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
-
