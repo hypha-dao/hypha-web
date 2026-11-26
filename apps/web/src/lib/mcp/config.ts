@@ -24,10 +24,11 @@ export type AuthServerView =
       resources: readonly string[];
       allowedPersonIds: ReadonlySet<string>;
       /**
-       * Scopes the MCP resource accepts now (the authorization server's MCP channel list: reads,
-       * plus `signals:write` while MCP_WRITES_ENABLED is on). Advertised as `scopes_supported`.
+       * The scopes the authorization server accepts for a resource now (its channel list).
+       * Asked for the resource this server selected, so `scopes_supported` is exactly what a
+       * token for it can carry.
        */
-      scopesSupported: readonly string[];
+      scopesForResource: (resource: string) => readonly string[];
     }
   | { enabled: false };
 
@@ -84,7 +85,7 @@ export function loadMcpConfig(env: Env, as: AuthServerView): McpConfig {
       issuer: as.issuer,
       resourceMetadataUrl: `${origin}${MCP_METADATA_PATH}`,
       allowedPersonIds: as.allowedPersonIds,
-      scopesSupported: as.scopesSupported,
+      scopesSupported: [...as.scopesForResource(audience)],
     },
   };
 }

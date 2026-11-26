@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { allowedScopesForResource } from '@hypha-platform/auth-server/server';
 import { loadMcpConfig, type AuthServerView } from '../config';
 
 const AS: AuthServerView = {
@@ -6,7 +7,7 @@ const AS: AuthServerView = {
   issuer: 'https://auth.example.com',
   resources: ['https://mcp.example.com/mcp'],
   allowedPersonIds: new Set(['p1']),
-  scopesSupported: ['spaces:read', 'offline_access'],
+  scopesForResource: () => ['spaces:read', 'offline_access'],
 };
 
 describe('loadMcpConfig', () => {
@@ -68,18 +69,37 @@ describe('loadMcpConfig', () => {
     });
   });
 
-  it('advertises exactly the scopes the authorization server lists for the MCP channel', () => {
+  it('advertises exactly the scopes the authorization server lists for the selected resource', () => {
     expect(
       loadMcpConfig({ MCP_SERVER_ENABLED: 'true' }, AS).active?.scopesSupported,
     ).toEqual(['spaces:read', 'offline_access']);
+    const asked: string[] = [];
     const withWrites: AuthServerView = {
       ...AS,
-      scopesSupported: ['spaces:read', 'offline_access', 'signals:write'],
+      resources: ['https://api.example.com/v2', 'https://mcp.example.com/mcp'],
+      scopesForResource: (resource) => {
+        asked.push(resource);
+        return ['spaces:read', 'offline_access', 'signals:write'];
+      },
     };
     expect(
       loadMcpConfig({ MCP_SERVER_ENABLED: 'true' }, withWrites).active
         ?.scopesSupported,
     ).toEqual(['spaces:read', 'offline_access', 'signals:write']);
+    expect(asked).toEqual(['https://mcp.example.com/mcp']);
+  });
+
+  it('a resource the authorization server does not treat as MCP never advertises signals:write', () => {
+    const real: AuthServerView = {
+      ...AS,
+      resources: ['https://mcp.example.com/v2/mcp'],
+      scopesForResource: (resource) =>
+        allowedScopesForResource(resource, { mcpWritesEnabled: true }),
+    };
+    expect(
+      loadMcpConfig({ MCP_SERVER_ENABLED: 'true' }, real).active
+        ?.scopesSupported,
+    ).not.toContain('signals:write');
   });
 
   it('while off with no resource configured, it still knows its own host (so the unavailable answer works)', () => {
