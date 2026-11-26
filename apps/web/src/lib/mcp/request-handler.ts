@@ -14,7 +14,7 @@ import {
   type ResolveResult,
   type Surface,
 } from '../authorize-request';
-import { MCP_SCOPE, MCP_SUPPORTED_SCOPES, type McpConfig } from './config';
+import { MCP_SCOPE, type McpConfig } from './config';
 
 export type McpRequestDeps = {
   getConfig(): McpConfig;
@@ -136,7 +136,7 @@ export function createMcpRequestHandlers(deps: McpRequestDeps) {
     return json(200, {
       resource: active.audience,
       authorization_servers: [active.issuer],
-      scopes_supported: [...MCP_SUPPORTED_SCOPES],
+      scopes_supported: [...active.scopesSupported],
       bearer_methods_supported: ['header'],
       resource_name: 'Hypha',
     });

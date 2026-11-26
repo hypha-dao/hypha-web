@@ -44,6 +44,20 @@ export function isGrantAwareCaller(caller: Caller): boolean {
   return caller.kind === 'user' && caller.via !== undefined;
 }
 
+/**
+ * True only when the caller came through the authorization server and its token carries `scope`.
+ * Fail closed: a caller without `via` (a guest, or the API's own bearer) holds no OAuth scope and
+ * is refused. A write checks this AND the space grant AND the person's own rights; never use
+ * `grantsAllow` alone for a write, it allows callers without `via`.
+ */
+export function hasScope(caller: Caller, scope: string): boolean {
+  return (
+    caller.kind === 'user' &&
+    caller.via !== undefined &&
+    caller.via.scopes.includes(scope)
+  );
+}
+
 function grantsAllow(caller: Caller, spaceId: number): boolean {
   if (caller.kind !== 'user' || !caller.via) return true;
   const grants = caller.via.spaceGrants;

@@ -1,6 +1,7 @@
 import 'server-only';
 import {
   loadAuthServerConfig,
+  scopesForChannel,
   type AuthServerConfig,
   type AuthServerDisabled,
 } from '@hypha-platform/auth-server/server';
@@ -36,6 +37,7 @@ function getMcpConfig() {
         issuer: authServer.issuer,
         resources: authServer.resources,
         allowedPersonIds: authServer.allowedPersonIds,
+        scopesSupported: scopesForChannel('mcp', authServer),
       }
     : { enabled: false };
   return (mcpConfig ??= loadMcpConfig(process.env, view));
