@@ -1779,6 +1779,7 @@ export function GlobalCallDockOverlay({
                 controlsMode={
                   isScreensharing ? 'screenshare_essential' : 'full'
                 }
+                liveKitRoom={room}
               />
             </>
           )}

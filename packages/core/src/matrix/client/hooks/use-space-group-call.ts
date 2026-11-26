@@ -194,7 +194,10 @@ async function stopLiveKitLocalPublishing(lkRoom: LiveKitRoom): Promise<void> {
 /**
  * Screen content (text/UI) needs sharper encoding than motion video, and the standard
  * `adaptiveStream`/`dynacast` mechanism only degrades layer selection correctly if a low
- * fallback layer actually exists — see #2425 decision 31.
+ * fallback layer actually exists — see #2425 decision 31. The 720p middle layer (#2742) gives
+ * viewers on mid-size tiles or slower links a step between 360p and full size; livekit-client
+ * only sends it when the capture is at least 960 px on its long side. The sharer can switch the
+ * top layer to Smooth (30 fps, same resolution) live, see `call-share-send-mode.ts` in epics.
  */
 const SCREEN_SHARE_CAPTURE_OPTIONS: ScreenShareCaptureOptions = {
   contentHint: 'detail',
@@ -203,7 +206,10 @@ const SCREEN_SHARE_CAPTURE_OPTIONS: ScreenShareCaptureOptions = {
 const SCREEN_SHARE_PUBLISH_OPTIONS: TrackPublishOptions = {
   simulcast: true,
   screenShareEncoding: ScreenSharePresets.h1080fps15.encoding,
-  screenShareSimulcastLayers: [ScreenSharePresets.h360fps15],
+  screenShareSimulcastLayers: [
+    ScreenSharePresets.h360fps15,
+    ScreenSharePresets.h720fps15,
+  ],
   degradationPreference: 'maintain-resolution',
 };
 
