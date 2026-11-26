@@ -12,6 +12,7 @@ import {
 import {
   AUTH_SERVER_API_BASE_PATH,
   MAX_SPACE_GRANTS,
+  SCOPES_REQUIRING_SPACES_READ,
   describeClient,
   type ClientKind,
   type ScopeCopyKey,
@@ -23,6 +24,10 @@ type Scope = {
   defaultGranted: boolean;
   warn: boolean;
 };
+
+/** Scopes that act in the spaces chosen under `spaces:read`: only offered while it is ticked. */
+const needsSpacesRead = (scope: string) =>
+  (SCOPES_REQUIRING_SPACES_READ as readonly string[]).includes(scope);
 
 type PickerSpace = {
   id: number;
@@ -73,6 +78,10 @@ export function ConsentForm({
       const next = new Set(prev);
       if (on) next.add(scope);
       else next.delete(scope);
+      // Unticking the read scope also unticks what acts in the spaces chosen under it.
+      if (!on && scope === 'spaces:read')
+        for (const other of prev)
+          if (needsSpacesRead(other)) next.delete(other);
       return next;
     });
 
@@ -173,6 +182,7 @@ export function ConsentForm({
             <Checkbox
               id={`scope-${s.scope}`}
               checked={granted.has(s.scope)}
+              disabled={needsSpacesRead(s.scope) && !granted.has('spaces:read')}
               onCheckedChange={(v) => toggle(s.scope, v === true)}
             />
             <label htmlFor={`scope-${s.scope}`} className="flex flex-col">
@@ -199,7 +209,9 @@ export function ConsentForm({
       {showPicker ? (
         <fieldset className="flex flex-col gap-3">
           <legend className="text-2 font-medium">
-            {t('consent.spaces.title')}
+            {[...granted].some(needsSpacesRead)
+              ? t('consent.spaces.titleWithWrite')
+              : t('consent.spaces.title')}
           </legend>
           <label className="flex items-start gap-3 border p-3">
             <input

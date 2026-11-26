@@ -5995,6 +5995,11 @@
           "detail": "Pedir-lhe que vote em propostas nos seus spaces. Nada é emitido até aprovar cada voto no Hypha e o assinar com a sua wallet.",
           "warning": "O Hypha não aprovou esta app. Se permitir, ela pode pedir-lhe que vote em seu nome. Permita apenas se confiar nesta app e a tiver iniciado você mesmo."
         },
+        "signalsWrite": {
+          "title": "Criar sinais por si",
+          "detail": "Publicar novos sinais nos espaços que escolher abaixo, em seu nome e marcados como vindos desta app. Não pode editar nem eliminar nada. Pode arquivar ou eliminar o que ela criar. Só fica selecionado se o marcar.",
+          "warning": "O Hypha não aprovou esta app. Se permitir, ela pode publicar sinais em seu nome nos espaços abaixo. Permita apenas se confiar nesta app e a tiver iniciado você mesmo."
+        },
         "offlineAccess": {
           "title": "Manter a ligação",
           "detail": "Manter esta app ligada sem lhe pedir que inicie sessão novamente, até a desligar."
@@ -6005,6 +6010,7 @@
       },
       "spaces": {
         "title": "Que espaços este app pode ler?",
+        "titleWithWrite": "Em que espaços este app pode ler e publicar sinais?",
         "explicit": {
           "title": "Apenas os espaços que eu escolher",
           "detail": "Espaços em que você entrar mais tarde não estão incluídos."

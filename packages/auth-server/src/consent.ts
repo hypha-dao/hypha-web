@@ -1,6 +1,10 @@
 import { verifyOAuthQueryParams } from '@better-auth/oauth-provider';
 import type { AuthServer } from './auth';
-import { AUTH_SERVER_WRITE_SCOPES, allowedScopesForResource } from './config';
+import {
+  ALWAYS_UNTICKED_SCOPES,
+  AUTH_SERVER_WRITE_SCOPES,
+  allowedScopesForResource,
+} from './config';
 import { describeScope, type ScopeCopyKey } from './scope-copy';
 import { describeRedirect } from './redirect-display';
 
@@ -37,7 +41,10 @@ export type ConsentRequest = {
     scope: string;
     /** Entry of the page's messages (AuthServer.scopes.<copyKey>) that words this scope. */
     copyKey: ScopeCopyKey;
-    /** Ticked when the page opens. Write scopes start unticked for clients that are not pre-approved. */
+    /**
+     * Ticked when the page opens. Write scopes start unticked for clients that are not
+     * pre-approved; `signals:write` starts unticked for every client.
+     */
     defaultGranted: boolean;
     /** Show the stronger warning of that entry: a write scope of a client that is not pre-approved. */
     warn: boolean;
@@ -159,9 +166,8 @@ export async function loadConsentRequest(
   // others from the token, so a tick on them would promise something that is not issued.
   let requested = (params.get('scope') ?? '').split(/\s+/).filter(Boolean);
   for (const resource of params.getAll('resource')) {
-    const allowed = allowedScopesForResource(resource);
-    if (allowed)
-      requested = requested.filter((scope) => allowed.includes(scope));
+    const allowed = allowedScopesForResource(resource, config);
+    requested = requested.filter((scope) => allowed.includes(scope));
   }
   return {
     oauthQuery,
@@ -186,10 +192,13 @@ export async function loadConsentRequest(
         scope,
       );
       const copy = describeScope(scope);
+      const alwaysUnticked = (
+        ALWAYS_UNTICKED_SCOPES as readonly string[]
+      ).includes(scope);
       return {
         scope,
         copyKey: copy.key,
-        defaultGranted: !(write && kind !== 'registered'),
+        defaultGranted: !alwaysUnticked && !(write && kind !== 'registered'),
         warn: write && kind !== 'registered' && copy.hasWarning,
       };
     }),

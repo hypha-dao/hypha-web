@@ -6001,6 +6001,11 @@
           "detail": "Be deg stemme på forslag i spacene dine. Ingenting avgis før du godkjenner hver stemme på Hypha og signerer den med wallet-en din.",
           "warning": "Hypha har ikke godkjent denne appen. Hvis du tillater dette, kan den be deg stemme i ditt navn. Tillat det bare hvis du stoler på denne appen og startet dette selv."
         },
+        "signalsWrite": {
+          "title": "Opprette signaler for deg",
+          "detail": "Publisere nye signaler i områdene du velger nedenfor, i ditt navn og merket som kommet fra denne appen. Den kan ikke redigere eller slette noe. Du kan arkivere eller slette det den oppretter. Ikke valgt med mindre du krysser av.",
+          "warning": "Hypha har ikke godkjent denne appen. Hvis du tillater dette, kan den publisere signaler i ditt navn i områdene nedenfor. Tillat det bare hvis du stoler på denne appen og startet dette selv."
+        },
         "offlineAccess": {
           "title": "Forbli tilkoblet",
           "detail": "Holde denne appen tilkoblet uten å be deg logge inn på nytt, til du kobler den fra."
@@ -6011,6 +6016,7 @@
       },
       "spaces": {
         "title": "Hvilke områder kan denne appen lese?",
+        "titleWithWrite": "Hvilke områder kan denne appen lese og publisere signaler i?",
         "explicit": {
           "title": "Bare områdene jeg velger",
           "detail": "Områder du blir med i senere, er ikke inkludert."
