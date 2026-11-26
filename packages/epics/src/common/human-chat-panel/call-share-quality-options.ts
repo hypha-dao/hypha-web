@@ -69,13 +69,23 @@ export function adaptiveRequestSize(
   return { width: boxWidthCssPx * density, height: boxHeightCssPx * density };
 }
 
+/** livekit-server's `layerSelectionTolerance`: a copy counts from 90% of the requested size. */
+const LAYER_SELECTION_TOLERANCE = 0.9;
+
+/**
+ * livekit-server's rule (`GetQualityForDimension`): compare the short side only, height for a
+ * landscape share and width for a portrait one, against the request times the tolerance.
+ */
 function covers(layer: PublishedShareLayer, request: ShareTileRequest) {
-  return layer.width >= request.width && layer.height >= request.height;
+  const portrait = layer.width < layer.height;
+  const size = portrait ? layer.width : layer.height;
+  const requested = portrait ? request.width : request.height;
+  return size >= requested * LAYER_SELECTION_TOLERANCE;
 }
 
 /**
- * The copy the server sends for `request`: the smallest that covers it in both width and height,
- * else the largest. Seen on a preview: a 1275 x 815 box got 1080p, not 720p (1280 x 720).
+ * The copy the server sends for `request`: the smallest that covers it, else the largest. Seen on
+ * a preview: a 1275 x 815 box got 1080p (815 x 0.9 is above 720).
  */
 export function servedShareLayer(
   layers: ReadonlyArray<PublishedShareLayer>,

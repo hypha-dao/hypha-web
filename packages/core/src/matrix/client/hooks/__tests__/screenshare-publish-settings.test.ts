@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import type { Room } from 'livekit-client';
 
 import {
   buildScreenShareCaptureOptions,
   buildScreenSharePublishOptions,
+  publishScreenShare,
   screenShareCopyHeights,
 } from '../screenshare-publish-settings';
 
@@ -56,5 +58,22 @@ describe('screenshare options', () => {
         height: 1080,
       }).screenShareSimulcastLayers?.map((p) => p.height),
     ).toEqual([360, 720]);
+  });
+});
+
+describe('publishScreenShare', () => {
+  it('keeps an existing share instead of capturing a second one', async () => {
+    const unmute = vi.fn().mockResolvedValue(undefined);
+    const createScreenTracks = vi.fn();
+    const room = {
+      localParticipant: {
+        getTrackPublication: () => ({ track: {}, isMuted: true, unmute }),
+        createScreenTracks,
+        publishTrack: vi.fn(),
+      },
+    } as unknown as Room;
+    await publishScreenShare(room);
+    expect(createScreenTracks).not.toHaveBeenCalled();
+    expect(unmute).toHaveBeenCalledOnce();
   });
 });

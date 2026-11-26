@@ -92,7 +92,7 @@ export function resolveCallShareQualityPhase(
     targetWidth = Math.min(targetWidth, input.capWidth);
   }
   let ratio = SHARP_ENOUGH_RATIO;
-  if (input.servedLayerWidth && input.servedLayerWidth < targetWidth) {
+  if (input.servedLayerWidth && input.servedLayerWidth <= targetWidth) {
     // The tile only justifies a smaller copy: that copy arriving is as sharp as it gets.
     targetWidth = input.servedLayerWidth;
     ratio = SERVED_LAYER_RATIO;

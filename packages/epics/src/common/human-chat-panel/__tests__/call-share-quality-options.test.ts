@@ -53,13 +53,18 @@ describe('adaptiveRequestSize', () => {
 });
 
 describe('servedShareLayer', () => {
-  it('picks the smallest copy covering both width and height', () => {
+  it("picks the smallest copy covering the box's height (90% tolerance)", () => {
     // Full view on the preview: a 1275 x 815 box received 1080p, since 720p is not tall enough.
     expect(servedShareLayer(layers, { width: 1275, height: 815 })).toEqual({
       width: 1920,
       height: 1080,
     });
     expect(servedShareLayer(layers, { width: 1210, height: 645 })).toEqual({
+      width: 1280,
+      height: 720,
+    });
+    // Height only, as the server does: a wide but short box stays on 720p.
+    expect(servedShareLayer(layers, { width: 1400, height: 780 })).toEqual({
       width: 1280,
       height: 720,
     });
@@ -95,7 +100,7 @@ describe('buildCallShareQualityOptions', () => {
       .filter((x) => x.kind === 'layer')
       .map((x) => (x.kind === 'layer' ? [x.label, x.needsResize] : []));
 
-  it('a box wider than 720p is tall enough for 1080p even if narrower', () => {
+  it('a box taller than 720p (with tolerance) can use 1080p even if narrower', () => {
     // The preview bug: 1920x1080 arriving while 1080p showed as unavailable.
     const o = buildCallShareQualityOptions({
       layers,
@@ -166,6 +171,20 @@ describe('resolveCallShareQualityPhase with the served copy', () => {
       servedLayerWidth: 540,
     });
     expect(result.phase).toBe('done');
+    expect(result.limitedByNetwork).toBeFalsy();
+  });
+
+  it('applies the tolerance when the served copy equals the target', () => {
+    const result = resolveCallShareQualityPhase({
+      receivedWidth: 501,
+      receivedHeight: 333,
+      renderedWidth: 540,
+      renderedHeight: 360,
+      devicePixelRatio: 1,
+      publishedWidth: 1620,
+      elapsedMs: 15_000,
+      servedLayerWidth: 540,
+    });
     expect(result.limitedByNetwork).toBeFalsy();
   });
 

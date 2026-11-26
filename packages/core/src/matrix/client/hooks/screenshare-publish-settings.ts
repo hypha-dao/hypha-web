@@ -82,7 +82,8 @@ const startsInFlight = new WeakMap<Room, Promise<void>>();
 /**
  * Starts a share in two steps so the copies can follow the picked surface: capture first (the
  * browser picker), then publish with copies chosen from the captured size. Same steps as
- * `setScreenShareEnabled(true)`, which picks the copies before it knows the size.
+ * `setScreenShareEnabled(true)`, which picks the copies before it knows the size. A no-op when
+ * this client already shares.
  */
 export function publishScreenShare(room: Room): Promise<void> {
   const pending = startsInFlight.get(room);
@@ -95,6 +96,15 @@ export function publishScreenShare(room: Room): Promise<void> {
 }
 
 async function startScreenShare(room: Room): Promise<void> {
+  // Already sharing (e.g. a takeover approval after a manual start): keep that share, as
+  // `setScreenShareEnabled(true)` does, instead of opening a second picker and track.
+  const existing = room.localParticipant.getTrackPublication(
+    Track.Source.ScreenShare,
+  );
+  if (existing?.track) {
+    if (existing.isMuted) await existing.unmute();
+    return;
+  }
   const tracks: LocalTrack[] = await room.localParticipant.createScreenTracks(
     buildScreenShareCaptureOptions(),
   );
