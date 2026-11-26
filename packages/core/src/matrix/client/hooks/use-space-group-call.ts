@@ -11,6 +11,10 @@ import {
   getScreenSharePublishSettings,
 } from './screenshare-publish-settings';
 import {
+  recordShareDiagnostic,
+  startShareDiagnostics,
+} from './screenshare-diagnostics';
+import {
   MATRIX_RTC_SESSION_EVENT,
   type MatrixRtcSessionLike,
 } from './matrix-rtc-events';
@@ -1422,6 +1426,11 @@ export function useSpaceGroupCall(
               ),
             screenshareSurfaceModeRef.current,
           );
+          recordShareDiagnostic({
+            side: 'send-start',
+            settings: getScreenSharePublishSettings(),
+            options: screenShareOptions,
+          });
         } catch (e) {
           clearOrphanedMatrixScreenshareStreams(client);
           syncLocalScreenshareState(lkRoom);
@@ -1570,17 +1579,19 @@ export function useSpaceGroupCall(
         setThreadContext(null);
       };
 
-      liveKitListenerCleanupRef.current = attachLiveKitRoomMediaListeners(
-        lkRoom,
-        {
-          onMediaChanged,
-          onActiveSpeakersChanged,
-          onDisconnected,
-          onReconnected: () => {
-            onMediaChanged();
-          },
+      const detachMediaListeners = attachLiveKitRoomMediaListeners(lkRoom, {
+        onMediaChanged,
+        onActiveSpeakersChanged,
+        onDisconnected,
+        onReconnected: () => {
+          onMediaChanged();
         },
-      );
+      });
+      const stopShareDiagnostics = startShareDiagnostics(lkRoom);
+      liveKitListenerCleanupRef.current = () => {
+        stopShareDiagnostics();
+        detachMediaListeners();
+      };
       syncActiveSpeakerFromRoom(lkRoom);
       syncLocalMuteState(lkRoom);
     },

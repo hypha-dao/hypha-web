@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { VideoQuality, type RemoteTrackPublication } from 'livekit-client';
 
+import { recordShareDiagnostic } from '@hypha-platform/core/client';
+
 import {
   CALL_SHARE_QUALITY_AUTO,
   layerOptionId,
@@ -105,6 +107,17 @@ export function usePublishShareQualityPicker(input: {
     if (!enabled || !shareKey || !selectionMissing) return;
     selectRef.current({ id: CALL_SHARE_QUALITY_AUTO, kind: 'auto' });
   }, [enabled, shareKey, selectionMissing]);
+
+  useEffect(() => {
+    if (!enabled || !shareKey) return;
+    // Quality log (#2742): which sizes the menu offers and which need a bigger tile.
+    recordShareDiagnostic({
+      side: 'picker',
+      sid: shareKey,
+      options: signature,
+      selected: selectedId,
+    });
+  }, [enabled, shareKey, signature, selectedId]);
 
   useEffect(() => {
     const owner = ownerRef.current;

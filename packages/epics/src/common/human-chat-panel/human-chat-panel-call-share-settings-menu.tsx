@@ -6,8 +6,12 @@ import { useTranslations } from 'next-intl';
 
 import {
   SCREEN_SHARE_SETTING_CHOICES,
+  clearShareDiagnosticsLog,
+  getShareDiagnosticsLog,
   setScreenSharePublishSettings,
+  setShareDiagnosticsEnabled,
   useScreenSharePublishSettings,
+  useShareDiagnostics,
   type ScreenSharePublishSettings,
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
@@ -46,7 +50,9 @@ export function HumanChatPanelCallShareSettingsMenu({
 }) {
   const t = useTranslations('HumanChatPanel');
   const settings = useScreenSharePublishSettings();
+  const diagnostics = useShareDiagnostics();
   const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
@@ -82,6 +88,16 @@ export function HumanChatPanelCallShareSettingsMenu({
       return value === 'h264' ? 'H.264' : String(value).toUpperCase();
     }
     return String(value);
+  };
+
+  const copyLog = async () => {
+    try {
+      await navigator.clipboard.writeText(getShareDiagnosticsLog());
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard blocked: the same entries are in the console as [hypha.share].
+    }
   };
 
   const update = <K extends SettingKey>(
@@ -173,6 +189,39 @@ export function HumanChatPanelCallShareSettingsMenu({
           >
             {t('callShareSettingsReset')}
           </button>
+          <div className="mt-1 border-t border-border/60 pt-2">
+            <label className="flex items-center gap-2 text-xs font-medium">
+              <input
+                type="checkbox"
+                checked={diagnostics.enabled}
+                onChange={(event) =>
+                  setShareDiagnosticsEnabled(event.target.checked)
+                }
+              />
+              {t('callShareLogToggle')}
+            </label>
+            <p className="py-1 text-xs opacity-70">{t('callShareLogNote')}</p>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                disabled={diagnostics.count === 0}
+                onClick={() => void copyLog()}
+                className="rounded-md border border-border/60 px-2 py-1 text-xs hover:bg-muted/80 disabled:opacity-50"
+              >
+                {copied
+                  ? t('callShareLogCopied')
+                  : t('callShareLogCopy', { count: diagnostics.count })}
+              </button>
+              <button
+                type="button"
+                disabled={diagnostics.count === 0}
+                onClick={clearShareDiagnosticsLog}
+                className="rounded-md border border-border/60 px-2 py-1 text-xs hover:bg-muted/80 disabled:opacity-50"
+              >
+                {t('callShareLogClear')}
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
     </div>
