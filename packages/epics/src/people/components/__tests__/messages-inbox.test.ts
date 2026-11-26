@@ -135,6 +135,65 @@ describe('messages inbox filters', () => {
     ]);
   });
 
+  it('lists quest channels the member has not joined, including quiet ones', () => {
+    const quests = [
+      {
+        roomId: '!unjoined:hs',
+        title: 'Garden map',
+        slug: 'garden-map',
+        spaceSlug: 'hypha-platform',
+        spaceTitle: 'Hypha Platform',
+        rootSlug: 'hypha',
+        rootTitle: 'Hypha',
+      },
+      {
+        roomId: 'provisioning:123:abc',
+        title: 'Still opening',
+        slug: 'still-opening',
+        spaceSlug: 'hypha-platform',
+        spaceTitle: 'Hypha Platform',
+        rootSlug: 'hypha',
+        rootTitle: 'Hypha',
+      },
+    ];
+    const rows = channelRowsFromSnapshots(
+      [
+        {
+          roomId: '!quiet-quest:hs',
+          roomType: 'io.hypha.room.quest',
+          name: 'Old quest room',
+          aliases: [],
+          preview: 'accepted in the spring',
+          mine: false,
+          lastTs: quiet,
+          unread: 0,
+        },
+      ],
+      {
+        ...context,
+        quests: [
+          ...quests,
+          {
+            roomId: '!quiet-quest:hs',
+            title: 'Spring matcher',
+            slug: 'spring-matcher',
+            spaceSlug: 'hypha-platform',
+            spaceTitle: 'Hypha Platform',
+            rootSlug: 'hypha',
+            rootTitle: 'Hypha',
+          },
+        ],
+      },
+      'Network',
+      now,
+    );
+    expect(rows.map((row) => [row.roomId, row.name, row.preview])).toEqual([
+      ['!quiet-quest:hs', 'Spring matcher', 'accepted in the spring'],
+      ['!unjoined:hs', 'Garden map', ''],
+    ]);
+    expect(rows.every((row) => row.inbox.kind === 'quest')).toBe(true);
+  });
+
   it('counts each conversation once per matching filter', () => {
     const counts = inboxFilterCounts([
       { kind: 'dm', unread: 2 },

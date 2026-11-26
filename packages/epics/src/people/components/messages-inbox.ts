@@ -731,9 +731,44 @@ function isCanonicalNetworkRoom(snapshot: JoinedChannelSnapshot): boolean {
 }
 
 /**
- * One row per joined channel the member actually belongs to, and only when
- * that channel has a message in the last three months. The room id is the
- * one Matrix already has. There is a single network room.
+ * Quest channels are created when a proposal passes, and only the lead and
+ * quest members are invited. The inbox still lists every accepted quest in a
+ * space the member belongs to, including ones they have not joined yet.
+ */
+function snapshotsWithListedQuests(
+  snapshots: readonly JoinedChannelSnapshot[],
+  context: InboxContext,
+): readonly JoinedChannelSnapshot[] {
+  const quests = context.quests;
+  if (!quests || quests.length === 0) return snapshots;
+  const known = new Set(snapshots.map((snapshot) => snapshot.roomId.trim()));
+  const extras: JoinedChannelSnapshot[] = [];
+  for (const quest of quests) {
+    const roomId = quest.roomId.trim();
+    if (!roomId || roomId.startsWith('provisioning:') || known.has(roomId)) {
+      continue;
+    }
+    known.add(roomId);
+    extras.push({
+      roomId,
+      roomType: 'io.hypha.room.quest',
+      name: quest.title,
+      aliases: [],
+      preview: '',
+      mine: false,
+      lastTs: null,
+      unread: 0,
+    });
+  }
+  return extras.length === 0 ? snapshots : [...snapshots, ...extras];
+}
+
+/**
+ * One row per channel the member belongs to. Most channels need a message in
+ * the last three months. Quest channels are listed from the member's spaces
+ * even before they join and when the room has been quiet. The room id is the
+ * one Matrix already has, or the quest's stored room id. There is a single
+ * network room.
  */
 export function channelRowsFromSnapshots(
   snapshots: readonly JoinedChannelSnapshot[],
@@ -742,6 +777,7 @@ export function channelRowsFromSnapshots(
   now = Date.now(),
 ): InboxChannelRow[] {
   const rows: InboxChannelRow[] = [];
+  const listed = snapshotsWithListedQuests(snapshots, context);
   const logoBySlug = new Map(
     context.spaces.map((space) => [
       space.slug.trim().toLowerCase(),
@@ -754,7 +790,7 @@ export function channelRowsFromSnapshots(
     canonical: boolean;
     lastTs: number;
   } | null = null;
-  for (const snapshot of snapshots) {
+  for (const snapshot of listed) {
     const roomId = snapshot.roomId.trim();
     if (!roomId || seen.has(roomId)) continue;
     const place = resolveInboxPlace(snapshot, context);
@@ -762,17 +798,20 @@ export function channelRowsFromSnapshots(
       continue;
     }
     // Assignees, the signal team, and people who were mentioned are notified
-    // even when nobody has written in the room lately. Proposal and Context
-    // section chats stay visible the same way once someone has written —
-    // opening a section creates its room before anyone speaks, and empty rooms
-    // would flood the inbox. Other channels stay hidden until they have a
-    // message in the last three months.
+    // even when nobody has written in the room lately. Quest channels stay
+    // listed once a quest proposal has passed: space members see them before
+    // they join, and a quiet room is still that quest's channel. Proposal and
+    // Context section chats stay visible once someone has written — opening a
+    // section creates its room before anyone speaks, and empty rooms would
+    // flood the inbox. Other channels stay hidden until they have a message
+    // in the last three months.
     if (place.kind === 'proposal' || place.kind === 'context') {
       // Blank preview with unread still belongs in the inbox — the member has
       // something to open even when the last line has not loaded yet.
       if (!snapshot.preview.trim() && snapshot.unread <= 0) continue;
     } else if (
       place.kind !== 'signal' &&
+      place.kind !== 'quest' &&
       !channelHasRecentActivity(snapshot.lastTs, now)
     ) {
       continue;
