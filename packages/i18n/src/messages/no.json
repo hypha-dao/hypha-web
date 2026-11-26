@@ -4208,6 +4208,12 @@
     "callShareQualityShow": "Vis oppløsning",
 
     "callShareQualityHide": "Skjul oppløsning",
+    "callShareQualityPicker": "Mottakskvalitet",
+    "callShareQualityAuto": "Auto",
+    "callShareQualityNeedsResize": "forstørr for å bruke",
+    "callShareQualityReasonAuto": "Auto: tilpasset ruten din",
+    "callShareQualityReasonCapped": "Begrenset til {label}",
+    "callShareQualityReasonNetwork": "Begrenset av nettverket",
     "callParticipantMicOff": "Mikrofon av",
     "callLeftAudio": "Du forlot talesamtalen.",
     "callLeftVideo": "Du forlot videosamtalen.",

@@ -4239,6 +4239,12 @@
     "callShareQualityShow": "Show resolution",
 
     "callShareQualityHide": "Hide resolution",
+    "callShareQualityPicker": "Receive quality",
+    "callShareQualityAuto": "Auto",
+    "callShareQualityNeedsResize": "enlarge to use",
+    "callShareQualityReasonAuto": "Auto: sized to your tile",
+    "callShareQualityReasonCapped": "Capped at {label}",
+    "callShareQualityReasonNetwork": "Limited by network",
     "callParticipantMicOff": "Microphone off",
     "callLeftAudio": "You left the voice call.",
     "callLeftVideo": "You left the video call.",
