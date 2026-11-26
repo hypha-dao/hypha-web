@@ -48,6 +48,7 @@ import { HumanChatPanelCallReactPopover } from './human-chat-panel-call-react-po
 import type { CallFloatingReactionStyle } from './call-zoom-reaction-catalog';
 import { HumanChatPanelCallScreenshareMenu } from './human-chat-panel-call-screenshare-menu';
 import { HumanChatPanelCallShareQualityMenu } from './human-chat-panel-call-share-quality-menu';
+import { HumanChatPanelCallShareSettingsMenu } from './human-chat-panel-call-share-settings-menu';
 import {
   callAccentAlertActionButtonClassName,
   callAccentAlertText,
@@ -1211,6 +1212,19 @@ export function HumanChatPanelInCallControls({
                   pip={isPipDensity}
                   dark={isFull}
                 />
+                {showAdvancedCallControls ? (
+                  <HumanChatPanelCallShareSettingsMenu
+                    isScreensharing={isScreensharing}
+                    triggerClassName={cn(
+                      shareIdleBtn,
+                      'inline-flex items-center justify-center',
+                    )}
+                    iconClassName={icon}
+                    iconStrokeWidth={lucideStroke}
+                    pip={isPipDensity}
+                    dark={isFull}
+                  />
+                ) : null}
               </>
               {renderMoreMenu}
             </div>
@@ -1307,6 +1321,19 @@ export function HumanChatPanelInCallControls({
                       pip={isPipDensity}
                       dark={isFull}
                     />
+                    {showAdvancedCallControls ? (
+                      <HumanChatPanelCallShareSettingsMenu
+                        isScreensharing={isScreensharing}
+                        triggerClassName={cn(
+                          shareIdleBtn,
+                          'inline-flex items-center justify-center',
+                        )}
+                        iconClassName={icon}
+                        iconStrokeWidth={lucideStroke}
+                        pip={isPipDensity}
+                        dark={isFull}
+                      />
+                    ) : null}
                   </>
                 ) : null}
                 {leaveOnly && callReactionsToolbarVisible ? (
@@ -1451,6 +1478,19 @@ export function HumanChatPanelInCallControls({
                         pip={isPipDensity}
                         dark={isFull}
                       />
+                      {showAdvancedCallControls ? (
+                        <HumanChatPanelCallShareSettingsMenu
+                          isScreensharing={isScreensharing}
+                          triggerClassName={cn(
+                            shareIdleBtn,
+                            'inline-flex items-center justify-center',
+                          )}
+                          iconClassName={icon}
+                          iconStrokeWidth={lucideStroke}
+                          pip={isPipDensity}
+                          dark={isFull}
+                        />
+                      ) : null}
                     </>
                   ) : null}
                   {callReactionsToolbarVisible ? (

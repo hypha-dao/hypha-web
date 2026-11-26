@@ -4,12 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as MatrixSdk from 'matrix-js-sdk';
 import { ClientEvent, RoomEvent } from 'matrix-js-sdk';
 import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
-import type {
-  Room as LiveKitRoom,
-  ScreenShareCaptureOptions,
-  TrackPublishOptions,
-} from 'livekit-client';
-import { LocalAudioTrack, ScreenSharePresets, Track } from 'livekit-client';
+import type { Room as LiveKitRoom } from 'livekit-client';
+import { LocalAudioTrack, Track } from 'livekit-client';
+import {
+  buildScreenShareOptions,
+  getScreenSharePublishSettings,
+} from './screenshare-publish-settings';
 import {
   MATRIX_RTC_SESSION_EVENT,
   type MatrixRtcSessionLike,
@@ -191,36 +191,11 @@ async function stopLiveKitLocalPublishing(lkRoom: LiveKitRoom): Promise<void> {
   }
 }
 
-/**
- * Screen content (text/UI) needs sharper encoding than motion video, and the standard
- * `adaptiveStream`/`dynacast` mechanism only degrades layer selection correctly if a low
- * fallback layer actually exists — see #2425 decision 31. The 720p middle layer (#2742) gives
- * viewers on mid-size tiles or slower links a step between 360p and full size; livekit-client
- * only sends it when the capture is at least 960 px on its long side.
- *
- * Sharper text (#2742): livekit-client's default capture asks for 1920x1080, so larger screens were
- * scaled down before encoding. The capture now goes up to 2560x1440 (smaller screens and windows
- * keep their own size; nothing is scaled up), and the full-size layer gets a larger bitrate budget
- * than the 1080p preset's 2.5 Mbps. Still 15 fps and `maintain-resolution`: on a short uplink frames
- * drop, not pixels, and viewers on slow links get the 720p / 360p layers.
+/*
+ * Screenshare capture / publish options come from `screenshare-publish-settings.ts` (#2742): the
+ * sharer's chosen size, frame rate, bitrate, smaller copies and codec, read when a share starts.
+ * A low fallback copy always exists (#2425 decision 31).
  */
-const SCREEN_SHARE_MAX_CAPTURE = { width: 2560, height: 1440, frameRate: 30 };
-const SCREEN_SHARE_TOP_ENCODING = { maxBitrate: 4_000_000, maxFramerate: 15 };
-
-const SCREEN_SHARE_CAPTURE_OPTIONS: ScreenShareCaptureOptions = {
-  contentHint: 'detail',
-  resolution: SCREEN_SHARE_MAX_CAPTURE,
-};
-
-const SCREEN_SHARE_PUBLISH_OPTIONS: TrackPublishOptions = {
-  simulcast: true,
-  screenShareEncoding: SCREEN_SHARE_TOP_ENCODING,
-  screenShareSimulcastLayers: [
-    ScreenSharePresets.h360fps15,
-    ScreenSharePresets.h720fps15,
-  ],
-  degradationPreference: 'maintain-resolution',
-};
 
 const CAPTURE_START_STALL_MS = 10_000;
 /** Minimum time capture must run before finalize produces a non-empty blob. */
@@ -1433,14 +1408,17 @@ export function useSpaceGroupCall(
     async (lkRoom: LiveKitRoom) => {
       try {
         clearOrphanedMatrixScreenshareStreams(client);
+        const screenShareOptions = buildScreenShareOptions(
+          getScreenSharePublishSettings(),
+        );
         try {
           await withEnhancedScreenshareCapture(
             client,
             () =>
               lkRoom.localParticipant.setScreenShareEnabled(
                 true,
-                SCREEN_SHARE_CAPTURE_OPTIONS,
-                SCREEN_SHARE_PUBLISH_OPTIONS,
+                screenShareOptions.capture,
+                screenShareOptions.publish,
               ),
             screenshareSurfaceModeRef.current,
           );
