@@ -1,8 +1,7 @@
-import { defineConfig } from 'vitest/config';
-export default defineConfig({
+import { defineUnitConfig } from '@hypha-platform/config-vitest';
+
+export default defineUnitConfig({
   test: {
-    environment: 'node',
-    include: ['src/**/*.test.ts'],
     testTimeout: 30000,
   },
 });

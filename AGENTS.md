@@ -61,7 +61,10 @@ pnpm start             # production start (requires build first)
 ### Testing
 
 ```bash
-# Unit tests (Vitest) — run from packages/core:
+# Unit tests (Vitest), every package — also run by CI on each PR:
+pnpm test
+
+# One package:
 pnpm --filter @hypha-platform/core test
 
 # Single test file:
@@ -72,6 +75,9 @@ pnpm e2e
 pnpm e2e:ui            # interactive UI mode
 pnpm e2e:debug
 ```
+
+Where tests go, naming, the integration tier and what CI runs:
+[`docs/development/testing.md`](docs/development/testing.md).
 
 ### Linting & Formatting
 

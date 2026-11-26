@@ -1,0 +1,15 @@
+{
+  "name": "@hypha-platform/config-vitest",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./base.d.ts",
+      "default": "./base.js"
+    }
+  },
+  "peerDependencies": {
+    "vitest": "^1.3.1"
+  }
+}
