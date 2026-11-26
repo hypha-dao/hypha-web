@@ -78,6 +78,27 @@ jobs:
       - name: Verify i18n locale parity
         run: pnpm run verify:messages
 
+  # Vitest unit tests in every package (docs/development/testing.md).
+  # Deliberately no secrets: unit tests must not reach a real database or
+  # chain, and database-backed tests skip themselves without DEFAULT_DB_URL.
+  unit-tests:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Unit tests
+        run: pnpm test
+
   deploy-preview:
     needs: [detect-changes, check-types, i18n-verify]
     if: |
