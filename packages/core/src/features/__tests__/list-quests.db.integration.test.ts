@@ -92,6 +92,7 @@ describe.skipIf(!HAS_DB)('quests queries (database)', () => {
             slug: `${PREFIX}-${slug}`,
             name: `Quest ${slug}`,
             goal: 'A goal',
+            originKind: 'app',
             ...over,
           } as never)
           .returning({ id: tables.spaceQuests.id })
@@ -185,12 +186,14 @@ describe.skipIf(!HAS_DB)('quests queries (database)', () => {
       {
         questId: activeId,
         authorName: 'Ada Tester',
+        originKind: 'app',
         text: 'private chatter one',
         createdAt: new Date(now - 86_400_000),
       },
       {
         questId: activeId,
         authorName: 'Ada Tester',
+        originKind: 'app',
         text: 'private chatter two',
         createdAt: new Date(now - 20 * 86_400_000),
       },

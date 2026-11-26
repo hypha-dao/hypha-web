@@ -43,11 +43,11 @@ const quoted = (values: readonly string[]) =>
  * Server-set, never-edited record of which path created a row. Written once by the data layer
  * from an `Origin` (see `packages/core/src/origin`); no update path includes these columns.
  *
- * The database default only exists for the expand step of the migration (old code that does
- * not pass an origin keeps working). The contract migration drops it.
+ * No default: a write without an origin fails. Rows written before the origin existed were
+ * filled with 'unknown' by migration 0105; 0106 dropped that default.
  */
 export const originColumns = {
-  originKind: text('origin_kind').notNull().default('unknown'),
+  originKind: text('origin_kind').notNull(),
   originClientId: varchar('origin_client_id', { length: ORIGIN_CLIENT_ID_MAX }),
   originClientLabel: varchar('origin_client_label', {
     length: ORIGIN_CLIENT_LABEL_MAX,
