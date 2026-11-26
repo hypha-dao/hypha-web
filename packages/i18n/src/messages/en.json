@@ -6018,6 +6018,11 @@
           "detail": "Ask you to vote on proposals in your spaces. Nothing is cast until you approve each vote on Hypha and sign it with your wallet.",
           "warning": "Hypha has not approved this app. If you allow this, it can ask you to vote in your name. Allow it only if you trust this app and started this yourself."
         },
+        "signalsWrite": {
+          "title": "Create signals for you",
+          "detail": "Post new signals in the spaces you choose below, in your name and marked as coming from this app. It cannot edit or delete anything. You can archive or delete what it creates. Not selected unless you tick it.",
+          "warning": "Hypha has not approved this app. If you allow this, it can post signals in your name in the spaces below. Allow it only if you trust this app and started this yourself."
+        },
         "offlineAccess": {
           "title": "Stay connected",
           "detail": "Keep this app connected without asking you to sign in again, until you disconnect it."
@@ -6028,6 +6033,7 @@
       },
       "spaces": {
         "title": "Which spaces can this app read?",
+        "titleWithWrite": "Which spaces can this app read and post signals in?",
         "explicit": {
           "title": "Only the spaces I choose",
           "detail": "Spaces you join later are not included."

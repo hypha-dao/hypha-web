@@ -19,8 +19,10 @@ import {
   AUTH_SERVER_JWKS_PATH,
   AUTH_SERVER_LOGIN_PATH,
   AUTH_SERVER_SCOPES,
+  DCR_ALLOWED_SCOPES,
   REFRESH_TOKEN_TTL_SECONDS,
   REFRESH_TOKEN_REUSE_INTERVAL_SECONDS,
+  SCOPES_REQUIRING_SPACES_READ,
   type AuthServerConfig,
 } from './config';
 import {
@@ -30,6 +32,7 @@ import {
 } from './db';
 import { isPersonAllowed } from './gate';
 import { SPACE_GRANTS_CLAIM, grantClaimFor } from './grants';
+import { CLIENT_NAME_CLAIM, clientNameClaim } from './client-name';
 import { redactingLog } from './redact';
 import { createIdentityBridge } from './identity-bridge';
 import { createPrivyProvider, type ProviderRegistry } from './providers';
@@ -68,6 +71,22 @@ export function isInitialAuthorizeRequest(
   if (!path.endsWith('/oauth2/authorize')) return false;
   const sig = (params as Record<string, unknown> | undefined)?.sig;
   return sig === undefined || sig === null || sig === '';
+}
+
+/**
+ * The scopes of the app's first authorize request with the implied ones added: `offline_access`
+ * always (see `hypha-offline-access`), and `spaces:read` next to a scope that acts in the spaces
+ * chosen under it (`signals:write`), so the page can show the space picker for it. The person can
+ * still untick them; an approval with the write scope but without `spaces:read` is refused.
+ */
+export function withImpliedScopes(scopes: readonly string[]): string[] {
+  const out = [...scopes];
+  const needsRead = scopes.some((scope) =>
+    (SCOPES_REQUIRING_SPACES_READ as readonly string[]).includes(scope),
+  );
+  if (needsRead && !out.includes('spaces:read')) out.push('spaces:read');
+  if (!out.includes('offline_access')) out.push('offline_access');
+  return out;
 }
 
 export function createAuthServer(
@@ -146,7 +165,7 @@ export function createAuthServer(
         consentPage: AUTH_SERVER_CONSENT_PATH,
         scopes: [...AUTH_SERVER_SCOPES],
         clientRegistrationDefaultScopes: ['spaces:read'],
-        clientRegistrationAllowedScopes: [...AUTH_SERVER_SCOPES],
+        clientRegistrationAllowedScopes: [...DCR_ALLOWED_SCOPES],
         grantTypes: ['authorization_code', 'refresh_token'],
         // No client management over HTTP for anyone. Anonymous registration (below) never reaches
         // this hook: the handler strips cookies from register requests, so it only ever sees
@@ -167,12 +186,13 @@ export function createAuthServer(
         // expiry. It carries the (longer) query lifetime; the code is cut back to
         // AUTH_CODE_TTL_SECONDS at the token endpoint by the `hypha-code-ttl` hook below.
         codeExpiresIn: AUTH_QUERY_TTL_SECONDS,
-        // Declared with their allowed scopes (E52). `merge` so a resource row that already exists
-        // picks the declaration up (the default only inserts missing rows).
-        resources: config.resources.map((identifier) => {
-          const allowedScopes = allowedScopesForResource(identifier);
-          return allowedScopes ? { identifier, allowedScopes } : { identifier };
-        }),
+        // Declared with the allowed scopes of their channel (E52: MCP or API). `merge` so a
+        // resource row that already exists picks the declaration up (the default only inserts
+        // missing rows), which is also how a change of the MCP write switch reaches the row.
+        resources: config.resources.map((identifier) => ({
+          identifier,
+          allowedScopes: allowedScopesForResource(identifier, config),
+        })),
         resourceSeedMode: 'merge',
         extensions: [
           {
@@ -185,12 +205,15 @@ export function createAuthServer(
                 if (!user || !gate(user.id)) {
                   throw new APIError('FORBIDDEN', FORBIDDEN);
                 }
+                const clientName = clientNameClaim(client.name);
                 return {
                   [SPACE_GRANTS_CLAIM]: await grantClaimFor(
                     pool,
                     user.id,
                     client.clientId,
                   ),
+                  // The app learns the client's name from the token, never from this server's tables.
+                  ...(clientName ? { [CLIENT_NAME_CLAIM]: clientName } : {}),
                 };
               },
             },
@@ -257,10 +280,9 @@ export function createAuthServer(
                   !requested.trim()
                 )
                   return;
-                const scopes = requested.split(/\s+/).filter(Boolean);
-                if (!scopes.includes('offline_access')) {
-                  target.scope = [...scopes, 'offline_access'].join(' ');
-                }
+                target.scope = withImpliedScopes(
+                  requested.split(/\s+/).filter(Boolean),
+                ).join(' ');
               }),
             },
           ],

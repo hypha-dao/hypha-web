@@ -88,6 +88,29 @@ describe('the stored grant is only replaced by an approval of the read scope', (
     );
   });
 
+  it('an approval of signals:write without spaces:read is refused and nothing is stored', async () => {
+    writeGrant.mockClear();
+    for (const scope of ['signals:write', 'signals:write offline_access']) {
+      const res = await approve(scope);
+      expect(res.status).toBe(400);
+      expect((await res.json()).error).toBe('invalid_request');
+    }
+    expect(writeGrant).not.toHaveBeenCalled();
+  });
+
+  it('signals:write with spaces:read stores the choice of spaces once, as for a read approval', async () => {
+    writeGrant.mockClear();
+    const res = await approve('spaces:read signals:write offline_access', [4]);
+    expect(res.status).toBe(200);
+    expect(writeGrant).toHaveBeenCalledTimes(1);
+    expect(writeGrant).toHaveBeenCalledWith(
+      expect.anything(),
+      'did:privy:a',
+      'app-1',
+      [4],
+    );
+  });
+
   it('an approval that names no scope is refused and nothing is stored', async () => {
     writeGrant.mockClear();
     for (const scope of [undefined, '', '   ']) {

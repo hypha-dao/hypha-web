@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { AUTH_SERVER_SCOPES } from './config';
+import { DCR_ALLOWED_SCOPES } from './config';
 import type { AuthDbPool } from './db';
 import { redactingLog } from './redact';
 
@@ -160,7 +160,7 @@ export function cleanRegistrationBody(
     if (!isString(input.scope) || input.scope.length > 200)
       return problem(400, 'invalid_scope', 'scope is malformed');
     requested = input.scope.split(/\s+/).filter(Boolean);
-    const vocabulary = new Set<string>(AUTH_SERVER_SCOPES);
+    const vocabulary = new Set<string>(DCR_ALLOWED_SCOPES);
     if (requested.length === 0 || !requested.every((s) => vocabulary.has(s)))
       return problem(
         400,

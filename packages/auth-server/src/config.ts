@@ -8,37 +8,92 @@
 export const AUTH_SERVER_SCOPES = [
   'spaces:read',
   'agreements:vote',
+  'signals:write',
   'offline_access',
 ] as const;
 export type AuthServerScope = (typeof AUTH_SERVER_SCOPES)[number];
 /**
- * Scopes that let an app act (prepare votes), as opposed to read. For clients that are not
- * pre-approved the consent page shows them unticked, with a stronger warning.
+ * Scopes that let an app act (prepare votes, create signals), as opposed to read. For clients
+ * that are not pre-approved the consent page shows them unticked, with a stronger warning.
  */
 export const AUTH_SERVER_WRITE_SCOPES: readonly AuthServerScope[] = [
   'agreements:vote',
+  'signals:write',
+];
+/**
+ * Scopes a dynamically registered client may carry: the vocabulary as it was before
+ * `signals:write`. Dynamic registration is unchanged by MCP writes (and off in production).
+ */
+export const DCR_ALLOWED_SCOPES: readonly AuthServerScope[] = [
+  'spaces:read',
+  'agreements:vote',
+  'offline_access',
+];
+/**
+ * Write scopes that start unticked for every client, pre-approved ones included: writing in a
+ * person's name is a choice they make each time they connect an app.
+ */
+export const ALWAYS_UNTICKED_SCOPES: readonly AuthServerScope[] = [
+  'signals:write',
+];
+/**
+ * Scopes that act in the spaces chosen under `spaces:read` (the same per-space grant), so an
+ * approval that includes one of them must include `spaces:read` too.
+ */
+export const SCOPES_REQUIRING_SPACES_READ: readonly AuthServerScope[] = [
+  'signals:write',
 ];
 
 /**
- * Scopes the hosted MCP resource accepts (E52, P5): reads only. The library intersects a request
- * with them at authorize and token time and answers `invalid_scope` when nothing is left. The MCP
- * resource is the configured resource whose path is `/mcp`, the same rule the app uses to find
- * its host; every other resource keeps no restriction.
+ * The channel a resource belongs to. Each channel has its own list of the scopes it accepts (the
+ * support grid of the integration kit): the hosted MCP server is the configured resource whose
+ * path is `/mcp`, the same rule the app uses to find its host; every other resource is the API.
  */
-export const MCP_RESOURCE_ALLOWED_SCOPES: readonly AuthServerScope[] = [
+export type ResourceChannel = 'mcp' | 'api';
+
+/** Scopes the hosted MCP resource accepts for reading (E52, P5). */
+export const MCP_READ_SCOPES: readonly AuthServerScope[] = [
   'spaces:read',
   'offline_access',
 ];
+/** Scopes the hosted MCP resource accepts only while MCP writes are switched on. */
+export const MCP_WRITE_SCOPES: readonly AuthServerScope[] = ['signals:write'];
+/** Scopes the API resource accepts: what it accepted before `signals:write` existed. */
+export const API_RESOURCE_SCOPES: readonly AuthServerScope[] = [
+  'spaces:read',
+  'agreements:vote',
+  'offline_access',
+];
 
-/** Allowed scopes declared for a resource identifier, or null when it has no restriction. */
-export function allowedScopesForResource(identifier: string): string[] | null {
+export function channelForResource(identifier: string): ResourceChannel {
   try {
-    return new URL(identifier).pathname === '/mcp'
-      ? [...MCP_RESOURCE_ALLOWED_SCOPES]
-      : null;
+    return new URL(identifier).pathname === '/mcp' ? 'mcp' : 'api';
   } catch {
-    return null;
+    return 'api';
   }
+}
+
+/** The scopes a channel accepts now. MCP write scopes depend on the MCP write switch. */
+export function scopesForChannel(
+  channel: ResourceChannel,
+  options: { mcpWritesEnabled: boolean },
+): string[] {
+  if (channel === 'api') return [...API_RESOURCE_SCOPES];
+  return options.mcpWritesEnabled
+    ? [...MCP_READ_SCOPES, ...MCP_WRITE_SCOPES]
+    : [...MCP_READ_SCOPES];
+}
+
+/**
+ * Allowed scopes declared for a resource identifier. The library intersects a request with them
+ * at token time and at every refresh, and answers `invalid_scope` when nothing is left; the
+ * consent page offers only these. Every resource has a list.
+ */
+export function allowedScopesForResource(
+  identifier: string,
+  options: { mcpWritesEnabled: boolean },
+): string[] {
+  return scopesForChannel(channelForResource(identifier), options);
 }
 
 /** Product defaults (reported for confirmation). Seconds. */
@@ -98,6 +153,13 @@ export type AuthServerConfig = {
    * in the metadata, the register path answers 404, and cross-origin access to it is not granted.
    */
   dcrEnabled: boolean;
+  /**
+   * MCP writes (`signals:write` on the `/mcp` resource). Off in code: only the exact string "true"
+   * in MCP_WRITES_ENABLED turns it on. Separate from MCP_SERVER_ENABLED (reads) and from the MCP
+   * kill switch. Off means the MCP resource does not accept the scope, so it is neither offered
+   * on the consent page nor issued, and the next refresh of a token that has it drops it.
+   */
+  mcpWritesEnabled: boolean;
 };
 
 export type AuthServerDisabled = { enabled: false; reason: string };
@@ -201,5 +263,6 @@ export function loadAuthServerConfig(
     resources: parseList(env.AUTH_SERVER_RESOURCES),
     corsAllowedOrigins: parseOrigins(env.AUTH_SERVER_CORS_ORIGINS),
     dcrEnabled: env.AUTH_SERVER_DCR_ENABLED === 'true',
+    mcpWritesEnabled: env.MCP_WRITES_ENABLED === 'true',
   };
 }

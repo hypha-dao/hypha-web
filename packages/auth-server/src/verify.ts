@@ -1,5 +1,6 @@
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from 'jose';
 import { SPACE_GRANTS_CLAIM, parseGrantClaim, type GrantValue } from './grants';
+import { CLIENT_NAME_CLAIM, parseClientNameClaim } from './client-name';
 import {
   AUTH_SERVER_API_BASE_PATH,
   AUTH_SERVER_JWKS_PATH,
@@ -18,6 +19,11 @@ export type VerifiedAccessToken = {
    * ids. A token without a valid claim is refused (never read as "all").
    */
   spaceGrants: GrantValue;
+  /**
+   * The name the client declared for itself (`client_name` claim), cleaned and capped. Self-
+   * declared, so unverified; `null` when the token has none (tokens minted before the claim).
+   */
+  clientName: string | null;
 };
 
 export type VerifyAccessTokenOptions = {
@@ -103,6 +109,7 @@ export async function verifyAccessToken(
       sub: payload.sub,
       clientId,
       spaceGrants,
+      clientName: parseClientNameClaim(payload[CLIENT_NAME_CLAIM]),
       scopes:
         typeof payload.scope === 'string'
           ? payload.scope.split(' ').filter(Boolean)

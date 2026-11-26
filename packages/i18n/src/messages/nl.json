@@ -6002,6 +6002,11 @@
           "detail": "Je vragen om te stemmen over voorstellen in je spaces. Er wordt niets uitgebracht totdat je elke stem op Hypha goedkeurt en met je wallet ondertekent.",
           "warning": "Hypha heeft deze app niet goedgekeurd. Als je dit toestaat, kan hij je vragen namens jou te stemmen. Sta het alleen toe als je deze app vertrouwt en dit zelf hebt gestart."
         },
+        "signalsWrite": {
+          "title": "Signalen voor je aanmaken",
+          "detail": "Nieuwe signalen plaatsen in de spaces die je hieronder kiest, namens jou en gemarkeerd als afkomstig van deze app. Hij kan niets bewerken of verwijderen. Wat hij aanmaakt, kun je archiveren of verwijderen. Alleen geselecteerd als je het aanvinkt.",
+          "warning": "Hypha heeft deze app niet goedgekeurd. Als je dit toestaat, kan hij namens jou signalen plaatsen in de spaces hieronder. Sta het alleen toe als je deze app vertrouwt en dit zelf hebt gestart."
+        },
         "offlineAccess": {
           "title": "Verbonden blijven",
           "detail": "Deze app verbonden houden zonder dat je opnieuw hoeft in te loggen, tot je hem loskoppelt."
@@ -6012,6 +6017,7 @@
       },
       "spaces": {
         "title": "Welke spaces mag deze app lezen?",
+        "titleWithWrite": "In welke spaces mag deze app lezen en signalen plaatsen?",
         "explicit": {
           "title": "Alleen de spaces die ik kies",
           "detail": "Spaces waar je later lid van wordt, zijn niet inbegrepen."

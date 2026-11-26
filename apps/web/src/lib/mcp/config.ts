@@ -11,7 +11,6 @@
  *   have been issued for exactly that string.
  */
 export const MCP_SCOPE = 'spaces:read';
-export const MCP_SUPPORTED_SCOPES = ['spaces:read', 'offline_access'] as const;
 export const MCP_DEFAULT_HOST = 'mcp.hypha.earth';
 export const MCP_METADATA_PATH = '/.well-known/oauth-protected-resource/mcp';
 
@@ -24,6 +23,12 @@ export type AuthServerView =
       issuer: string;
       resources: readonly string[];
       allowedPersonIds: ReadonlySet<string>;
+      /**
+       * The scopes the authorization server accepts for a resource now (its channel list).
+       * Asked for the resource this server selected, so `scopes_supported` is exactly what a
+       * token for it can carry.
+       */
+      scopesForResource: (resource: string) => readonly string[];
     }
   | { enabled: false };
 
@@ -36,6 +41,7 @@ export type McpConfig = {
     issuer: string;
     resourceMetadataUrl: string;
     allowedPersonIds: ReadonlySet<string>;
+    scopesSupported: readonly string[];
   } | null;
   /** Why it is off (operator log only, never shown to a caller). */
   reason?: string;
@@ -79,6 +85,7 @@ export function loadMcpConfig(env: Env, as: AuthServerView): McpConfig {
       issuer: as.issuer,
       resourceMetadataUrl: `${origin}${MCP_METADATA_PATH}`,
       allowedPersonIds: as.allowedPersonIds,
+      scopesSupported: [...as.scopesForResource(audience)],
     },
   };
 }
