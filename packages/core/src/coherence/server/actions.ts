@@ -260,7 +260,7 @@ export async function updateCoherenceBySlugAction(
     authToken,
     requesterPersonId: self.id,
   });
-  return updateCoherenceBySlug(data, { db });
+  return normalizeCoherence(await updateCoherenceBySlug(data, { db }));
 }
 
 export async function deleteCoherenceBySlugAction(
@@ -280,10 +280,11 @@ export async function deleteCoherenceBySlugAction(
     requesterPersonId: self.id,
     action: 'delete',
   });
-  return deleteCoherenceBySlug(
+  const deleted = await deleteCoherenceBySlug(
     { slug: data.slug, requesterPersonId: self.id },
     { db },
   );
+  return deleted ? normalizeCoherence(deleted) : deleted;
 }
 
 export async function updateCoherenceSignalBySlugAction(
@@ -436,7 +437,7 @@ export async function patchCoherenceTaskBySlugAction(
       });
     }
   }
-  return updated;
+  return normalizeCoherence(updated);
 }
 
 export async function mergeCoherenceTagsAction(
