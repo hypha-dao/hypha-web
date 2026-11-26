@@ -17,9 +17,15 @@ export const integrationTestPatterns = [
 // the thread pool (segfault, core). This is the Vitest 2+ default.
 const pool = 'forks';
 
+// jsdom component tests run 2-3x slower when every package runs at once
+// (turbo, CI); the 5 s default made the slowest (~5 s alone) flaky. A real
+// hang still fails.
+const testTimeout = 15_000;
+
 const unitBase = defineConfig({
   test: {
     pool,
+    testTimeout,
     // Node by default; a file that needs the DOM opts in with a
     // `// @vitest-environment jsdom` comment at the top.
     environment: 'node',
