@@ -3,6 +3,10 @@
 Every change to `index.ts` in this folder needs a `DESCRIPTIONS_VERSION` bump, a snapshot
 update and a line here (K31).
 
+## 1.8.0
+
+- `hypha_list_quests`: each quest carries an `origin` (`kind` and the client's self-declared `clientName`, #2724), explained with the same text as on `hypha_list_signals`. The updates of a quest are not returned, so their origin is not either.
+
 ## 1.7.0
 
 - `hypha_list_signals`: each item carries an `origin` (`kind` and the client's self-declared `clientName`, #2724). The text lists the kinds, says the name is unverified, and says that for `space_key` signals the creator is the author the app named, not verified by Hypha.

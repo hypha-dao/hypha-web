@@ -15,6 +15,7 @@ import {
   type SpaceQuestUpdate,
 } from '@hypha-platform/storage-postgres';
 import type { DbConfig } from '../../common/server/types';
+import { originViewFromColumns } from '../../origin';
 import { findSpaceBySlug } from '../../space/server/queries';
 import {
   isQuestHealthState,
@@ -145,8 +146,7 @@ function mapUpdateRow(row: SpaceQuestUpdate): QuestUpdateRecord {
     authorName: row.authorName,
     authorAvatarUrl: row.authorAvatarUrl ?? null,
     kind,
-    // Ship without MCP live: keep viaAgent false at ship unless explicitly stored
-    viaAgent: false,
+    origin: originViewFromColumns(row),
     milestoneOrder: row.milestoneOrder ?? null,
     milestoneLabel: row.milestoneLabel ?? null,
     text: row.text,
@@ -313,6 +313,7 @@ export function assembleQuestRecord(
     leadName,
     leadAvatarUrl: extras.leadAvatarUrl ?? null,
     creatorPersonId: row.creatorPersonId ?? null,
+    origin: originViewFromColumns(row),
     proposalDocumentId: row.proposalDocumentId ?? null,
     proposalSlug: extras.proposalSlug ?? null,
     proposalWeb3Id: extras.proposalWeb3Id ?? null,

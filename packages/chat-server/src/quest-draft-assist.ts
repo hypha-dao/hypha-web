@@ -24,6 +24,7 @@ import {
   computeSpaceMemberEntries,
   findSpaceBySlug,
   getSpaceQuestBySlug,
+  hyphaAssistantOrigin,
   listSpaceContextSections,
   officialSectionMarkdown,
   updateSpaceQuest,
@@ -600,7 +601,7 @@ ${untrusted(
               : {}),
           },
         },
-        { db },
+        { db, origin: hyphaAssistantOrigin() },
       );
       if (writeResult.ok) {
         updatedQuest = writeResult.quest;

@@ -5919,7 +5919,8 @@
       "before": "Vorher",
       "after": "Nachher",
       "showChanges": "Änderungen anzeigen",
-      "hideChanges": "Änderungen ausblenden"
+      "hideChanges": "Änderungen ausblenden",
+      "aiAgent": "KI-Agent"
     },
     "milestones": {
       "status": {

@@ -746,6 +746,7 @@ function questFixture(
     leadName: 'Ada Lovelace',
     leadAvatarUrl: null,
     creatorPersonId: 1,
+    origin: { kind: 'app', clientLabel: null },
     proposalDocumentId: null,
     proposalSlug: null,
     proposalWeb3Id: null,
