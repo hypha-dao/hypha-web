@@ -60,8 +60,9 @@ describe('all-spaces map chat entry points', () => {
     expect(humanRightPanel).toContain('waitForAcceptedPublicRoomId({');
     expect(humanRightPanel).not.toContain('distinctPublicRoomId');
     expect(humanRightPanel).toContain('acceptEnsuredPublicRoomId(');
-    expect(humanRightPanel).toContain(
-      "mode === 'coherence' && !coherencePublic && !coherenceSlug?.trim()",
+    // A public channel is never a direct conversation (the condition may wrap).
+    expect(humanRightPanel).toMatch(
+      /isDirectConversation =\s*mode === 'coherence' &&\s*!coherencePublic &&\s*!coherenceSlug\?\.trim\(\)/,
     );
     expect(humanRightPanel).toContain('recovered?.getType() ?? null');
     expect(
@@ -70,11 +71,13 @@ describe('all-spaces map chat entry points', () => {
       ),
     ).toBeLessThan(
       humanRightPanel.indexOf(
-        'openingSpaceSlug &&\n      isSpaceLoading &&\n      (coherencePublic || !coherenceRoomId?.trim())',
+        // The space-loading guard; its later terms changed (signal threads).
+        'openingSpaceSlug &&\n      isSpaceLoading &&',
       ),
     );
-    expect(humanRightPanel).toContain(
-      '} else if (!targetRoomId && openingSpaceSlug) {',
+    // Later terms (quest, signal thread) were added to this branch.
+    expect(humanRightPanel).toMatch(
+      /\} else if \(\s*!targetRoomId &&\s*openingSpaceSlug &&/,
     );
     expect(humanRightPanel).toContain(
       'coherenceSpaceSlug?.trim() || routeSpaceSlug || undefined',

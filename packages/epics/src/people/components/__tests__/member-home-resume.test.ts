@@ -50,7 +50,7 @@ describe('home thread resume', () => {
 
   it('moves the open-tab thread into the lasting store', () => {
     window.sessionStorage.setItem(
-      'hypha-member-home-thread',
+      'hypha-member-home-thread-v2',
       JSON.stringify([
         {
           id: 's1',

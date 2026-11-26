@@ -206,9 +206,10 @@ describe('quest list drafts', () => {
     await waitFor(() => {
       expect(screen.queryByTestId('confirm-delete-quest-draft')).toBeNull();
     });
-    expect(screen.getByTestId('quest-draft-delete-error').textContent).toBe(
-      'drafts.deleteFailed',
-    );
+    // The confirm closes before the request settles; the error follows it.
+    expect(
+      (await screen.findByTestId('quest-draft-delete-error')).textContent,
+    ).toBe('drafts.deleteFailed');
     expect(screen.getByTestId('quest-draft-4')).toBeTruthy();
   });
 
