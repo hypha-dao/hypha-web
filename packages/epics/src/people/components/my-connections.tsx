@@ -160,6 +160,12 @@ import {
   type InboxFilter,
   type JoinedChannelSnapshot,
 } from './messages-inbox';
+import {
+  clearInboxListSnapshot,
+  keepPaintedInboxRows,
+  readInboxListSnapshot,
+  writeInboxListSnapshot,
+} from './messages-inbox-snapshot';
 import { GroupFaces } from './group-faces';
 import { MemberHomeMark } from './member-home-mark';
 import { PersonAvatar } from './person-avatar';
@@ -1941,6 +1947,20 @@ export function MyConnections({
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<ConversationRow[]>([]);
   const [channels, setChannels] = useState<JoinedChannelSnapshot[]>([]);
+  const restoredInboxSnapshot = useRef(false);
+  useLayoutEffect(() => {
+    if (restoredInboxSnapshot.current) return;
+    restoredInboxSnapshot.current = true;
+    const snapshot = readInboxListSnapshot();
+    if (snapshot.rows.length > 0) {
+      setRows((current) => (current.length > 0 ? current : snapshot.rows));
+    }
+    if (snapshot.channels.length > 0) {
+      setChannels((current) =>
+        current.length > 0 ? current : snapshot.channels,
+      );
+    }
+  }, []);
   // Direct skips the all-channels merge on open (faster first paint).
   const [inboxFilter, setInboxFilter] = useState<InboxFilter>('direct');
   const [inboxVisibleCount, setInboxVisibleCount] = useState(INBOX_LIST_PAGE);
@@ -1985,8 +2005,19 @@ export function MyConnections({
       compare: sameMemberHome,
     },
   );
+  const [deferFullHome, setDeferFullHome] = useState(
+    () => section === 'messages',
+  );
+  useEffect(() => {
+    if (section !== 'messages') {
+      setDeferFullHome(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setDeferFullHome(false), 2000);
+    return () => window.clearTimeout(timer);
+  }, [section]);
   const fullKey = useEnergyGatedSWRKey(
-    homeKeyReady
+    homeKeyReady && !deferFullHome
       ? (['/api/v1/people/me/intelligence', memberId, 'full'] as const)
       : null,
   );
@@ -2244,21 +2275,43 @@ export function MyConnections({
 
   useEffect(() => {
     if (!client) {
-      setRows([]);
-      setChannels([]);
-      setSynced(false);
-      setInitialSyncComplete(false);
-      setListSettled(false);
+      // Logged out: drop the list. A reconnect or the first Matrix start
+      // keeps the snapshot so the screen does not blink back to a skeleton.
+      if (!isConnecting && !isMatrixAvailable) {
+        setRows([]);
+        setChannels([]);
+        setSynced(false);
+        setInitialSyncComplete(false);
+        setListSettled(false);
+        clearInboxListSnapshot();
+      }
       return;
     }
+    const liveSyncReady = () => {
+      const state = client.getSyncState();
+      return (
+        state === SyncState.Prepared ||
+        (typeof client.isInitialSyncComplete === 'function' &&
+          client.isInitialSyncComplete())
+      );
+    };
     return attachConversationList(client, () => {
+      const ready = liveSyncReady();
       setRows((current) => {
-        const next = conversationRowsSnapshot(client);
-        return sameConversationRows(current, next) ? current : next;
+        const next = keepPaintedInboxRows(
+          current,
+          conversationRowsSnapshot(client),
+          ready,
+        );
+        return sameConversationRows(current, next) ? current : [...next];
       });
       setChannels((current) => {
-        const next = joinedChannelSnapshots(client);
-        return sameChannelSnapshots(current, next) ? current : next;
+        const next = keepPaintedInboxRows(
+          current,
+          joinedChannelSnapshots(client),
+          ready,
+        );
+        return sameChannelSnapshots(current, next) ? current : [...next];
       });
       const state = client.getSyncState();
       // Catchup is the IndexedDB restore path — treat it like Syncing so an
@@ -2279,7 +2332,7 @@ export function MyConnections({
         setInitialSyncComplete(true);
       }
     });
-  }, [client]);
+  }, [client, isConnecting, isMatrixAvailable]);
 
   useEffect(() => {
     if (!client) return;
@@ -2411,7 +2464,12 @@ export function MyConnections({
   useEffect(() => {
     if (dataReady && isMatrixAvailable) setListSettled(true);
   }, [dataReady, isMatrixAvailable]);
-  const listLoading = !listSettled && !dataReady;
+  const listLoading =
+    !listSettled && !dataReady && rows.length === 0 && channels.length === 0;
+  useEffect(() => {
+    if (!listSettled) return;
+    writeInboxListSnapshot({ rows, channels });
+  }, [channels, listSettled, rows]);
   const resolvedMembers = useMemo(
     () =>
       applyResolvedPeerTitles(
@@ -2775,7 +2833,12 @@ export function MyConnections({
   }, [picking, section, shownRows]);
   const [channelPreviewsPending, setChannelPreviewsPending] = useState(false);
   useEffect(() => {
-    if (!client || listLoading || missingChannelPreviewIds.length === 0) {
+    if (
+      !client ||
+      listLoading ||
+      !initialSyncComplete ||
+      missingChannelPreviewIds.length === 0
+    ) {
       setChannelPreviewsPending(false);
       return;
     }
@@ -2793,7 +2856,7 @@ export function MyConnections({
     return () => {
       cancelled = true;
     };
-  }, [client, listLoading, missingChannelPreviewIds]);
+  }, [client, initialSyncComplete, listLoading, missingChannelPreviewIds]);
   const hasMoreInboxRows = inboxWindow?.hasMore ?? false;
   const canLoadMoreInbox =
     !moreFailed &&

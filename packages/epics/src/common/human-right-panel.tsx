@@ -258,6 +258,19 @@ import {
   takeCoherenceRoomCreate,
 } from './human-chat-panel/signal-thread-call';
 import {
+  coherenceJoinTargetKey,
+  shouldResetCoherenceTimeline,
+  shouldRestartCoherenceJoin,
+} from './human-chat-panel/coherence-join-target';
+import {
+  keepVisibleMemberLabel,
+  shouldRefreshMemberLabelsAfterIdle,
+} from './human-chat-panel/member-label-refresh';
+import {
+  dedupeTimelineMessages,
+  timelineMessagesForPersistence,
+} from './human-chat-panel/timeline-message-dedupe';
+import {
   asTimelineDate,
   sortMessagesChronologically,
   upsertTimelineMessages,
@@ -516,10 +529,12 @@ function readPersistedChatHistory(roomId: string): UIMessage[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw) as PersistedUIMessage[];
     if (!Array.isArray(parsed)) return [];
-    return parsed.slice(-CHAT_HISTORY_MAX_ITEMS).map((m) => ({
-      ...m,
-      timestamp: m.timestamp ? new Date(m.timestamp) : undefined,
-    }));
+    return dedupeTimelineMessages(
+      parsed.slice(-CHAT_HISTORY_MAX_ITEMS).map((m) => ({
+        ...m,
+        timestamp: m.timestamp ? new Date(m.timestamp) : undefined,
+      })),
+    );
   } catch {
     return [];
   }
@@ -537,7 +552,12 @@ function writePersistedChatHistory(
       );
       if (existing && existing !== '[]') return;
     }
-    const payload: PersistedUIMessage[] = messages
+    const safe = timelineMessagesForPersistence(messages);
+    // Echoes alone must not wipe a good transcript from the last visit.
+    if (safe.length === 0) {
+      if (messages.length > 0) return;
+    }
+    const payload: PersistedUIMessage[] = safe
       .slice(-CHAT_HISTORY_MAX_ITEMS)
       .map((m) => ({
         ...m,
@@ -1439,6 +1459,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   // Bumped whenever the panel switches target (mode / room / start-conversation).
   // In-flight join catches must not paint "Failed to join…" on a newer shell.
   const joinEpochRef = useRef(0);
+  /** Set once a coherence room is open, so a later flag change does not rejoin. */
+  const settledCoherenceTargetRef = useRef<string | null>(null);
   const createRoomInFlightRef = useRef(
     new Map<string, Promise<{ roomId: string }>>(),
   );
@@ -3458,7 +3480,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           newSenderName = QUEST_HELPER_NAME;
           nextMemberAvatar = undefined;
         } else if (m.role === 'member' && sid) {
-          newSenderName = resolveMemberLabelRef.current(sid);
+          newSenderName = keepVisibleMemberLabel(
+            sid,
+            resolveMemberLabelRef.current(sid),
+            m.senderName,
+          );
           nextMemberAvatar =
             resolveMemberAvatarRef.current(sid) ??
             matrixMemberAvatarSquare(
@@ -3472,7 +3498,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
         const newAuthorLabel =
           m.replyTo?.sourceUserId != null
-            ? resolveMemberLabelRef.current(m.replyTo.sourceUserId)
+            ? keepVisibleMemberLabel(
+                m.replyTo.sourceUserId,
+                resolveMemberLabelRef.current(m.replyTo.sourceUserId),
+                m.replyTo.authorLabel,
+              )
             : m.replyTo?.authorLabel;
 
         const nextReply =
@@ -3537,24 +3567,24 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    const refreshMemberLabelsAfterIdle = () => {
-      if (document.visibilityState !== 'visible') return;
-      profileLookupAttemptedRef.current.clear();
-      profileLookupInFlightRef.current.clear();
+    let hiddenAt = 0;
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        hiddenAt = Date.now();
+        return;
+      }
+      const away = hiddenAt > 0 ? Date.now() - hiddenAt : 0;
+      hiddenAt = 0;
+      // A short switch was clearing profile lookups and re-reading the
+      // timeline, which flashed name masks and duplicate echoes.
+      if (!shouldRefreshMemberLabelsAfterIdle(away)) return;
       setMemberLabelEpoch((n) => n + 1);
-      const rid = roomIdRef.current?.trim();
-      if (rid) syncRoomMessages(rid);
     };
-    document.addEventListener('visibilitychange', refreshMemberLabelsAfterIdle);
-    window.addEventListener('focus', refreshMemberLabelsAfterIdle);
+    document.addEventListener('visibilitychange', onVisibility);
     return () => {
-      document.removeEventListener(
-        'visibilitychange',
-        refreshMemberLabelsAfterIdle,
-      );
-      window.removeEventListener('focus', refreshMemberLabelsAfterIdle);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [syncRoomMessages]);
+  }, []);
 
   // Backfill avatar on self-authored messages after useMe() resolves
   useEffect(() => {
@@ -4069,6 +4099,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     // DM shell with no room yet — do not join; a prior space/network join
     // must not leave its error on this empty Start-a-conversation view.
     if (isStartConversation) {
+      settledCoherenceTargetRef.current = null;
       joinEpochRef.current += 1;
       openingTimelineRoomIdRef.current = null;
       messagesRoomIdRef.current = null;
@@ -4088,28 +4119,29 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       isPublic: coherencePublic,
     });
     const intendedRoomId = coherenceRoomId?.trim() || null;
-    const previousRoomId = roomIdRef.current?.trim();
-    if (previousRoomId) {
-      matrixRef.current.unregisterRoomListener(previousRoomId);
+    const joinKey = coherenceJoinTargetKey({
+      roomId: intendedRoomId,
+      slug: coherenceSlug?.trim() ?? '',
+      spaceSlug: openingSpaceSlug,
+      isPublic: Boolean(coherencePublic),
+      channel: coherenceChannel ?? null,
+    });
+    if (
+      !shouldRestartCoherenceJoin({
+        settledKey: settledCoherenceTargetRef.current,
+        joinKey,
+        openRoomId: roomIdRef.current?.trim() || null,
+      })
+    ) {
+      setIsJoining(false);
+      return;
     }
-    // Lock paints to the inbox room id immediately (before any await). Clearing
-    // openingTimelineRoomIdRef to null lets a late HE paint win over HUMAI.
-    openingTimelineRoomIdRef.current = intendedRoomId;
-    roomIdRef.current = null;
-    messagesRoomIdRef.current = null;
-    setRoomId(null);
-    // Clear the previous room's timeline immediately so a slow join cannot
-    // leave another channel's messages under the new title (HE → HUMAI).
-    setMessages([]);
-    setPaintedRoomId(null);
-    setIsJoining(true);
     // A selected space may only know its slug until the space record loads.
     // Public map→chat also waits: we need `spaces.chatRoomId` so a misbound
     // `#hypha-public-{slug}` alias is not joined as the member room.
     // A public room already open from Messages has its own id and type, so
-    // it does not wait on that space record.
-    // Detach and lock first — the previous effect's cleanup sets
-    // `isJoining` false, and a send must not hit the old room.
+    // it does not wait on that space record. Don't blank the thread while
+    // that record is still loading — that was a reload blink.
     const knownPublicRoomId = coherencePublic
       ? acceptEnsuredPublicRoomId(
           coherenceRoomId,
@@ -4123,23 +4155,47 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       (coherencePublic || (!coherenceRoomId?.trim() && !signalThreadJoin)) &&
       !knownPublicRoomId
     ) {
-      return () => {
-        setIsJoining(false);
-      };
+      return;
     }
-
+    const resetTimeline = shouldResetCoherenceTimeline({
+      intendedRoomId,
+      openRoomId: roomIdRef.current?.trim() || null,
+      openingRoomId: openingTimelineRoomIdRef.current?.trim() || null,
+    });
+    settledCoherenceTargetRef.current = null;
+    if (resetTimeline) {
+      const previousRoomId = roomIdRef.current?.trim();
+      if (previousRoomId && previousRoomId !== intendedRoomId) {
+        matrixRef.current.unregisterRoomListener(previousRoomId);
+      }
+      // Lock paints to the inbox room id immediately (before any await).
+      openingTimelineRoomIdRef.current = intendedRoomId;
+      roomIdRef.current = null;
+      messagesRoomIdRef.current = null;
+      setRoomId(null);
+      // Clear the previous room's timeline immediately so a slow join cannot
+      // leave another channel's messages under the new title (HE → HUMAI).
+      setMessages([]);
+      setPaintedRoomId(null);
+      setIsJoining(true);
+    } else {
+      openingTimelineRoomIdRef.current =
+        intendedRoomId ?? openingTimelineRoomIdRef.current;
+    }
     let cancelled = false;
     const joinEpoch = ++joinEpochRef.current;
 
     const init = async () => {
-      setError(null);
-      setReplyDraft(null);
-      setEditDraft(null);
-      setInput('');
-      setComposerError(null);
-      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
-      setDraftAttachments([]);
-      setSendingPending(null);
+      if (resetTimeline) {
+        setError(null);
+        setReplyDraft(null);
+        setEditDraft(null);
+        setInput('');
+        setComposerError(null);
+        disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+        setDraftAttachments([]);
+        setSendingPending(null);
+      }
       try {
         let targetRoomId = coherenceRoomId?.trim() || null;
         const openingSpaceSlug = coherenceSpaceSlug?.trim() || '';
@@ -4309,6 +4365,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         if (cancelled || joinEpochRef.current !== joinEpoch) return;
         openingTimelineRoomIdRef.current = targetRoomId;
         roomIdRef.current = targetRoomId;
+        settledCoherenceTargetRef.current = joinKey;
         setRoomId(targetRoomId);
         if (
           coherenceSlug?.trim() &&
@@ -4319,7 +4376,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
         void revealRoomTimeline(
           targetRoomId,
-          () => cancelled || openingTimelineRoomIdRef.current !== targetRoomId,
+          () => openingTimelineRoomIdRef.current !== targetRoomId,
         );
       } catch (err) {
         const knownId = coherenceRoomId?.trim();
@@ -4354,12 +4411,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           );
           openingTimelineRoomIdRef.current = recovered.roomId;
           roomIdRef.current = recovered.roomId;
+          settledCoherenceTargetRef.current = joinKey;
           setRoomId(recovered.roomId);
           void revealRoomTimeline(
             recovered.roomId,
-            () =>
-              cancelled ||
-              openingTimelineRoomIdRef.current !== recovered.roomId,
+            () => openingTimelineRoomIdRef.current !== recovered.roomId,
           );
           return;
         }
@@ -4378,7 +4434,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
     return () => {
       cancelled = true;
-      setIsJoining(false);
+      if (resetTimeline) setIsJoining(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -4674,43 +4730,50 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       };
       return sortMessagesChronologically([...timelineMessages, pendingRow]);
     })();
-    if (mode !== 'coherence' || !coherenceSlug?.trim()) return withPending;
-    const firstTextIndex = withPending.findIndex(
-      (row) => !row.isSynthetic && getMessagePlainText(row).trim().length > 0,
-    );
-    if (firstTextIndex < 0) return withPending;
-    const first = withPending[firstTextIndex]!;
-    const attribution = applySignalCreatorToChatAuthor({
-      isDescriptionAnchor: isSignalDescriptionAnchorMessage({
-        isFirstChatTextMessage: true,
-        messageContent: getMessagePlainText(first),
-        signalDescription:
-          openSignalForCreator?.description ?? coherenceDescription,
-      }),
-      viewerPersonId: me?.id,
-      creatorId: openSignalForCreator?.creatorId,
-      creatorName: [signalCreatorPerson?.name, signalCreatorPerson?.surname]
-        .filter(Boolean)
-        .join(' '),
-      viewerName: [me?.name, me?.surname].filter(Boolean).join(' '),
-    });
-    if (!attribution) return withPending;
-    return withPending.map((row, index) =>
-      index === firstTextIndex
-        ? {
-            ...row,
-            ...attribution,
-            senderMatrixId: undefined,
-            avatarUrl: signalCreatorPerson?.avatarUrl?.trim() || row.avatarUrl,
-          }
-        : row,
-    );
+    let resolved = withPending;
+    if (mode === 'coherence' && coherenceSlug?.trim()) {
+      const firstTextIndex = withPending.findIndex(
+        (row) => !row.isSynthetic && getMessagePlainText(row).trim().length > 0,
+      );
+      if (firstTextIndex >= 0) {
+        const first = withPending[firstTextIndex]!;
+        const attribution = applySignalCreatorToChatAuthor({
+          isDescriptionAnchor: isSignalDescriptionAnchorMessage({
+            isFirstChatTextMessage: true,
+            messageContent: getMessagePlainText(first),
+            signalDescription:
+              openSignalForCreator?.description ?? coherenceDescription,
+          }),
+          viewerPersonId: me?.id,
+          creatorId: openSignalForCreator?.creatorId,
+          creatorName: [signalCreatorPerson?.name, signalCreatorPerson?.surname]
+            .filter(Boolean)
+            .join(' '),
+          viewerName: [me?.name, me?.surname].filter(Boolean).join(' '),
+        });
+        if (attribution) {
+          resolved = withPending.map((row, index) =>
+            index === firstTextIndex
+              ? {
+                  ...row,
+                  ...attribution,
+                  senderMatrixId: undefined,
+                  avatarUrl:
+                    signalCreatorPerson?.avatarUrl?.trim() || row.avatarUrl,
+                }
+              : row,
+          );
+        }
+      }
+    }
+    return dedupeTimelineMessages(resolved, currentUserId);
   }, [
     messages,
     paintedRoomId,
     roomId,
     sendingPending,
     currentUserAvatarUrl,
+    currentUserId,
     mode,
     coherenceSlug,
     coherenceDescription,
@@ -6789,7 +6852,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                     onThread={onHelperThread}
                   />
                 ) : null}
-                {isJoining ? (
+                {isJoining && mergedMessages.length === 0 ? (
                   <HumanChatPanelLoader showPreview />
                 ) : (
                   <HumanChatPanelErrorBoundary key={roomId ?? 'messages'}>
@@ -6943,7 +7006,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                     void retryMatrixConnection();
                   }}
                 />
-                {isJoining ? (
+                {isJoining && mergedMessages.length === 0 ? (
                   <HumanChatPanelLoader showPreview />
                 ) : error ? null : (
                   <HumanChatPanelMentionTab
