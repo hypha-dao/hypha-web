@@ -11,6 +11,15 @@ Central index for all project documentation.
 
 ---
 
+## Proposals
+
+Product and platform analyses that are not yet implementation specs.
+
+| Document | Description | Status |
+|---|---|---|
+| [Hypha costs and charging overview](./proposals/hypha-costs-and-charging-overview.md) | Short: what costs Hypha today, and plain ways to charge a user or space | draft |
+| [Hypha Network charging models](./proposals/hypha-network-charging-models.md) | Options for charging spaces/members (card vs existing on-chain activation), split/accounting, and a phased recommendation | draft |
+
 ## Plans
 
 Active implementation plans and feature roadmaps.
