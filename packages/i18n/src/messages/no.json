@@ -5924,7 +5924,8 @@
       "before": "Før",
       "after": "Etter",
       "showChanges": "Vis endringer",
-      "hideChanges": "Skjul endringer"
+      "hideChanges": "Skjul endringer",
+      "aiAgent": "AI-agent"
     },
     "milestones": {
       "status": {

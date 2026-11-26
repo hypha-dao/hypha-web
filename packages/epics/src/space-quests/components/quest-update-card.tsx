@@ -136,7 +136,7 @@ export function QuestUpdateCard({ update }: { update: QuestUpdateRecord }) {
               className="text-[11px] text-[#4b4bff]"
               data-testid="quest-update-ai-label"
             >
-              ✦ AI Agent
+              ✦ {t('updates.aiAgent')}
             </span>
           ) : null}
           {update.milestoneOrder != null || update.milestoneLabel ? (

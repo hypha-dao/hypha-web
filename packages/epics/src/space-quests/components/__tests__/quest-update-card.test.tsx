@@ -13,6 +13,7 @@ vi.mock('next-intl', () => ({
       'updates.after': 'After',
       'updates.showChanges': 'Show changes',
       'updates.hideChanges': 'Hide changes',
+      'updates.aiAgent': 'AI Agent',
     };
     return labels[key] ?? key;
   },
@@ -253,7 +254,9 @@ describe('quest update card', () => {
         />,
       );
       const found = screen.queryByTestId('quest-update-ai-label');
+      const text = found?.textContent ?? null;
       cleanup();
+      if (text !== null) expect(text).toBe('✦ AI Agent');
       return found !== null;
     };
     for (const kind of [
