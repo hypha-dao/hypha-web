@@ -208,8 +208,6 @@ export const spaceQuestUpdates = pgTable(
     authorName: text('author_name').notNull(),
     authorAvatarUrl: text('author_avatar_url'),
     kind: text('kind').notNull().default('post'),
-    // `via_agent` is replaced by the origin columns (#2724). The column stays in the database,
-    // with its default, until the contract migration drops it; code no longer reads or writes it.
     milestoneOrder: integer('milestone_order'),
     milestoneLabel: text('milestone_label'),
     text: text('text').notNull(),
