@@ -8,6 +8,9 @@ import {
   spaceQuests,
 } from '@hypha-platform/storage-postgres';
 import { activateSpaceQuestByDocumentId } from '../mutations';
+import { platformOrigin } from '../../../origin';
+
+const origin = platformOrigin('proposal-executed-webhook');
 
 type QuestRow = {
   id: number;
@@ -200,11 +203,11 @@ describe('activateSpaceQuestByDocumentId', () => {
     const store = createActivationDb([proposedQuest()]);
     const first = await activateSpaceQuestByDocumentId(
       { documentId: 9 },
-      { db: store.db },
+      { db: store.db, origin },
     );
     const second = await activateSpaceQuestByDocumentId(
       { documentId: 9 },
-      { db: store.db },
+      { db: store.db, origin },
     );
 
     expect(first).toBe(1);
@@ -214,9 +217,25 @@ describe('activateSpaceQuestByDocumentId', () => {
       expect.objectContaining({
         questId: 4,
         text: 'Quest proposal accepted — Quest is now Active.',
+        originKind: 'hypha_platform',
+        originClientId: null,
+        originClientLabel: 'proposal-executed-webhook',
       }),
     ]);
+    expect(store.posts()[0]).not.toHaveProperty('viaAgent');
     expect(store.rollbacks()).toBe(0);
+  });
+
+  it('refuses to run without an origin, before any read or write (#2724)', async () => {
+    const store = createActivationDb([proposedQuest()]);
+    await expect(
+      activateSpaceQuestByDocumentId(
+        { documentId: 9 },
+        { db: store.db, origin: undefined as never },
+      ),
+    ).rejects.toThrow(/origin is required/);
+    expect(store.quests()[0]?.status).toBe('proposed');
+    expect(store.posts()).toEqual([]);
   });
 
   it('stores the proposal creator on the acceptance post', async () => {
@@ -233,7 +252,10 @@ describe('activateSpaceQuestByDocumentId', () => {
       ],
       [{ id: 9, creatorId: 12 }],
     );
-    await activateSpaceQuestByDocumentId({ documentId: 9 }, { db: store.db });
+    await activateSpaceQuestByDocumentId(
+      { documentId: 9 },
+      { db: store.db, origin },
+    );
     expect(store.posts()[0]).toEqual(
       expect.objectContaining({
         text: 'Quest proposal accepted — Quest is now Active.',
@@ -258,7 +280,10 @@ describe('activateSpaceQuestByDocumentId', () => {
       ],
       [{ id: 9, creatorId: 12 }],
     );
-    await activateSpaceQuestByDocumentId({ documentId: 9 }, { db: store.db });
+    await activateSpaceQuestByDocumentId(
+      { documentId: 9 },
+      { db: store.db, origin },
+    );
     expect(store.posts()[0]).toEqual(
       expect.objectContaining({
         authorPersonId: 12,
@@ -281,7 +306,10 @@ describe('activateSpaceQuestByDocumentId', () => {
         { id: 7, name: 'Ada', surname: 'Lovelace', avatarUrl: null },
       ],
     );
-    await activateSpaceQuestByDocumentId({ documentId: 9 }, { db: store.db });
+    await activateSpaceQuestByDocumentId(
+      { documentId: 9 },
+      { db: store.db, origin },
+    );
     expect(store.posts()[0]).toEqual(
       expect.objectContaining({
         authorPersonId: 4,
@@ -303,7 +331,10 @@ describe('activateSpaceQuestByDocumentId', () => {
         },
       ],
     );
-    await activateSpaceQuestByDocumentId({ documentId: 9 }, { db: store.db });
+    await activateSpaceQuestByDocumentId(
+      { documentId: 9 },
+      { db: store.db, origin },
+    );
     expect(store.posts()[0]).toEqual(
       expect.objectContaining({
         authorPersonId: 7,
@@ -318,7 +349,10 @@ describe('activateSpaceQuestByDocumentId', () => {
       [proposedQuest()],
       [{ id: 7, avatarUrl: null }],
     );
-    await activateSpaceQuestByDocumentId({ documentId: 9 }, { db: store.db });
+    await activateSpaceQuestByDocumentId(
+      { documentId: 9 },
+      { db: store.db, origin },
+    );
     expect(store.posts()[0]).toEqual(
       expect.objectContaining({
         authorPersonId: 7,
@@ -331,8 +365,14 @@ describe('activateSpaceQuestByDocumentId', () => {
   it('lets one of two overlapping activations claim the proposed row', async () => {
     const store = createActivationDb([proposedQuest()]);
     const [left, right] = await Promise.all([
-      activateSpaceQuestByDocumentId({ documentId: 9 }, { db: store.db }),
-      activateSpaceQuestByDocumentId({ documentId: 9 }, { db: store.db }),
+      activateSpaceQuestByDocumentId(
+        { documentId: 9 },
+        { db: store.db, origin },
+      ),
+      activateSpaceQuestByDocumentId(
+        { documentId: 9 },
+        { db: store.db, origin },
+      ),
     ]);
 
     expect([left, right].sort()).toEqual([0, 1]);
@@ -345,7 +385,10 @@ describe('activateSpaceQuestByDocumentId', () => {
     store.failNextInsert();
 
     await expect(
-      activateSpaceQuestByDocumentId({ documentId: 9 }, { db: store.db }),
+      activateSpaceQuestByDocumentId(
+        { documentId: 9 },
+        { db: store.db, origin },
+      ),
     ).rejects.toThrow('acceptance post failed');
 
     expect(store.quests()[0]?.status).toBe('proposed');

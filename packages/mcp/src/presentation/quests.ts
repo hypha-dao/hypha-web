@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import type { QuestItem } from '@hypha-platform/core/server';
+import { TOOLS } from '../descriptions';
 import { sanitiseUserText } from '../sanitiser';
+import { originSchema, presentOrigin } from './origin';
 import { userText } from './user-text';
 
 export const QUEST_STATUSES = [
@@ -142,6 +144,7 @@ export const questItemSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   viewer: z.object({ isLead: z.boolean(), isMember: z.boolean() }),
+  origin: originSchema.describe(TOOLS.hypha_list_quests.fields.origin),
 });
 export type QuestPresented = z.infer<typeof questItemSchema>;
 
@@ -262,5 +265,6 @@ export function presentQuest(
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
     viewer: item.viewer,
+    origin: presentOrigin(item.origin),
   };
 }

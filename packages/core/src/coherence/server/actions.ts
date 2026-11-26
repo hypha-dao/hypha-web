@@ -2,6 +2,7 @@
 
 import { getDb } from '../../common/server/get-db';
 import { findSelf } from '../../people/server/queries';
+import { appOrigin } from '../../origin';
 import {
   CreateCoherenceInput,
   PatchCoherenceTaskBySlugInput,
@@ -210,12 +211,14 @@ export async function createCoherenceAction(
       'Could not resolve authenticated user for create coherence',
     );
   }
+  // The origin comes from this entry point, never from `data` (which the browser supplies);
+  // createCoherence also ignores any key it does not list, so `data` cannot set one.
   const newSignal = await createCoherence(
     {
       ...data,
       creatorId: creatorIdForAuthenticatedCreate(self.id, data.creatorId),
     },
-    { db },
+    { db, origin: appOrigin() },
   );
   if (newSignal.spaceId != null) {
     await notifySignalAssigned({
@@ -257,7 +260,7 @@ export async function updateCoherenceBySlugAction(
     authToken,
     requesterPersonId: self.id,
   });
-  return updateCoherenceBySlug(data, { db });
+  return normalizeCoherence(await updateCoherenceBySlug(data, { db }));
 }
 
 export async function deleteCoherenceBySlugAction(
@@ -277,10 +280,11 @@ export async function deleteCoherenceBySlugAction(
     requesterPersonId: self.id,
     action: 'delete',
   });
-  return deleteCoherenceBySlug(
+  const deleted = await deleteCoherenceBySlug(
     { slug: data.slug, requesterPersonId: self.id },
     { db },
   );
+  return deleted ? normalizeCoherence(deleted) : deleted;
 }
 
 export async function updateCoherenceSignalBySlugAction(
@@ -433,7 +437,7 @@ export async function patchCoherenceTaskBySlugAction(
       });
     }
   }
-  return updated;
+  return normalizeCoherence(updated);
 }
 
 export async function mergeCoherenceTagsAction(

@@ -24,6 +24,7 @@ import { shouldCloseSignalDetailChat } from '../lib/signal-detail-chat';
 import { matrixUserIdToCanonicalPrivySub } from '../../common/human-chat-panel/matrix-room-member-display';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
+import { signalOriginLabel } from '../lib/signal-origin-label';
 import { useSignalRoomActivity } from '../hooks/use-signal-room-activity';
 import { useSignalSpaceMembership } from '../hooks/use-is-signal-space-non-member';
 import {
@@ -328,12 +329,16 @@ export function SignalPage({
   const lastReplyPerson = lastReplySub
     ? lastReplyPeople.get(lastReplySub)
     : undefined;
-  const { creatorDisplayName } = useSignalCreatorMeta({
+  const { creatorDisplayName, relaySourceLabel } = useSignalCreatorMeta({
     creatorId: signal?.creatorId ?? null,
     createdAt: signal?.createdAt ?? new Date(0),
     description: signal?.description ?? '',
     title: signal?.title ?? '',
     tags: signal?.tags ?? [],
+    origin: signal?.origin,
+  });
+  const originLabel = signalOriginLabel(signal?.origin, t, {
+    relaySourceLabel,
   });
   const { person: creator } = usePersonById({ id: signal?.creatorId });
   const mediaSummary = useSignalMediaSummary(
@@ -594,6 +599,13 @@ export function SignalPage({
               />
               <span className="break-words">{creatorDisplayName}</span>
             </MetaItem>
+            {originLabel ? (
+              <MetaItem label={t('signalOrigin')}>
+                <span className="break-words" data-testid="signal-page-origin">
+                  {originLabel}
+                </span>
+              </MetaItem>
+            ) : null}
             {created ? (
               <MetaItem label={t('signalCreatedLabel')}>{created}</MetaItem>
             ) : null}

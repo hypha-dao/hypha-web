@@ -4207,6 +4207,12 @@
     "callShareQualityShow": "Auflösung anzeigen",
 
     "callShareQualityHide": "Auflösung ausblenden",
+    "callShareQualityPicker": "Empfangsqualität",
+    "callShareQualityAuto": "Auto",
+    "callShareQualityNeedsResize": "zum Nutzen vergrößern",
+    "callShareQualityReasonAuto": "Auto: an deine Kachel angepasst",
+    "callShareQualityReasonCapped": "Begrenzt auf {label}",
+    "callShareQualityReasonNetwork": "Durch das Netzwerk begrenzt",
     "callParticipantMicOff": "Mikrofon aus",
     "callLeftAudio": "Du hast den Sprachanruf verlassen.",
     "callLeftVideo": "Du hast den Videoanruf verlassen.",
@@ -4811,6 +4817,15 @@
     "signalDownload": "Herunterladen",
     "createSignal": "Signal erstellen",
     "signalCreatedBy": "Erstellt von",
+    "signalOrigin": "Herkunft",
+    "signalOriginApp": "Hypha-App",
+    "signalOriginAssistant": "Hypha-KI-Assistent",
+    "signalOriginMcpClient": "KI-Client",
+    "signalOriginApiClient": "Verbundene App",
+    "signalOriginSpaceKey": "Community-App",
+    "signalOriginJob": "Hypha Intelligence",
+    "signalOriginPlatform": "Hypha-Plattform",
+    "signalOriginRelayedFrom": "weitergeleitet von {space}",
     "signalCreatedLabel": "Erstellt",
     "signalLastReplyLabel": "Letzte Antwort",
     "signalDiscussion": "Diskussion",
@@ -5919,7 +5934,8 @@
       "before": "Vorher",
       "after": "Nachher",
       "showChanges": "Änderungen anzeigen",
-      "hideChanges": "Änderungen ausblenden"
+      "hideChanges": "Änderungen ausblenden",
+      "aiAgent": "KI-Agent"
     },
     "milestones": {
       "status": {

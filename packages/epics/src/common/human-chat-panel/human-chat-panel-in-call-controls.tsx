@@ -47,6 +47,7 @@ import {
 import { HumanChatPanelCallReactPopover } from './human-chat-panel-call-react-popover';
 import type { CallFloatingReactionStyle } from './call-zoom-reaction-catalog';
 import { HumanChatPanelCallScreenshareMenu } from './human-chat-panel-call-screenshare-menu';
+import { HumanChatPanelCallShareQualityMenu } from './human-chat-panel-call-share-quality-menu';
 import {
   callAccentAlertActionButtonClassName,
   callAccentAlertText,
@@ -1183,22 +1184,34 @@ export function HumanChatPanelInCallControls({
                   <Video className={icon} strokeWidth={lucideStroke} />
                 )}
               </button>
-              <HumanChatPanelCallScreenshareMenu
-                isScreensharing={isScreensharing}
-                disabled={controlsDisabled}
-                remoteScreenshareActive={remoteScreenshareActive}
-                onStartScreenshare={onStartScreenshare}
-                onStopScreenshare={onStopScreenshare}
-                triggerClassName={cn(
-                  isScreensharing ? shareActiveBtn : shareIdleBtn,
-                  'inline-flex items-center justify-center',
-                  'disabled:cursor-not-allowed',
-                  controlsDisabled && 'opacity-50',
-                )}
-                activeTriggerClassName="inline-flex items-center justify-center"
-                iconClassName={icon}
-                iconStrokeWidth={lucideStroke}
-              />
+              <>
+                <HumanChatPanelCallScreenshareMenu
+                  isScreensharing={isScreensharing}
+                  disabled={controlsDisabled}
+                  remoteScreenshareActive={remoteScreenshareActive}
+                  onStartScreenshare={onStartScreenshare}
+                  onStopScreenshare={onStopScreenshare}
+                  triggerClassName={cn(
+                    isScreensharing ? shareActiveBtn : shareIdleBtn,
+                    'inline-flex items-center justify-center',
+                    'disabled:cursor-not-allowed',
+                    controlsDisabled && 'opacity-50',
+                  )}
+                  activeTriggerClassName="inline-flex items-center justify-center"
+                  iconClassName={icon}
+                  iconStrokeWidth={lucideStroke}
+                />
+                <HumanChatPanelCallShareQualityMenu
+                  triggerClassName={cn(
+                    shareIdleBtn,
+                    'inline-flex items-center justify-center',
+                  )}
+                  iconClassName={icon}
+                  iconStrokeWidth={lucideStroke}
+                  pip={isPipDensity}
+                  dark={isFull}
+                />
+              </>
               {renderMoreMenu}
             </div>
           ) : useSymmetricalDockToolbar ? (
@@ -1267,22 +1280,34 @@ export function HumanChatPanelInCallControls({
                 )}
               >
                 {!leaveOnly && showAdvancedCallControls ? (
-                  <HumanChatPanelCallScreenshareMenu
-                    isScreensharing={isScreensharing}
-                    disabled={controlsDisabled}
-                    remoteScreenshareActive={remoteScreenshareActive}
-                    onStartScreenshare={onStartScreenshare}
-                    onStopScreenshare={onStopScreenshare}
-                    triggerClassName={cn(
-                      isScreensharing ? shareActiveBtn : shareIdleBtn,
-                      'inline-flex items-center justify-center',
-                      'disabled:cursor-not-allowed',
-                      controlsDisabled && 'opacity-50',
-                    )}
-                    activeTriggerClassName="inline-flex items-center justify-center"
-                    iconClassName={icon}
-                    iconStrokeWidth={lucideStroke}
-                  />
+                  <>
+                    <HumanChatPanelCallScreenshareMenu
+                      isScreensharing={isScreensharing}
+                      disabled={controlsDisabled}
+                      remoteScreenshareActive={remoteScreenshareActive}
+                      onStartScreenshare={onStartScreenshare}
+                      onStopScreenshare={onStopScreenshare}
+                      triggerClassName={cn(
+                        isScreensharing ? shareActiveBtn : shareIdleBtn,
+                        'inline-flex items-center justify-center',
+                        'disabled:cursor-not-allowed',
+                        controlsDisabled && 'opacity-50',
+                      )}
+                      activeTriggerClassName="inline-flex items-center justify-center"
+                      iconClassName={icon}
+                      iconStrokeWidth={lucideStroke}
+                    />
+                    <HumanChatPanelCallShareQualityMenu
+                      triggerClassName={cn(
+                        shareIdleBtn,
+                        'inline-flex items-center justify-center',
+                      )}
+                      iconClassName={icon}
+                      iconStrokeWidth={lucideStroke}
+                      pip={isPipDensity}
+                      dark={isFull}
+                    />
+                  </>
                 ) : null}
                 {leaveOnly && callReactionsToolbarVisible ? (
                   <HumanChatPanelCallReactPopover
@@ -1399,22 +1424,34 @@ export function HumanChatPanelInCallControls({
                     )}
                   </button>
                   {showAdvancedCallControls ? (
-                    <HumanChatPanelCallScreenshareMenu
-                      isScreensharing={isScreensharing}
-                      disabled={controlsDisabled}
-                      remoteScreenshareActive={remoteScreenshareActive}
-                      onStartScreenshare={onStartScreenshare}
-                      onStopScreenshare={onStopScreenshare}
-                      triggerClassName={cn(
-                        isScreensharing ? shareActiveBtn : shareIdleBtn,
-                        'inline-flex items-center justify-center',
-                        'disabled:cursor-not-allowed',
-                        !isFull && controlsDisabled && 'opacity-50',
-                      )}
-                      activeTriggerClassName="inline-flex items-center justify-center"
-                      iconClassName={icon}
-                      iconStrokeWidth={lucideStroke}
-                    />
+                    <>
+                      <HumanChatPanelCallScreenshareMenu
+                        isScreensharing={isScreensharing}
+                        disabled={controlsDisabled}
+                        remoteScreenshareActive={remoteScreenshareActive}
+                        onStartScreenshare={onStartScreenshare}
+                        onStopScreenshare={onStopScreenshare}
+                        triggerClassName={cn(
+                          isScreensharing ? shareActiveBtn : shareIdleBtn,
+                          'inline-flex items-center justify-center',
+                          'disabled:cursor-not-allowed',
+                          !isFull && controlsDisabled && 'opacity-50',
+                        )}
+                        activeTriggerClassName="inline-flex items-center justify-center"
+                        iconClassName={icon}
+                        iconStrokeWidth={lucideStroke}
+                      />
+                      <HumanChatPanelCallShareQualityMenu
+                        triggerClassName={cn(
+                          shareIdleBtn,
+                          'inline-flex items-center justify-center',
+                        )}
+                        iconClassName={icon}
+                        iconStrokeWidth={lucideStroke}
+                        pip={isPipDensity}
+                        dark={isFull}
+                      />
+                    </>
                   ) : null}
                   {callReactionsToolbarVisible ? (
                     <HumanChatPanelCallReactPopover

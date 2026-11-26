@@ -4208,6 +4208,12 @@
     "callShareQualityShow": "Vis oppløsning",
 
     "callShareQualityHide": "Skjul oppløsning",
+    "callShareQualityPicker": "Mottakskvalitet",
+    "callShareQualityAuto": "Auto",
+    "callShareQualityNeedsResize": "forstørr for å bruke",
+    "callShareQualityReasonAuto": "Auto: tilpasset ruten din",
+    "callShareQualityReasonCapped": "Begrenset til {label}",
+    "callShareQualityReasonNetwork": "Begrenset av nettverket",
     "callParticipantMicOff": "Mikrofon av",
     "callLeftAudio": "Du forlot talesamtalen.",
     "callLeftVideo": "Du forlot videosamtalen.",
@@ -4812,6 +4818,15 @@
     "signalDownload": "Last ned",
     "createSignal": "Opprett signal",
     "signalCreatedBy": "Opprettet av",
+    "signalOrigin": "Opprinnelse",
+    "signalOriginApp": "Hypha-appen",
+    "signalOriginAssistant": "Hypha AI-assistent",
+    "signalOriginMcpClient": "AI-klient",
+    "signalOriginApiClient": "Tilkoblet app",
+    "signalOriginSpaceKey": "Fellesskapsapp",
+    "signalOriginJob": "Hypha Intelligence",
+    "signalOriginPlatform": "Hypha-plattformen",
+    "signalOriginRelayedFrom": "videresendt fra {space}",
     "signalCreatedLabel": "Opprettet",
     "signalLastReplyLabel": "Siste svar",
     "signalDiscussion": "Diskusjon",
@@ -5924,7 +5939,8 @@
       "before": "Før",
       "after": "Etter",
       "showChanges": "Vis endringer",
-      "hideChanges": "Skjul endringer"
+      "hideChanges": "Skjul endringer",
+      "aiAgent": "AI-agent"
     },
     "milestones": {
       "status": {

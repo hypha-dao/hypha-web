@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  appOrigin,
   deleteSpaceQuest,
   questSchemaErrorPayload,
   schemaPatchSpaceQuest,
@@ -67,7 +68,7 @@ export async function PATCH(
         patch: parsed.data,
         actor: auth.actor,
       },
-      { db },
+      { db, origin: appOrigin() },
     );
     if (!result.ok) return questWriteErrorResponse(result.error);
     return NextResponse.json(result.quest);

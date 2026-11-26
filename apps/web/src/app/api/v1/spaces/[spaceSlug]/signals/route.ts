@@ -8,6 +8,7 @@ import {
   isUniqueViolation,
   normalizeCoherence,
   schemaIngestSignal,
+  spaceKeyOrigin,
   type Coherence,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -156,7 +157,11 @@ export async function POST(
           source: apiKey.source,
           externalId: payload.externalId ?? null,
         },
-        { db },
+        // A community app writing with a space key: the key's id and its source label.
+        {
+          db,
+          origin: spaceKeyOrigin({ keyId: apiKey.id, source: apiKey.source }),
+        },
       );
     } catch (error) {
       // Two retries can race past the replay check; the unique index is what

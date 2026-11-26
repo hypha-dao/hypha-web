@@ -9,6 +9,7 @@ import {
   TrackEvent,
   type LocalParticipant,
   type RemoteParticipant,
+  type RemoteTrackPublication,
 } from 'livekit-client';
 import { matrixUserIdFromLiveKitParticipant } from '@hypha-platform/core/client';
 
@@ -134,6 +135,17 @@ class LiveKitAdaptedCallFeed {
     return this.participant.getTrackPublication(this.trackSource)?.track;
   }
 
+  /**
+   * Remote publication for this feed's source (#2742), to read the published layers and apply a
+   * viewer quality cap. Undefined for local feeds.
+   */
+  getRemotePublication(): RemoteTrackPublication | undefined {
+    if (this.isLocalFeed) return undefined;
+    return this.participant.getTrackPublication(this.trackSource) as
+      | RemoteTrackPublication
+      | undefined;
+  }
+
   /** Highest resolution the sender publishes for this source (#2427 quality badge). */
   getPublishedDimensions(): Track.Dimensions | undefined {
     return this.participant.getTrackPublication(this.trackSource)?.dimensions;
@@ -257,4 +269,11 @@ export function publishedDimensionsFromCallFeed(
 
 export function liveKitTrackFromCallFeed(feed: CallFeed): Track | undefined {
   return (feed as unknown as LiveKitAdaptedCallFeed).getLiveKitTrack?.();
+}
+
+/** Remote screenshare publication behind a feed (#2742); undefined for local feeds. */
+export function remotePublicationFromCallFeed(
+  feed: CallFeed,
+): RemoteTrackPublication | undefined {
+  return (feed as unknown as LiveKitAdaptedCallFeed).getRemotePublication?.();
 }

@@ -2,6 +2,7 @@ import {
   Alchemy,
   activateSpaceQuestByDocumentId,
   linkDeployedTokenForProposal,
+  platformOrigin,
   ratifySpaceContextSectionsByDocumentId,
 } from '@hypha-platform/core/server';
 import { daoProposalsImplementationAbi } from '@hypha-platform/core/generated';
@@ -112,7 +113,7 @@ export const POST = proposalExecutedSigningKey
           if (proposalId === undefined) return;
           const activated = await activateSpaceQuestByDocumentId(
             { web3ProposalId: proposalId },
-            { db },
+            { db, origin: platformOrigin('proposal-executed-webhook') },
           );
           if (activated > 0) {
             console.info(

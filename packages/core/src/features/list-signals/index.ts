@@ -27,6 +27,7 @@ import {
 } from '../../coherence/signal-workflow';
 import { parseCapitalKeys, type CapitalKey } from '../../network/capitals';
 import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
+import { originViewFromColumns, type OriginView } from '../../origin';
 
 export type ListSignalsInput = {
   spaceSlug: string;
@@ -81,6 +82,11 @@ export type SignalItem = {
   viewer: { isCreator: boolean; vote: 'up' | 'down' | null };
   /** Display name only: never an address or a person id. */
   creatorName: string | null;
+  /**
+   * Which path created the signal (#2724): the kind and the client's self-declared name, never
+   * the client id. `unknown` for signals written before origin was recorded.
+   */
+  origin: OriginView;
   /** From when signals doubled as tasks; kept for the migration period. */
   taskFields: {
     status: string;
@@ -300,6 +306,7 @@ export async function listSignals(
           vote: vote?.myDirection ?? null,
         },
         creatorName: row.creatorName,
+        origin: originViewFromColumns(row),
         taskFields: {
           status: row.status,
           statusCategory: categoryOf.get(row.status) ?? null,

@@ -3635,6 +3635,12 @@
     "callShareQualityShow": "Afficher la résolution",
 
     "callShareQualityHide": "Masquer la résolution",
+    "callShareQualityPicker": "Qualité de réception",
+    "callShareQualityAuto": "Auto",
+    "callShareQualityNeedsResize": "agrandir pour utiliser",
+    "callShareQualityReasonAuto": "Auto : adaptée à votre vignette",
+    "callShareQualityReasonCapped": "Limitée à {label}",
+    "callShareQualityReasonNetwork": "Limitée par le réseau",
     "callParticipantMicOff": "Micro coupé",
     "callLeftAudio": "Vous avez quitté l'appel vocal.",
     "callLeftVideo": "Vous avez quitté l'appel vidéo.",
@@ -4236,6 +4242,15 @@
     "signalDownload": "Télécharger",
     "createSignal": "Créer un signal",
     "signalCreatedBy": "Créé par",
+    "signalOrigin": "Origine",
+    "signalOriginApp": "App Hypha",
+    "signalOriginAssistant": "Assistant IA Hypha",
+    "signalOriginMcpClient": "Client IA",
+    "signalOriginApiClient": "App connectée",
+    "signalOriginSpaceKey": "App de la communauté",
+    "signalOriginJob": "Hypha Intelligence",
+    "signalOriginPlatform": "Plateforme Hypha",
+    "signalOriginRelayedFrom": "relayé depuis {space}",
     "signalCreatedLabel": "Créé",
     "signalLastReplyLabel": "Dernière réponse",
     "signalDiscussion": "Discussion",
@@ -5916,7 +5931,8 @@
       "before": "Avant",
       "after": "Après",
       "showChanges": "Afficher les modifications",
-      "hideChanges": "Masquer les modifications"
+      "hideChanges": "Masquer les modifications",
+      "aiAgent": "Agent IA"
     },
     "milestones": {
       "status": {

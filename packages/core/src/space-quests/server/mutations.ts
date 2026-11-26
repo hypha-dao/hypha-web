@@ -70,6 +70,10 @@ import type {
 } from '../validation';
 import type { z } from 'zod';
 import { getSpaceQuestBySlug } from './queries';
+import { originToColumns, type Origin } from '../../origin';
+
+/** Every quest writer takes the origin of the path that called it; it never comes from input. */
+export type QuestWriteConfig = DbConfig & { origin: Origin };
 
 export type SpaceQuestWriteError =
   | 'not_found'
@@ -326,8 +330,10 @@ export async function createSpaceQuest(
       avatarUrl?: string | null;
     } | null;
   },
-  { db }: DbConfig,
+  { db, origin }: QuestWriteConfig,
 ): Promise<SpaceQuestWriteResult> {
+  // Checked before anything else: no origin, no write.
+  const originColumns = originToColumns(origin);
   const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
   if (!space) return { ok: false, error: 'not_found' };
 
@@ -393,6 +399,7 @@ export async function createSpaceQuest(
       deliverablesEnabled: (input.deliverables ?? []).some(
         (item) => item.name.trim().length > 0,
       ),
+      ...originColumns,
     })
     .returning();
 
@@ -462,7 +469,6 @@ export async function createSpaceQuest(
     authorName: leadName,
     authorAvatarUrl: actor?.avatarUrl ?? null,
     kind: 'post',
-    viaAgent: false,
     milestoneOrder: null,
     milestoneLabel: null,
     text:
@@ -470,6 +476,7 @@ export async function createSpaceQuest(
         ? 'proposed, waiting for votes'
         : 'created the quest',
     links: [],
+    ...originColumns,
   });
 
   const quest = await getSpaceQuestBySlug(
@@ -571,8 +578,10 @@ export async function updateSpaceQuest(
       avatarUrl?: string | null;
     };
   },
-  { db }: DbConfig,
+  { db, origin }: QuestWriteConfig,
 ): Promise<SpaceQuestWriteResult> {
+  // The quest keeps the origin it was created with; this one goes on the update rows written here.
+  const originColumns = originToColumns(origin);
   const current = await getSpaceQuestBySlug({ spaceSlug, questSlug }, { db });
   if (!current) return { ok: false, error: 'not_found' };
 
@@ -1001,12 +1010,12 @@ export async function updateSpaceQuest(
           authorName: actorName,
           authorAvatarUrl: actor.avatarUrl ?? null,
           kind: 'edit_event',
-          viaAgent: false,
           milestoneOrder: null,
           milestoneLabel: null,
           text: ev.text,
           links: [],
           change: ev.change,
+          ...originColumns,
         })),
       );
     }
@@ -1056,8 +1065,9 @@ export async function postSpaceQuestUpdate(
       avatarUrl?: string | null;
     };
   },
-  { db }: DbConfig,
+  { db, origin }: QuestWriteConfig,
 ): Promise<SpaceQuestWriteResult> {
+  const originColumns = originToColumns(origin);
   const current = await getSpaceQuestBySlug({ spaceSlug, questSlug }, { db });
   if (!current) return { ok: false, error: 'not_found' };
   if (current.status === 'archived') {
@@ -1081,11 +1091,11 @@ export async function postSpaceQuestUpdate(
     authorName: actorName,
     authorAvatarUrl: actor.avatarUrl ?? null,
     kind: 'post',
-    viaAgent: false,
     milestoneOrder: input.milestoneOrder ?? null,
     milestoneLabel,
     text: input.text.trim(),
     links: input.links ?? [],
+    ...originColumns,
   });
 
   await db
@@ -1216,8 +1226,9 @@ export async function activateSpaceQuestByDocumentId(
     documentId,
     web3ProposalId,
   }: { documentId?: number; web3ProposalId?: number },
-  { db }: { db: TransactionalDatabase },
+  { db, origin }: { db: TransactionalDatabase; origin: Origin },
 ): Promise<number> {
+  const originColumns = originToColumns(origin);
   let targetDocId = documentId;
   if (targetDocId == null && web3ProposalId != null) {
     const [doc] = await db
@@ -1265,9 +1276,9 @@ export async function activateSpaceQuestByDocumentId(
           authorName: author.name,
           authorAvatarUrl: author.avatarUrl,
           kind: 'post',
-          viaAgent: false,
           text: QUEST_PROPOSAL_ACCEPTED_TEXT,
           links: [],
+          ...originColumns,
         });
 
         return true;

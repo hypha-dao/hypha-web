@@ -35,6 +35,9 @@ import { findSelf } from '../../people/server/queries';
 import { checkSpaceAccessForSpace, findSpaceBySlug } from '../../space/server';
 import { getAllOrganizationSpacesForNodeById } from '../../space/server/web3';
 import { createCoherence } from '../server/mutations';
+import { jobOrigin } from '../../origin';
+
+const testOrigin = jobOrigin('signal-orchestrator');
 
 const mockedFindSelf = vi.mocked(findSelf);
 const mockedCheckAccess = vi.mocked(checkSpaceAccessForSpace);
@@ -70,6 +73,7 @@ describe('createSystemAiSignalForSpaceBySlug — orchestrator-only path', () => 
   it('succeeds with no authToken, skips the access gate, and writes a null creatorId', async () => {
     const result = await createSystemAiSignalForSpaceBySlug(baseInput, {
       db: {} as never,
+      origin: testOrigin,
     });
 
     expect(result.ok).toBe(true);
@@ -77,7 +81,8 @@ describe('createSystemAiSignalForSpaceBySlug — orchestrator-only path', () => 
     expect(mockedFindSelf).not.toHaveBeenCalled();
     expect(mockedCreateCoherence).toHaveBeenCalledWith(
       expect.objectContaining({ creatorId: null }),
-      expect.anything(),
+      // The origin the caller passed reaches the write unchanged.
+      expect.objectContaining({ origin: testOrigin }),
     );
     if (result.ok) {
       expect(result.creatorId).toBeNull();
@@ -92,7 +97,7 @@ describe('createAiSignalForSpaceBySlug — user-facing path always requires real
 
     const result = await createAiSignalForSpaceBySlug(
       { ...baseInput, authToken: 'real-privy-jwt' },
-      { db: {} as never },
+      { db: {} as never, origin: testOrigin },
     );
 
     expect(result.ok).toBe(true);
@@ -109,7 +114,7 @@ describe('createAiSignalForSpaceBySlug — user-facing path always requires real
   it('a caller with no authToken is rejected (no accidental bypass — there is no flag to set)', async () => {
     const result = await createAiSignalForSpaceBySlug(
       { ...baseInput, authToken: '' },
-      { db: {} as never },
+      { db: {} as never, origin: testOrigin },
     );
 
     expect(result.ok).toBe(false);
@@ -166,6 +171,7 @@ describe('relaySystemAiSignalToEcosystemSpace — ecosystem-root gate', () => {
 
     const result = await relaySystemAiSignalToEcosystemSpace(relayInput, {
       db: {} as never,
+      origin: testOrigin,
     });
 
     expect(result.ok).toBe(true);
@@ -194,6 +200,7 @@ describe('relaySystemAiSignalToEcosystemSpace — ecosystem-root gate', () => {
 
     const result = await relaySystemAiSignalToEcosystemSpace(relayInput, {
       db: {} as never,
+      origin: testOrigin,
     });
 
     expect(result.ok).toBe(false);
