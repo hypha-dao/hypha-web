@@ -1,6 +1,9 @@
 'use client';
 
-import type { QuestUpdateRecord } from '@hypha-platform/core/client';
+import {
+  isAiOrigin,
+  type QuestUpdateRecord,
+} from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { ArrowUpRight, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -128,8 +131,13 @@ export function QuestUpdateCard({ update }: { update: QuestUpdateRecord }) {
           <span className="text-[13px] font-semibold text-foreground">
             {update.authorName}
           </span>
-          {update.viaAgent ? (
-            <span className="text-[11px] text-[#4b4bff]">✦ via agent</span>
+          {isAiOrigin(update.origin) ? (
+            <span
+              className="text-[11px] text-[#4b4bff]"
+              data-testid="quest-update-ai-label"
+            >
+              ✦ AI Agent
+            </span>
           ) : null}
           {update.milestoneOrder != null || update.milestoneLabel ? (
             <span className="bg-neutral-3 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
