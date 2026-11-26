@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type {
   RosterPerson,
   SpaceMemberRosterEntry,
@@ -65,9 +65,18 @@ function makeSpace(id: number, title: string): Space {
 }
 
 describe('getSpaceMembersRoster', () => {
+  let getSpaceMembersRoster: Awaited<
+    ReturnType<typeof loadGetSpaceMembersRoster>
+  >;
+
+  // The module's import chain loads the Postgres storage layer, which is slow
+  // to load: import it once, outside the per-test timeout.
+  beforeAll(async () => {
+    getSpaceMembersRoster = await loadGetSpaceMembersRoster();
+  }, 60_000);
+
   it('returns not-found shape with empty pagination metadata', async () => {
     const computeEntries = vi.fn().mockResolvedValue({ found: false as const });
-    const getSpaceMembersRoster = await loadGetSpaceMembersRoster();
     const result = await getSpaceMembersRoster(
       { spaceSlug: 'missing-space', page: 2, pageSize: 5 },
       { db: {} as never },
@@ -132,7 +141,6 @@ describe('getSpaceMembersRoster', () => {
       asOf: '2026-01-04T00:00:00.000Z',
     });
 
-    const getSpaceMembersRoster = await loadGetSpaceMembersRoster();
     const result = await getSpaceMembersRoster(
       { spaceSlug: 'hypha', page: 2, pageSize: 2 },
       { db: {} as never },
@@ -197,7 +205,6 @@ describe('getSpaceMembersRoster', () => {
       asOf: '2026-01-04T00:00:00.000Z',
     });
 
-    const getSpaceMembersRoster = await loadGetSpaceMembersRoster();
     const result = await getSpaceMembersRoster(
       {
         spaceSlug: 'hypha',

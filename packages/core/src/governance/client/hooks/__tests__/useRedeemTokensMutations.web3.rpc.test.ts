@@ -5,6 +5,9 @@ import {
   tokenBackingVaultImplementationAbi,
   tokenBackingVaultImplementationAddress,
 } from '@hypha-platform/core/generated';
+import { publicClient } from '@hypha-platform/core/client';
+
+import { prepareRedeemProposalParams } from '../useRedeemTokensMutations.web3.rpc';
 
 vi.mock('@hypha-platform/core/client', async () => {
   return {
@@ -22,10 +25,6 @@ vi.mock('@hypha-platform/core/client', async () => {
 
 describe('prepareRedeemProposalParams', () => {
   test('adds addToWhitelist before redeem when vault whitelist is enabled and executor is not whitelisted', async () => {
-    const { publicClient } = await import('@hypha-platform/core/client');
-    const { prepareRedeemProposalParams } = await import(
-      '../useRedeemTokensMutations.web3.rpc'
-    );
     const readContractMock = vi.mocked(publicClient.readContract);
     readContractMock
       .mockResolvedValueOnce(3600n) // getSpaceMinProposalDuration
@@ -96,10 +95,6 @@ describe('prepareRedeemProposalParams', () => {
   });
 
   test('prepends ERC20 approve on space token before redeem when whitelist is disabled', async () => {
-    const { publicClient } = await import('@hypha-platform/core/client');
-    const { prepareRedeemProposalParams } = await import(
-      '../useRedeemTokensMutations.web3.rpc'
-    );
     const readContractMock = vi.mocked(publicClient.readContract);
     readContractMock
       .mockResolvedValueOnce(3600n) // getSpaceMinProposalDuration
@@ -138,10 +133,6 @@ describe('prepareRedeemProposalParams', () => {
   });
 
   test('creates proposal in current space while redeeming from vault owner space', async () => {
-    const { publicClient } = await import('@hypha-platform/core/client');
-    const { prepareRedeemProposalParams } = await import(
-      '../useRedeemTokensMutations.web3.rpc'
-    );
     const readContractMock = vi.mocked(publicClient.readContract);
     readContractMock
       .mockResolvedValueOnce(3600n) // getSpaceMinProposalDuration (proposal space)
