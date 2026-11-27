@@ -35,9 +35,10 @@ describe('signalDetailPath', () => {
 });
 
 describe('signal detail chat', () => {
-  it('opens from the discussion control and does not auto-open', () => {
+  it('opens the discussion with the detail, and the control can open it too', () => {
     expect(pageSource).toContain('onClick={openChat}');
+    expect(pageSource).toContain('openedDiscussionSlug');
+    expect(pageSource).toContain('openChat();');
     expect(pageSource).not.toContain('autoOpenedForRef');
-    expect(pageSource).not.toContain('openChat();');
   });
 });
