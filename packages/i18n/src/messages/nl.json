@@ -4027,6 +4027,8 @@
     "reactionReactorsTooltip": "{names} reageerde met {emoji}",
     "reactionToggleFailed": "Kan de reactie niet updaten. Probeer het opnieuw.",
     "sendFailed": "Kan bericht niet verzenden. Probeer het opnieuw.",
+    "chatSessionRefreshed": "Chatsessie vernieuwd. Stuur je bericht opnieuw.",
+    "chatSessionExpired": "Chatsessie verlopen. Laad de pagina opnieuw en probeer het nog eens.",
     "sendFailedWithReason": "Kon bericht niet verzenden: {message}",
     "sendUploadTimedOut": "Er is een time-out opgetreden bij het uploaden. Probeer een kleiner bestand of controleer uw verbinding.",
     "sendRateLimited": "De chatserver beperkt uploads. Wacht een paar seconden en probeer het opnieuw, of stuur minder bestanden tegelijk.",

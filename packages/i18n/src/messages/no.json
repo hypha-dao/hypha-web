@@ -4026,6 +4026,8 @@
     "reactionReactorsTooltip": "{names} reagerte med {emoji}",
     "reactionToggleFailed": "Kunne ikke oppdatere reaksjonen. Prøv igjen.",
     "sendFailed": "Kunne ikke sende meldingen. Prøv igjen.",
+    "chatSessionRefreshed": "Chatteøkten er oppdatert. Send meldingen på nytt.",
+    "chatSessionExpired": "Chatteøkten er utløpt. Last inn siden på nytt og prøv igjen.",
     "sendFailedWithReason": "Kunne ikke sende meldingen: {message}",
     "sendUploadTimedOut": "Opplastingen tidsavbrøt. Prøv en mindre fil eller sjekk tilkoblingen din.",
     "sendRateLimited": "Chatserveren begrenser opplastinger. Vent noen sekunder og prøv igjen, eller send færre filer om gangen.",

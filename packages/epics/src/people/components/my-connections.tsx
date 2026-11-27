@@ -1958,13 +1958,19 @@ export function MyConnections({
   const [channels, setChannels] = useState<JoinedChannelSnapshot[]>([]);
   const restoredInboxAccount = useRef<string | null>(null);
   const skipSnapshotWrite = useRef(false);
+  const inboxAccountIdRef = useRef(inboxAccountId);
+  inboxAccountIdRef.current = inboxAccountId;
+  const rowsOwnerRef = useRef<{
+    accountId: string;
+    matrixUserId: string;
+  } | null>(null);
   useLayoutEffect(() => {
     if (!inboxAccountId || restoredInboxAccount.current === inboxAccountId) {
       return;
     }
     const switchingAccount = restoredInboxAccount.current != null;
     restoredInboxAccount.current = inboxAccountId;
-    skipSnapshotWrite.current = true;
+    skipSnapshotWrite.current = switchingAccount;
     const snapshot = readInboxListSnapshot(inboxAccountId);
     if (switchingAccount) {
       setRows(snapshot.rows);
@@ -2315,6 +2321,7 @@ export function MyConnections({
         setListSettled(false);
         clearInboxListSnapshot();
         restoredInboxAccount.current = null;
+        rowsOwnerRef.current = null;
       }
       return;
     }
@@ -2327,6 +2334,17 @@ export function MyConnections({
       );
     };
     return attachConversationList(client, () => {
+      const accountId = inboxAccountIdRef.current;
+      const matrixUserId = client.getUserId() ?? '';
+      if (!accountId) return;
+      const owner = rowsOwnerRef.current;
+      if (owner && matrixUserId && owner.matrixUserId !== matrixUserId) {
+        rowsOwnerRef.current = { accountId, matrixUserId };
+      } else if (owner && owner.accountId !== accountId) {
+        return;
+      } else if (matrixUserId) {
+        rowsOwnerRef.current = { accountId, matrixUserId };
+      }
       const ready = liveSyncReady();
       setRows((current) => {
         const next = keepPaintedInboxRows(
@@ -2505,14 +2523,23 @@ export function MyConnections({
   const listLoading =
     !listSettled && !dataReady && rows.length === 0 && channels.length === 0;
   useEffect(() => {
-    if (!listSettled || !inboxAccountId) return;
+    if (!listSettled || !inboxAccountId || !client) return;
     if (restoredInboxAccount.current !== inboxAccountId) return;
+    const owner = rowsOwnerRef.current;
+    const matrixUserId = client.getUserId() ?? '';
+    if (
+      !owner ||
+      owner.accountId !== inboxAccountId ||
+      owner.matrixUserId !== matrixUserId
+    ) {
+      return;
+    }
     if (skipSnapshotWrite.current) {
       skipSnapshotWrite.current = false;
       return;
     }
     writeInboxListSnapshot({ rows, channels }, inboxAccountId);
-  }, [channels, inboxAccountId, listSettled, rows]);
+  }, [channels, client, inboxAccountId, listSettled, rows]);
   const resolvedMembers = useMemo(
     () =>
       applyResolvedPeerTitles(

@@ -448,6 +448,7 @@ const SESSION_ROOM_TO_COHERENCE_TITLE_PREFIX = 'hypha-room-to-coherence-title-';
 const SESSION_ROOM_TO_COHERENCE_SPACE_PREFIX = 'hypha-room-to-coherence-space-';
 const COHERENCE_ROOM_REVERSE_PREFIX = 'hypha-room-id-to-coherence-';
 const CHAT_HISTORY_SESSION_PREFIX = 'hypha-chat-history-v1-';
+const CHAT_REDACTED_SESSION_PREFIX = 'hypha-chat-redacted-v1-';
 const CHAT_HISTORY_MAX_ITEMS = 250;
 /** Messages mounted when a conversation opens. The rest stay behind "load older". */
 const OPEN_THREAD_TAIL = 16;
@@ -522,6 +523,49 @@ type PersistedUIMessage = Omit<UIMessage, 'timestamp'> & {
   timestamp?: string;
 };
 
+function readRedactedChatIds(roomId: string): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = window.sessionStorage.getItem(
+      `${CHAT_REDACTED_SESSION_PREFIX}${roomId}`,
+    );
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(
+      parsed.filter(
+        (id): id is string => typeof id === 'string' && id.length > 0,
+      ),
+    );
+  } catch {
+    return new Set();
+  }
+}
+
+function rememberRedactedChatMessage(roomId: string, messageId: string): void {
+  const id = messageId.trim();
+  if (typeof window === 'undefined' || !id) return;
+  try {
+    const ids = readRedactedChatIds(roomId);
+    ids.add(id);
+    window.sessionStorage.setItem(
+      `${CHAT_REDACTED_SESSION_PREFIX}${roomId}`,
+      JSON.stringify([...ids].slice(-500)),
+    );
+  } catch {
+    // ignore
+  }
+}
+
+function withoutRedactedMessages(
+  roomId: string,
+  messages: UIMessage[],
+): UIMessage[] {
+  const redacted = readRedactedChatIds(roomId);
+  if (redacted.size === 0) return messages;
+  return messages.filter((message) => !redacted.has(message.id));
+}
+
 function readPersistedChatHistory(roomId: string): UIMessage[] {
   if (typeof window === 'undefined') return [];
   try {
@@ -531,11 +575,14 @@ function readPersistedChatHistory(roomId: string): UIMessage[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw) as PersistedUIMessage[];
     if (!Array.isArray(parsed)) return [];
-    return dedupeTimelineMessages(
-      parsed.slice(-CHAT_HISTORY_MAX_ITEMS).map((m) => ({
-        ...m,
-        timestamp: m.timestamp ? new Date(m.timestamp) : undefined,
-      })),
+    return withoutRedactedMessages(
+      roomId,
+      dedupeTimelineMessages(
+        parsed.slice(-CHAT_HISTORY_MAX_ITEMS).map((m) => ({
+          ...m,
+          timestamp: m.timestamp ? new Date(m.timestamp) : undefined,
+        })),
+      ),
     );
   } catch {
     return [];
@@ -554,19 +601,24 @@ function writePersistedChatHistory(
       );
       if (existing && existing !== '[]') return;
     }
-    const incoming = timelineMessagesForPersistence(messages);
+    const incoming = withoutRedactedMessages(
+      roomId,
+      timelineMessagesForPersistence(messages),
+    );
     // Echoes alone must not wipe a good transcript from the last visit.
     if (incoming.length === 0) {
       if (messages.length > 0) return;
     }
     // The open path only keeps a screenful in React state. Merge so that
     // short list does not erase older messages already stored for this room.
+    // Incoming is first so an equal row (a removed reaction, for example)
+    // replaces the stored copy. A richer stored row can still win.
     const stored = readPersistedChatHistory(roomId);
     const safe =
       stored.length > 0
         ? timelineMessagesForPersistence(
             sortMessagesChronologically(
-              dedupeTimelineMessages([...stored, ...incoming]),
+              dedupeTimelineMessages([...incoming, ...stored]),
             ),
           )
         : incoming;
@@ -3435,14 +3487,25 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           force: true,
           maxBatches: 5,
         });
-        syncRoomMessages(
-          targetRoomId,
-          Math.min(
-            CHAT_HISTORY_MAX_ITEMS,
-            Math.max(OPEN_THREAD_TAIL, messages.length) + 40,
-          ),
+        if (roomIdRef.current?.trim() !== targetRoomId) return;
+        const nextLimit = Math.min(
+          CHAT_HISTORY_MAX_ITEMS,
+          Math.max(OPEN_THREAD_TAIL, messages.length) + 40,
         );
-        setHasMoreOlderMessages(result.hasMoreOlder);
+        syncRoomMessages(targetRoomId, nextLimit);
+        if (roomIdRef.current?.trim() !== targetRoomId) return;
+        const remembered = readPersistedChatHistory(targetRoomId).length;
+        let inMemory = 0;
+        try {
+          inMemory =
+            matrixRef.current.getRoomMessages(targetRoomId, nextLimit + 1)
+              ?.length ?? 0;
+        } catch {
+          inMemory = 0;
+        }
+        setHasMoreOlderMessages(
+          result.hasMoreOlder || remembered > nextLimit || inMemory > nextLimit,
+        );
         if (
           source === 'auto' &&
           result.addedEvents === 0 &&
@@ -4128,6 +4191,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       // Switching FROM space TO coherence — unregister space listener, clear state.
       // A settled target from the previous thread must not skip this join.
       settledCoherenceTargetRef.current = null;
+      roomIdRef.current = null;
       if (roomId) {
         matrixRef.current.unregisterRoomListener(roomId);
       }
@@ -4149,6 +4213,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     if (mode === 'space' && prevMode === 'coherence') {
       // Switching FROM coherence TO space — clear state, space init will re-run
       settledCoherenceTargetRef.current = null;
+      roomIdRef.current = null;
       setIsJoining(false);
       if (roomId) {
         matrixRef.current.unregisterRoomListener(roomId);
@@ -4208,6 +4273,14 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       isPublic: Boolean(coherencePublic),
       channel: coherenceChannel ?? null,
     });
+    const settledKeyForRoom = (roomId: string) =>
+      coherenceJoinTargetKey({
+        roomId,
+        slug: coherenceSlug?.trim() ?? '',
+        spaceSlug: openingSpaceSlug,
+        isPublic: Boolean(coherencePublic),
+        channel: coherenceChannel ?? null,
+      });
     if (
       !shouldRestartCoherenceJoin({
         settledKey: settledCoherenceTargetRef.current,
@@ -4250,9 +4323,14 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       if (previousRoomId && previousRoomId !== intendedRoomId) {
         matrixRef.current.unregisterRoomListener(previousRoomId);
       }
+      // A public id is not a send target until the member channel is ruled out.
+      const deferPublicRoom =
+        Boolean(coherencePublic) && Boolean(intendedRoomId);
       // Lock paints to the inbox room id immediately (before any await).
-      openingTimelineRoomIdRef.current = intendedRoomId;
-      if (intendedRoomId) {
+      openingTimelineRoomIdRef.current = deferPublicRoom
+        ? null
+        : intendedRoomId;
+      if (intendedRoomId && !deferPublicRoom) {
         roomIdRef.current = intendedRoomId;
         messagesRoomIdRef.current = intendedRoomId;
         setRoomId(intendedRoomId);
@@ -4277,6 +4355,13 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             // The join below still fills the thread if the store has no tail yet.
           }
         }
+      } else if (deferPublicRoom) {
+        roomIdRef.current = null;
+        messagesRoomIdRef.current = null;
+        setRoomId(null);
+        setMessages([]);
+        setPaintedRoomId(null);
+        setIsJoining(true);
       } else {
         roomIdRef.current = null;
         messagesRoomIdRef.current = null;
@@ -4473,7 +4558,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         if (cancelled || joinEpochRef.current !== joinEpoch) return;
         openingTimelineRoomIdRef.current = targetRoomId;
         roomIdRef.current = targetRoomId;
-        settledCoherenceTargetRef.current = joinKey;
+        settledCoherenceTargetRef.current = settledKeyForRoom(targetRoomId);
         setRoomId(targetRoomId);
         if (
           coherenceSlug?.trim() &&
@@ -4519,7 +4604,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           );
           openingTimelineRoomIdRef.current = recovered.roomId;
           roomIdRef.current = recovered.roomId;
-          settledCoherenceTargetRef.current = joinKey;
+          settledCoherenceTargetRef.current = settledKeyForRoom(
+            recovered.roomId,
+          );
           setRoomId(recovered.roomId);
           void revealRoomTimeline(
             recovered.roomId,
@@ -4644,6 +4731,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       roomId,
       async (message: Message) => {
         if (message.redacted) {
+          rememberRedactedChatMessage(roomId, message.id);
           pendingTimelineRedactIdsRef.current.add(message.id);
           scheduleTimelineFlush();
           return;
@@ -5759,6 +5847,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     mode === 'space' || directChatRoomId
       ? searchParams?.get('msg')?.trim()
       : undefined;
+  const deepLinkPagingKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (!deepLinkEventId || !roomId) return;
     const qpChat = searchParams?.get('chat')?.trim();
@@ -5767,17 +5856,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       : (!qpChat && Boolean(roomId)) || Boolean(qpChat && qpChat === roomId);
     if (!sameRoom) return;
 
-    let cancelled = false;
-    const tryOnce = () => {
-      if (cancelled) return;
-      const escaped =
-        typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
-          ? CSS.escape(deepLinkEventId)
-          : deepLinkEventId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-      const el = document.querySelector(
-        `[data-matrix-event-id="${escaped}"]`,
-      ) as HTMLElement | null;
-      if (!el) return;
+    const targetRoomId = roomId;
+    const highlight = (el: HTMLElement) => {
       el.scrollIntoView({ block: 'center', behavior: 'smooth' });
       el.classList.add(
         'ring-2',
@@ -5799,10 +5879,72 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       const qs = next.toString();
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     };
+    const findRow = () => {
+      const escaped =
+        typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+          ? CSS.escape(deepLinkEventId)
+          : deepLinkEventId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      return document.querySelector(
+        `[data-matrix-event-id="${escaped}"]`,
+      ) as HTMLElement | null;
+    };
 
-    const id = requestAnimationFrame(tryOnce);
+    let frameCancelled = false;
+    const id = requestAnimationFrame(() => {
+      if (frameCancelled) return;
+      const visible = findRow();
+      if (visible) {
+        highlight(visible);
+        return;
+      }
+      const pagingKey = `${targetRoomId}\n${deepLinkEventId}`;
+      if (deepLinkPagingKeyRef.current === pagingKey) return;
+      deepLinkPagingKeyRef.current = pagingKey;
+      void (async () => {
+        const hasEvent = (rows: { id: string }[] | null | undefined) =>
+          rows?.some((row) => row.id === deepLinkEventId) ?? false;
+        const loadedMessages = () => {
+          try {
+            return matrixRef.current.getRoomMessages(targetRoomId);
+          } catch {
+            return null;
+          }
+        };
+        let located =
+          hasEvent(loadedMessages()) ||
+          hasEvent(readPersistedChatHistory(targetRoomId));
+        if (!located) {
+          for (let attempt = 0; attempt < 12; attempt += 1) {
+            if (roomIdRef.current?.trim() !== targetRoomId) return;
+            let result: { hasMoreOlder: boolean };
+            try {
+              result = await matrixRef.current.loadRoomHistory(targetRoomId, {
+                force: true,
+                maxBatches: 3,
+              });
+            } catch {
+              return;
+            }
+            if (roomIdRef.current?.trim() !== targetRoomId) return;
+            located = hasEvent(loadedMessages());
+            if (located || !result.hasMoreOlder) break;
+          }
+        }
+        if (roomIdRef.current?.trim() !== targetRoomId) return;
+        if (hasEvent(loadedMessages())) {
+          syncRoomMessages(targetRoomId);
+          return;
+        }
+        const cached = readPersistedChatHistory(targetRoomId);
+        const index = cached.findIndex((row) => row.id === deepLinkEventId);
+        if (index < 0) return;
+        setPaintedRoomId(targetRoomId);
+        setMessages(cached.slice(index));
+        setHasMoreOlderMessages(index > 0);
+      })();
+    });
     return () => {
-      cancelled = true;
+      frameCancelled = true;
       cancelAnimationFrame(id);
     };
   }, [
@@ -5814,6 +5956,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     pathname,
     router,
     searchParams,
+    syncRoomMessages,
   ]);
 
   const handleReplyToMessage = useCallback(
@@ -6225,7 +6368,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
               : { kind: 'space', spaceSlug },
           });
         }
-        setSendingPending(null);
+        if (optimisticId) {
+          const deliveredId = optimisticId;
+          setMessages((prev) => prev.filter((row) => row.id !== deliveredId));
+        }
+        setSendingPending((cur) => (cur?.id === pendingId ? null : cur));
         disposeDraftAttachmentUrls(savedAttachments);
         setReplyDraft(null);
         setEditDraft(null);
@@ -6242,11 +6389,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         }
         if (sendOperationTokenRef.current !== sendToken) {
           disposeDraftAttachmentUrls(savedAttachments);
-          setSendingPending(null);
+          setSendingPending((cur) => (cur?.id === pendingId ? null : cur));
           return;
         }
         sendOperationTokenRef.current = null;
-        setSendingPending(null);
+        setSendingPending((cur) => (cur?.id === pendingId ? null : cur));
         if (sendAbortControllerRef.current === abortController) {
           sendAbortControllerRef.current = null;
         }
@@ -6290,9 +6437,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             .refreshSession()
             .catch(() => false);
           setComposerError(
-            recovered
-              ? 'Chat session refreshed. Please send your message again.'
-              : 'Chat session expired. Please reload the page and try again.',
+            recovered ? t('chatSessionRefreshed') : t('chatSessionExpired'),
           );
           replaceComposerText(text);
           setReplyDraft(savedDraft);
@@ -7163,14 +7308,18 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           </>
         )}
       </SidebarContent>
-      {activeTab === 'chat' &&
-        (Boolean(spaceSlug?.trim()) ||
-          isDirectConversation ||
-          isNetworkSpaceChat ||
-          coherenceChannel === 'network') &&
+      {(Boolean(spaceSlug?.trim()) ||
+        isDirectConversation ||
+        isNetworkSpaceChat ||
+        coherenceChannel === 'network') &&
         !showAuthPrompt &&
         !blockSpaceChatForActivityAccess && (
-          <SidebarFooter className="relative z-20 border-t border-border/70 bg-page-background p-0 dark:bg-background-2">
+          <SidebarFooter
+            className={cn(
+              'relative z-20 border-t border-border/70 bg-page-background p-0 dark:bg-background-2',
+              activeTab !== 'chat' && 'hidden',
+            )}
+          >
             <div>
               <HumanChatPanelTypingIndicator
                 peers={

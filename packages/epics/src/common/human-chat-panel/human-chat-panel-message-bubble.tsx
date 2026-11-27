@@ -1879,12 +1879,12 @@ export function HumanChatPanelMessageBubble({
     );
     const visible =
       message.senderMatrixId != null
-        ? visibleMatrixMemberName(
+        ? pickUserVisibleMemberLabel(
             message.senderMatrixId,
             fromPerson,
             rosterLabel,
             storedLabel,
-          )
+          ) ?? ''
         : fromPerson || rosterLabel || storedLabel;
     return visible;
   }, [
@@ -1914,12 +1914,12 @@ export function HumanChatPanelMessageBubble({
     );
     const visible =
       replyTo.sourceUserId != null
-        ? visibleMatrixMemberName(
+        ? pickUserVisibleMemberLabel(
             replyTo.sourceUserId,
             fromPerson,
             rosterLabel,
             storedLabel,
-          )
+          ) ?? ''
         : fromPerson || rosterLabel || storedLabel;
     return visible;
   }, [agentMentionLabel, replyPerson, replyTo, rosterReplyLabel, t]);

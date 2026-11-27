@@ -130,20 +130,51 @@ function FilterRow({
 
   if (afterTitle) {
     return (
-      <div
-        role="button"
-        tabIndex={0}
-        aria-pressed={selected}
-        data-testid={`inbox-filter-${filter}`}
-        onClick={() => onSelect(filter)}
-        onKeyDown={(event) => {
-          if (event.key !== 'Enter' && event.key !== ' ') return;
-          event.preventDefault();
-          onSelect(filter);
-        }}
-        className={className}
-      >
-        {content}
+      <div className={className}>
+        <Icon
+          className="mt-0.5 size-4 shrink-0 text-foreground"
+          strokeWidth={1.5}
+          aria-hidden
+        />
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-3">
+            <span className="flex min-w-0 flex-1 items-center gap-1">
+              <button
+                type="button"
+                aria-pressed={selected}
+                data-testid={`inbox-filter-${filter}`}
+                onClick={() => onSelect(filter)}
+                className={cn(
+                  'min-w-0 truncate text-left text-3 text-foreground',
+                  selected && 'font-medium',
+                )}
+              >
+                {title}
+              </button>
+              {afterTitle}
+            </span>
+            <span className="ml-auto flex shrink-0 items-center gap-2">
+              {total > 0 ? (
+                <span className="text-1 text-muted-foreground">{total}</span>
+              ) : null}
+              {unread > 0 ? (
+                <span
+                  className="grid h-5 min-w-5 place-items-center rounded-full bg-foreground px-1.5 text-[10px] leading-none text-background"
+                  aria-label={unreadLabel ?? undefined}
+                >
+                  {unread > 99 ? '99+' : unread}
+                </span>
+              ) : null}
+            </span>
+          </span>
+          <button
+            type="button"
+            onClick={() => onSelect(filter)}
+            className="mt-1 block text-left text-2 text-muted-foreground"
+          >
+            {description}
+          </button>
+        </span>
       </div>
     );
   }

@@ -3451,6 +3451,8 @@
     "reactionReactorsTooltip": "{names} ont réagi avec {emoji}",
     "reactionToggleFailed": "Impossible de mettre à jour la réaction. Réessayez.",
     "sendFailed": "Impossible d’envoyer le message. Réessayez.",
+    "chatSessionRefreshed": "Session de chat actualisée. Renvoie ton message.",
+    "chatSessionExpired": "Session de chat expirée. Recharge la page et réessaie.",
     "sendFailedWithReason": "Impossible d’envoyer le message : {message}",
     "sendUploadTimedOut": "Délai d’envoi dépassé. Essayez un fichier plus petit ou vérifiez la connexion.",
     "sendRateLimited": "Le serveur de chat limite les envois. Attendez quelques secondes puis réessayez, ou envoyez moins de fichiers à la fois.",

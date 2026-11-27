@@ -3465,6 +3465,8 @@
     "reactionReactorsTooltip": "{names} reaccionaron con {emoji}",
     "reactionToggleFailed": "No se pudo actualizar la reacción. Inténtalo de nuevo.",
     "sendFailed": "No se pudo enviar el mensaje. Inténtalo de nuevo.",
+    "chatSessionRefreshed": "La sesión del chat se actualizó. Vuelve a enviar tu mensaje.",
+    "chatSessionExpired": "La sesión del chat caducó. Recarga la página e inténtalo de nuevo.",
     "sendFailedWithReason": "No se pudo enviar el mensaje: {message}",
     "sendUploadTimedOut": "Se agotó el tiempo de subida. Prueba con un archivo más pequeño o revisa la conexión.",
     "sendRateLimited": "El servidor de chat limita las subidas. Espera unos segundos e inténtalo de nuevo, o envía menos archivos a la vez.",

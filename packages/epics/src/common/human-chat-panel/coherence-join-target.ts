@@ -21,20 +21,39 @@ export function coherenceJoinTargetKey(target: CoherenceJoinTarget): string {
  * A title, logo, or Matrix flag change must not tear the thread down again.
  * Only a new target, or a join that never settled, starts over.
  */
+function sameCoherenceTarget(settledKey: string, joinKey: string): boolean {
+  const settled = settledKey.split('\n');
+  const join = joinKey.split('\n');
+  if (settled.length !== join.length) return false;
+  const settledRoom = settled[0]?.trim() ?? '';
+  const joinRoom = join[0]?.trim() ?? '';
+  if (settledRoom && joinRoom && settledRoom !== joinRoom) return false;
+  for (let index = 1; index < settled.length; index += 1) {
+    if ((settled[index] ?? '') !== (join[index] ?? '')) return false;
+  }
+  return true;
+}
+
 export function shouldRestartCoherenceJoin(input: {
   settledKey: string | null;
   joinKey: string;
   openRoomId: string | null;
 }): boolean {
-  if (input.settledKey === input.joinKey) {
-    const openRoomId = input.openRoomId?.trim() ?? '';
-    if (!openRoomId) return true;
-    const settledRoomId = input.settledKey.split('\n')[0]?.trim() ?? '';
-    // A target that settled before its room id was known stays open.
-    // A known room id must still be the room on screen.
-    if (!settledRoomId || settledRoomId === openRoomId) return false;
+  if (
+    !input.settledKey ||
+    !sameCoherenceTarget(input.settledKey, input.joinKey)
+  ) {
+    return true;
   }
-  return true;
+  const openRoomId = input.openRoomId?.trim() ?? '';
+  if (!openRoomId) return true;
+  const settledRoomId = input.settledKey.split('\n')[0]?.trim() ?? '';
+  const joinRoomId = input.joinKey.split('\n')[0]?.trim() ?? '';
+  const expectedRoomId = settledRoomId || joinRoomId;
+  // An empty room id must not treat whatever is on screen (a space room,
+  // for example) as this thread.
+  if (!expectedRoomId || expectedRoomId !== openRoomId) return true;
+  return false;
 }
 
 /**

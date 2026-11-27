@@ -29,6 +29,39 @@ describe('coherence join target', () => {
     ).toBe(false);
   });
 
+  it('restarts when the settled target never recorded its room', () => {
+    const unsettled = coherenceJoinTargetKey({
+      roomId: null,
+      slug: 'hello',
+      spaceSlug: 'hypha',
+      isPublic: false,
+      channel: null,
+    });
+    expect(
+      shouldRestartCoherenceJoin({
+        settledKey: unsettled,
+        joinKey: unsettled,
+        openRoomId: '!other:example',
+      }),
+    ).toBe(true);
+  });
+
+  it('keeps a settled room open when the next key has no room id yet', () => {
+    expect(
+      shouldRestartCoherenceJoin({
+        settledKey: key,
+        joinKey: coherenceJoinTargetKey({
+          roomId: null,
+          slug: 'hello',
+          spaceSlug: 'hypha',
+          isPublic: false,
+          channel: null,
+        }),
+        openRoomId: '!room:example',
+      }),
+    ).toBe(false);
+  });
+
   it('restarts when a different room is still open', () => {
     expect(
       shouldRestartCoherenceJoin({
