@@ -5,7 +5,7 @@ update and a line here (K31).
 
 ## 1.9.0
 
-- New tool `hypha_create_signal` (#2744), the first write: creates a signal in a space where the user is a member or a delegate, offered only while writes are switched on and listed last. The text says to use it only when the user asked, to confirm a drafted title, description or type with the user first, to take links only from the user's request, that Hypha records the app in `origin` and adds no tag and no notification, and what `duplicate: true` means. The server instructions no longer say that everything is read-only; they name the one write tool.
+- New tool `hypha_create_signal` (#2744), the first write: creates a signal in a space where the user is a member or a delegate, offered only while writes are switched on and listed last. The text says to use it only when the user asked, to confirm a drafted title, description or type with the user first, to take links only from the user's request, that Hypha records the app in `origin` and adds no tag and no notification, and what `duplicate: true` means. The server instructions no longer say that everything is read-only; they name the one write tool. A write that runs past the deadline answers that the signal may or may not have been created and how to check, instead of the generic timeout text.
 
 ## 1.8.0
 

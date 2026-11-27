@@ -14,9 +14,33 @@ const SCAN_ROOTS = ['packages', 'apps'];
 const OWNER = 'packages/auth-server/';
 const ALLOWED = new Set<string>([]);
 
-// The table names the authorization server creates (better-auth model names, see `auth.ts`).
-const AS_TABLE =
-  /\bas_(?:user|session|account|verification|jwks|oauth_[a-z_]+)\b/;
+const MIGRATIONS = 'packages/storage-postgres/migrations';
+
+/**
+ * The authorization server's tables, read from the migrations that create them, so a new `as_*`
+ * table is guarded without editing this test.
+ */
+function authServerTables(): string[] {
+  const names = new Set<string>();
+  const files = execFileSync('git', ['ls-files', '--', MIGRATIONS], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+  })
+    .split('\n')
+    .filter((file) => file.endsWith('.sql'));
+  const create =
+    /create\s+table\s+(?:if\s+not\s+exists\s+)?(?:"?public"?\.)?"?(as_[a-z0-9_]+)"?/gi;
+  for (const file of files) {
+    const sql = readFileSync(path.join(REPO_ROOT, file), 'utf8');
+    for (const match of sql.matchAll(create)) {
+      names.add(match[1]!.toLowerCase());
+    }
+  }
+  return [...names].sort();
+}
+
+const TABLES = authServerTables();
+const AS_TABLE = new RegExp(`\\b(?:${TABLES.join('|')})\\b`);
 
 /** Tracked source files only (fast, and ignores build output). */
 function sourceFiles(): string[] {
@@ -41,6 +65,20 @@ describe('authorization server tables guard', () => {
       if (AS_TABLE.test(text)) offenders.push(relative);
     }
     expect(offenders).toEqual([]);
+  });
+
+  it('knows the authorization server tables from the migrations', () => {
+    for (const table of [
+      'as_oauth_client',
+      'as_jwks',
+      'as_registration_slot',
+      'as_identity',
+      'as_client_grant',
+    ]) {
+      expect(TABLES).toContain(table);
+    }
+    // A Matrix application-service token is not one of them.
+    expect(AS_TABLE.test('as_token')).toBe(false);
   });
 
   it('still recognises a table name (the scan is not empty)', () => {

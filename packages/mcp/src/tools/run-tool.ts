@@ -95,9 +95,10 @@ export async function runTool(
   const caller = deps.access.caller;
 
   let timer: ReturnType<typeof setTimeout> | undefined;
+  const work = run(caller);
   try {
     const out = await Promise.race([
-      run(caller),
+      work,
       new Promise<never>((_, reject) => {
         timer = setTimeout(
           () => reject(new DeadlineError()),
@@ -114,7 +115,19 @@ export async function runTool(
   } catch (error) {
     if (error instanceof DeadlineError) {
       finish('timeout');
-      return toolError(ERRORS.timeout);
+      if (!options.write) return toolError(ERRORS.timeout);
+      // The deadline does not cancel the work: a write can still commit. Keep watching it and
+      // record how it ended, with its ids, in a second audit line (best effort; `keepAlive` keeps
+      // the platform from freezing the function first). The model is told the outcome is unknown.
+      const late = work.then(
+        (out) =>
+          out.ok
+            ? finish('late_ok', out.itemCount, out.audit)
+            : finish(`late_${out.outcome}`),
+        () => finish('late_error'),
+      );
+      deps.keepAlive?.(late);
+      return toolError(ERRORS.writeTimeout);
     }
     // Raw error text can carry data; the operator gets the outcome, the model a generic line.
     finish('error');

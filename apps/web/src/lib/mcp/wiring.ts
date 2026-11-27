@@ -1,4 +1,5 @@
 import 'server-only';
+import { after } from 'next/server';
 import {
   loadAuthServerConfig,
   allowedScopesForResource,
@@ -99,4 +100,7 @@ export const mcpHandlers = createMcpRequestHandlers({
       getSpaceDhoPath(spaceSlug, `quests/${encodeURIComponent(questSlug)}`),
     ),
   slot,
+  // A write that outlives the tool deadline is still watched after the response, so its outcome
+  // is logged; `after` keeps the function alive until then.
+  keepAlive: (work) => after(work),
 });

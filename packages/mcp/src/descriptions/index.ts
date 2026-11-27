@@ -276,6 +276,8 @@ export const ERRORS = {
   writeRateLimited: 'Too many signals created in a short time.',
   invalidInput:
     'The input was not accepted. Check the limits in the tool description.',
+  writeTimeout:
+    'The request took too long, so the signal may or may not have been created. Check with `hypha_list_signals` (`createdByMe`) before trying again; the same title and description within 10 minutes return the existing signal instead of a new one.',
 } as const;
 
 /** The step-up answer when a token lacks the write scope (an HTTP 403, not a tool error). */

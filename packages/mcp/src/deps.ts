@@ -100,6 +100,11 @@ export type McpDeps = {
   questUrl(spaceSlug: string, questSlug: string): string;
   log(entry: ToolCallLog): void;
   /**
+   * Keep the function alive until `work` settles after the response was sent (the platform's
+   * post-response hook). Used when a write outlives the deadline, so its outcome is still logged.
+   */
+  keepAlive?(work: Promise<unknown>): void;
+  /**
    * Whether write tools are offered (`MCP_WRITES_ENABLED`, the same switch that lets the
    * authorization server grant the write scope). Off or absent: they are not registered at all.
    */

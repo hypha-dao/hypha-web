@@ -138,8 +138,9 @@ export async function createSignalUnlessDuplicate(
           sql`${coherences.createdAt} >= now() - make_interval(secs => ${duplicate.windowSeconds})`,
         ),
       )
-      .orderBy(desc(coherences.createdAt))
-      .limit(50);
+      // No row cap: the rate limit and the window keep the candidates few, and a cap could hide
+      // an older match that is still inside the window.
+      .orderBy(desc(coherences.createdAt));
     const existing = recent.find((row) => duplicate.sameContent(row));
     if (existing) return { signal: toStored(existing), duplicate: true };
 

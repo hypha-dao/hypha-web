@@ -419,6 +419,30 @@ describe('the write tool and the step-up (#2744)', () => {
     expect(createSignal).not.toHaveBeenCalled();
   });
 
+  it('the refused write gets its audit line, ids only', async () => {
+    const { handlers, logs } = withWrite();
+    const token = await issuer.sign(AUDIENCE, { scope: 'spaces:read' });
+    await handlers.mcp(
+      rpc(token, {
+        ...callWrite,
+        params: {
+          name: 'hypha_create_signal',
+          arguments: { title: 'Secret title' },
+        },
+      }),
+    );
+    expect(logs).toEqual([
+      {
+        tool: 'hypha_create_signal',
+        outcome: 'insufficient_scope',
+        durationMs: 0,
+        clientId: expect.any(String),
+        write: { personId: 1 },
+      },
+    ]);
+    expect(JSON.stringify(logs)).not.toContain('Secret title');
+  });
+
   it('no step-up for read calls, or while writes are off (the tool does not exist then)', async () => {
     const token = await issuer.sign(AUDIENCE, { scope: 'spaces:read' });
     const read = {

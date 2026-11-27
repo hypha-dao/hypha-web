@@ -208,4 +208,45 @@ describe('hypha_create_signal', () => {
     expect(line).toMatchObject({ event: 'mcp.write', outcome: 'no_profile' });
     expect(line).not.toHaveProperty('personId');
   });
+
+  it('a write past the deadline: outcome unknown to the model, the late result still audited', async () => {
+    let finishWrite: (value: unknown) => void = () => {};
+    const slow = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          finishWrite = resolve;
+        }),
+    );
+    const kept: Promise<unknown>[] = [];
+    const { deps, logs } = makeDeps(
+      {
+        writesEnabled: true,
+        deadlineMs: 20,
+        keepAlive: (work) => kept.push(work),
+      },
+      { createSignal: slow as never },
+    );
+    const r = await call(deps);
+    expect(r).toMatchObject({
+      isError: true,
+      content: [{ text: ERRORS.writeTimeout }],
+    });
+    expect(buildToolLogLine(logs[0]!)).toMatchObject({
+      event: 'mcp.write',
+      outcome: 'timeout',
+      personId: 1,
+    });
+    expect(kept).toHaveLength(1);
+
+    finishWrite({ ok: true, data: created() });
+    await kept[0];
+    expect(logs).toHaveLength(2);
+    expect(buildToolLogLine(logs[1]!)).toMatchObject({
+      event: 'mcp.write',
+      outcome: 'late_ok',
+      personId: 1,
+      spaceId: 5,
+      signalId: 99,
+    });
+  });
 });
