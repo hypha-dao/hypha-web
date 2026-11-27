@@ -6005,6 +6005,34 @@
       "invalid": "Dieser Freigabelink ist ungültig. Gehe zurück zur App und starte neu.",
       "accountChanged": "Ihr Konto hat sich in einem anderen Tab geändert, daher wurde diese Genehmigung nicht gespeichert. Um ein anderes Konto zu verwenden, melden Sie sich zuerst ab und beginnen Sie dann erneut in der App."
     },
+    "apps": {
+      "title": "Verbundene KI-Apps",
+      "intro": "Diese Apps können dein Hypha-Konto nutzen. Du kannst ändern, welche Spaces jede App nutzen darf, oder sie trennen.",
+      "signInTitle": "Deine verbundenen KI-Apps",
+      "signInIntro": "Melde dich mit deinem Hypha-Konto an, um die damit verbundenen KI-Apps zu sehen und zu verwalten.",
+      "empty": "Mit deinem Konto ist keine KI-App verbunden.",
+      "unnamed": "Unbenannte App",
+      "kind": {
+        "cimd": "Läuft auf {host}",
+        "registered": "Von Hypha hinzugefügt",
+        "registeredWithHost": "Von Hypha hinzugefügt, läuft auf {host}",
+        "dcr": "Hat sich selbst registriert; ihr Name wurde nicht geprüft"
+      },
+      "mayDo": "Was sie darf",
+      "spaces": "Spaces",
+      "spacesNone": "Keine Spaces",
+      "connectedOn": "Verbunden am {date}",
+      "lastActive": "zuletzt aktiv am {date}",
+      "changeSpaces": "Spaces ändern",
+      "whenApplied": "Die App nutzt die neue Auswahl ab ihrer nächsten Anmeldung, spätestens nach 10 Minuten.",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "saved": "Gespeichert. Die App nutzt die neuen Spaces innerhalb von 10 Minuten.",
+      "disconnect": "Trennen",
+      "confirmDisconnect": "{name} trennen? Die App kann dein Hypha-Konto dann nicht mehr nutzen. Bereits erteilter Zugriff endet innerhalb von 10 Minuten. Um sie wieder zu nutzen, verbinde sie erneut aus der App.",
+      "disconnected": "{name} ist getrennt.",
+      "failed": "Etwas ist schiefgelaufen, es wurde nichts geändert. Bitte versuche es erneut."
+    },
     "consent": {
       "title": "{name} freigeben?",
       "signedInAs": "Angemeldet als {name}. Diese App möchte:",

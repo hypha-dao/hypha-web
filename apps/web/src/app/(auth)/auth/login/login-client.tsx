@@ -28,7 +28,12 @@ type SignInBody = {
  * once to this server, which verifies it and opens its own session; the token is never kept
  * and never given to the app that asked.
  */
-export function LoginClient() {
+export function LoginClient({
+  next = null,
+}: {
+  /** Where to go after signing in when no app is asking (the connected-apps page). */
+  next?: string | null;
+} = {}) {
   const t = useTranslations('AuthServer');
   const { isAuthenticated, isLoading, openLoginModal, getAccessToken, logout } =
     useAuthentication();
@@ -69,12 +74,18 @@ export function LoginClient() {
       const params = new URLSearchParams(original);
       const hasLang = params.has('lang');
       params.delete('lang');
+      // `next` is a page setting too; without an app asking there is no signed query at all.
+      params.delete('next');
       let { res, body } = await post(params.toString());
       if (hasLang && body.error === 'invalid_signature') {
         ({ res, body } = await post(original));
       }
       if (res.ok && body.url) {
         window.location.assign(body.url);
+        return;
+      }
+      if (res.ok && next) {
+        window.location.assign(next);
         return;
       }
       // The signed link from the app ran out; signing in again will not help, the app must restart.
@@ -94,7 +105,7 @@ export function LoginClient() {
     } catch {
       setPhase('failed');
     }
-  }, [getAccessToken]);
+  }, [getAccessToken, next]);
 
   React.useEffect(() => {
     if (isLoading || !isAuthenticated || started.current) return;
@@ -110,8 +121,12 @@ export function LoginClient() {
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-4 px-4 py-12">
-      <h1 className="text-4 font-medium">{t('login.title')}</h1>
-      <p className="text-2 text-neutral-11">{t('login.intro')}</p>
+      <h1 className="text-4 font-medium">
+        {next ? t('apps.signInTitle') : t('login.title')}
+      </h1>
+      <p className="text-2 text-neutral-11">
+        {next ? t('apps.signInIntro') : t('login.intro')}
+      </p>
       {phase === 'denied' ? (
         <>
           <p role="alert" className="text-2">

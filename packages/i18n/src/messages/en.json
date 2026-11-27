@@ -6027,6 +6027,34 @@
       "invalid": "This approval link is not valid. Go back to the app and start again.",
       "accountChanged": "Your account changed in another tab, so this approval was not saved. To use a different account, sign out first, then start again from the app."
     },
+    "apps": {
+      "title": "Connected AI apps",
+      "intro": "These apps can use your Hypha account. You can change the spaces each one may use, or disconnect it.",
+      "signInTitle": "Your connected AI apps",
+      "signInIntro": "Sign in with your Hypha account to see and manage the AI apps connected to it.",
+      "empty": "No AI apps are connected to your account.",
+      "unnamed": "Unnamed app",
+      "kind": {
+        "cimd": "Runs from {host}",
+        "registered": "Added by Hypha",
+        "registeredWithHost": "Added by Hypha, runs from {host}",
+        "dcr": "Registered itself; its name has not been checked"
+      },
+      "mayDo": "What it may do",
+      "spaces": "Spaces",
+      "spacesNone": "No spaces",
+      "connectedOn": "Connected on {date}",
+      "lastActive": "last active {date}",
+      "changeSpaces": "Change spaces",
+      "whenApplied": "The app uses the new choice from its next sign-in, at the latest within 10 minutes.",
+      "save": "Save",
+      "cancel": "Cancel",
+      "saved": "Saved. The app uses the new spaces within 10 minutes.",
+      "disconnect": "Disconnect",
+      "confirmDisconnect": "Disconnect {name}? It can no longer use your Hypha account. Access it already has ends within 10 minutes. To use it again, connect it again from the app.",
+      "disconnected": "{name} is disconnected.",
+      "failed": "Something went wrong and nothing was changed. Please try again."
+    },
     "consent": {
       "title": "Approve {name}?",
       "signedInAs": "Signed in as {name}. This app is asking to:",
