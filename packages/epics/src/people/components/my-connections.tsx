@@ -2003,6 +2003,7 @@ export function MyConnections({
   const [inboxChannelOpen, setInboxChannelOpen] = useState(false);
   const [synced, setSynced] = useState(false);
   const [initialSyncComplete, setInitialSyncComplete] = useState(false);
+  const syncedClientRef = useRef<typeof client>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedById, setSelectedById] = useState<
     Map<number, ConnectionMemberRow>
@@ -2309,6 +2310,10 @@ export function MyConnections({
   ]);
 
   useEffect(() => {
+    if (syncedClientRef.current !== client) {
+      syncedClientRef.current = client;
+      setInitialSyncComplete(false);
+    }
     if (!client) {
       // A reconnect, or a token that is still loading, keeps the painted
       // list. Only a confirmed sign-out drops it.
@@ -2539,7 +2544,15 @@ export function MyConnections({
       skipSnapshotWrite.current = false;
       return;
     }
-    writeInboxListSnapshot({ rows, channels }, inboxAccountId);
+    writeInboxListSnapshot(
+      {
+        rows,
+        channels: [...channels].sort(
+          (left, right) => (right.lastTs ?? 0) - (left.lastTs ?? 0),
+        ),
+      },
+      inboxAccountId,
+    );
   }, [channels, client, inboxAccountId, listSettled, rows]);
   const resolvedMembers = useMemo(
     () =>
