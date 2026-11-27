@@ -10,6 +10,11 @@ export {
 } from './matrix-rtc-events';
 export { shouldMirrorCallFeedVideoForDisplay } from './call-local-video-orientation';
 export {
+  CALL_BACKGROUND_EFFECT_NONE,
+  type CallBackgroundEffect,
+  type CallBackgroundEffectStatus,
+} from './call-background-effect';
+export {
   getCallControlsPhase,
   type SpaceGroupCallCaptureMode,
   type SpaceGroupCallRecordingStatus,

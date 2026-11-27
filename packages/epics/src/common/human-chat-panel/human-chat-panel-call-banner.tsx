@@ -1,6 +1,7 @@
 'use client';
 
 import { Loader2, X } from 'lucide-react';
+import type { CallBackgroundEffectControl } from './human-chat-panel-call-background-effect-menu';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 import {
@@ -71,6 +72,8 @@ type HumanChatPanelCallBannerProps = {
   onStartScreenshare: () => void;
   onStopScreenshare: () => void;
   voiceProcessingPreset: 'standard' | 'voice_isolation' | 'music';
+  /** #2563: background effect control, forwarded to the in-call controls. */
+  backgroundEffect?: CallBackgroundEffectControl | null;
   onVoiceProcessingPresetChange: (
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => void;
@@ -182,6 +185,7 @@ export function HumanChatPanelCallBanner({
   onStopScreenshare,
   voiceProcessingPreset,
   onVoiceProcessingPresetChange,
+  backgroundEffect = null,
   unsupportedVoiceProcessingConstraints = null,
   captureMode,
   capturePreference,
@@ -582,6 +586,7 @@ export function HumanChatPanelCallBanner({
                 onStopScreenshare={onStopScreenshare}
                 voiceProcessingPreset={voiceProcessingPreset}
                 onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
+                backgroundEffect={backgroundEffect}
                 unsupportedVoiceProcessingConstraints={
                   unsupportedVoiceProcessingConstraints
                 }

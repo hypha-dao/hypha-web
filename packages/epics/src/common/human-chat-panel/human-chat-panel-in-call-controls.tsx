@@ -1,6 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   AudioLines,
   Check,
@@ -23,6 +29,11 @@ import {
   VideoOff,
 } from 'lucide-react';
 import { CallHangUpIcon } from './call-hang-up-icon';
+import {
+  CallBackgroundEffectMenuBody,
+  type CallBackgroundEffectControl,
+  CallBackgroundEffectTriggerIcon,
+} from './human-chat-panel-call-background-effect-menu';
 import { useTranslations } from 'next-intl';
 import {
   AlertDialog,
@@ -67,6 +78,8 @@ type HumanChatPanelInCallControlsProps = {
   onVoiceProcessingPresetChange: (
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => void;
+  /** #2563: background effect on the local camera; no control when absent or unsupported. */
+  backgroundEffect?: CallBackgroundEffectControl | null;
   /** Which audio constraints the local device/browser can't actually apply (detected via `getCapabilities()` at join). */
   unsupportedVoiceProcessingConstraints?: {
     autoGainControl: boolean;
@@ -128,6 +141,7 @@ export function HumanChatPanelInCallControls({
   onStopScreenshare,
   voiceProcessingPreset,
   onVoiceProcessingPresetChange,
+  backgroundEffect = null,
   unsupportedVoiceProcessingConstraints = null,
   captureMode,
   capturePreference,
@@ -172,8 +186,10 @@ export function HumanChatPanelInCallControls({
   /** Share toolbar overflow: record, mic setup and leave (they would not fit the narrow share dock / PiP). */
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [moreMenuView, setMoreMenuView] = useState<
-    'root' | 'capture' | 'audio'
+    'root' | 'capture' | 'audio' | 'effects'
   >('root');
+  const [isEffectsMenuOpen, setIsEffectsMenuOpen] = useState(false);
+  const effectsMenuRef = useRef<HTMLDivElement | null>(null);
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
   const reactMenuContentRef = useRef<HTMLDivElement | null>(null);
   const reactMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -416,8 +432,9 @@ export function HumanChatPanelInCallControls({
   );
 
   const closeOtherToolbarMenus = useCallback(
-    (except?: 'audio' | 'capture' | 'react' | 'more') => {
+    (except?: 'audio' | 'capture' | 'react' | 'more' | 'effects') => {
       if (except !== 'more') setIsMoreMenuOpen(false);
+      if (except !== 'effects') setIsEffectsMenuOpen(false);
       if (except !== 'audio') setIsAudioMenuOpen(false);
       if (except !== 'capture') setIsCaptureMenuOpen(false);
       if (except !== 'react') setIsReactMenuOpen(false);
@@ -466,6 +483,9 @@ export function HumanChatPanelInCallControls({
       if (!moreMenuRef.current?.contains(target)) {
         setIsMoreMenuOpen(false);
       }
+      if (!effectsMenuRef.current?.contains(target)) {
+        setIsEffectsMenuOpen(false);
+      }
       if (
         !reactMenuContentRef.current?.contains(target) &&
         !reactMenuTriggerRef.current?.contains(target)
@@ -482,12 +502,14 @@ export function HumanChatPanelInCallControls({
       !isAudioMenuOpen &&
       !isCaptureMenuOpen &&
       !isReactMenuOpen &&
-      !isMoreMenuOpen
+      !isMoreMenuOpen &&
+      !isEffectsMenuOpen
     )
       return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsMoreMenuOpen(false);
+        setIsEffectsMenuOpen(false);
         setIsAudioMenuOpen(false);
         setIsCaptureMenuOpen(false);
         setIsReactMenuOpen(false);
@@ -495,7 +517,13 @@ export function HumanChatPanelInCallControls({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isAudioMenuOpen, isCaptureMenuOpen, isReactMenuOpen, isMoreMenuOpen]);
+  }, [
+    isAudioMenuOpen,
+    isCaptureMenuOpen,
+    isReactMenuOpen,
+    isMoreMenuOpen,
+    isEffectsMenuOpen,
+  ]);
 
   /**
    * In PiP, stop-capture confirmation renders inline inside this same menu
@@ -935,6 +963,69 @@ export function HumanChatPanelInCallControls({
       ) : null}
     </div>
   );
+  const showBackgroundEffectControl = Boolean(
+    showAdvancedCallControls && backgroundEffect?.supported,
+  );
+  const renderEffectsMenuBody = (backButton?: ReactNode) =>
+    backgroundEffect ? (
+      <CallBackgroundEffectMenuBody
+        control={backgroundEffect}
+        isCameraOff={isLocalVideoMuted}
+        dark={isFull}
+        backButton={backButton}
+        onTurnCameraOnWithoutEffect={() => {
+          backgroundEffect.onChange({ kind: 'none' });
+          if (isLocalVideoMuted) onToggleCamera();
+        }}
+        onDone={() => {
+          setIsEffectsMenuOpen(false);
+          setIsMoreMenuOpen(false);
+        }}
+      />
+    ) : null;
+  /** #2563: camera background effect, placed with the other settings menus (layout is #2597's). */
+  const renderEffectsMenu =
+    showBackgroundEffectControl && backgroundEffect ? (
+      <div className="relative" ref={effectsMenuRef}>
+        <button
+          type="button"
+          className={audioSettingsBtn}
+          title={t('callBackgroundEffectLabel')}
+          aria-label={t('callBackgroundEffectLabel')}
+          aria-haspopup="menu"
+          aria-expanded={isEffectsMenuOpen}
+          onClick={() => {
+            closeOtherToolbarMenus('effects');
+            setIsEffectsMenuOpen((open) => !open);
+          }}
+        >
+          <CallBackgroundEffectTriggerIcon
+            control={backgroundEffect}
+            iconClassName={icon}
+            strokeWidth={lucideStroke}
+          />
+          <ChevronUp
+            className={menuChevronClass(isEffectsMenuOpen)}
+            aria-hidden
+          />
+        </button>
+        {isEffectsMenuOpen ? (
+          <div
+            role="menu"
+            onPointerDown={(event) => event.stopPropagation()}
+            className={cn(
+              'z-[60] max-h-[min(70vh,calc(100dvh-8rem),var(--hypha-call-dock-popover-max-h,9999px))] overflow-y-auto rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
+              isPipDensity
+                ? 'fixed bottom-14 left-1/2 w-[calc(100dvw-1rem)] max-w-52 -translate-x-1/2'
+                : 'absolute bottom-full mb-2 right-0 min-w-56 max-w-72',
+              isFull && 'border-zinc-700 bg-zinc-900 text-white',
+            )}
+          >
+            {renderEffectsMenuBody()}
+          </div>
+        ) : null}
+      </div>
+    ) : null;
   const moreMenuItemClass =
     'flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50';
   /**
@@ -1015,6 +1106,23 @@ export function HumanChatPanelInCallControls({
                       {t('callVoiceProcessingLabel')}
                     </span>
                   </button>
+                  {showBackgroundEffectControl && backgroundEffect ? (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => setMoreMenuView('effects')}
+                      className={moreMenuItemClass}
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <CallBackgroundEffectTriggerIcon
+                          control={backgroundEffect}
+                          iconClassName="h-4 w-4"
+                          strokeWidth={2}
+                        />
+                        {t('callBackgroundEffectLabel')}
+                      </span>
+                    </button>
+                  ) : null}
                   <div className="-mx-0 my-1 h-px bg-neutral-6" />
                 </>
               ) : null}
@@ -1036,6 +1144,8 @@ export function HumanChatPanelInCallControls({
             </>
           ) : moreMenuView === 'capture' ? (
             captureMenuBody
+          ) : moreMenuView === 'effects' ? (
+            renderEffectsMenuBody(moreMenuBackButton)
           ) : (
             audioMenuBody
           )}
@@ -1349,6 +1459,7 @@ export function HumanChatPanelInCallControls({
                   <>
                     {renderCaptureMenu}
                     {renderAudioSettingsMenu}
+                    {renderEffectsMenu}
                   </>
                 ) : null}
               </div>
@@ -1461,6 +1572,7 @@ export function HumanChatPanelInCallControls({
                   ) : null}
                   {showAdvancedCallControls ? renderCaptureMenu : null}
                   {showAdvancedCallControls ? renderAudioSettingsMenu : null}
+                  {renderEffectsMenu}
                 </>
               ) : null}
               {leaveOnly && callReactionsToolbarVisible ? (

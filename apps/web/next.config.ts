@@ -66,6 +66,8 @@ const MIDDLEWARE_SKIPPED_PREFIXES = [
   'onesignal',
   '.well-known',
   'geo',
+  // Self-hosted third-party assets in public/ (#2563: MediaPipe WASM and model).
+  'vendor/',
   '_next/static',
   '_next/image',
   'favicon.ico',
@@ -171,6 +173,16 @@ const nextConfig: NextConfig = {
         headers: [
           { key: 'Cache-Control', value: MCP_CACHE_CONTROL },
           { key: 'Vary', value: MCP_VARY },
+        ],
+      },
+      // Call background effect assets (#2563): paths carry the version, so cache for good.
+      {
+        source: '/vendor/mediapipe/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
         ],
       },
       {

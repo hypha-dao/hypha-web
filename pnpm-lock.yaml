@@ -1078,6 +1078,9 @@ importers:
       '@hypha-platform/ui-utils':
         specifier: workspace:*
         version: link:../ui-utils
+      '@livekit/track-processors':
+        specifier: 0.8.3
+        version: 0.8.3(@types/dom-mediacapture-transform@0.1.12)(livekit-client@2.20.0(@types/dom-mediacapture-record@1.0.22))
       '@privy-io/node':
         specifier: ^0.12.0
         version: 0.12.0(viem@2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76))
@@ -4334,6 +4337,12 @@ packages:
   '@livekit/protocol@1.48.0':
     resolution: {integrity: sha512-fYHYgltH6YavAsokl3qsHLkBdQeKCl4UORVTub5crS3t8JtKFZ0uinHDFQ+XXdNKS6Ub9gcOjV+UHcDiqnWXoQ==}
 
+  '@livekit/track-processors@0.8.3':
+    resolution: {integrity: sha512-68hetu9AV0mHjOM4UDSgdJRjpckcy2LFxEYh4iN1X6niP2qiaQCz826wDKn7ULl4a+czyfAkiN9gzwKuRCOlUQ==}
+    peerDependencies:
+      '@types/dom-mediacapture-transform': ^0.1.9
+      livekit-client: ^1.12.0 || ^2.1.0
+
   '@lukeed/ms@2.0.2':
     resolution: {integrity: sha512-9I2Zn6+NJLfaGoz9jN3lpwDgAYvfGeNYdbAIjJOqzs4Tpc+VU3Jqq4IofSUBKajiDS8k9fZIg18/z13mpk1bsA==}
     engines: {node: '>=8'}
@@ -4356,6 +4365,9 @@ packages:
     peerDependencies:
       '@types/react': '>=16'
       react: '>=16'
+
+  '@mediapipe/tasks-vision@0.10.14':
+    resolution: {integrity: sha512-vOifgZhkndgybdvoRITzRkIueWWSiCKuEUXXK6Q4FaJsFvRJuwgg++vqFUMlL0Uox62U5aEXFhHxlhV7Ja5e3Q==}
 
   '@mermaid-js/parser@0.4.0':
     resolution: {integrity: sha512-wla8XOWvQAwuqy+gxiZqY+c7FokraOTHRWMsbB4AgRx9Sy7zKslNyejy7E+a77qHfey5GXw/ik3IXv/NHMJgaA==}
@@ -8990,6 +9002,12 @@ packages:
 
   '@types/dom-mediacapture-record@1.0.22':
     resolution: {integrity: sha512-mUMZLK3NvwRLcAAT9qmcK+9p7tpU2FHdDsntR3YI4+GY88XrgG4XiE7u1Q2LAN2/FZOz/tdMDC3GQCR4T8nFuw==}
+
+  '@types/dom-mediacapture-transform@0.1.12':
+    resolution: {integrity: sha512-d7/QsLRwF864A5mgIM/YrfiglHoYn7zgCcAoJgW404r+2DwnNr7EBbLnCWpmOMgH8y0te73L1AV6H1bmauaWFw==}
+
+  '@types/dom-webcodecs@0.1.19':
+    resolution: {integrity: sha512-+yFUIDUaASFz0vQpWBErPxun/Lb+F0TdrlTsj50gm7K797YzEx2TmV6fEiwciHyFNghlZYPgQXH5qRcwMHcJFQ==}
 
   '@types/eslint-scope@3.7.7':
     resolution: {integrity: sha512-MzMFlSLBqNF2gcHWO0G1vP/YQyfvrxZ0bF+u7mzUdZ1/xK4A4sru+nraZz5i3iEIk1l1uyicaDVTB4QbbEkAYg==}
@@ -23917,6 +23935,12 @@ snapshots:
     dependencies:
       '@bufbuild/protobuf': 1.10.1
 
+  '@livekit/track-processors@0.8.3(@types/dom-mediacapture-transform@0.1.12)(livekit-client@2.20.0(@types/dom-mediacapture-record@1.0.22))':
+    dependencies:
+      '@mediapipe/tasks-vision': 0.10.14
+      '@types/dom-mediacapture-transform': 0.1.12
+      livekit-client: 2.20.0(@types/dom-mediacapture-record@1.0.22)
+
   '@lukeed/ms@2.0.2': {}
 
   '@marsidev/react-turnstile@0.4.1(react-dom@19.1.2(react@19.1.2))(react@19.1.2)':
@@ -23967,6 +23991,8 @@ snapshots:
       '@types/mdx': 2.0.13
       '@types/react': 19.1.2
       react: 19.1.2
+
+  '@mediapipe/tasks-vision@0.10.14': {}
 
   '@mermaid-js/parser@0.4.0':
     dependencies:
@@ -30579,6 +30605,12 @@ snapshots:
   '@types/doctrine@0.0.9': {}
 
   '@types/dom-mediacapture-record@1.0.22': {}
+
+  '@types/dom-mediacapture-transform@0.1.12':
+    dependencies:
+      '@types/dom-webcodecs': 0.1.19
+
+  '@types/dom-webcodecs@0.1.19': {}
 
   '@types/eslint-scope@3.7.7':
     dependencies:

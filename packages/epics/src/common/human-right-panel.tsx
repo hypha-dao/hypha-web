@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { toCallBackgroundEffectControl } from './human-chat-panel/human-chat-panel-call-background-effect-menu';
 import {
   ClientEvent,
   MatrixEventEvent,
@@ -1591,6 +1592,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     setVoiceProcessingPreset: setSpaceCallVoiceProcessingPreset,
     unsupportedVoiceProcessingConstraints:
       spaceCallUnsupportedVoiceProcessingConstraints,
+    backgroundEffect: spaceCallBackgroundEffect,
+    setBackgroundEffect: setSpaceCallBackgroundEffect,
+    backgroundEffectStatus: spaceCallBackgroundEffectStatus,
+    backgroundEffectSlow: spaceCallBackgroundEffectSlow,
+    backgroundEffectSupported: spaceCallBackgroundEffectSupported,
     tabBackgroundWhileInCall: spaceCallTabBackground,
     retryFromError: retrySpaceCall,
     dismissCallError: dismissSpaceCallError,
@@ -6553,6 +6559,13 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                 onStartScreenshare={handleCallStartScreenshare}
                 onStopScreenshare={handleCallStopScreenshare}
                 voiceProcessingPreset={spaceCallVoiceProcessingPreset}
+                backgroundEffect={toCallBackgroundEffectControl({
+                  backgroundEffect: spaceCallBackgroundEffect,
+                  setBackgroundEffect: setSpaceCallBackgroundEffect,
+                  backgroundEffectStatus: spaceCallBackgroundEffectStatus,
+                  backgroundEffectSlow: spaceCallBackgroundEffectSlow,
+                  backgroundEffectSupported: spaceCallBackgroundEffectSupported,
+                })}
                 onVoiceProcessingPresetChange={
                   handleCallVoiceProcessingPresetChange
                 }

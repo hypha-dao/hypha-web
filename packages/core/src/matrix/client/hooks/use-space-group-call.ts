@@ -4,8 +4,26 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as MatrixSdk from 'matrix-js-sdk';
 import { ClientEvent, RoomEvent } from 'matrix-js-sdk';
 import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
-import type { Room as LiveKitRoom } from 'livekit-client';
+import type { LocalVideoTrack, Room as LiveKitRoom } from 'livekit-client';
 import { LocalAudioTrack, Track } from 'livekit-client';
+import {
+  CALL_BACKGROUND_EFFECT_NONE,
+  type CallBackgroundEffect,
+  type CallBackgroundEffectStatus,
+  createCallBackgroundFrameDropDetector,
+  isCallBackgroundEffectActive,
+  persistCallBackgroundEffect,
+  readStoredCallBackgroundEffect,
+  supportsCallBackgroundEffects,
+} from './call-background-effect';
+import {
+  attachCallBackgroundProcessor,
+  CallBackgroundEffectError,
+  type CallBackgroundProcessorHooks,
+  createCameraTrackWithBackgroundEffect,
+  getCallBackgroundProcessor,
+  switchCallBackgroundEffect,
+} from './call-background-processor';
 import { publishScreenShare } from './screenshare-publish-settings';
 import {
   MATRIX_RTC_SESSION_EVENT,
@@ -455,6 +473,23 @@ export function useSpaceGroupCall(
     useState<SpaceGroupCallVoiceProcessingPreset>('standard');
   const voiceProcessingPresetRef =
     useRef<SpaceGroupCallVoiceProcessingPreset>('standard');
+  /** #2563: background effect on the local camera (stored per device, default none). */
+  const [backgroundEffect, setBackgroundEffectState] =
+    useState<CallBackgroundEffect>(CALL_BACKGROUND_EFFECT_NONE);
+  const backgroundEffectRef = useRef<CallBackgroundEffect>(
+    CALL_BACKGROUND_EFFECT_NONE,
+  );
+  const [backgroundEffectStatus, setBackgroundEffectStatus] =
+    useState<CallBackgroundEffectStatus>('idle');
+  const [backgroundEffectSlow, setBackgroundEffectSlow] = useState(false);
+  const [backgroundEffectSupported, setBackgroundEffectSupported] =
+    useState(false);
+  const backgroundEffectSupportedRef = useRef(false);
+  /** Bumped on every camera on/off request and on cleanup; a pending effect start checks it. */
+  const cameraRequestEpochRef = useRef(0);
+  const backgroundFrameDropDetectorRef = useRef(
+    createCallBackgroundFrameDropDetector(),
+  );
   const [
     unsupportedVoiceProcessingConstraints,
     setUnsupportedVoiceProcessingConstraints,
@@ -1350,6 +1385,10 @@ export function useSpaceGroupCall(
       setLocalPreviewStream(null);
       setIsMicrophoneMuted(false);
       setIsLocalVideoMuted(true);
+      cameraRequestEpochRef.current += 1;
+      setBackgroundEffectStatus('idle');
+      backgroundFrameDropDetectorRef.current.reset();
+      setBackgroundEffectSlow(false);
       setRoom(null);
       if (activeSpeakerCommitTimerRef.current != null) {
         clearTimeout(activeSpeakerCommitTimerRef.current);
@@ -1385,6 +1424,112 @@ export function useSpaceGroupCall(
     }
     setLocalPreviewStream(localPreviewStreamFromRoom(lkRoom));
   }, []);
+
+  const backgroundProcessorHooks = useMemo<CallBackgroundProcessorHooks>(
+    () => ({
+      onFrameProcessed: (stats) => {
+        const detector = backgroundFrameDropDetectorRef.current;
+        const wasSlow = detector.isSlow;
+        const slow = detector.record(stats.processingTimeMs);
+        if (slow !== wasSlow) setBackgroundEffectSlow(slow);
+      },
+    }),
+    [],
+  );
+  const resetBackgroundFrameDrops = useCallback(() => {
+    backgroundFrameDropDetectorRef.current.reset();
+    setBackgroundEffectSlow(false);
+  }, []);
+  /** An effect start on the live camera track is in progress (see `setBackgroundEffect`). */
+  const backgroundAttachInFlightRef = useRef(false);
+
+  /**
+   * #2563: turns the camera on. Without an effect this is exactly `setCameraEnabled(true)`.
+   * With an effect and no processed track yet, the new track gets the effect before it is
+   * published, so others never see the unprocessed camera; if the effect cannot start, the
+   * camera stays off and the status is `failed`. Returns whether the camera is on.
+   */
+  const enableLocalCamera = useCallback(
+    async (lkRoom: LiveKitRoom): Promise<boolean> => {
+      const participant = lkRoom.localParticipant;
+      const effect = backgroundEffectRef.current;
+      const existing = participant.getTrackPublication(Track.Source.Camera)
+        ?.track as LocalVideoTrack | undefined;
+      const existingHasProcessor = Boolean(
+        getCallBackgroundProcessor(existing),
+      );
+
+      if (
+        !backgroundEffectSupportedRef.current ||
+        !isCallBackgroundEffectActive(effect) ||
+        existingHasProcessor
+      ) {
+        // Unmuting restarts our processor with the new camera capture (livekit-client
+        // `LocalTrack.setMediaStreamTrack`), so the effect continues; sync its mode first.
+        if (existing && existingHasProcessor) {
+          await switchCallBackgroundEffect(existing, effect);
+        }
+        await participant.setCameraEnabled(true);
+        setBackgroundEffectStatus(
+          existingHasProcessor && isCallBackgroundEffectActive(effect)
+            ? 'active'
+            : 'idle',
+        );
+        return true;
+      }
+
+      const requestEpoch = cameraRequestEpochRef.current;
+      if (existing) {
+        // A muted camera track without our processor: replace it (invisible to others, the
+        // camera is off) so the new track starts with the effect.
+        await participant.unpublishTrack(existing, true);
+      }
+      resetBackgroundFrameDrops();
+      setBackgroundEffectStatus('applying');
+      let track: LocalVideoTrack;
+      try {
+        track = await createCameraTrackWithBackgroundEffect(
+          lkRoom,
+          effect,
+          backgroundProcessorHooks,
+        );
+      } catch (err) {
+        if (requestEpoch !== cameraRequestEpochRef.current) {
+          return false;
+        }
+        if (err instanceof CallBackgroundEffectError) {
+          logCallDebug('background-effect:start-failed', {
+            message: err.message,
+          });
+          setBackgroundEffectStatus('failed');
+          return false;
+        }
+        setBackgroundEffectStatus('idle');
+        throw err;
+      }
+      if (requestEpoch !== cameraRequestEpochRef.current) {
+        // Camera turned off or call left while the effect was starting.
+        track.stop();
+        return false;
+      }
+      try {
+        // The choice may have changed while the processor was starting.
+        await switchCallBackgroundEffect(track, backgroundEffectRef.current);
+        await participant.publishTrack(track);
+      } catch (err) {
+        track.stop();
+        setBackgroundEffectStatus('idle');
+        throw err;
+      }
+      setBackgroundEffectStatus(
+        isCallBackgroundEffectActive(backgroundEffectRef.current)
+          ? 'active'
+          : 'idle',
+      );
+      return true;
+    },
+    [backgroundProcessorHooks, resetBackgroundFrameDrops],
+  );
 
   const applyScreenshareContentHints = useCallback(
     (lkRoom: LiveKitRoom) => {
@@ -1899,7 +2044,9 @@ export function useSpaceGroupCall(
             true,
             constraintsForVoicePreset(voiceProcessingPresetRef.current),
           ),
-          lkRoom.localParticipant.setCameraEnabled(enableCamera),
+          enableCamera
+            ? enableLocalCamera(lkRoom)
+            : lkRoom.localParticipant.setCameraEnabled(false),
         ]);
         logJoinDebugStep('join-step:local-tracks-published');
 
@@ -2034,6 +2181,7 @@ export function useSpaceGroupCall(
       attachLiveKitListeners,
       authToken,
       client,
+      enableLocalCamera,
       spaceSlug,
       roomId,
       refreshLocalPreview,
@@ -2128,8 +2276,12 @@ export function useSpaceGroupCall(
     async (muted: boolean) => {
       const lkRoom = liveKitRoomRef.current;
       if (!lkRoom) return;
+      cameraRequestEpochRef.current += 1;
       if (muted) {
         setCameraAccessBlocked(false);
+        setBackgroundEffectStatus((status) =>
+          status === 'applying' || status === 'failed' ? 'idle' : status,
+        );
       } else {
         const access = await requestLocalCameraAccess();
         if (!access.ok) {
@@ -2146,8 +2298,13 @@ export function useSpaceGroupCall(
         }
         setCameraAccessBlocked(false);
       }
-      await lkRoom.localParticipant.setCameraEnabled(!muted);
-      if (!muted) {
+      let cameraOn = false;
+      if (muted) {
+        await lkRoom.localParticipant.setCameraEnabled(false);
+      } else {
+        cameraOn = await enableLocalCamera(lkRoom);
+      }
+      if (cameraOn) {
         setCallKind('video');
         lastJoinKindRef.current = 'video';
       }
@@ -2155,7 +2312,81 @@ export function useSpaceGroupCall(
       refreshLocalPreview();
       scheduleFeedBatched();
     },
-    [refreshLocalPreview, scheduleFeedBatched, syncLocalMuteState],
+    [
+      enableLocalCamera,
+      refreshLocalPreview,
+      scheduleFeedBatched,
+      syncLocalMuteState,
+    ],
+  );
+
+  /**
+   * #2563: chooses the background effect. Stored on this device and used for the next camera
+   * track too. With the camera on, switches the running processor live, or starts one on the
+   * live track (already visible to others, so no privacy change while it starts).
+   */
+  const setBackgroundEffect = useCallback(
+    async (effect: CallBackgroundEffect) => {
+      backgroundEffectRef.current = effect;
+      setBackgroundEffectState(effect);
+      persistCallBackgroundEffect(effect);
+      resetBackgroundFrameDrops();
+
+      const lkRoom = liveKitRoomRef.current;
+      const publication = lkRoom?.localParticipant.getTrackPublication(
+        Track.Source.Camera,
+      );
+      const track = publication?.track as LocalVideoTrack | undefined;
+      if (!lkRoom || !track || publication?.isMuted) {
+        // Applied when the camera turns on; a start in progress picks the new choice up.
+        setBackgroundEffectStatus((status) =>
+          status === 'applying' ? status : 'idle',
+        );
+        return;
+      }
+      if (backgroundAttachInFlightRef.current) return;
+
+      const active = isCallBackgroundEffectActive(effect);
+      if (await switchCallBackgroundEffect(track, effect)) {
+        setBackgroundEffectStatus(active ? 'active' : 'idle');
+        return;
+      }
+      if (!active || !backgroundEffectSupportedRef.current) {
+        setBackgroundEffectStatus('idle');
+        return;
+      }
+
+      backgroundAttachInFlightRef.current = true;
+      setBackgroundEffectStatus('applying');
+      try {
+        await attachCallBackgroundProcessor(
+          track,
+          effect,
+          backgroundProcessorHooks,
+        );
+        await switchCallBackgroundEffect(track, backgroundEffectRef.current);
+        setBackgroundEffectStatus(
+          isCallBackgroundEffectActive(backgroundEffectRef.current)
+            ? 'active'
+            : 'idle',
+        );
+      } catch (err) {
+        logCallDebug('background-effect:live-start-failed', {
+          message: err instanceof Error ? err.message : String(err),
+        });
+        setBackgroundEffectStatus('failed');
+      } finally {
+        backgroundAttachInFlightRef.current = false;
+      }
+      refreshLocalPreview();
+      scheduleFeedBatched();
+    },
+    [
+      backgroundProcessorHooks,
+      refreshLocalPreview,
+      resetBackgroundFrameDrops,
+      scheduleFeedBatched,
+    ],
   );
 
   const setScreensharingEnabled = useCallback(
@@ -2336,6 +2567,15 @@ export function useSpaceGroupCall(
 
   useEffect(() => {
     setVoiceProcessingPresetState(readVoiceProcessingPreset());
+  }, []);
+
+  useEffect(() => {
+    const supported = supportsCallBackgroundEffects();
+    backgroundEffectSupportedRef.current = supported;
+    setBackgroundEffectSupported(supported);
+    const stored = readStoredCallBackgroundEffect();
+    backgroundEffectRef.current = stored;
+    setBackgroundEffectState(stored);
   }, []);
 
   useEffect(() => {
@@ -3134,6 +3374,14 @@ export function useSpaceGroupCall(
     voiceProcessingPreset,
     setVoiceProcessingPreset,
     unsupportedVoiceProcessingConstraints,
+    /** #2563: background effect on the local camera (blur), stored on this device. */
+    backgroundEffect,
+    setBackgroundEffect,
+    backgroundEffectStatus,
+    /** The effect's processing is too slow for the camera frame rate (frames drop). */
+    backgroundEffectSlow,
+    /** False where the browser cannot run the effect; the control is hidden then. */
+    backgroundEffectSupported,
     /** WCUX-SHARE-VOICE-5: auto voice boost while presenting from Speech preset. */
     isScreensharing,
     /** Another participant is presenting — local share start is blocked (one at a time). */

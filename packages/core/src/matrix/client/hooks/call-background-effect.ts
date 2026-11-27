@@ -1,0 +1,216 @@
+/**
+ * Background effect on the local camera in calls (#2563): the member's choice, how it is stored,
+ * whether the browser can run it, and when the processing is too slow. Pure logic only; the
+ * processor itself is in `call-background-processor.ts` and loaded on first use.
+ */
+
+export type CallBackgroundEffect = { kind: 'none' } | { kind: 'blur' };
+
+/** Where the effect stands on the current camera track. */
+export type CallBackgroundEffectStatus =
+  /** No effect on the camera now (none chosen, or the camera is off). */
+  | 'idle'
+  /** Loading the model or starting the processor; the camera is not published meanwhile. */
+  | 'applying'
+  /** The effect runs on the published camera. */
+  | 'active'
+  /** The effect could not start; a new camera track stays off (privacy first). */
+  | 'failed';
+
+export const CALL_BACKGROUND_EFFECT_NONE: CallBackgroundEffect = {
+  kind: 'none',
+};
+
+export const CALL_BACKGROUND_EFFECT_STORAGE_KEY =
+  'hypha-group-call-background-effect-v1';
+
+/** One blur strength for now (callout 1); the package default. */
+export const CALL_BACKGROUND_BLUR_RADIUS = 10;
+
+/**
+ * Exact `@mediapipe/tasks-vision` version `@livekit/track-processors` pins. The WASM files are
+ * served from our own domain under this version (`apps/web/scripts/copy-call-effect-assets.mjs`);
+ * a unit test fails if the installed version moves.
+ */
+export const MEDIAPIPE_TASKS_VISION_VERSION = '0.10.14';
+
+/**
+ * Self-hosted assets, so no CDN request and no CSP change (callout 5). The WASM is copied on
+ * install; the model is committed (see `apps/web/scripts/copy-call-effect-assets.mjs`).
+ */
+export const CALL_BACKGROUND_ASSET_PATHS = {
+  tasksVisionFileSet: `/vendor/mediapipe/tasks-vision-${MEDIAPIPE_TASKS_VISION_VERSION}/wasm`,
+  modelAssetPath: '/vendor/mediapipe/models/selfie_segmenter-float16-v1.tflite',
+} as const;
+
+export function isCallBackgroundEffectActive(
+  effect: CallBackgroundEffect,
+): boolean {
+  return effect.kind !== 'none';
+}
+
+export function callBackgroundEffectsEqual(
+  a: CallBackgroundEffect,
+  b: CallBackgroundEffect,
+): boolean {
+  return a.kind === b.kind;
+}
+
+export function serializeCallBackgroundEffect(
+  effect: CallBackgroundEffect,
+): string {
+  return effect.kind;
+}
+
+/** Unknown or malformed values fall back to no effect. */
+export function parseCallBackgroundEffect(
+  raw: string | null | undefined,
+): CallBackgroundEffect {
+  const value = raw?.trim();
+  if (value === 'blur') return { kind: 'blur' };
+  return CALL_BACKGROUND_EFFECT_NONE;
+}
+
+type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
+
+function defaultStorage(): StorageLike | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+export function readStoredCallBackgroundEffect(
+  storage: StorageLike | null = defaultStorage(),
+): CallBackgroundEffect {
+  if (!storage) return CALL_BACKGROUND_EFFECT_NONE;
+  try {
+    return parseCallBackgroundEffect(
+      storage.getItem(CALL_BACKGROUND_EFFECT_STORAGE_KEY),
+    );
+  } catch {
+    return CALL_BACKGROUND_EFFECT_NONE;
+  }
+}
+
+export function persistCallBackgroundEffect(
+  effect: CallBackgroundEffect,
+  storage: StorageLike | null = defaultStorage(),
+): void {
+  if (!storage) return;
+  try {
+    storage.setItem(
+      CALL_BACKGROUND_EFFECT_STORAGE_KEY,
+      serializeCallBackgroundEffect(effect),
+    );
+  } catch {
+    // ignore persistence write failures (private mode, quota)
+  }
+}
+
+/** Options for the processor's `switchTo`, without importing the package. */
+export type CallBackgroundProcessorMode =
+  | { mode: 'disabled' }
+  | { mode: 'background-blur'; blurRadius: number };
+
+export function processorModeForEffect(
+  effect: CallBackgroundEffect,
+): CallBackgroundProcessorMode {
+  switch (effect.kind) {
+    case 'blur':
+      return {
+        mode: 'background-blur',
+        blurRadius: CALL_BACKGROUND_BLUR_RADIUS,
+      };
+    case 'none':
+    default:
+      return { mode: 'disabled' };
+  }
+}
+
+type SupportEnv = {
+  OffscreenCanvas?: unknown;
+  VideoFrame?: unknown;
+  createImageBitmap?: unknown;
+  MediaStreamTrackProcessor?: unknown;
+  MediaStreamTrackGenerator?: unknown;
+  HTMLCanvasElement?: { prototype: object };
+  document?: { createElement: (tag: 'canvas') => HTMLCanvasElement };
+};
+
+/**
+ * Same test as `supportsBackgroundProcessors()` in `@livekit/track-processors@0.8.3`
+ * (`BackgroundTransformer.isSupported && ProcessorWrapper.isSupported`), so the control can be
+ * hidden without loading the package. The package's own check still runs before use.
+ */
+export function supportsCallBackgroundEffects(
+  env: SupportEnv | undefined = typeof window === 'undefined'
+    ? undefined
+    : (window as unknown as SupportEnv),
+): boolean {
+  if (!env?.document) return false;
+  try {
+    const transformerSupported =
+      typeof env.OffscreenCanvas !== 'undefined' &&
+      typeof env.VideoFrame !== 'undefined' &&
+      typeof env.createImageBitmap !== 'undefined' &&
+      !!env.document.createElement('canvas').getContext('webgl2');
+    if (!transformerSupported) return false;
+    const hasStreamProcessor =
+      typeof env.MediaStreamTrackProcessor !== 'undefined' &&
+      typeof env.MediaStreamTrackGenerator !== 'undefined';
+    const hasFallback =
+      typeof env.HTMLCanvasElement !== 'undefined' &&
+      'captureStream' in env.HTMLCanvasElement.prototype;
+    return hasStreamProcessor || hasFallback;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Flags frame drops from the processor's per-frame timings (callout 4: always offered, warn when
+ * slow). Slow when the average over `windowSize` frames exceeds `slowAboveMs`; clears only below
+ * `recoverBelowMs` so the warning does not flicker.
+ */
+export function createCallBackgroundFrameDropDetector({
+  windowSize = 30,
+  slowAboveMs = 45,
+  recoverBelowMs = 30,
+}: {
+  windowSize?: number;
+  slowAboveMs?: number;
+  recoverBelowMs?: number;
+} = {}) {
+  let samples: number[] = [];
+  let sum = 0;
+  let slow = false;
+  return {
+    /** Records one frame's processing time; returns whether processing is currently slow. */
+    record(processingTimeMs: number): boolean {
+      if (!Number.isFinite(processingTimeMs) || processingTimeMs < 0) {
+        return slow;
+      }
+      samples.push(processingTimeMs);
+      sum += processingTimeMs;
+      if (samples.length > windowSize) {
+        sum -= samples.shift() ?? 0;
+      }
+      if (samples.length < windowSize) return slow;
+      const average = sum / samples.length;
+      if (!slow && average > slowAboveMs) slow = true;
+      else if (slow && average < recoverBelowMs) slow = false;
+      return slow;
+    },
+    reset() {
+      samples = [];
+      sum = 0;
+      slow = false;
+    },
+    get isSlow() {
+      return slow;
+    },
+  };
+}

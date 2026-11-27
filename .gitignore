@@ -78,3 +78,6 @@ context-local/
 
 # Local Matrix client discovery well-known file (dev-only, machine-specific)
 apps/web/public/.well-known/
+
+# MediaPipe WASM for call background effects, copied on install (#2563)
+apps/web/public/vendor/mediapipe/tasks-vision-*/
