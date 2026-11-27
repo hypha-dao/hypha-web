@@ -9,6 +9,7 @@ export {
 } from './common/pagination';
 export * from './governance/server';
 export * from './access';
+export * from './data-access';
 export * from './features';
 export * from './api-v2/server';
 export * from './people/server';

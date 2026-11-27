@@ -1,6 +1,6 @@
 import 'server-only';
 
-import type { DbConfig } from '../server';
+import type { ReadCtx } from '../data-access/types';
 import type { Caller } from './caller';
 import { failure, type Failure } from './failure';
 import { authorizeSpaceRead } from './space-read-gate';
@@ -71,15 +71,15 @@ function grantsAllow(caller: Caller, spaceId: number): boolean {
  */
 export async function decideSpaceAccess(
   space: SpaceRef,
-  caller: Caller,
-  config: DbConfig,
+  ctx: ReadCtx,
   options: { matrix?: boolean } = {},
 ): Promise<SpaceAccessDecision> {
+  const caller = ctx.actor;
   if (!grantsAllow(caller, space.id)) return DENY;
   if (isGrantAwareCaller(caller) && space.web3SpaceId == null) return DENY;
   if (options.matrix === false) return { outcome: 'full' };
 
-  const gate = await authorizeSpaceRead(space, caller, config);
+  const gate = await authorizeSpaceRead(space, ctx);
   if (gate.ok) return { outcome: 'full' };
   return { outcome: 'none', failure: gate };
 }
@@ -92,8 +92,7 @@ export async function filterSpacesForCaller<
   T extends { id: number; web3SpaceId?: number | null },
 >(
   spaces: T[],
-  caller: Caller,
-  config: DbConfig,
+  ctx: ReadCtx,
 ): Promise<{
   visible: T[];
   levels: Map<number, SpaceVisibility>;
@@ -101,8 +100,8 @@ export async function filterSpacesForCaller<
    *  "empty", the check failed (and everything stayed hidden). */
   levelsUnreadable: boolean;
 }> {
-  const considered = spaces.filter((space) => grantsAllow(caller, space.id));
-  const result = await filterSpacesForViewer(considered, caller, config);
+  const considered = spaces.filter((space) => grantsAllow(ctx.actor, space.id));
+  const result = await filterSpacesForViewer(considered, ctx);
   const withChainId = considered.filter(
     (space) => typeof space.web3SpaceId === 'number',
   ).length;

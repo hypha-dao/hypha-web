@@ -2,13 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 const findPersonBySub = vi.fn();
-vi.mock('../../people/server/queries', () => ({
+vi.mock('../../data-access/people', () => ({
   findPersonBySub: (...a: unknown[]) => findPersonBySub(...a),
 }));
 
 import { resolveCaller } from '../resolve-caller';
 
-const db = {} as never;
 const claims = {
   kind: 'user' as const,
   sub: 'did:privy:abc',
@@ -23,10 +22,10 @@ beforeEach(() => {
 describe('resolveCaller (verified authorization-server claims only)', () => {
   it('builds a user caller with via, looked up by the token subject', async () => {
     findPersonBySub.mockResolvedValue({ id: 9, address: '0xAbC' });
-    const r = await resolveCaller(claims, { db });
+    const r = await resolveCaller(claims);
     expect(findPersonBySub).toHaveBeenCalledWith(
+      { actor: { kind: 'service', name: 'identity' } },
       { sub: 'did:privy:abc' },
-      { db },
     );
     expect(r).toMatchObject({
       ok: true,
@@ -44,7 +43,7 @@ describe('resolveCaller (verified authorization-server claims only)', () => {
 
   it('carries the space grants of the token (DB ids)', async () => {
     findPersonBySub.mockResolvedValue({ id: 9, address: null });
-    const r = await resolveCaller({ ...claims, spaceGrants: [4, 7] }, { db });
+    const r = await resolveCaller({ ...claims, spaceGrants: [4, 7] });
     expect(r).toMatchObject({
       ok: true,
       caller: { address: null, via: { spaceGrants: [4, 7] } },
@@ -54,12 +53,12 @@ describe('resolveCaller (verified authorization-server claims only)', () => {
   it('carries the client name of the token, or null when it has none (#2756)', async () => {
     findPersonBySub.mockResolvedValue({ id: 9, address: null });
     expect(
-      await resolveCaller({ ...claims, clientName: 'Example AI' }, { db }),
+      await resolveCaller({ ...claims, clientName: 'Example AI' }),
     ).toMatchObject({
       ok: true,
       caller: { via: { clientName: 'Example AI' } },
     });
-    expect(await resolveCaller(claims, { db })).toMatchObject({
+    expect(await resolveCaller(claims)).toMatchObject({
       ok: true,
       caller: { via: { clientName: null } },
     });
@@ -67,7 +66,7 @@ describe('resolveCaller (verified authorization-server claims only)', () => {
 
   it('a person without a profile is a typed failure, never a guest', async () => {
     findPersonBySub.mockResolvedValue(null);
-    const r = await resolveCaller(claims, { db });
+    const r = await resolveCaller(claims);
     expect(r).toMatchObject({ ok: false, code: 'no_profile' });
     expect(JSON.stringify(r)).not.toContain('guest');
   });

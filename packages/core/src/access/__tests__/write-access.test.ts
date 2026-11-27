@@ -10,7 +10,6 @@ vi.mock('../chain-reads', () => ({ readMemberAndDelegate: vi.fn() }));
 
 import { decideSpaceWrite } from '../write-access';
 
-const db = {} as never;
 const SCOPE = 'signals:write';
 const space = { id: 5, web3SpaceId: 50 };
 
@@ -38,7 +37,12 @@ const run = (
   c: never,
   s: typeof space | { id: number; web3SpaceId: null } = space,
 ) =>
-  decideSpaceWrite(s, c, { scope: SCOPE }, { db, readMembership: membership });
+  decideSpaceWrite(
+    s,
+    { actor: c },
+    { scope: SCOPE },
+    { readMembership: membership },
+  );
 
 beforeEach(() => {
   vi.clearAllMocks();

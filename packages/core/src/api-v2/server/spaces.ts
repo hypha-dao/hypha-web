@@ -1,6 +1,5 @@
 import 'server-only';
 
-import type { DbConfig } from '../../server';
 import { buildPaginatedResponse } from '../../common/pagination';
 import type { PaginationMetadata } from '../../common/types';
 import { listSpaces, type ListedSpace } from '../../features/list-spaces';
@@ -62,7 +61,6 @@ export type SpacesListV2 = {
 export async function buildSpacesListV2(
   query: SpacesListQuery,
   caller: V2Caller,
-  config: DbConfig,
 ): Promise<{ ok: true; body: SpacesListV2 } | V2BadRequest | V2Failure> {
   const include = parseInclude(query.include, SPACES_LIST_INCLUDE_BLOCKS);
   if (!include.ok) return badInclude(include.unknown, include.allowed);
@@ -86,8 +84,7 @@ export async function buildSpacesListV2(
         visibility: include.blocks.has('visibility'),
       },
     },
-    caller,
-    config,
+    { actor: caller },
   );
   if (!r.ok) return toV2Failure(r);
 
