@@ -1,6 +1,7 @@
 'use server';
 
 import { db } from '@hypha-platform/storage-postgres';
+import type { DbConfig } from '../../../common/server/types';
 import { findAllSpacesBySlugs } from '@hypha-platform/core/server';
 import { Space } from '@hypha-platform/core/client';
 import {
@@ -13,11 +14,16 @@ import { mapDbSpaceToSpace } from '../map-db-space';
 export async function getSpacesBySlugs(
   slugs: string[],
   { parentOnly = true }: { parentOnly?: boolean } = {},
+  // Optional, for the data-access boundary (#2745); existing callers keep the default.
+  connection: DbConfig['db'] = db,
 ): Promise<Space[]> {
   if (slugs.length === 0) return [];
 
   try {
-    const spaces = await findAllSpacesBySlugs({ slugs, parentOnly }, { db });
+    const spaces = await findAllSpacesBySlugs(
+      { slugs, parentOnly },
+      { db: connection },
+    );
 
     const spacesWithWeb3Id = spaces.filter(
       ({ web3SpaceId }) => web3SpaceId !== null,
