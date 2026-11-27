@@ -4705,6 +4705,7 @@
     "signalFormStatusHint": "Arbeidsflyttrinn for dette signalet (vises som kolonner i Kanban-tavle- og Swimlane-visning).",
     "signalFormBoard": "Tavlekategori",
     "signalFormBoardHint": "Organisatorisk swimlane — grupperer signaler etter team, initiativ eller arbeidsstrøm. Ikke det samme som Type (Mulighet/Risiko/Innsikt) eller Emneknagger.",
+    "signalBoardsLoadFailed": "Kunne ikke laste inn tavlene i dette området.",
     "signalFormDueDate": "Frist",
     "signalFormDueDateHint": "Valgfri måldato for å følge opp denne signaloppgaven.",
     "signalAssignee": "Ansvarlig",

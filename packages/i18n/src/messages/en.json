@@ -4736,6 +4736,7 @@
     "signalFormStatusHint": "Workflow stage for this signal (shown as columns in Kanban Board and Swimlane views).",
     "signalFormBoard": "Board category",
     "signalFormBoardHint": "Organizational swimlane — groups signals by team, initiative, or workstream. Not the same as Type (Opportunity/Risk/Insight) or Tags.",
+    "signalBoardsLoadFailed": "Could not load this space's boards.",
     "signalFormDueDate": "Due date",
     "signalFormDueDateHint": "Optional target date for tracking this signal task.",
     "signalAssignee": "Assignee",

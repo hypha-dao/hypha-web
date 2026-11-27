@@ -4131,6 +4131,7 @@
     "signalFormStatusHint": "Etapa do fluxo de trabalho deste sinal (colunas nas vistas Board e Swimlane).",
     "signalFormBoard": "Categoria do quadro",
     "signalFormBoardHint": "Swimlane organizacional — agrupa sinais por equipa, iniciativa ou área. Não é o mesmo que Tipo (Oportunidade/Risco/Insight) ou Tags.",
+    "signalBoardsLoadFailed": "Não foi possível carregar os quadros deste espaço.",
     "signalFormDueDate": "Data limite",
     "signalFormDueDateHint": "Data-alvo opcional para acompanhar esta tarefa de sinal.",
     "signalAssignee": "Responsável",
