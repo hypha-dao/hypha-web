@@ -10,7 +10,8 @@ import { connect, makeDeps } from './harness';
  */
 describe('tools/list is the reviewed text, in the fixed order', () => {
   it('matches the snapshot (order, text, schemas, annotations)', async () => {
-    const { deps } = makeDeps();
+    // Writes on, so the snapshot holds the text of every tool the server can offer.
+    const { deps } = makeDeps({ writesEnabled: true });
     const { client, close } = await connect(deps);
     const { tools } = await client.listTools();
     const instructions = client.getInstructions();
@@ -34,7 +35,16 @@ describe('tools/list is the reviewed text, in the fixed order', () => {
     ]);
   });
 
-  it('every tool is read-only and closed-world', async () => {
+  it('with writes on, the write tool comes last', async () => {
+    const { deps } = makeDeps({ writesEnabled: true });
+    const { client, close } = await connect(deps);
+    const names = (await client.listTools()).tools.map((t) => t.name);
+    await close();
+    expect(names.at(-1)).toBe('hypha_create_signal');
+    expect(names).toHaveLength(8);
+  });
+
+  it('with writes off, every tool is read-only and closed-world', async () => {
     const { deps } = makeDeps();
     const { client, close } = await connect(deps);
     const { tools } = await client.listTools();

@@ -11,7 +11,7 @@ import { classifyClient } from '../consent';
 import { isAcceptableRedirectUri } from '../registration';
 
 describe('registered clients', () => {
-  it('Cursor: stable public id, the documented redirect, read and offline_access only', () => {
+  it('Cursor: stable public id, the documented redirect, read, signal creation and offline_access', () => {
     const cursor = REGISTERED_CLIENTS.find(
       (c) => c.clientId === CURSOR_CLIENT_ID,
     );
@@ -22,6 +22,7 @@ describe('registered clients', () => {
     ]);
     expect([...cursor!.scopes].sort()).toEqual([
       'offline_access',
+      'signals:write',
       'spaces:read',
     ]);
   });
