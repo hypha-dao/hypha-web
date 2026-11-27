@@ -12,6 +12,7 @@ import type {
 } from '@livekit/track-processors';
 import {
   CALL_BACKGROUND_ASSET_PATHS,
+  CALL_BACKGROUND_BLUR_RADII,
   CALL_BACKGROUND_BLUR_RADIUS,
   type CallBackgroundProcessorMode,
 } from './call-background-effect';
@@ -21,6 +22,16 @@ export const CALL_BACKGROUND_PROCESSOR_NAME = 'hypha-background-effect';
 
 /** First use downloads ~9.4 MB of WASM; beyond this the effect counts as failed. */
 const PROCESSOR_START_TIMEOUT_MS = 20_000;
+/** A background image that takes longer counts as broken (strong blur instead). */
+const IMAGE_LOAD_TIMEOUT_MS = 15_000;
+/** How often a pending image load checks whether a newer choice replaced it. */
+const SUPERSEDED_POLL_MS = 100;
+
+/** A processor starts in strong blur; an image is switched to once it runs. */
+const START_MODE: CallBackgroundProcessorMode = {
+  mode: 'background-blur',
+  blurRadius: CALL_BACKGROUND_BLUR_RADII.strong,
+};
 
 export class CallBackgroundEffectError extends Error {
   constructor(message: string, cause?: unknown) {
@@ -78,23 +89,63 @@ export function getCallBackgroundProcessor(
 /**
  * Loads and decodes a background image before the processor gets it. The package only logs a
  * failed image load and would keep rendering without it, which could show the room; a failure here
- * is a {@link CallBackgroundImageError} instead. Loaded as the package loads it (anonymous CORS),
- * so it is cached.
+ * is a {@link CallBackgroundImageError} instead (also after {@link IMAGE_LOAD_TIMEOUT_MS}). Loaded
+ * as the package loads it (anonymous CORS), so it is cached. Resolves `superseded` as soon as a
+ * newer choice replaced this one, so a stalled image never holds up the next pass.
  */
 async function preloadEffectImage(
   mode: CallBackgroundProcessorMode,
-): Promise<void> {
-  if (mode.mode !== 'virtual-background') return;
+  shouldCommit: CallBackgroundCommitCheck,
+): Promise<'loaded' | 'superseded'> {
+  if (mode.mode !== 'virtual-background') return 'loaded';
+  let poll: ReturnType<typeof setInterval> | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const img = new Image();
     img.crossOrigin = 'Anonymous';
     img.src = mode.imagePath;
-    await img.decode();
+    return await Promise.race([
+      img.decode().then(() => 'loaded' as const),
+      // A newer choice releases the pass at once instead of waiting for this image.
+      new Promise<'superseded'>((resolve) => {
+        poll = setInterval(() => {
+          if (!shouldCommit()) resolve('superseded');
+        }, SUPERSEDED_POLL_MS);
+      }),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`no image after ${IMAGE_LOAD_TIMEOUT_MS} ms`)),
+          IMAGE_LOAD_TIMEOUT_MS,
+        );
+      }),
+    ]);
   } catch (err) {
     throw new CallBackgroundImageError(
       `Background image failed to load: ${mode.imagePath}`,
       err,
     );
+  } finally {
+    if (poll) clearInterval(poll);
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/** Applies a mode on a running processor; a failed image mode is an image error. */
+async function applyMode(
+  processor: BackgroundProcessorWrapper,
+  mode: CallBackgroundProcessorMode,
+) {
+  try {
+    await processor.switchTo(mode);
+  } catch (err) {
+    // The package loads the image again itself (`loadAndSetBackground`); it can still fail
+    // (revoked blob, decode error) after our preload passed.
+    throw mode.mode === 'virtual-background'
+      ? new CallBackgroundImageError('Background image failed to apply', err)
+      : new CallBackgroundEffectError(
+          'Background effect failed to switch',
+          err,
+        );
   }
 }
 
@@ -166,11 +217,16 @@ async function attachProcessor(
   hooks: CallBackgroundProcessorHooks = {},
   shouldCommit: CallBackgroundCommitCheck = () => true,
 ): Promise<boolean> {
-  await preloadEffectImage(mode);
+  if ((await preloadEffectImage(mode, shouldCommit)) === 'superseded') {
+    return false;
+  }
   if (!shouldCommit()) return false;
+  // Start in strong blur, never in an image mode: 0.8.3 only logs an image that fails during
+  // init and would then pass the room through. The image is switched to once the processor runs.
+  const startMode = mode.mode === 'virtual-background' ? START_MODE : mode;
   let processor: BackgroundProcessorWrapper | null = null;
   try {
-    processor = await createProcessor(mode, hooks);
+    processor = await createProcessor(startMode, hooks);
     // Loading the package can take a while on first use: check again right before attaching.
     if (!shouldCommit()) {
       await processor.destroy().catch(() => undefined);
@@ -181,21 +237,10 @@ async function attachProcessor(
       await withTimeout(pending, PROCESSOR_START_TIMEOUT_MS);
     } catch (err) {
       if (err instanceof CallBackgroundTimeoutError) {
-        // 0.8.3 ignores destroy() while initializing, and livekit-client can still finish the
-        // pending setProcessor later and swap the outgoing track. Remove it when that happens.
-        const late = processor;
-        void pending.then(
-          async () => {
-            if (track.getProcessor() !== late) return;
-            await track.stopProcessor().catch(() => undefined);
-            hooks.onLateStartRemoved?.();
-          },
-          () => undefined,
-        );
+        removeLateStart(track, processor, pending, hooks);
       }
       throw err;
     }
-    return true;
   } catch (err) {
     if (processor && track.getProcessor() === processor) {
       await track.stopProcessor().catch(() => undefined);
@@ -206,12 +251,40 @@ async function attachProcessor(
       ? err
       : new CallBackgroundEffectError('Background effect failed to start', err);
   }
+  if (startMode !== mode) {
+    if (!shouldCommit()) return true; // running (strong blur); the next pass sets the latest
+    await applyMode(processor, mode);
+  }
+  return true;
+}
+
+/**
+ * A start that missed the deadline can still settle later: 0.8.3 ignores destroy() while
+ * initializing, and livekit-client registers the processor before swapping the sender track.
+ * Whatever the outcome, remove that processor from the track if it is still the one there (never a
+ * newer one), else release it.
+ */
+function removeLateStart(
+  track: LocalVideoTrack,
+  late: BackgroundProcessorWrapper,
+  pending: Promise<unknown>,
+  hooks: CallBackgroundProcessorHooks,
+) {
+  const settle = async () => {
+    if (track.getProcessor() === late) {
+      await track.stopProcessor().catch(() => undefined);
+      hooks.onLateStartRemoved?.();
+    } else {
+      await late.destroy().catch(() => undefined);
+    }
+  };
+  void pending.then(settle, settle);
 }
 
 /**
  * Changes the effect on a track that already has our processor (no restart, no artifacts). Returns
- * false when the track has no processor of ours or `shouldCommit` said no after the image loaded.
- * Throws {@link CallBackgroundImageError} when the image cannot load and
+ * false when the track has no processor of ours or a newer choice replaced this one while its
+ * image loaded. Throws {@link CallBackgroundImageError} when the image cannot load or apply and
  * {@link CallBackgroundEffectError} when the switch fails; the previous effect then stays.
  */
 export async function switchCallBackgroundEffect(
@@ -221,18 +294,13 @@ export async function switchCallBackgroundEffect(
 ): Promise<boolean> {
   const processor = getCallBackgroundProcessor(track);
   if (!processor) return false;
-  await preloadEffectImage(mode);
+  if ((await preloadEffectImage(mode, shouldCommit)) === 'superseded') {
+    return false;
+  }
   if (!shouldCommit() || getCallBackgroundProcessor(track) !== processor) {
     return false;
   }
-  try {
-    await processor.switchTo(mode);
-  } catch (err) {
-    throw new CallBackgroundEffectError(
-      'Background effect failed to switch',
-      err,
-    );
-  }
+  await applyMode(processor, mode);
   return true;
 }
 
@@ -302,11 +370,22 @@ export function warmUpCallBackgroundEffect(): Promise<void> {
 export async function recoverCameraWithoutProcessor(
   participant: { setCameraEnabled: (enabled: boolean) => Promise<unknown> },
   track: Pick<LocalVideoTrack, 'stopProcessor' | 'mediaStream'>,
-): Promise<void> {
+  /** False once a newer camera request (e.g. a mute) arrived; then the camera stays as it is. */
+  isCurrent: () => boolean = () => true,
+): Promise<boolean> {
   const captures = track.mediaStream?.getVideoTracks() ?? [];
   await track.stopProcessor().catch(() => undefined);
+  // Unconditional: the orphaned capture must never keep running.
   for (const capture of captures) {
     if (capture.readyState === 'live') capture.stop();
   }
+  if (!isCurrent()) return false;
   await participant.setCameraEnabled(true);
+  // A mute that came in during the camera-on wins (livekit-client serialises mute/unmute, so it
+  // already ran after us; this covers one that completed just before).
+  if (!isCurrent()) {
+    await participant.setCameraEnabled(false);
+    return false;
+  }
+  return true;
 }

@@ -1,15 +1,41 @@
 import { describe, expect, it } from 'vitest';
 import {
   type BackgroundReconcileOutcome,
+  type BackgroundReconcilePass,
   createBackgroundReconciler,
 } from '../call-background-reconciler';
 
-function deferred() {
-  let resolve!: () => void;
-  const promise = new Promise<void>((r) => {
-    resolve = r;
-  });
-  return { promise, resolve };
+/**
+ * A pass that blocks until released, with an explicit signal when each pass starts, so a test
+ * can interleave requests with passes deterministically.
+ */
+function gatedPass(apply: (isSuperseded: () => boolean) => void) {
+  const starts: Array<() => void> = [];
+  let passesStarted = 0;
+  let notifyStart: (() => void) | null = null;
+  const pass: BackgroundReconcilePass = async (_trigger, isSuperseded) => {
+    passesStarted += 1;
+    notifyStart?.();
+    await new Promise<void>((release) => starts.push(release));
+    if (isSuperseded()) return 'superseded';
+    apply(isSuperseded);
+    return 'done';
+  };
+  return {
+    pass,
+    get passesStarted() {
+      return passesStarted;
+    },
+    /** Resolves once the next pass has started. */
+    nextStart: () =>
+      new Promise<void>((resolve) => {
+        notifyStart = () => {
+          notifyStart = null;
+          resolve();
+        };
+      }),
+    releaseCurrent: () => starts.shift()?.(),
+  };
 }
 
 describe('createBackgroundReconciler', () => {
@@ -30,37 +56,32 @@ describe('createBackgroundReconciler', () => {
     expect(maxActive).toBe(1);
   });
 
-  it('gives the latest request a pass even after many superseding requests', async () => {
-    // Regression: a fixed pass cap could leave the last choice (e.g. None) unapplied.
-    const seen: string[] = [];
-    let state = 'image-0';
-    const gates: Array<() => void> = [];
-    const reconciler = createBackgroundReconciler(
-      async (trigger, isSuperseded) => {
-        const applying = state;
-        const gate = deferred();
-        gates.push(gate.resolve);
-        await gate.promise;
-        if (isSuperseded()) return 'superseded';
-        seen.push(`${trigger}:${applying}`);
-        return 'done';
-      },
-    );
+  it('applies the latest choice after more than five superseded passes', async () => {
+    // Regression: a fixed five-pass cap could leave the last choice (e.g. None) unapplied.
+    let choice = 'image-0';
+    const applied: string[] = [];
+    const gate = gatedPass(() => applied.push(choice));
+    const reconciler = createBackgroundReconciler(gate.pass);
+
+    let started = gate.nextStart();
     const run = reconciler.request('pick');
-    for (let i = 1; i <= 8; i += 1) {
-      await Promise.resolve();
-      state = `image-${i}`;
-      void reconciler.request('pick');
-      gates.shift()?.();
+    await started;
+    for (let i = 1; i <= 7; i += 1) {
+      choice = `image-${i}`;
+      void reconciler.request('pick'); // supersedes the running pass
+      started = gate.nextStart();
+      gate.releaseCurrent();
+      await started; // the next pass has really begun
     }
-    state = 'none';
+    expect(gate.passesStarted).toBeGreaterThan(5);
+    choice = 'none';
     void reconciler.request('pick');
-    while (reconciler.isRunning) {
-      gates.shift()?.();
-      await new Promise((r) => setTimeout(r, 0));
-    }
+    started = gate.nextStart();
+    gate.releaseCurrent();
+    await started;
+    gate.releaseCurrent();
     await run;
-    expect(seen.at(-1)).toBe('pick:none');
+    expect(applied).toEqual(['none']);
   });
 
   it('caps retries when nothing newer arrives', async () => {
@@ -91,21 +112,41 @@ describe('createBackgroundReconciler', () => {
     expect(superseded).toBe(true);
   });
 
-  it('drops a running pass on invalidate and survives a throwing pass', async () => {
-    let superseded: boolean | null = null;
-    const gate = deferred();
-    const reconciler = createBackgroundReconciler(
-      async (_trigger, isSuperseded) => {
-        await gate.promise;
-        superseded ??= isSuperseded();
-        throw new Error('boom');
-      },
-    );
+  it('invalidate drops the running pass without owing another one', async () => {
+    const gate = gatedPass(() => undefined);
+    const reconciler = createBackgroundReconciler(gate.pass);
+    const started = gate.nextStart();
     const run = reconciler.request('x');
+    await started;
     reconciler.invalidate();
-    gate.resolve();
+    gate.releaseCurrent();
     await run;
-    expect(superseded).toBe(true);
+    expect(gate.passesStarted).toBe(1);
+  });
+
+  it('a request made after invalidate still gets its pass', async () => {
+    const applied: string[] = [];
+    const gate = gatedPass(() => applied.push('after'));
+    const reconciler = createBackgroundReconciler(gate.pass);
+    let started = gate.nextStart();
+    const run = reconciler.request('x');
+    await started;
+    reconciler.invalidate();
+    void reconciler.request('y');
+    started = gate.nextStart();
+    gate.releaseCurrent();
+    await started;
+    gate.releaseCurrent();
+    await run;
+    expect(gate.passesStarted).toBe(2);
+    expect(applied).toEqual(['after']);
+  });
+
+  it('survives a throwing pass', async () => {
+    const reconciler = createBackgroundReconciler(async () => {
+      throw new Error('boom');
+    });
+    await reconciler.request('x');
     expect(reconciler.isRunning).toBe(false);
   });
 });

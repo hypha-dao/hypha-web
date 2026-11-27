@@ -27,13 +27,17 @@ export function createBackgroundReconciler(
   }: { epoch?: () => number; maxRetries?: number } = {},
 ) {
   let running = false;
+  /** Bumps on requests and on invalidate: a running pass compares it to know it is stale. */
   let generation = 0;
+  /** Bumps on requests only: decides whether another pass is owed. */
+  let requests = 0;
   let latestTrigger = '';
 
   return {
     /** Asks for a pass; resolves when the reconciler is idle again (or at once if one is running). */
     async request(trigger: string): Promise<void> {
       generation += 1;
+      requests += 1;
       latestTrigger = trigger;
       if (running) return;
       running = true;
@@ -41,6 +45,7 @@ export function createBackgroundReconciler(
       try {
         for (;;) {
           const requested = generation;
+          const requestCount = requests;
           const startEpoch = epoch();
           let outcome: BackgroundReconcileOutcome;
           try {
@@ -51,7 +56,7 @@ export function createBackgroundReconciler(
           } catch {
             outcome = 'done';
           }
-          if (generation !== requested) {
+          if (requests !== requestCount) {
             // A newer request arrived meanwhile: it always gets its own pass.
             retries = 0;
             continue;
@@ -63,7 +68,7 @@ export function createBackgroundReconciler(
         running = false;
       }
     },
-    /** Drops the work of a running pass (call ended). */
+    /** Drops the work of a running pass (call ended) without owing a new pass. */
     invalidate(): void {
       generation += 1;
     },

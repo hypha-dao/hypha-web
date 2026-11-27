@@ -55,8 +55,9 @@ export function useCallBackgroundUploads({
     urlsRef.current = [];
   }, []);
 
-  const reload = React.useCallback(async () => {
-    const lifecycle = lifecycleRef.current;
+  /** `lifecycle`: the value when the caller started; a later disable/unmount drops the result. */
+  const reload = React.useCallback(async (lifecycle = lifecycleRef.current) => {
+    if (lifecycle !== lifecycleRef.current) return;
     const stored = await listCallBackgroundUploads();
     if (lifecycle !== lifecycleRef.current) return;
     const views = stored.map((upload) => ({
@@ -104,13 +105,17 @@ export function useCallBackgroundUploads({
 
   const add = React.useCallback(
     async (file: File) => {
+      const lifecycle = lifecycleRef.current;
       setBusy(true);
       setError(null);
       try {
         const upload = await addCallBackgroundUpload(file);
-        await reload();
+        // The write completes either way; an obsolete view just does not publish it.
+        if (lifecycle !== lifecycleRef.current) return null;
+        await reload(lifecycle);
         return upload.id;
       } catch (err) {
+        if (lifecycle !== lifecycleRef.current) return null;
         setError(
           err instanceof CallBackgroundUploadError
             ? err.code
@@ -126,11 +131,15 @@ export function useCallBackgroundUploads({
 
   const remove = React.useCallback(
     async (id: string) => {
+      const lifecycle = lifecycleRef.current;
       setError(null);
-      await deleteCallBackgroundUpload(id).catch(() =>
-        setError('storage_failed'),
+      const failed = await deleteCallBackgroundUpload(id).then(
+        () => false,
+        () => true,
       );
-      await reload();
+      if (lifecycle !== lifecycleRef.current) return;
+      if (failed) setError('storage_failed');
+      await reload(lifecycle);
     },
     [reload],
   );

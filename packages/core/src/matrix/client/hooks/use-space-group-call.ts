@@ -296,6 +296,9 @@ export type SpaceGroupCallOptions = {
 };
 export type { SpaceGroupCallVoiceProcessingPreset } from './voice-processing-constraints';
 
+/** #2563: late-finishing effect starts tolerated per choice before reporting failure. */
+const MAX_LATE_BACKGROUND_STARTS = 2;
+
 function readVoiceProcessingPreset(): SpaceGroupCallVoiceProcessingPreset {
   if (typeof window === 'undefined') return 'standard';
   try {
@@ -1420,6 +1423,7 @@ export function useSpaceGroupCall(
       cameraRequestEpochRef.current += 1;
       backgroundRoomRef.current = null;
       backgroundReconcilerRef.current.invalidate();
+      lateBackgroundStartsRef.current = 0;
       setBackgroundEffectStatus('idle');
       backgroundFrameDropDetectorRef.current.reset();
       setBackgroundEffectSlow(false);
@@ -1459,6 +1463,8 @@ export function useSpaceGroupCall(
     setLocalPreviewStream(localPreviewStreamFromRoom(lkRoom));
   }, []);
 
+  /** Late-finishing starts removed for the current choice (see `onLateStartRemoved`). */
+  const lateBackgroundStartsRef = useRef(0);
   /** Set below; lets the processor hooks ask for a reconcile without a dependency cycle. */
   const reconcileBackgroundEffectRef = useRef<
     ((trigger: string) => Promise<void>) | null
@@ -1474,6 +1480,13 @@ export function useSpaceGroupCall(
         if (slow !== wasSlow) setBackgroundEffectSlow(slow);
       },
       onLateStartRemoved: () => {
+        // Bounded: a start that keeps timing out and finishing late must not cycle forever.
+        lateBackgroundStartsRef.current += 1;
+        if (lateBackgroundStartsRef.current > MAX_LATE_BACKGROUND_STARTS) {
+          logCallDebug('background-effect:late-start-budget-exhausted', {});
+          setBackgroundEffectStatus('failed');
+          return;
+        }
         void reconcileBackgroundEffectRef.current?.('late-start-removed');
       },
     }),
@@ -1601,6 +1614,7 @@ export function useSpaceGroupCall(
         elapsedMs: Math.round(performance.now() - startedAt),
         imageFailed,
       });
+      if (!imageFailed) lateBackgroundStartsRef.current = 0;
       setBackgroundEffectStatus(imageFailed ? 'failed' : 'active');
       refreshLocalPreview();
       scheduleFeedBatched();
@@ -1637,6 +1651,7 @@ export function useSpaceGroupCall(
   const enableLocalCamera = useCallback(
     async (lkRoom: LiveKitRoom): Promise<boolean> => {
       const participant = lkRoom.localParticipant;
+      const requestEpoch = cameraRequestEpochRef.current;
       backgroundRoomRef.current = lkRoom;
       const existing = participant.getTrackPublication(Track.Source.Camera)
         ?.track as LocalVideoTrack | undefined;
@@ -1655,9 +1670,16 @@ export function useSpaceGroupCall(
         logCallDebug('background-effect:restart-failed', {
           message: err instanceof Error ? err.message : String(err),
         });
-        await recoverCameraWithoutProcessor(participant, track);
+        // A newer camera request (a mute, leaving) wins over this recovery's camera-on.
+        const cameraOn = await recoverCameraWithoutProcessor(
+          participant,
+          track,
+          () =>
+            cameraRequestEpochRef.current === requestEpoch &&
+            backgroundRoomRef.current === lkRoom,
+        );
         setBackgroundEffectStatus('failed');
-        return true;
+        return cameraOn;
       }
       void reconcileBackgroundEffect('camera-on');
       return true;
@@ -2465,6 +2487,7 @@ export function useSpaceGroupCall(
       backgroundEffectRef.current = effect;
       setBackgroundEffectState(effect);
       persistCallBackgroundEffect(effect);
+      lateBackgroundStartsRef.current = 0;
       resetBackgroundFrameDrops();
       const lkRoom = backgroundRoomRef.current ?? liveKitRoomRef.current;
       const publication = lkRoom?.localParticipant.getTrackPublication(
