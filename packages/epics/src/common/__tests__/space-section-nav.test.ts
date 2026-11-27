@@ -14,17 +14,18 @@ const base = {
 
 const menuKeys = [
   'overview',
+  'context',
   'coherence',
-  'agreements',
   'quests',
-  'members',
+  'agreements',
   'treasury',
+  'members',
 ] as const;
 
 describe('buildSpaceSectionNavItems', () => {
-  it('keeps the menu to home, signals, agreements, members, and treasury', () => {
+  it('keeps the menu to overview, context, signals, quests, agreements, treasury, and members', () => {
     const items = buildSpaceSectionNavItems(base);
-    expect(items.map((item) => item.key)).toEqual([...menuKeys, 'context']);
+    expect(items.map((item) => item.key)).toEqual([...menuKeys]);
     expect(
       items.every((item) => item.group === SPACE_SECTION_NAV_GROUP[item.key]),
     ).toBe(true);
@@ -38,11 +39,7 @@ describe('buildSpaceSectionNavItems', () => {
       ...base,
       memoryEnabled: true,
     });
-    expect(items.map((item) => item.key)).toEqual([
-      ...menuKeys,
-      'memory',
-      'context',
-    ]);
+    expect(items.map((item) => item.key)).toEqual([...menuKeys, 'memory']);
   });
 
   it('omits signals when coherence is off', () => {
@@ -53,7 +50,7 @@ describe('buildSpaceSectionNavItems', () => {
     expect(items.map((item) => item.key)).not.toContain('coherence');
   });
 
-  it('places deals after signals when that screen is on', () => {
+  it('places pipeline after quests when that screen is on', () => {
     const items = buildSpaceSectionNavItems({
       ...base,
       pipelineEnabled: true,
@@ -61,14 +58,14 @@ describe('buildSpaceSectionNavItems', () => {
     });
     expect(items.map((item) => item.key)).toEqual([
       'overview',
+      'context',
       'coherence',
+      'quests',
       'pipeline',
       'agreements',
-      'quests',
-      'members',
       'treasury',
+      'members',
       'memory',
-      'context',
     ]);
   });
 
@@ -82,14 +79,14 @@ describe('buildSpaceSectionNavItems', () => {
     expect(items.map((item) => item.key)).toEqual([
       'overview',
       'energy',
+      'context',
       'coherence',
+      'quests',
       'pipeline',
       'agreements',
-      'quests',
-      'members',
       'treasury',
+      'members',
       'memory',
-      'context',
     ]);
     expect(items.find((item) => item.key === 'energy')?.href).toBe(
       '/en/dho/hypha/energy',
@@ -185,6 +182,56 @@ describe('buildSpaceSectionNavItems', () => {
     expect(items.find((item) => item.key === 'treasury')?.active).toBe(true);
     expect(items.filter((item) => item.active)).toHaveLength(1);
   });
+
+  it('uses a saved order and hides screens for this space', () => {
+    const items = buildSpaceSectionNavItems({
+      ...base,
+      pipelineEnabled: true,
+      energyEnabled: true,
+      memoryEnabled: true,
+      screenLayout: {
+        order: [
+          'members',
+          'overview',
+          'quests',
+          'pipeline',
+          'context',
+          'coherence',
+          'agreements',
+          'treasury',
+          'energy',
+          'memory',
+        ],
+        hidden: ['agreements', 'overview'],
+      },
+    });
+    expect(items.map((item) => item.key)).toEqual([
+      'members',
+      'overview',
+      'quests',
+      'pipeline',
+      'context',
+      'coherence',
+      'treasury',
+      'energy',
+      'memory',
+    ]);
+  });
+
+  it('keeps pipeline out of the menu until it is activated', () => {
+    const items = buildSpaceSectionNavItems({
+      ...base,
+      pipelineEnabled: false,
+      screenLayout: {
+        order: ['overview', 'pipeline', 'quests'],
+        hidden: [],
+      },
+    });
+    expect(items.map((item) => item.key)).not.toContain('pipeline');
+    expect(items.map((item) => item.key).indexOf('quests')).toBeGreaterThan(
+      items.map((item) => item.key).indexOf('overview'),
+    );
+  });
 });
 
 describe('partitionSpaceSectionNavForTabs', () => {
@@ -192,11 +239,7 @@ describe('partitionSpaceSectionNavForTabs', () => {
     const { primary, more } = partitionSpaceSectionNavForTabs(
       buildSpaceSectionNavItems({ ...base, memoryEnabled: true }),
     );
-    expect(primary.map((item) => item.key)).toEqual([
-      ...menuKeys,
-      'memory',
-      'context',
-    ]);
+    expect(primary.map((item) => item.key)).toEqual([...menuKeys, 'memory']);
     expect(more).toEqual([]);
   });
 

@@ -18,7 +18,6 @@ import {
   RequirementMark,
   Card,
   Separator,
-  Switch,
   COMBOBOX_TITLE,
   COMBOBOX_DELIMITER,
 } from '@hypha-platform/ui';
@@ -72,6 +71,7 @@ import {
   SpaceLocationPicker,
   type SpaceLocationPickerHandle,
 } from './space-location-picker';
+import { SpaceScreenLayoutFields } from './space-screen-layout-fields';
 import slugify from 'slugify';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -106,6 +106,10 @@ export type CreateSpaceFormProps = {
   /** What this space seeks and offers back. Several forms of capital at once. */
   capitals?: SpaceCapitalSelection;
   onCapitalsChange?: (next: SpaceCapitalSelection) => void;
+  /** Energy screen is listed only when this space is an energy community. */
+  energyEnabled?: boolean;
+  /** Memory screen is listed only when that feature is on. */
+  memoryEnabled?: boolean;
   onSubmit: (
     values: SchemaCreateSpaceForm,
     organisationSpaces?: Space[],
@@ -156,6 +160,8 @@ export const SpaceForm = ({
   slugIncorrectMessage,
   capitals,
   onCapitalsChange,
+  energyEnabled = false,
+  memoryEnabled = false,
 }: CreateSpaceFormProps) => {
   if (process.env.NODE_ENV !== 'production') {
     console.debug('SpaceForm', { defaultValues });
@@ -1052,32 +1058,25 @@ export const SpaceForm = ({
             )}
           </div>
           {label === 'configure' ? (
-            <FormField
-              control={form.control}
-              name="pipelineEnabled"
-              render={({ field }) => (
-                <FormItem>
-                  <Card className="flex items-center justify-between gap-4 p-6">
-                    <div className="flex flex-col gap-1">
-                      <FormLabel className="text-2 font-medium">
-                        {tSpaces('pipelineEnabled')}
-                      </FormLabel>
-                      <span className="text-1 text-neutral-11">
-                        {tSpaces('pipelineEnabledDescription')}
-                      </span>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={Boolean(field.value)}
-                        onCheckedChange={field.onChange}
-                        disabled={isLoading}
-                        aria-label={tSpaces('pipelineEnabled')}
-                      />
-                    </FormControl>
-                  </Card>
-                  <FormMessage />
-                </FormItem>
-              )}
+            <SpaceScreenLayoutFields
+              order={form.watch('screenLayout')?.order}
+              hidden={form.watch('screenLayout')?.hidden}
+              pipelineEnabled={Boolean(pipelineEnabled)}
+              energyEnabled={energyEnabled}
+              memoryEnabled={memoryEnabled}
+              disabled={isSubmitting}
+              onLayoutChange={(layout) => {
+                form.setValue('screenLayout', layout, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
+              onPipelineEnabledChange={(enabled) => {
+                form.setValue('pipelineEnabled', enabled, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
             />
           ) : null}
           {label !== 'configure' ? (

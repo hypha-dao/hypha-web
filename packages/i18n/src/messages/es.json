@@ -2864,6 +2864,13 @@
     "escrowDepositInsufficientWallet": "El saldo de tu billetera está por debajo del monto requerido.",
     "pipelineEnabled": "Pipeline",
     "pipelineEnabledDescription": "Activa un pipeline Kanban para este espacio. Desactivado por defecto.",
+    "screensTitle": "Pantallas",
+    "screensDescription": "Elige qué pantallas aparecen en este espacio y en qué orden.",
+    "screenMoveUp": "Subir {screen}",
+    "screenMoveDown": "Bajar {screen}",
+    "screenShow": "Mostrar {screen}",
+    "screenHide": "Ocultar {screen}",
+    "screenOverviewAlwaysOn": "Resumen permanece visible",
     "mySpacesSupport": "Crea un espacio o abre uno al que ya perteneces."
   },
   "ProposalDetails": {
@@ -3817,7 +3824,7 @@
     "publish": "Publicar",
     "createdOn": "Creado el {date}",
     "errorCoherenceTab": "Vaya, algo salió mal. No se pudo cargar la pestaña de coherencia.",
-    "spaceMemory": "Memoria del espacio",
+    "spaceMemory": "Memoria",
     "searchSpaceMemory": "Buscar en la memoria del espacio...",
     "spaceMemoryLoading": "Cargando archivos…",
     "spaceMemoryEmpty": "Aún no hay archivos subidos. Los adjuntos en propuestas y acuerdos aparecen aquí.",

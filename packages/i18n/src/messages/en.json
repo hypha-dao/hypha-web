@@ -2669,6 +2669,13 @@
     "escrowDepositInsufficientWallet": "Your wallet balance is below the required amount.",
     "pipelineEnabled": "Pipeline",
     "pipelineEnabledDescription": "Enable a Kanban pipeline for this space. Off by default.",
+    "screensTitle": "Screens",
+    "screensDescription": "Choose which screens appear in this space, and the order people see them.",
+    "screenMoveUp": "Move {screen} up",
+    "screenMoveDown": "Move {screen} down",
+    "screenShow": "Show {screen}",
+    "screenHide": "Hide {screen}",
+    "screenOverviewAlwaysOn": "Overview stays visible",
     "mySpacesSupport": "Create a space or open one you already belong to."
   },
   "AgreementFlow": {
@@ -4407,7 +4414,7 @@
     "publish": "Publish",
     "createdOn": "Created on {date}",
     "errorCoherenceTab": "Oops, something went wrong. Couldn't load signals tab.",
-    "spaceMemory": "Space memory",
+    "spaceMemory": "Memory",
     "searchSpaceMemory": "Search space memory...",
     "spaceMemoryLoading": "Loading assets…",
     "spaceMemoryEmpty": "No uploaded files yet. Attachments on proposals and agreements appear here.",

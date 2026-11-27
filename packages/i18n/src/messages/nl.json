@@ -2641,6 +2641,13 @@
     "escrowDepositInsufficientWallet": "Uw portemonneesaldo is lager dan het vereiste bedrag.",
     "pipelineEnabled": "Pipeline",
     "pipelineEnabledDescription": "Schakel een Kanban-pipeline in voor deze ruimte. Standaard uit.",
+    "screensTitle": "Schermen",
+    "screensDescription": "Kies welke schermen in deze space verschijnen en in welke volgorde.",
+    "screenMoveUp": "{screen} omhoog",
+    "screenMoveDown": "{screen} omlaag",
+    "screenShow": "{screen} tonen",
+    "screenHide": "{screen} verbergen",
+    "screenOverviewAlwaysOn": "Overzicht blijft zichtbaar",
     "mySpacesSupport": "Maak een ruimte of open er een waar je al lid van bent."
   },
   "AgreementFlow": {
@@ -4377,7 +4384,7 @@
     "publish": "Publiceren",
     "createdOn": "Gemaakt op {date}",
     "errorCoherenceTab": "Oeps, er is iets misgegaan. Kan het tabblad Signalen niet laden.",
-    "spaceMemory": "Ruimtegeheugen",
+    "spaceMemory": "Geheugen",
     "searchSpaceMemory": "Zoek ruimtegeheugen...",
     "spaceMemoryLoading": "Activa laden…",
     "spaceMemoryEmpty": "Nog geen geüploade bestanden. Hier vindt u bijlagen over voorstellen en overeenkomsten.",

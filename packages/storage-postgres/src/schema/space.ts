@@ -57,6 +57,14 @@ export const spaces = pgTable(
       .default({}),
     /** When true, Pipeline tab and APIs are available for this space. */
     pipelineEnabled: boolean('pipeline_enabled').notNull().default(false),
+    /**
+     * Screen order and hidden screens for this space.
+     * `{}` keeps the default order. Pipeline visibility is `pipelineEnabled`.
+     */
+    screenLayout: jsonb('screen_layout')
+      .$type<{ order?: string[]; hidden?: string[] }>()
+      .notNull()
+      .default({}),
     /** Space-scoped pipeline settings (e.g. configurable regions). */
     pipelineConfig: jsonb('pipeline_config')
       .$type<Record<string, unknown>>()

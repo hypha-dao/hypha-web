@@ -2850,6 +2850,13 @@
     "escrowDepositInsufficientWallet": "O saldo da sua carteira está abaixo do valor necessário.",
     "pipelineEnabled": "Pipeline",
     "pipelineEnabledDescription": "Ative um pipeline Kanban neste espaço. Desativado por padrão.",
+    "screensTitle": "Ecrãs",
+    "screensDescription": "Escolha que ecrãs aparecem neste espaço e a ordem em que as pessoas os veem.",
+    "screenMoveUp": "Mover {screen} para cima",
+    "screenMoveDown": "Mover {screen} para baixo",
+    "screenShow": "Mostrar {screen}",
+    "screenHide": "Ocultar {screen}",
+    "screenOverviewAlwaysOn": "A visão geral permanece visível",
     "mySpacesSupport": "Crie um espaço ou abra um ao qual você já pertence."
   },
   "ProposalDetails": {
@@ -3803,7 +3810,7 @@
     "publish": "Publicar",
     "createdOn": "Criado em {date}",
     "errorCoherenceTab": "Ops, algo deu errado. Não foi possível carregar a aba de coerência.",
-    "spaceMemory": "Memória do espaço",
+    "spaceMemory": "Memória",
     "searchSpaceMemory": "Pesquisar na memória do espaço...",
     "spaceMemoryLoading": "Carregando arquivos…",
     "spaceMemoryEmpty": "Ainda não há arquivos enviados. Anexos em propostas e acordos aparecem aqui.",
