@@ -49,27 +49,44 @@ export function prepareSignalDescriptionMarkdown(source: string): string {
   const raw = source.replace(/\r\n/g, '\n').trim();
   if (!raw) return '';
 
-  const lines = raw.split('\n').map(normalizeItemLine);
+  let inFence = false;
+  const lines = raw.split('\n').map((line) => {
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence;
+      return { text: line, literal: true };
+    }
+    // Indented code is literal. Nested lists use fewer than four spaces.
+    if (inFence || /^(?: {4}|\t)/.test(line)) {
+      return { text: line, literal: true };
+    }
+    return { text: normalizeItemLine(line), literal: false };
+  });
   const out: string[] = [];
+  const itemAt = (index: number) => {
+    const line = lines[index];
+    return !!line && !line.literal && isListItem(line.text);
+  };
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!;
+    const line = lines[i]!.text;
     const prev = out[out.length - 1];
     const prevPrev = out[out.length - 2];
+    const literal = lines[i]!.literal;
 
     // Drop blank lines between consecutive list items so MDX keeps one list.
     if (
+      !literal &&
       line.trim() === '' &&
       prev !== undefined &&
       isListItem(prev) &&
-      i + 1 < lines.length &&
-      isListItem(lines[i + 1]!)
+      itemAt(i + 1)
     ) {
       continue;
     }
 
     // Blank line before the first list item when it follows prose.
     if (
+      !literal &&
       isListItem(line) &&
       prev !== undefined &&
       prev.trim() !== '' &&

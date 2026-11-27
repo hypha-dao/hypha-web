@@ -64,14 +64,16 @@ function safeMediaUrl(url: string | null | undefined): string | null {
   return null;
 }
 
-/** Lead image, otherwise the first image attachment. Unsafe URLs are dropped. */
+/** First safe image, lead first. A rejected lead falls through to an attachment. */
 export function signalListImage(input?: {
   leadImage?: string | null;
   attachments?: SignalMediaItem[] | null;
 }): string | null {
-  const lead = safeMediaUrl(input?.leadImage);
-  if (lead) return lead;
-  return safeMediaUrl(splitSignalMedia(input).images[0]?.url);
+  for (const image of splitSignalMedia(input).images) {
+    const safe = safeMediaUrl(image.url);
+    if (safe) return safe;
+  }
+  return null;
 }
 
 export function countSignalMedia(input?: {

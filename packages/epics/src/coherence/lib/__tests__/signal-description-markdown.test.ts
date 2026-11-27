@@ -25,6 +25,18 @@ describe('prepareSignalDescriptionMarkdown', () => {
     );
   });
 
+  it('leaves fenced and indented code unchanged', () => {
+    const input = [
+      'Steps:',
+      '```',
+      '1. Step - literal',
+      '```',
+      '    2. Also literal - keep',
+    ].join('\n');
+
+    expect(prepareSignalDescriptionMarkdown(input)).toBe(input);
+  });
+
   it('leaves ordinary paragraphs alone', () => {
     expect(
       prepareSignalDescriptionMarkdown(

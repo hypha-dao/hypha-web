@@ -50,6 +50,17 @@ describe('signalListImage', () => {
     ).toBe('https://cdn.example.com/roof.jpg');
   });
 
+  it('skips a rejected lead and uses the first safe attachment', () => {
+    expect(
+      signalListImage({
+        leadImage: 'javascript:alert(1)',
+        attachments: [
+          { name: 'roof.jpg', url: 'https://cdn.example.com/roof.jpg' },
+        ],
+      }),
+    ).toBe('https://cdn.example.com/roof.jpg');
+  });
+
   it('returns nothing when the signal has no safe image', () => {
     expect(
       signalListImage({

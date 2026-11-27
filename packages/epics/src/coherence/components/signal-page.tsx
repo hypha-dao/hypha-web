@@ -575,7 +575,8 @@ export function SignalPage({
                   className="aspect-[4/3] w-full object-cover"
                 />
               </a>
-            ) : video ? (
+            ) : null}
+            {video ? (
               <div className="w-full overflow-hidden border border-border/70 bg-black">
                 <div className="relative aspect-video w-full">
                   <SignalVideoPlayer video={video} title={signal.title} />
