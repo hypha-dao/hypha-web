@@ -30,7 +30,12 @@ describe('a grant write that fails after the library accepted the consent', () =
       pool: {
         query: async (sql: string, params: unknown[]) => {
           queries.push({ sql, params });
-          return { rows: [] };
+          // The client's kind is read first: a pre-registered client.
+          return sql.includes('from as_oauth_client')
+            ? {
+                rows: [{ clientDiscoveryId: null, registration: 'registered' }],
+              }
+            : { rows: [] };
         },
       },
       auth: {

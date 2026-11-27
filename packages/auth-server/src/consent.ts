@@ -4,6 +4,7 @@ import {
   ALWAYS_UNTICKED_SCOPES,
   AUTH_SERVER_WRITE_SCOPES,
   allowedScopesForResource,
+  scopesForClientKind,
 } from './config';
 import { describeScope, type ScopeCopyKey } from './scope-copy';
 import { describeRedirect } from './redirect-display';
@@ -164,7 +165,11 @@ export async function loadConsentRequest(
   });
   // Only the scopes the requested resources accept are offered (E52): the library drops the
   // others from the token, so a tick on them would promise something that is not issued.
-  let requested = (params.get('scope') ?? '').split(/\s+/).filter(Boolean);
+  // Only the scopes this kind of client may be granted are offered either.
+  const kindAllows = scopesForClientKind(kind);
+  let requested = (params.get('scope') ?? '')
+    .split(/\s+/)
+    .filter((scope) => scope && kindAllows.includes(scope));
   for (const resource of params.getAll('resource')) {
     const allowed = allowedScopesForResource(resource, config);
     requested = requested.filter((scope) => allowed.includes(scope));

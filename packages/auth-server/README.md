@@ -57,6 +57,13 @@ unticked for every client. `signals:write` acts in the spaces chosen under `spac
 per-space grant), so an approval of it without `spaces:read` is refused, and a first authorize
 request that asks for it also asks for `spaces:read`.
 
+Each kind of client has its own scope list (`src/config.ts`): a registered client its row, a
+metadata-document client `CIMD_ALLOWED_SCOPES` (every scope, `signals:write` included), a dynamically
+registered client `DCR_ALLOWED_SCOPES` (no `signals:write`). The library stores one list on every client
+it registers itself (`CLIENT_REGISTRATION_CEILING_SCOPES`, the union); dynamic registrations are
+narrowed to their list when created, and the consent page offers and accepts only the scopes of the
+client's kind.
+
 Access tokens carry `space_grants` (the chosen spaces) and `client_name` (the name the client
 declared for itself, cleaned and capped at 120 characters, unverified). Access tokens last 10 minutes; refresh tokens
 slide over 90 days. The approval link lasts 10 minutes, the authorization code 60 seconds.
