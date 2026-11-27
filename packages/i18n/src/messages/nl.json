@@ -4211,7 +4211,7 @@
     "callShareQualityHide": "Resolutie verbergen",
     "callShareQualityPicker": "Ontvangstkwaliteit",
     "callShareQualityAuto": "Auto",
-    "callShareQualityNeedsResize": "vergroot om te gebruiken",
+    "callShareQualityUnavailable": "Beperkt door venstergrootte of netwerk",
     "callShareQualityReasonAuto": "Auto: afgestemd op je tegel",
     "callShareQualityReasonCapped": "Beperkt tot {label}",
     "callShareQualityReasonNetwork": "Beperkt door het netwerk",

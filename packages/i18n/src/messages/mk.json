@@ -4192,7 +4192,7 @@
     "callShareQualityHide": "Сокриј резолуција",
     "callShareQualityPicker": "Квалитет на примање",
     "callShareQualityAuto": "Автоматски",
-    "callShareQualityNeedsResize": "зголеми за употреба",
+    "callShareQualityUnavailable": "Ограничено од големината на прозорецот или мрежата",
     "callShareQualityReasonAuto": "Автоматски: прилагодено на вашата плочка",
     "callShareQualityReasonCapped": "Ограничено на {label}",
     "callShareQualityReasonNetwork": "Ограничено од мрежата",

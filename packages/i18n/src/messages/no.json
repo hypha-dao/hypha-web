@@ -4210,7 +4210,7 @@
     "callShareQualityHide": "Skjul oppløsning",
     "callShareQualityPicker": "Mottakskvalitet",
     "callShareQualityAuto": "Auto",
-    "callShareQualityNeedsResize": "forstørr for å bruke",
+    "callShareQualityUnavailable": "Begrenset av vindusstørrelse eller nettverk",
     "callShareQualityReasonAuto": "Auto: tilpasset ruten din",
     "callShareQualityReasonCapped": "Begrenset til {label}",
     "callShareQualityReasonNetwork": "Begrenset av nettverket",

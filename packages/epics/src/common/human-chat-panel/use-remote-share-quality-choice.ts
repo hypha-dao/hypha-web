@@ -82,8 +82,10 @@ export function usePublishShareQualityPicker(input: {
   options: CallShareQualityOption[];
   selectedId: string;
   select: (option: CallShareQualityOption) => void;
+  /** Width this tile asks for (`tileRequest.width`); the toolbar follows the largest tile. */
+  tileWidth?: number;
 }): void {
-  const { enabled, shareKey, options, selectedId } = input;
+  const { enabled, shareKey, options, selectedId, tileWidth } = input;
   const selectRef = useRef(input.select);
   selectRef.current = input.select;
   const ownerRef = useRef<object>({});
@@ -117,7 +119,8 @@ export function usePublishShareQualityPicker(input: {
       options: optionsRef.current,
       selectedId,
       select: (option) => selectRef.current(option),
+      tileWidth,
     });
     return () => publishShareQualityPicker(owner, null);
-  }, [enabled, shareKey, signature, selectedId]);
+  }, [enabled, shareKey, signature, selectedId, tileWidth]);
 }
