@@ -2648,6 +2648,8 @@
     "screenShow": "{screen} tonen",
     "screenHide": "{screen} verbergen",
     "screenOverviewAlwaysOn": "Overzicht blijft zichtbaar",
+    "screenBannerTitle": "Bovenste banner",
+    "screenBannerDescription": "Toon de foto en de balk met de naam van de space. Uit begint elk scherm bij de titel.",
     "mySpacesSupport": "Maak een ruimte of open er een waar je al lid van bent."
   },
   "AgreementFlow": {

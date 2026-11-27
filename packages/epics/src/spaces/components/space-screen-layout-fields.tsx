@@ -17,6 +17,7 @@ type SpaceScreenLayoutFieldsProps = {
   order?: readonly string[] | null;
   hidden?: readonly string[] | null;
   pipelineEnabled: boolean;
+  showBanner?: boolean;
   energyEnabled: boolean;
   memoryEnabled: boolean;
   disabled?: boolean;
@@ -28,6 +29,7 @@ export function SpaceScreenLayoutFields({
   order,
   hidden,
   pipelineEnabled,
+  showBanner = true,
   energyEnabled,
   memoryEnabled,
   disabled = false,
@@ -74,6 +76,7 @@ export function SpaceScreenLayoutFields({
     onLayoutChange({
       order: nextOrder,
       hidden: setSpaceScreenHidden(hidden, 'overview', false),
+      showBanner,
     });
   };
 
@@ -84,6 +87,33 @@ export function SpaceScreenLayoutFields({
         <p className="text-1 text-neutral-11">
           {tSpaces('screensDescription')}
         </p>
+      </div>
+      <div className="flex items-center gap-3 border-t border-neutral-6 px-4 py-3">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="text-2 font-medium">
+            {tSpaces('screenBannerTitle')}
+          </span>
+          <span className="text-1 text-neutral-11">
+            {tSpaces('screenBannerDescription')}
+          </span>
+        </div>
+        <Switch
+          size="sm"
+          checked={showBanner}
+          disabled={disabled}
+          aria-label={
+            showBanner
+              ? tSpaces('screenHide', { screen: tSpaces('screenBannerTitle') })
+              : tSpaces('screenShow', { screen: tSpaces('screenBannerTitle') })
+          }
+          onCheckedChange={(next) => {
+            onLayoutChange({
+              order: resolveSpaceScreenOrder(order),
+              hidden: setSpaceScreenHidden(hidden, 'overview', false),
+              showBanner: next,
+            });
+          }}
+        />
       </div>
       <ul aria-label={tSpaces('screensTitle')}>
         {rows.map((key, index) => {
@@ -167,6 +197,7 @@ export function SpaceScreenLayoutFields({
                   onLayoutChange({
                     order: resolveSpaceScreenOrder(order),
                     hidden: setSpaceScreenHidden(hidden, key, !next),
+                    showBanner,
                   });
                 }}
               />

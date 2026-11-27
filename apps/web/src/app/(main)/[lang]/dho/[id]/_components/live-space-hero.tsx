@@ -5,6 +5,7 @@ import {
   DEFAULT_SPACE_LEAD_IMAGE,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
+import { spaceScreenShowsBanner } from '@hypha-platform/core/space/screen-layout';
 import {
   CompactSpaceBanner,
   SpaceAccentFromImages,
@@ -30,6 +31,8 @@ export type LiveSpaceHeroBannerProps = Omit<
   links?: string[] | null;
   beforeBanner?: React.ReactNode;
   children?: React.ReactNode;
+  /** False hides the photo and name. The space colour still comes from the images. */
+  showBanner?: boolean;
 };
 
 function resolveSafeImageUrl(
@@ -54,6 +57,7 @@ export function LiveSpaceHero({
   links,
   beforeBanner,
   children,
+  showBanner = true,
   logoAlt: _logoAlt,
   ...bannerRest
 }: LiveSpaceHeroBannerProps) {
@@ -71,6 +75,10 @@ export function LiveSpaceHero({
     liveSpace?.leadImage ?? leadImageUrl,
     DEFAULT_SPACE_LEAD_IMAGE,
   );
+  const bannerOn =
+    liveSpace?.screenLayout !== undefined
+      ? spaceScreenShowsBanner(liveSpace.screenLayout)
+      : showBanner;
 
   return (
     <SpaceAccentFromImages
@@ -79,17 +87,19 @@ export function LiveSpaceHero({
       className="pt-0"
     >
       {beforeBanner}
-      <CompactSpaceBanner
-        key={`${resolvedLogoUrl}|${resolvedLeadImageUrl}|${resolvedTitle}`}
-        {...bannerRest}
-        showSpaceStats
-        title={resolvedTitle}
-        description={resolvedDescription}
-        logoUrl={resolvedLogoUrl}
-        logoAlt={resolvedTitle}
-        links={resolvedLinks}
-        leadImageUrl={resolvedLeadImageUrl}
-      />
+      {bannerOn ? (
+        <CompactSpaceBanner
+          key={`${resolvedLogoUrl}|${resolvedLeadImageUrl}|${resolvedTitle}`}
+          {...bannerRest}
+          showSpaceStats
+          title={resolvedTitle}
+          description={resolvedDescription}
+          logoUrl={resolvedLogoUrl}
+          logoAlt={resolvedTitle}
+          links={resolvedLinks}
+          leadImageUrl={resolvedLeadImageUrl}
+        />
+      ) : null}
       {children}
     </SpaceAccentFromImages>
   );

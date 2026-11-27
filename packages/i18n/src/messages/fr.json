@@ -2077,6 +2077,8 @@
     "screenShow": "Afficher {screen}",
     "screenHide": "Masquer {screen}",
     "screenOverviewAlwaysOn": "L'aperçu reste visible",
+    "screenBannerTitle": "Bandeau du haut",
+    "screenBannerDescription": "Affiche la photo et la barre avec le nom de l'espace. Désactivé, chaque écran commence à son titre.",
     "mySpacesSupport": "Créez un espace ou ouvrez-en un auquel vous appartenez déjà."
   },
   "AgreementFlow": {

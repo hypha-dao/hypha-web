@@ -2649,6 +2649,8 @@
     "screenShow": "{screen} anzeigen",
     "screenHide": "{screen} ausblenden",
     "screenOverviewAlwaysOn": "Übersicht bleibt sichtbar",
+    "screenBannerTitle": "Oberes Banner",
+    "screenBannerDescription": "Foto und Namensleiste des Spaces anzeigen. Aus beginnt jeder Bildschirm beim Titel.",
     "mySpacesSupport": "Erstellen Sie einen Space oder öffnen Sie einen, dem Sie angehören."
   },
   "AgreementFlow": {

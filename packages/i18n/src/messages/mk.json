@@ -2628,6 +2628,8 @@
     "screenShow": "Прикажи {screen}",
     "screenHide": "Сокриј {screen}",
     "screenOverviewAlwaysOn": "Прегледот останува видлив",
+    "screenBannerTitle": "Горен банер",
+    "screenBannerDescription": "Прикажи ја фотографијата и лентата со името. Исклучено, секој екран започнува од насловот.",
     "mySpacesSupport": "Креирај простор или отвори еден во кој веќе членуваш."
   },
   "AgreementFlow": {

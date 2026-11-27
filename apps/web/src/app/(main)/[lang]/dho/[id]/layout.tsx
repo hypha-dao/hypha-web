@@ -14,6 +14,7 @@ import {
 import '../../_shared/space-accent.css';
 import { Locale } from '@hypha-platform/i18n';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
+import { spaceScreenShowsBanner } from '@hypha-platform/core/space/screen-layout';
 import { getDhoPathAgreements } from './@tab/agreements/constants';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
@@ -93,6 +94,7 @@ export default async function DhoLayout({
   // Member count is not archive state. A space that was just created has no
   // indexed members yet, and that was painting the Archived badge until reload.
   const compactBannerSpaceArchived = spaceFlags.includes('archived');
+  const showSpaceBanner = spaceScreenShowsBanner(spaceFromDb.screenLayout);
 
   return (
     <SpaceAccentPortalBridge>
@@ -123,8 +125,11 @@ export default async function DhoLayout({
           <div className="relative z-[1]">
             {/* React 19+: link rel="preload" is hoisted to document head.
                 Sized /_next/image URL only — never the UploadThing original. */}
-            {sizedHeroBannerPreload(heroBannerImageHref)}
+            {showSpaceBanner
+              ? sizedHeroBannerPreload(heroBannerImageHref)
+              : null}
             <DhoStickySpaceChrome
+              showBanner={showSpaceBanner}
               title={spaceFromDb.title}
               logoUrl={accentLogoHref}
               logoAlt={spaceFromDb.title}
@@ -164,6 +169,7 @@ export default async function DhoLayout({
               }
               banner={
                 <LiveSpaceHeroBanner
+                  showBanner={showSpaceBanner}
                   web3SpaceId={spaceFromDb.web3SpaceId}
                   spaceSlug={daoSlug}
                   title={spaceFromDb.title}

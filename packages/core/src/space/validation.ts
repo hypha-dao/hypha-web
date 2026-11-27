@@ -120,6 +120,7 @@ const createSpaceWeb2Props = {
         .array(z.enum(SPACE_SCREEN_LAYOUT_KEYS))
         .max(SPACE_SCREEN_LAYOUT_KEYS.length)
         .optional(),
+      showBanner: z.boolean().optional(),
     })
     .optional(),
   latitude: spaceLatitudeSchema.nullable().optional(),

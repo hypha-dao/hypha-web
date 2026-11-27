@@ -1061,6 +1061,7 @@ export const SpaceForm = ({
             <SpaceScreenLayoutFields
               order={form.watch('screenLayout')?.order}
               hidden={form.watch('screenLayout')?.hidden}
+              showBanner={form.watch('screenLayout')?.showBanner !== false}
               pipelineEnabled={Boolean(pipelineEnabled)}
               energyEnabled={energyEnabled}
               memoryEnabled={memoryEnabled}

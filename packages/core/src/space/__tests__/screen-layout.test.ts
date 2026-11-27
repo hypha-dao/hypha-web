@@ -54,6 +54,14 @@ describe('resolveSpaceScreenOrder', () => {
 });
 
 describe('normalizeSpaceScreenLayout', () => {
+  it('shows the banner unless this space turned it off', () => {
+    expect(normalizeSpaceScreenLayout(undefined).showBanner).toBe(true);
+    expect(normalizeSpaceScreenLayout({}).showBanner).toBe(true);
+    expect(normalizeSpaceScreenLayout({ showBanner: false }).showBanner).toBe(
+      false,
+    );
+  });
+
   it('never hides overview or pipeline', () => {
     expect(
       normalizeSpaceScreenLayout({

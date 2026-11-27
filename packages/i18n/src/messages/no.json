@@ -2647,7 +2647,9 @@
     "screenMoveDown": "Flytt {screen} ned",
     "screenShow": "Vis {screen}",
     "screenHide": "Skjul {screen}",
-    "screenOverviewAlwaysOn": "Oversikt forblir synlig"
+    "screenOverviewAlwaysOn": "Oversikt forblir synlig",
+    "screenBannerTitle": "Toppbanner",
+    "screenBannerDescription": "Vis bildet og linjen med navnet på rommet. Av starter hvert skjermbilde ved tittelen."
   },
   "AgreementFlow": {
     "labels": {

@@ -23,12 +23,22 @@ export type SpaceScreenLayoutKey = (typeof SPACE_SCREEN_LAYOUT_KEYS)[number];
 export type SpaceScreenLayoutInput = {
   order?: readonly string[] | null;
   hidden?: readonly string[] | null;
+  /** False hides the space photo and name. Missing means shown. */
+  showBanner?: boolean | null;
 };
 
 export type SpaceScreenLayout = {
   order: SpaceScreenLayoutKey[];
   hidden: SpaceScreenLayoutKey[];
+  showBanner: boolean;
 };
+
+/** The space photo and name stay on unless this space turned them off. */
+export function spaceScreenShowsBanner(
+  layout?: SpaceScreenLayoutInput | null,
+): boolean {
+  return layout?.showBanner !== false;
+}
 
 const KEY_SET = new Set<string>(SPACE_SCREEN_LAYOUT_KEYS);
 
@@ -103,6 +113,7 @@ export function normalizeSpaceScreenLayout(
   return {
     order: resolveSpaceScreenOrder(layout?.order),
     hidden: sanitizeSpaceScreenHidden(layout?.hidden),
+    showBanner: spaceScreenShowsBanner(layout),
   };
 }
 

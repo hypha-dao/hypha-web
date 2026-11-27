@@ -2871,6 +2871,8 @@
     "screenShow": "Mostrar {screen}",
     "screenHide": "Ocultar {screen}",
     "screenOverviewAlwaysOn": "Resumen permanece visible",
+    "screenBannerTitle": "Banner superior",
+    "screenBannerDescription": "Muestra la foto y la barra con el nombre del espacio. Desactivado, cada pantalla empieza en su título.",
     "mySpacesSupport": "Crea un espacio o abre uno al que ya perteneces."
   },
   "ProposalDetails": {

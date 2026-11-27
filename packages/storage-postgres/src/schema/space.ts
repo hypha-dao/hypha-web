@@ -62,7 +62,11 @@ export const spaces = pgTable(
      * `{}` keeps the default order. Pipeline visibility is `pipelineEnabled`.
      */
     screenLayout: jsonb('screen_layout')
-      .$type<{ order?: string[]; hidden?: string[] }>()
+      .$type<{
+        order?: string[];
+        hidden?: string[];
+        showBanner?: boolean;
+      }>()
       .notNull()
       .default({}),
     /** Space-scoped pipeline settings (e.g. configurable regions). */

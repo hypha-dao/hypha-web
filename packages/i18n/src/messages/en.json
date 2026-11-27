@@ -2676,6 +2676,8 @@
     "screenShow": "Show {screen}",
     "screenHide": "Hide {screen}",
     "screenOverviewAlwaysOn": "Overview stays visible",
+    "screenBannerTitle": "Top banner",
+    "screenBannerDescription": "Show the space photo and the name bar. Off starts each screen at its title.",
     "mySpacesSupport": "Create a space or open one you already belong to."
   },
   "AgreementFlow": {
