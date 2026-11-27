@@ -116,6 +116,9 @@ export async function authorizeRequest(
     // The verifier already refused a token without a valid grant claim. `'all'` is the
     // resolver's `null` (no restriction beyond the person's own rights).
     spaceGrants: token.spaceGrants === 'all' ? null : token.spaceGrants,
+    // Self-declared by the client; the origin label of what it writes (#2756: from the token,
+    // never from the authorization server's tables).
+    clientName: token.clientName,
   });
   if (!resolved.ok) {
     return {

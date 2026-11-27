@@ -16,6 +16,12 @@ export type CallerVia = {
    * person can see (no per-space restriction). An empty array grants nothing.
    */
   spaceGrants: number[] | null;
+  /**
+   * The name the client gave itself, from the token's `client_name` claim: self-declared and
+   * unverified, used only as the origin label of what this client writes. `null` when the token
+   * carries none. Never read from the authorization server's tables (#2756).
+   */
+  clientName?: string | null;
 };
 
 /**
