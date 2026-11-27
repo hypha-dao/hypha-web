@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ElementType, type ReactNode } from 'react';
+import { useEffect, useState, type ElementType, type ReactNode } from 'react';
 import {
   BookOpen,
   ChevronDown,
@@ -32,6 +32,8 @@ const SPACE_FILTERS: readonly InboxFilter[] = [
   'quests',
   'context',
 ];
+
+const SPACE_MENU = new Set<InboxFilter>(['spaces', ...SPACE_FILTERS]);
 
 const TOP_FILTERS: readonly InboxFilter[] = [
   'all',
@@ -130,30 +132,34 @@ function FilterRow({
 
   if (afterTitle) {
     return (
-      <div className={className}>
+      <div className={cn(className, 'relative')}>
+        <button
+          type="button"
+          aria-pressed={selected}
+          data-testid={`inbox-filter-${filter}`}
+          onClick={() => onSelect(filter)}
+          aria-label={title}
+          className="absolute inset-0"
+        />
         <Icon
-          className="mt-0.5 size-4 shrink-0 text-foreground"
+          className="pointer-events-none relative mt-0.5 size-4 shrink-0 text-foreground"
           strokeWidth={1.5}
           aria-hidden
         />
-        <span className="min-w-0 flex-1">
+        <span className="pointer-events-none relative min-w-0 flex-1">
           <span className="flex items-center gap-3">
             <span className="flex min-w-0 flex-1 items-center gap-1">
-              <button
-                type="button"
-                aria-pressed={selected}
-                data-testid={`inbox-filter-${filter}`}
-                onClick={() => onSelect(filter)}
+              <span
                 className={cn(
-                  'min-w-0 truncate text-left text-3 text-foreground',
+                  'pointer-events-none min-w-0 truncate text-3 text-foreground',
                   selected && 'font-medium',
                 )}
               >
                 {title}
-              </button>
+              </span>
               {afterTitle}
             </span>
-            <span className="ml-auto flex shrink-0 items-center gap-2">
+            <span className="pointer-events-none ml-auto flex shrink-0 items-center gap-2">
               {total > 0 ? (
                 <span className="text-1 text-muted-foreground">{total}</span>
               ) : null}
@@ -167,13 +173,9 @@ function FilterRow({
               ) : null}
             </span>
           </span>
-          <button
-            type="button"
-            onClick={() => onSelect(filter)}
-            className="mt-1 block text-left text-2 text-muted-foreground"
-          >
+          <span className="pointer-events-none mt-1 block text-2 text-muted-foreground">
             {description}
-          </button>
+          </span>
         </span>
       </div>
     );
@@ -203,6 +205,9 @@ function SpaceFilters({
 }) {
   const t = useTranslations('Connections');
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!SPACE_MENU.has(value)) setOpen(false);
+  }, [value]);
   return (
     <div>
       <FilterRow
@@ -216,7 +221,7 @@ function SpaceFilters({
         afterTitle={
           <button
             type="button"
-            className="inline-flex size-4 shrink-0 items-center justify-center text-neutral-9 hover:text-foreground"
+            className="pointer-events-auto relative z-10 inline-flex size-4 shrink-0 items-center justify-center text-neutral-9 hover:text-foreground"
             aria-expanded={open}
             aria-controls="inbox-space-filters"
             aria-label={t('inbox.spacesTitle')}
