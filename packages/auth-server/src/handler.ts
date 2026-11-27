@@ -1,12 +1,14 @@
 import {
   AUTH_SERVER_API_BASE_PATH,
   AUTH_SERVER_JWKS_PATH,
+  CONNECTED_APPS_DISCONNECT_PATH,
+  CONNECTED_APPS_SPACES_PATH,
   SCOPES_REQUIRING_SPACES_READ,
   scopesForClientKind,
   type AuthServerConfig,
   type AuthServerDisabled,
 } from './config';
-import { blockUnlessAuthServerHost, notFound } from './gate';
+import { blockUnlessAuthServerHost, isPersonAllowed, notFound } from './gate';
 import { classifyClient } from './consent';
 import type { AuthServer } from './auth';
 import { redactingLog } from './redact';
@@ -14,6 +16,7 @@ import { corsPreflight, withCors } from './cors';
 import { authServerErrorPage } from './error-page';
 import { guardRegistration, narrowRegisteredClient } from './registration';
 import { logOnboardingStep, onboardingStepOf } from './onboarding-log';
+import { createHash } from 'node:crypto';
 import { verifyOAuthQueryParams } from '@better-auth/oauth-provider';
 import {
   GrantError,
@@ -22,6 +25,11 @@ import {
   parseGrantInput,
   writeGrant,
 } from './grants';
+import {
+  changeConnectedAppSpaces,
+  confirmStillConnected,
+  disconnectConnectedApp,
+} from './connected-apps';
 
 /**
  * The only HTTP surface the server exposes. Everything else Better Auth ships (client
@@ -40,6 +48,8 @@ const ALLOWED: ReadonlyArray<{ path: string; methods: readonly string[] }> = [
   { path: REGISTER_PATH, methods: ['POST'] },
   { path: AUTH_SERVER_JWKS_PATH, methods: ['GET'] },
   { path: '/provider/sign-in', methods: ['POST'] },
+  { path: CONNECTED_APPS_DISCONNECT_PATH, methods: ['POST'] },
+  { path: CONNECTED_APPS_SPACES_PATH, methods: ['POST'] },
 ];
 const WELL_KNOWN = '/.well-known/oauth-authorization-server';
 
@@ -95,6 +105,13 @@ export function createAuthServerHandler(
     let server: AuthServer | undefined;
     try {
       server = getServer(config);
+      const rel = url.pathname.slice(AUTH_SERVER_API_BASE_PATH.length);
+      if (
+        rel === CONNECTED_APPS_DISCONNECT_PATH ||
+        rel === CONNECTED_APPS_SPACES_PATH
+      ) {
+        return await handleConnectedApps(server, config, request, rel);
+      }
       const response =
         url.pathname === WELL_KNOWN
           ? await metadataWithoutDisabledEndpoints(
@@ -106,6 +123,11 @@ export function createAuthServerHandler(
           ? await handleRegistration(server, request)
           : url.pathname === `${AUTH_SERVER_API_BASE_PATH}/oauth2/consent`
           ? await handleConsent(server, request)
+          : url.pathname === `${AUTH_SERVER_API_BASE_PATH}/oauth2/token`
+          ? await refuseTokenOfDisconnectedApp(
+              server,
+              await server.auth.handler(request),
+            )
           : await server.auth.handler(request);
       if (step && requestCopy)
         await logOnboardingStep({
@@ -159,6 +181,173 @@ async function metadataWithoutDisabledEndpoints(
   const headers = new Headers(res.headers);
   headers.delete('content-length');
   return new Response(JSON.stringify(meta), { status: 200, headers });
+}
+
+/**
+ * The person and client of a JWT access token this server just issued (read, not verified: it
+ * comes from the library's own response). Null for anything else, an opaque token included.
+ */
+export function tokenSubjectAndClient(
+  accessToken: unknown,
+): { personId: string; clientId: string } | null {
+  if (typeof accessToken !== 'string') return null;
+  const part = accessToken.split('.')[1];
+  if (!part) return null;
+  try {
+    const payload = JSON.parse(
+      Buffer.from(part, 'base64url').toString('utf8'),
+    ) as Record<string, unknown>;
+    const clientId = payload.client_id ?? payload.azp;
+    if (typeof payload.sub !== 'string' || typeof clientId !== 'string')
+      return null;
+    return { personId: payload.sub, clientId };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * An opaque access token (issued when the request names no resource) is stored by the library
+ * as its SHA-256 hash, base64url without padding (the library's default `storeTokens: 'hashed'`,
+ * which this server does not change); its row names the person and the client.
+ */
+async function opaqueTokenPair(
+  server: AuthServer,
+  accessToken: unknown,
+): Promise<{ personId: string; clientId: string } | null> {
+  if (typeof accessToken !== 'string' || !accessToken) return null;
+  const stored = createHash('sha256').update(accessToken).digest('base64url');
+  const { rows } = await server.pool.query<{
+    userId: string | null;
+    clientId: string;
+  }>(
+    'select "userId", "clientId" from as_oauth_access_token where token = $1 limit 1',
+    [stored],
+  );
+  const row = rows[0];
+  return row?.userId ? { personId: row.userId, clientId: row.clientId } : null;
+}
+
+const tokenRefused = () =>
+  new Response(
+    JSON.stringify({
+      error: 'invalid_grant',
+      error_description: 'the app is not connected',
+    }),
+    {
+      status: 400,
+      headers: {
+        'content-type': 'application/json',
+        'cache-control': 'no-store',
+        pragma: 'no-cache',
+      },
+    },
+  );
+
+/**
+ * A token is handed out only while the person still has the app connected (see
+ * `confirmStillConnected`): a disconnect that lands while the library issues a token leaves no
+ * usable token behind. Fails closed: a token whose person and app cannot be read is refused, and
+ * a failed check throws (500, nothing handed out).
+ */
+async function refuseTokenOfDisconnectedApp(
+  server: AuthServer,
+  response: Response,
+): Promise<Response> {
+  if (response.status !== 200) return response;
+  const body = (await response.clone().json()) as Record<string, unknown>;
+  const pair =
+    tokenSubjectAndClient(body.access_token) ??
+    (await opaqueTokenPair(server, body.access_token));
+  if (!pair) return tokenRefused();
+  return (await confirmStillConnected(
+    server.pool,
+    pair.personId,
+    pair.clientId,
+  ))
+    ? response
+    : tokenRefused();
+}
+
+/**
+ * The connected-apps page's actions on the person's own apps. Same protections as the consent
+ * approval: a same-origin JSON request (the `Origin` must be this server), the session's person
+ * must be the one the page showed (`expected_person`) and on the allowlist, and the app is named
+ * by the person's consent record id, never by a client id. Nothing from the body is logged.
+ */
+async function handleConnectedApps(
+  server: AuthServer,
+  config: AuthServerConfig,
+  request: Request,
+  rel: string,
+): Promise<Response> {
+  const answer = (status: number, body: Record<string, unknown>) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: {
+        'content-type': 'application/json',
+        'cache-control': 'no-store',
+      },
+    });
+  if (request.headers.get('origin') !== config.issuer)
+    return answer(403, { error: 'forbidden' });
+  if (
+    !(request.headers.get('content-type') ?? '')
+      .toLowerCase()
+      .startsWith('application/json')
+  )
+    return answer(415, { error: 'invalid_request' });
+  let body: Record<string, unknown>;
+  try {
+    const parsed: unknown = JSON.parse(await request.text());
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))
+      return answer(400, { error: 'invalid_request' });
+    body = parsed as Record<string, unknown>;
+  } catch {
+    return answer(400, { error: 'invalid_request' });
+  }
+  const session = await server.auth.api.getSession({
+    headers: request.headers,
+  });
+  if (!session) return answer(401, { error: 'unauthorized' });
+  if (
+    typeof body.expected_person !== 'string' ||
+    body.expected_person !== session.user.id
+  )
+    return answer(409, { error: 'account_changed' });
+  if (!isPersonAllowed(config, session.user.id))
+    return answer(403, { error: 'forbidden' });
+  const appId = body.app;
+  if (typeof appId !== 'string' || !appId || appId.length > 128)
+    return answer(400, { error: 'invalid_request' });
+
+  if (rel === CONNECTED_APPS_DISCONNECT_PATH) {
+    const done = await disconnectConnectedApp(
+      server.pool,
+      session.user.id,
+      appId,
+    );
+    return done
+      ? answer(200, { ok: true })
+      : answer(404, { error: 'not_found' });
+  }
+  try {
+    const value = parseGrantInput(body.space_grants);
+    if (value !== 'all') await assertSpacesExist(server.pool, value);
+    const result = await changeConnectedAppSpaces(
+      server.pool,
+      session.user.id,
+      appId,
+      value,
+    );
+    if (result === 'not_found') return answer(404, { error: 'not_found' });
+    if (result === 'no_read_scope')
+      return answer(400, { error: 'invalid_request' });
+    return answer(200, { ok: true });
+  } catch (error) {
+    if (error instanceof GrantError) return answer(400, { error: error.code });
+    throw error;
+  }
 }
 
 async function handleRegistration(

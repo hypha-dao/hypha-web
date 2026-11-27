@@ -1,5 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createAuthServerHandler } from '../handler';
+import { createAuthServerHandler, tokenSubjectAndClient } from '../handler';
+import {
+  CONNECTED_APPS_DISCONNECT_PATH,
+  CONNECTED_APPS_SPACES_PATH,
+} from '../config';
 import type { AuthServerConfig } from '../config';
 
 const ORIGIN = 'http://localhost:6274';
@@ -175,5 +179,132 @@ describe('discovery HEAD and consent binding', () => {
     expect(res.status).toBe(400);
     expect((await res.json()).error).toBe('invalid_signature');
     expect(called).toBe(0);
+  });
+});
+
+describe('connected-apps actions are refused before the database is touched', () => {
+  const ISSUER = 'http://auth.localhost:3000';
+  const appsConfig = {
+    enabled: true,
+    issuer: ISSUER,
+    host: 'auth.localhost:3000',
+    corsAllowedOrigins: [],
+    dcrEnabled: false,
+    allowedPersonIds: new Set(['did:privy:a']),
+  } as unknown as AuthServerConfig;
+  const server = (sessionUser: string | null) =>
+    ({
+      config: { secret: 'handler-test-secret-'.padEnd(48, 'x') },
+      pool: {
+        query: async () => {
+          throw new Error('database used');
+        },
+        connect: async () => {
+          throw new Error('database used');
+        },
+      },
+      auth: {
+        handler: async () => {
+          throw new Error('library used');
+        },
+        api: {
+          getSession: async () =>
+            sessionUser ? { user: { id: sessionUser } } : null,
+        },
+      },
+    } as never);
+  const call = (
+    sessionUser: string | null,
+    body: unknown,
+    headers: Record<string, string> = {},
+    path = CONNECTED_APPS_DISCONNECT_PATH,
+  ) =>
+    createAuthServerHandler(
+      () => appsConfig,
+      () => server(sessionUser),
+    )(
+      new Request(`${ISSUER}/api/auth${path}`, {
+        method: 'POST',
+        headers: {
+          host: 'auth.localhost:3000',
+          origin: ISSUER,
+          'content-type': 'application/json',
+          ...headers,
+        },
+        body: typeof body === 'string' ? body : JSON.stringify(body),
+      }),
+    );
+  const ok = { app: 'consent-1', expected_person: 'did:privy:a' };
+
+  it.each([
+    [
+      'another origin',
+      'did:privy:a',
+      ok,
+      { origin: 'https://evil.example' },
+      403,
+    ],
+    ['no origin', 'did:privy:a', ok, { origin: '' }, 403],
+    ['not JSON', 'did:privy:a', ok, { 'content-type': 'text/plain' }, 415],
+    ['a body that is not an object', 'did:privy:a', '[1]', {}, 400],
+    ['no session', null, ok, {}, 401],
+    ['another account than the page showed', 'did:privy:b', ok, {}, 409],
+    ['no displayed account', 'did:privy:a', { app: 'consent-1' }, {}, 409],
+    [
+      'a person outside the allowlist',
+      'did:privy:z',
+      { ...ok, expected_person: 'did:privy:z' },
+      {},
+      403,
+    ],
+    ['no app', 'did:privy:a', { expected_person: 'did:privy:a' }, {}, 400],
+  ])('%s', async (_name, sessionUser, body, headers, status) => {
+    const res = await call(sessionUser, body, headers);
+    expect(res.status).toBe(status);
+    expect(res.headers.get('cache-control')).toBe('no-store');
+  });
+
+  it('changing spaces is guarded the same way', async () => {
+    const res = await call(
+      'did:privy:b',
+      { ...ok, space_grants: 'all' },
+      {},
+      CONNECTED_APPS_SPACES_PATH,
+    );
+    expect(res.status).toBe(409);
+  });
+
+  it('only POST reaches the actions', async () => {
+    const res = await createAuthServerHandler(
+      () => appsConfig,
+      () => server('did:privy:a'),
+    )(
+      new Request(`${ISSUER}/api/auth${CONNECTED_APPS_DISCONNECT_PATH}`, {
+        headers: { host: 'auth.localhost:3000' },
+      }),
+    );
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('tokenSubjectAndClient (who a just-issued token is for)', () => {
+  const jwt = (payload: Record<string, unknown>) =>
+    `e30.${Buffer.from(JSON.stringify(payload)).toString('base64url')}.sig`;
+
+  it('reads the person and the client of a JWT', () => {
+    expect(
+      tokenSubjectAndClient(jwt({ sub: 'did:privy:a', client_id: 'c' })),
+    ).toEqual({ personId: 'did:privy:a', clientId: 'c' });
+    expect(tokenSubjectAndClient(jwt({ sub: 'p', azp: 'c2' }))).toEqual({
+      personId: 'p',
+      clientId: 'c2',
+    });
+  });
+
+  it('anything else is null (an opaque token is looked up instead)', () => {
+    expect(tokenSubjectAndClient('opaqueTokenValue')).toBeNull();
+    expect(tokenSubjectAndClient(jwt({ client_id: 'c' }))).toBeNull();
+    expect(tokenSubjectAndClient('a.%%%.b')).toBeNull();
+    expect(tokenSubjectAndClient(undefined)).toBeNull();
   });
 });

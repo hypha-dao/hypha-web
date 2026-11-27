@@ -99,6 +99,34 @@ export async function grantClaimFor(
   return grant;
 }
 
+/**
+ * Replaces the stored grant for the pair inside a transaction the caller has opened (`tx` is a
+ * connection in a transaction). `null` removes it.
+ */
+export async function replaceGrantIn(
+  tx: Pick<AuthDbPool, 'query'>,
+  personId: string,
+  clientId: string,
+  value: Snapshot,
+): Promise<void> {
+  await tx.query(
+    'delete from as_client_grant where "userId" = $1 and "clientId" = $2',
+    [personId, clientId],
+  );
+  if (value === null) return;
+  await tx.query(
+    `insert into as_client_grant ("userId", "clientId", mode, level) values ($1, $2, $3, $4)`,
+    [personId, clientId, value === 'all' ? 'all' : 'spaces', GRANT_LEVEL_READ],
+  );
+  if (value !== 'all') {
+    await tx.query(
+      `insert into as_client_grant_space ("userId", "clientId", "spaceId", level)
+       select $1, $2, s, $4 from unnest($3::int[]) as s`,
+      [personId, clientId, value, GRANT_LEVEL_READ],
+    );
+  }
+}
+
 /** Replaces the stored grant for the pair in one transaction. `null` removes it. */
 export async function writeGrant(
   pool: AuthDbPool,
@@ -109,28 +137,7 @@ export async function writeGrant(
   const client = await pool.connect();
   try {
     await client.query('begin');
-    await client.query(
-      'delete from as_client_grant where "userId" = $1 and "clientId" = $2',
-      [personId, clientId],
-    );
-    if (value !== null) {
-      await client.query(
-        `insert into as_client_grant ("userId", "clientId", mode, level) values ($1, $2, $3, $4)`,
-        [
-          personId,
-          clientId,
-          value === 'all' ? 'all' : 'spaces',
-          GRANT_LEVEL_READ,
-        ],
-      );
-      if (value !== 'all') {
-        await client.query(
-          `insert into as_client_grant_space ("userId", "clientId", "spaceId", level)
-           select $1, $2, s, $4 from unnest($3::int[]) as s`,
-          [personId, clientId, value, GRANT_LEVEL_READ],
-        );
-      }
-    }
+    await replaceGrantIn(client, personId, clientId, value);
     await client.query('commit');
   } catch (error) {
     await client.query('rollback').catch(() => undefined);

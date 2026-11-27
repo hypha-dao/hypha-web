@@ -32,12 +32,21 @@ All under `/api/auth` on the issuer host, plus the discovery document.
 - `GET /.well-known/oauth-authorization-server`: server metadata.
 - `GET /api/auth/jwks.json`: the public key set.
 - `GET|POST /api/auth/oauth2/authorize`, `POST /oauth2/consent`, `POST /oauth2/continue`: the authorization-code flow (PKCE).
-- `POST /api/auth/oauth2/token`, `POST /oauth2/revoke`.
+- `POST /api/auth/oauth2/token`, `POST /oauth2/revoke`. A token is handed out only while the person
+  still has the app connected (a consent record exists); one issued while the app is being
+  disconnected is refused and its rows are deleted.
 - `POST /api/auth/oauth2/register`: only when `AUTH_SERVER_DCR_ENABLED=true`.
+- `POST /api/auth/connected-apps/spaces`, `POST /api/auth/connected-apps/disconnect`: the
+  connected-apps page's actions on the signed-in person's own apps (same-origin JSON, the account the
+  page showed, the allowlist). The page names an app by its consent record id, never by its client id.
 - `GET /api/auth/error`: plain-text error page.
 
-Login and consent pages live at `/auth/login` and `/auth/consent`. Everything else the library
-ships (client management, userinfo, introspection, session listing) is blocked.
+Login and consent pages live at `/auth/login` and `/auth/consent`. The connected-apps page,
+`/auth/apps`, lists the person's apps (what each may do, in which spaces, when it was last active)
+and lets them change an app's spaces (applied at the app's next token, within the 10-minute
+access-token life) or disconnect it (refresh stops at once; an access token already issued lasts
+at most 10 minutes). Signing in from it uses `/auth/login?next=/auth/apps`. Everything else the
+library ships (client management, userinfo, introspection, session listing) is blocked.
 
 ## Resources
 
