@@ -821,7 +821,8 @@ function snapshotsWithListedQuests(
  * the last three months. Quest channels are listed from the member's spaces
  * even before they join and when the room has been quiet. The room id is the
  * one Matrix already has, or the quest's stored room id. There is a single
- * network room.
+ * network room, and it stays listed even when its latest message is old or
+ * not loaded yet.
  */
 export function channelRowsFromSnapshots(
   snapshots: readonly JoinedChannelSnapshot[],
@@ -853,11 +854,13 @@ export function channelRowsFromSnapshots(
     // Assignees, the signal team, and people who were mentioned are notified
     // even when nobody has written in the room lately. Quest channels stay
     // listed once a quest proposal has passed: space members see them before
-    // they join, and a quiet room is still that quest's channel. Proposal and
-    // Context section chats stay visible once someone has written — opening a
-    // section creates its room before anyone speaks, and empty rooms would
-    // flood the inbox. Other channels stay hidden until they have a message
-    // in the last three months.
+    // they join, and a quiet room is still that quest's channel. The network
+    // room is the one room every member belongs to, so a missing or old
+    // timestamp must not leave the Network filter empty. Proposal and Context
+    // section chats stay visible once someone has written — opening a section
+    // creates its room before anyone speaks, and empty rooms would flood the
+    // inbox. Other channels stay hidden until they have a message in the last
+    // three months.
     if (place.kind === 'proposal' || place.kind === 'context') {
       // Blank preview with unread still belongs in the inbox — the member has
       // something to open even when the last line has not loaded yet.
@@ -865,6 +868,7 @@ export function channelRowsFromSnapshots(
     } else if (
       place.kind !== 'signal' &&
       place.kind !== 'quest' &&
+      place.kind !== 'network' &&
       !channelHasRecentActivity(snapshot.lastTs, now)
     ) {
       continue;

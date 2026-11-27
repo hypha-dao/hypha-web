@@ -882,6 +882,27 @@ describe('messages inbox context', () => {
     expect(row?.roomId).toBe('!signal:hs');
   });
 
+  it('keeps the network channel when its last message is old or not loaded yet', () => {
+    const rows = channelRowsFromSnapshots(
+      [
+        {
+          roomId: '!quiet-net:hs',
+          roomType: 'io.hypha.room.network',
+          name: 'Network',
+          aliases: ['#hypha-network:example.org'],
+          preview: '',
+          mine: false,
+          lastTs: null,
+          unread: 0,
+        },
+      ],
+      { spaces: [], signals: [] },
+      'Network',
+      now,
+    );
+    expect(rows.map((row) => row.roomId)).toEqual(['!quiet-net:hs']);
+  });
+
   it('shows the network channel for everyone when it has a recent message', () => {
     const rows = channelRowsFromSnapshots(
       [

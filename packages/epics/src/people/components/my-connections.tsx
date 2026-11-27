@@ -1688,6 +1688,21 @@ function latestChannelMessage(
       sender: null,
     };
   }
+  // A busy room can fill the loaded timeline with joins. The latest message
+  // is then older than what is in memory, and a null time would hide it.
+  const timeline = room.getLiveTimeline();
+  const hasOlder =
+    typeof timeline?.getPaginationToken === 'function' &&
+    Boolean(timeline.getPaginationToken(Direction.Backward));
+  if (hasOlder) {
+    const active =
+      typeof room.getLastActiveTimestamp === 'function'
+        ? room.getLastActiveTimestamp()
+        : 0;
+    if (active > 0) {
+      return { preview: '', mine: false, ts: active, sender: null };
+    }
+  }
   return { preview: '', mine: false, ts: null, sender: null };
 }
 
