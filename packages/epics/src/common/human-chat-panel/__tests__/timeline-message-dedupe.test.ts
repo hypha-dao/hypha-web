@@ -19,6 +19,45 @@ const text = (
 });
 
 describe('dedupeTimelineMessages', () => {
+  it('hides the outgoing placeholder as soon as the echo is in the thread', () => {
+    const merged = dedupeTimelineMessages(
+      [
+        text('~hypha-outgoing-1', 'Hello', {
+          sendAcknowledged: false,
+          role: 'user',
+        }),
+        text('~sdk', 'Hello', {
+          sendAcknowledged: false,
+          role: 'user',
+        }),
+      ],
+      '@me:example',
+    );
+    expect(merged.map((row) => row.id)).toEqual(['~sdk']);
+  });
+
+  it('keeps a second identical send until its own echo arrives', () => {
+    const merged = dedupeTimelineMessages(
+      [
+        text('~hypha-outgoing-1', 'Ok', {
+          sendAcknowledged: false,
+          role: 'user',
+        }),
+        text('~hypha-outgoing-2', 'Ok', {
+          sendAcknowledged: false,
+          role: 'user',
+          timestamp: new Date(1_500),
+        }),
+        text('$real', 'Ok', {
+          role: 'user',
+          timestamp: new Date(1_100),
+        }),
+      ],
+      '@me:example',
+    );
+    expect(merged.map((row) => row.id)).toEqual(['~hypha-outgoing-2', '$real']);
+  });
+
   it('drops a local echo once the homeserver copy is present', () => {
     const merged = dedupeTimelineMessages([
       text('~local', 'Hello', { sendAcknowledged: false }),

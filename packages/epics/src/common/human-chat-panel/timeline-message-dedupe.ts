@@ -54,6 +54,11 @@ function isPendingSend(message: DedupableTimelineMessage): boolean {
   return Boolean(message.sendPending) || id.startsWith('hypha-send-pending');
 }
 
+/** The row we paint before Matrix echoes the send. It is not a second message. */
+function isOutgoingPlaceholder(message: DedupableTimelineMessage): boolean {
+  return (message.id ?? '').startsWith('~hypha-outgoing-');
+}
+
 function isUnackedEcho(message: DedupableTimelineMessage): boolean {
   if (isPendingSend(message)) return false;
   const id = message.id ?? '';
@@ -155,14 +160,29 @@ export function dedupeTimelineMessages<T extends DedupableTimelineMessage>(
   const acknowledged = unique.filter(
     (message) => !isUnackedEcho(message) && !isPendingSend(message),
   );
+  const echoed = unique.filter((message) => !isOutgoingPlaceholder(message));
+  const claimedEchoIds = new Set<string>();
+  const matches = (
+    message: DedupableTimelineMessage,
+    real: DedupableTimelineMessage,
+  ) =>
+    real.id !== message.id &&
+    sameAuthor(message, real, selfId) &&
+    echoMatchesReal(message, real);
   return unique.filter((message) => {
+    if (isOutgoingPlaceholder(message)) {
+      const echo = echoed.find(
+        (real) =>
+          Boolean(real.id) &&
+          !claimedEchoIds.has(real.id ?? '') &&
+          matches(message, real),
+      );
+      if (!echo?.id) return true;
+      claimedEchoIds.add(echo.id);
+      return false;
+    }
     if (!isUnackedEcho(message) && !isPendingSend(message)) return true;
-    return !acknowledged.some(
-      (real) =>
-        real.id !== message.id &&
-        sameAuthor(message, real, selfId) &&
-        echoMatchesReal(message, real),
-    );
+    return !acknowledged.some((real) => matches(message, real));
   });
 }
 
