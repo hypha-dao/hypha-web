@@ -995,8 +995,12 @@ export function HumanChatPanelInCallControls({
         }}
       />
     ) : null;
-  /** #2563: camera background effect, placed with the other settings menus (layout is #2597's). */
-  const renderEffectsMenu =
+  /**
+   * #2563: camera background effect. Docked toolbar: in the left group after the camera (keeps
+   * the groups balanced); other toolbars: with the settings menus. Layout is #2597's. `align`
+   * says which edge of the trigger the popover keeps, so it opens towards the inside of the bar.
+   */
+  const renderEffectsMenu = (align: 'left' | 'right' = 'right') =>
     showBackgroundEffectControl && backgroundEffect ? (
       <div className="relative" ref={effectsMenuRef}>
         <button
@@ -1029,7 +1033,10 @@ export function HumanChatPanelInCallControls({
               'z-[60] max-h-[min(70vh,calc(100dvh-8rem),var(--hypha-call-dock-popover-max-h,9999px))] overflow-y-auto rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
               isPipDensity
                 ? 'fixed bottom-14 left-1/2 w-[calc(100dvw-1rem)] max-w-52 -translate-x-1/2'
-                : 'absolute bottom-full mb-2 right-0 min-w-56 max-w-72',
+                : cn(
+                    'absolute bottom-full mb-2 min-w-56 max-w-72',
+                    align === 'left' ? 'left-0' : 'right-0',
+                  ),
               isFull && 'border-zinc-700 bg-zinc-900 text-white',
             )}
           >
@@ -1399,6 +1406,7 @@ export function HumanChatPanelInCallControls({
                         <Video className={icon} strokeWidth={lucideStroke} />
                       )}
                     </button>
+                    {renderEffectsMenu('left')}
                   </>
                 ) : null}
               </div>
@@ -1478,7 +1486,6 @@ export function HumanChatPanelInCallControls({
                   <>
                     {renderCaptureMenu}
                     {renderAudioSettingsMenu}
-                    {renderEffectsMenu}
                   </>
                 ) : null}
               </div>
@@ -1591,7 +1598,7 @@ export function HumanChatPanelInCallControls({
                   ) : null}
                   {showAdvancedCallControls ? renderCaptureMenu : null}
                   {showAdvancedCallControls ? renderAudioSettingsMenu : null}
-                  {renderEffectsMenu}
+                  {renderEffectsMenu()}
                   {showCompactMoreMenu ? renderMoreMenu : null}
                 </>
               ) : null}
