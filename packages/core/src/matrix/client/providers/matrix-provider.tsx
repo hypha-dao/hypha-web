@@ -2577,22 +2577,17 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
               return;
             }
 
-            const pinnedIds = getPinnedMessageIds(roomId);
             const mid = redacted.getId();
-            const ms = redacted.getSender();
-            if (!mid || !ms) return;
-            let message = messageFromRoomMessageEvent(
-              client,
-              roomId,
-              redacted,
-              pinnedIds.includes(mid),
-            );
-            message = attachReactionsToMessage(
-              room,
-              message,
-              client.getUserId(),
-            );
-            await messageListener(message);
+            if (!mid) return;
+            // A redaction of the message itself must remove the row. Re-sending
+            // its body puts the deleted text back on the open thread.
+            await messageListener({
+              id: mid,
+              sender: redacted.getSender() ?? '',
+              content: '',
+              timestamp: new Date(redacted.getTs()),
+              redacted: true,
+            });
           }
         }
       };

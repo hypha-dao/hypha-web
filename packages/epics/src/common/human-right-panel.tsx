@@ -557,6 +557,23 @@ function rememberRedactedChatMessage(roomId: string, messageId: string): void {
   }
 }
 
+function forgetRedactedChatMessage(roomId: string, messageId: string): void {
+  const id = messageId.trim();
+  if (typeof window === 'undefined' || !id) return;
+  try {
+    const ids = readRedactedChatIds(roomId);
+    if (!ids.delete(id)) return;
+    const key = `${CHAT_REDACTED_SESSION_PREFIX}${roomId}`;
+    if (ids.size === 0) {
+      window.sessionStorage.removeItem(key);
+      return;
+    }
+    window.sessionStorage.setItem(key, JSON.stringify([...ids]));
+  } catch {
+    // ignore
+  }
+}
+
 function withoutRedactedMessages(
   roomId: string,
   messages: UIMessage[],
@@ -4672,6 +4689,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         pendingTimelineRedactIdsRef.current = new Set();
         const upserts = pendingTimelineMessagesRef.current;
         pendingTimelineMessagesRef.current = new Map();
+        for (const id of redacts) upserts.delete(id);
 
         if (redacts.size === 0 && upserts.size === 0) return;
 
@@ -4730,9 +4748,14 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     registerRoomListener(
       roomId,
       async (message: Message) => {
-        if (message.redacted) {
+        if (
+          message.redacted ||
+          pendingTimelineRedactIdsRef.current.has(message.id) ||
+          readRedactedChatIds(roomId).has(message.id)
+        ) {
           rememberRedactedChatMessage(roomId, message.id);
           pendingTimelineRedactIdsRef.current.add(message.id);
+          pendingTimelineMessagesRef.current.delete(message.id);
           scheduleTimelineFlush();
           return;
         }
@@ -6081,18 +6104,38 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     async (messageId: string) => {
       if (!roomId) return;
       setDeleteError(null);
+      let removed: UIMessage | undefined;
+      rememberRedactedChatMessage(roomId, messageId);
+      pendingTimelineRedactIdsRef.current.add(messageId);
+      pendingTimelineMessagesRef.current.delete(messageId);
+      setMessages((prev) => {
+        removed = prev.find((message) => message.id === messageId);
+        return prev.filter((message) => message.id !== messageId);
+      });
+      if (editDraft?.messageId === messageId) {
+        setEditDraft(null);
+        replaceComposerText('');
+      }
+      if (replyDraft?.messageId === messageId) {
+        setReplyDraft(null);
+      }
       try {
-        await matrixRef.current.redactRoomEvent({ roomId, eventId: messageId });
-        setMessages((prev) => prev.filter((m) => m.id !== messageId));
-        if (editDraft?.messageId === messageId) {
-          setEditDraft(null);
-          replaceComposerText('');
-        }
-        if (replyDraft?.messageId === messageId) {
-          setReplyDraft(null);
-        }
+        await matrixRef.current.redactRoomEvent({
+          roomId,
+          eventId: messageId,
+        });
       } catch (err) {
         console.error('[HumanRightPanel] Failed to delete message:', err);
+        forgetRedactedChatMessage(roomId, messageId);
+        pendingTimelineRedactIdsRef.current.delete(messageId);
+        if (removed) {
+          const row = removed;
+          setMessages((prev) =>
+            prev.some((message) => message.id === row.id)
+              ? prev
+              : upsertTimelineMessages(prev, [row]),
+          );
+        }
         setDeleteError(t('messageDeleteFailed'));
       }
     },
