@@ -69,7 +69,10 @@ export function createLiveKitRoom(): Room {
     setLogLevel(LogLevel.debug);
   }
   return new Room({
-    adaptiveStream: true,
+    // Request video at the screen's real pixels (#2742). livekit-client's default density is 1 on
+    // screens up to 2x, so a scaled laptop (125-200%) asked for less than it shows and received a
+    // smaller layer than its tile needs, e.g. a 720p screenshare in a 1080p-sized window.
+    adaptiveStream: { pixelDensity: 'screen' },
     dynacast: true,
   });
 }

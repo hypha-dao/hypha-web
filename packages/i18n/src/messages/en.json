@@ -4241,7 +4241,7 @@
     "callShareQualityHide": "Hide resolution",
     "callShareQualityPicker": "Receive quality",
     "callShareQualityAuto": "Auto",
-    "callShareQualityNeedsResize": "enlarge to use",
+    "callShareQualityUnavailable": "Limited by window size or network",
     "callShareQualityReasonAuto": "Auto: sized to your tile",
     "callShareQualityReasonCapped": "Capped at {label}",
     "callShareQualityReasonNetwork": "Limited by network",

@@ -20,7 +20,7 @@ export type CallShareQualityOption =
       height: number;
       /** e.g. "1080p" */
       label: string;
-      /** The tile is too small for this layer to be served; enlarge it first. */
+      /** The tile is too small for this layer to be served (or the network holds it back). */
       needsResize: boolean;
     };
 
@@ -47,32 +47,71 @@ export function normalizePublishedLayers(
 }
 
 /**
- * Pixel density `adaptiveStream` uses when none is set (livekit-client `getPixelDensity`): 1, or 2
- * on screens above 2x. Not the full device pixel ratio.
+ * Pixel density `adaptiveStream` requests at: the screen's real density, since the room sets
+ * `pixelDensity: 'screen'` (`createLiveKitRoom` in core).
  */
 export function adaptiveRequestDensity(devicePixelRatio: number): number {
-  return devicePixelRatio > 2 ? 2 : 1;
+  return devicePixelRatio > 0 ? devicePixelRatio : 1;
 }
 
-/** Width the server is asked for by `adaptiveStream`: CSS pixels times that density. */
-export function adaptiveRequestWidthPx(
-  contentWidthCssPx: number,
+export type ShareTileRequest = { width: number; height: number };
+
+/**
+ * Size `adaptiveStream` asks the server for: the whole video box (letterbox included) times that
+ * density, as livekit-client's `updateDimensions` does.
+ */
+export function adaptiveRequestSize(
+  boxWidthCssPx: number,
+  boxHeightCssPx: number,
   devicePixelRatio: number,
-): number {
-  return contentWidthCssPx * adaptiveRequestDensity(devicePixelRatio);
+): ShareTileRequest {
+  const density = adaptiveRequestDensity(devicePixelRatio);
+  return { width: boxWidthCssPx * density, height: boxHeightCssPx * density };
+}
+
+/** livekit-server's `layerSelectionTolerance`: a copy counts from 90% of the requested size. */
+const LAYER_SELECTION_TOLERANCE = 0.9;
+
+/**
+ * livekit-server's rule (`GetQualityForDimension`, checked on v1.13.3, the deployed version): with
+ * published copies it compares heights only, even for a portrait share, against the requested
+ * height times the tolerance.
+ */
+function covers(layer: PublishedShareLayer, request: ShareTileRequest) {
+  return layer.height >= request.height * LAYER_SELECTION_TOLERANCE;
 }
 
 /**
- * Options for the picker: Auto first, then published layers from the largest down. A layer needs a
- * bigger tile when the next smaller layer already covers the tile (the server serves the smallest
- * layer that covers the request; not stated in the LiveKit docs, to confirm on a real share).
+ * The copy the server sends for `request`: the smallest that covers it, else the largest. Seen on
+ * a preview: a 1275 x 815 box got 1080p (815 x 0.9 is above 720).
+ */
+export function servedShareLayer(
+  layers: ReadonlyArray<PublishedShareLayer>,
+  request: ShareTileRequest,
+): PublishedShareLayer | undefined {
+  const sorted = normalizePublishedLayers(layers);
+  return sorted.find((l) => covers(l, request)) ?? sorted[sorted.length - 1];
+}
+
+/** A received picture this close to a copy's listed size is that copy (a shared window may shrink). */
+const SAME_LAYER_RATIO = 0.9;
+
+/**
+ * Options for the picker: Auto first, then published layers from the largest down. A layer is
+ * unavailable when the next smaller one already covers the tile, unless it is the one arriving.
  */
 export function buildCallShareQualityOptions(input: {
   layers: ReadonlyArray<PublishedShareLayer>;
-  /** See `adaptiveRequestWidthPx`; 0 or unknown disables nothing. */
-  tileRequestWidth: number;
+  /** See `adaptiveRequestSize`; unknown or 0 disables nothing. */
+  tileRequest?: ShareTileRequest;
+  /** Height of the picture arriving now (`video.videoHeight`). */
+  receivedHeight?: number;
 }): CallShareQualityOption[] {
   const sorted = normalizePublishedLayers(input.layers);
+  const request = input.tileRequest;
+  const requestKnown = Boolean(
+    request && request.width > 0 && request.height > 0,
+  );
   const options: CallShareQualityOption[] = [
     { id: CALL_SHARE_QUALITY_AUTO, kind: 'auto' },
   ];
@@ -80,10 +119,14 @@ export function buildCallShareQualityOptions(input: {
     const layer = sorted[i];
     if (!layer) continue;
     const smaller = i > 0 ? sorted[i - 1] : undefined;
+    const arriving =
+      (input.receivedHeight ?? 0) >= layer.height * SAME_LAYER_RATIO;
     const needsResize =
-      input.tileRequestWidth > 0 &&
+      requestKnown &&
+      request !== undefined &&
       smaller !== undefined &&
-      input.tileRequestWidth <= smaller.width;
+      covers(smaller, request) &&
+      !arriving;
     options.push({
       id: layerOptionId(layer),
       kind: 'layer',

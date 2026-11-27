@@ -2734,10 +2734,12 @@ const FeedContent = ({
     shareKey: remotePublicationFromCallFeed(feed)?.trackSid,
     options: buildCallShareQualityOptions({
       layers: remoteShareQuality.layers,
-      tileRequestWidth: remoteShareQuality.tileRequestWidth,
+      tileRequest: remoteShareQuality.tileRequest,
+      receivedHeight: remoteShareQuality.receivedHeight,
     }),
     selectedId: remoteShareChoice.selectedId,
     select: remoteShareChoice.select,
+    tileWidth: Math.round(remoteShareQuality.tileRequest.width),
   });
   /** Avatar until video paints — avoids black tiles while remote/local tracks warm up. */
   const showAudioScrim = !showVideoElement || !videoSurfaceReady;

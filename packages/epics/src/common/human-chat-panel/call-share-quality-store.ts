@@ -58,24 +58,41 @@ export type ShareQualityPickerState = {
   options: CallShareQualityOption[];
   selectedId: string;
   select: (option: CallShareQualityOption) => void;
+  /** Width the tile asks for; the toolbar follows the largest tile showing a share. */
+  tileWidth?: number;
 };
 
+/**
+ * Every tile showing a remote share publishes its picker (full view, dock, a small tile of the same
+ * share). The toolbar shows the largest one, so a small tile cannot make the menu say "enlarge"
+ * while the share is open in full; ties go to the most recent.
+ */
+const pickersByOwner = new Map<object, ShareQualityPickerState>();
 let picker: ShareQualityPickerState | null = null;
-let pickerOwner: object | null = null;
 const pickerListeners = new Set<() => void>();
+
+function pickLargest(): ShareQualityPickerState | null {
+  let best: ShareQualityPickerState | null = null;
+  for (const state of pickersByOwner.values()) {
+    if (!best || (state.tileWidth ?? 0) >= (best.tileWidth ?? 0)) best = state;
+  }
+  return best;
+}
 
 export function publishShareQualityPicker(
   owner: object,
   state: ShareQualityPickerState | null,
 ): void {
   if (state === null) {
-    if (pickerOwner !== owner) return;
-    picker = null;
-    pickerOwner = null;
+    if (!pickersByOwner.delete(owner)) return;
   } else {
-    picker = state;
-    pickerOwner = owner;
+    // Re-insert so the latest publish counts as the most recent on a tie.
+    pickersByOwner.delete(owner);
+    pickersByOwner.set(owner, state);
   }
+  const next = pickLargest();
+  if (next === picker) return;
+  picker = next;
   for (const l of pickerListeners) l();
 }
 
@@ -102,6 +119,6 @@ export function useShareQualityPicker(): ShareQualityPickerState | null {
 export function resetShareQualityStoreForTests(): void {
   choiceBySid.clear();
   choiceVersion = 0;
+  pickersByOwner.clear();
   picker = null;
-  pickerOwner = null;
 }

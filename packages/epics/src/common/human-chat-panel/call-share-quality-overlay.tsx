@@ -31,8 +31,10 @@ function writeHidden(hidden: boolean) {
 }
 
 /**
- * Remote screenshare quality overlay (#2427): an "Improving quality…" pill while the picture
- * sharpens, and a small resolution badge that can be hidden (choice remembered).
+ * Remote screenshare quality overlay (#2427): a small resolution badge that can be hidden (choice
+ * remembered), with an "Improving quality…" pill below it while the picture sharpens. The badge sits
+ * on top so it does not jump when the pill comes and goes. Its buttons carry
+ * `data-call-badge-control` so they stay clickable in the dock, where the stage is click-locked.
  */
 export function CallShareQualityOverlay({
   phase,
@@ -45,7 +47,7 @@ export function CallShareQualityOverlay({
   phase: CallShareQualityPhase;
   receivedWidth: number;
   receivedHeight: number;
-  /** Small windows (Document PiP, dock thumbnail): loader only, no resolution text. */
+  /** Small windows (Document PiP, dock thumbnail): resolution only, smaller, no reason text. */
   compact?: boolean;
   /** Short reason next to the resolution (#2742); omitted = resolution only, as in slice 1. */
   reason?: {
@@ -84,19 +86,11 @@ export function CallShareQualityOverlay({
 
   return (
     <div className="pointer-events-none absolute right-2 top-2 z-[9] flex max-w-[calc(100%-1rem)] flex-col items-end gap-1">
-      {improving ? (
-        <div
-          role="status"
-          className="flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-xs text-white"
-        >
-          <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
-          <span>{t('callShareQualityImproving')}</span>
-        </div>
-      ) : null}
-      {!compact && resolution ? (
+      {resolution ? (
         hidden ? (
           <button
             type="button"
+            data-call-badge-control
             onClick={() => updateHidden(false)}
             className="pointer-events-auto rounded-full bg-black/45 p-1 text-white/80 hover:bg-black/65 hover:text-white"
             aria-label={t('callShareQualityShow')}
@@ -107,15 +101,17 @@ export function CallShareQualityOverlay({
         ) : (
           <div
             className={cn(
-              'pointer-events-auto flex items-center gap-1 rounded-full bg-black/55 py-0.5 pl-2.5 pr-1 text-xs text-white/90',
+              'pointer-events-auto flex items-center gap-1 rounded-full bg-black/55 py-0.5 pr-1 text-white/90',
+              compact ? 'pl-1.5 text-[10px] leading-4' : 'pl-2.5 text-xs',
             )}
           >
             <span className="tabular-nums">{resolution}</span>
-            {reasonText ? (
+            {reasonText && !compact ? (
               <span className="text-white/70">· {reasonText}</span>
             ) : null}
             <button
               type="button"
+              data-call-badge-control
               onClick={() => updateHidden(true)}
               className="rounded-full p-0.5 hover:bg-white/20"
               aria-label={t('callShareQualityHide')}
@@ -125,6 +121,15 @@ export function CallShareQualityOverlay({
             </button>
           </div>
         )
+      ) : null}
+      {improving ? (
+        <div
+          role="status"
+          className="flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-xs text-white"
+        >
+          <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+          <span>{t('callShareQualityImproving')}</span>
+        </div>
       ) : null}
     </div>
   );

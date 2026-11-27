@@ -3637,7 +3637,7 @@
     "callShareQualityHide": "Ocultar resolução",
     "callShareQualityPicker": "Qualidade de receção",
     "callShareQualityAuto": "Auto",
-    "callShareQualityNeedsResize": "amplie para usar",
+    "callShareQualityUnavailable": "Limitado pelo tamanho da janela ou pela rede",
     "callShareQualityReasonAuto": "Auto: ajustada ao seu quadro",
     "callShareQualityReasonCapped": "Limitada a {label}",
     "callShareQualityReasonNetwork": "Limitada pela rede",

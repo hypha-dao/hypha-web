@@ -6,7 +6,7 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
-import { Check, Gauge } from 'lucide-react';
+import { Check, Gauge, Info } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { cn } from '@hypha-platform/ui-utils';
@@ -48,7 +48,7 @@ export function HumanChatPanelCallShareQualityMenu({
   const menuItems = (): HTMLButtonElement[] =>
     Array.from(
       menuRef.current?.querySelectorAll<HTMLButtonElement>(
-        '[role="menuitemradio"]:not(:disabled)',
+        '[role="menuitemradio"]',
       ) ?? [],
     );
 
@@ -144,7 +144,7 @@ export function HumanChatPanelCallShareQualityMenu({
             {t('callShareQualityPicker')}
           </p>
           {picker.options.map((option) => {
-            const disabled = option.kind === 'layer' && option.needsResize;
+            const unavailable = option.kind === 'layer' && option.needsResize;
             const isSelected = option.id === picker.selectedId;
             return (
               <button
@@ -152,20 +152,33 @@ export function HumanChatPanelCallShareQualityMenu({
                 type="button"
                 role="menuitemradio"
                 aria-checked={isSelected}
-                disabled={disabled}
+                // aria-disabled (not disabled) keeps the hint reachable by hover and keyboard.
+                aria-disabled={unavailable || undefined}
+                title={
+                  unavailable ? t('callShareQualityUnavailable') : undefined
+                }
                 onClick={() => {
+                  if (unavailable) return;
                   picker.select(option);
                   closeAndFocusTrigger();
                 }}
-                className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50"
+                className={cn(
+                  'flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors',
+                  unavailable
+                    ? 'cursor-not-allowed opacity-50'
+                    : 'hover:bg-muted/80',
+                )}
               >
-                <span>
+                <span className="flex items-center gap-1.5">
                   {option.kind === 'auto'
                     ? t('callShareQualityAuto')
                     : option.label}
-                  {disabled ? (
-                    <span className="ml-1 text-xs opacity-80">
-                      · {t('callShareQualityNeedsResize')}
+                  {unavailable ? (
+                    <Info className="h-3 w-3 opacity-80" aria-hidden />
+                  ) : null}
+                  {unavailable ? (
+                    <span className="sr-only">
+                      {t('callShareQualityUnavailable')}
                     </span>
                   ) : null}
                 </span>
