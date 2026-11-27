@@ -9,7 +9,7 @@ describe('spaceCallBackgroundLayout', () => {
     const { logo } = spaceCallBackgroundLayout(W, H, true, null);
     expect(logo).not.toBeNull();
     expect(logo!.width).toBe(logo!.height);
-    expect(logo!.width).toBe(Math.round(H * 0.16));
+    expect(logo!.width).toBe(Math.round(H * 0.18));
     // Right half, upper third.
     expect(logo!.x).toBeGreaterThan(W / 2);
     expect(logo!.y + logo!.height).toBeLessThan(H / 3);

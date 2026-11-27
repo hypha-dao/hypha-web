@@ -3,7 +3,7 @@ import {
   CALL_BACKGROUND_UPLOAD_LIMIT,
   CALL_BACKGROUND_UPLOAD_MAX_BYTES,
   coverCropRect,
-  uploadIdsBeyondLimit,
+  canAddCallBackgroundUpload,
   validateCallBackgroundUploadFile,
 } from '../call-background-uploads';
 
@@ -72,12 +72,12 @@ describe('coverCropRect', () => {
   });
 });
 
-describe('uploadIdsBeyondLimit', () => {
-  it('drops the oldest beyond the limit', () => {
-    const uploads = [1, 4, 2, 3].map((t) => ({ id: `u${t}`, createdAt: t }));
+describe('canAddCallBackgroundUpload', () => {
+  it('allows adding below the limit only', () => {
     expect(CALL_BACKGROUND_UPLOAD_LIMIT).toBe(3);
-    expect(uploadIdsBeyondLimit(uploads)).toEqual(['u1']);
-    expect(uploadIdsBeyondLimit(uploads, 1)).toEqual(['u3', 'u2', 'u1']);
-    expect(uploadIdsBeyondLimit(uploads.slice(0, 2))).toEqual([]);
+    expect(canAddCallBackgroundUpload(0)).toBe(true);
+    expect(canAddCallBackgroundUpload(2)).toBe(true);
+    expect(canAddCallBackgroundUpload(3)).toBe(false);
+    expect(canAddCallBackgroundUpload(1, 1)).toBe(false);
   });
 });

@@ -7,16 +7,20 @@ import {
   Check,
   ImagePlus,
   Loader2,
-  Sparkles,
-  X,
+  SquareUser,
+  Trash2,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
-import { CALL_BACKGROUND_UPLOAD_ACCEPT } from './call-background-uploads';
+import {
+  CALL_BACKGROUND_UPLOAD_ACCEPT,
+  CALL_BACKGROUND_UPLOAD_LIMIT,
+} from './call-background-uploads';
 import type {
   CallBackgroundUploads,
   CallBackgroundUploadView,
 } from './use-call-background-uploads';
+import { CallBlurIcon } from './call-blur-icon';
 import {
   CALL_BACKGROUND_IMAGES,
   type CallBackgroundEffect,
@@ -32,9 +36,11 @@ export type CallBackgroundEffectControl = {
   /** False where the browser cannot run the effect; the control is not shown. */
   supported: boolean;
   onChange: (effect: CallBackgroundEffect) => void;
+  /** The menu opened: draw the space background and preload the images for quick switching. */
+  onMenuOpen: () => void;
   /** The call's space background once drawn (`blob:`), for the "This space" tile. */
   spaceImageSrc: string | null;
-  /** The call's space logo, for the tile before the background is drawn. */
+  /** The call's space logo, for the tile while its background is being drawn. */
   spaceLogoSrc: string | null;
   /** The member's own images on this device; null where not offered. */
   uploads: {
@@ -42,24 +48,49 @@ export type CallBackgroundEffectControl = {
     items: CallBackgroundUploadView[] | null;
     busy: boolean;
     error: CallBackgroundUploads['error'];
-    /** Stores and selects a picked file. */
-    onAdd: (file: File) => void;
+    /** Stores and selects a picked file; resolves to whether it worked. */
+    onAdd: (file: File) => Promise<boolean>;
     onRemove: (id: string) => void;
   } | null;
 };
 
-const OPTIONS: Array<{
+type BlurOption = {
+  key: string;
   effect: CallBackgroundEffect;
-  labelKey: 'callBackgroundEffectNone' | 'callBackgroundEffectBlur';
-  Icon: typeof Ban;
-}> = [
-  { effect: { kind: 'none' }, labelKey: 'callBackgroundEffectNone', Icon: Ban },
+  labelKey:
+    | 'callBackgroundEffectNone'
+    | 'callBackgroundEffectBlur'
+    | 'callBackgroundEffectBlurStrong';
+  icon: (className: string) => ReactNode;
+};
+
+const OPTIONS: BlurOption[] = [
   {
-    effect: { kind: 'blur' },
+    key: 'none',
+    effect: { kind: 'none' },
+    labelKey: 'callBackgroundEffectNone',
+    icon: (className) => <Ban className={className} />,
+  },
+  {
+    key: 'blur-light',
+    effect: { kind: 'blur', strength: 'light' },
     labelKey: 'callBackgroundEffectBlur',
-    Icon: Sparkles,
+    icon: (className) => <CallBlurIcon className={className} />,
+  },
+  {
+    key: 'blur-strong',
+    effect: { kind: 'blur', strength: 'strong' },
+    labelKey: 'callBackgroundEffectBlurStrong',
+    icon: (className) => <CallBlurIcon strong className={className} />,
   },
 ];
+
+function isSameOption(a: CallBackgroundEffect, b: CallBackgroundEffect) {
+  if (a.kind === 'blur' && b.kind === 'blur') {
+    return (a.strength ?? 'light') === (b.strength ?? 'light');
+  }
+  return a.kind === b.kind;
+}
 
 /** Menu labels of the built-in images (`CALL_BACKGROUND_IMAGES` ids). */
 const IMAGE_LABEL_KEYS: Record<
@@ -70,16 +101,30 @@ const IMAGE_LABEL_KEYS: Record<
   dark: 'callBackgroundImageDark',
 };
 
+const TILE_CLASS =
+  'relative block aspect-video w-full overflow-hidden rounded-md border-2 transition-colors';
+const tileBorder = (selected: boolean) =>
+  selected
+    ? 'border-[color:var(--color-accent-9,#4a65d8)]'
+    : 'border-transparent hover:border-neutral-7';
+
+function TileSpinner() {
+  return (
+    <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+      <Loader2 className="h-4 w-4 animate-spin text-white" aria-hidden />
+    </span>
+  );
+}
+
 /**
  * Menu content: heading, effect choices and the status line. Used by the toolbar menu and by the
- * share toolbar's More sub-view.
+ * More sub-view. Every choice closes the menu (`onDone`).
  */
 export function CallBackgroundEffectMenuBody({
   control,
   isCameraOff,
   dark,
   backButton,
-  onTurnCameraOnWithoutEffect,
   onDone,
 }: {
   control: CallBackgroundEffectControl;
@@ -87,7 +132,6 @@ export function CallBackgroundEffectMenuBody({
   dark: boolean;
   /** More menu sub-view: back arrow shown inline with the heading. */
   backButton?: ReactNode;
-  onTurnCameraOnWithoutEffect: () => void;
   /** Close the menu after a choice. */
   onDone: () => void;
 }) {
@@ -99,6 +143,13 @@ export function CallBackgroundEffectMenuBody({
   const failed = control.status === 'failed';
   const applying = control.status === 'applying';
   const effectChosen = control.effect.kind !== 'none';
+  const choose = (effect: CallBackgroundEffect, selected: boolean) => {
+    if (!selected) control.onChange(effect);
+    onDone();
+  };
+  const uploads = control.uploads;
+  const uploadItems = uploads?.items ?? [];
+  const uploadsFull = uploadItems.length >= CALL_BACKGROUND_UPLOAD_LIMIT;
 
   return (
     <>
@@ -114,22 +165,19 @@ export function CallBackgroundEffectMenuBody({
         </p>
       </div>
       <div className="-mx-0 my-1 h-px bg-neutral-6" />
-      {OPTIONS.map(({ effect, labelKey, Icon }) => {
-        const selected = control.effect.kind === effect.kind;
+      {OPTIONS.map(({ key, effect, labelKey, icon }) => {
+        const selected = isSameOption(control.effect, effect);
         return (
           <button
-            key={effect.kind}
+            key={key}
             type="button"
             role="menuitemradio"
             aria-checked={selected}
-            onClick={() => {
-              if (!selected) control.onChange(effect);
-              onDone();
-            }}
+            onClick={() => choose(effect, selected)}
             className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
           >
             <span className="inline-flex items-center gap-2">
-              <Icon className="h-4 w-4" />
+              {icon('h-4 w-4')}
               {t(labelKey)}
             </span>
             {selected ? (
@@ -165,32 +213,17 @@ export function CallBackgroundEffectMenuBody({
               aria-checked={selected}
               aria-label={label}
               title={label}
-              onClick={() => {
-                if (!selected)
-                  control.onChange({ kind: 'image', imageId: image.id });
-                onDone();
-              }}
-              className={cn(
-                'relative aspect-video overflow-hidden rounded-md border-2 transition-colors',
-                selected
-                  ? 'border-[color:var(--color-accent-9,#4a65d8)]'
-                  : 'border-transparent hover:border-neutral-7',
-              )}
+              onClick={() =>
+                choose({ kind: 'image', imageId: image.id }, selected)
+              }
+              className={cn(TILE_CLASS, tileBorder(selected))}
             >
               <img
                 src={image.thumbnailSrc}
                 alt=""
-                loading="lazy"
                 className="h-full w-full object-cover"
               />
-              {selected && applying ? (
-                <span className="absolute inset-0 flex items-center justify-center bg-black/30">
-                  <Loader2
-                    className="h-4 w-4 animate-spin text-white"
-                    aria-hidden
-                  />
-                </span>
-              ) : null}
+              {selected && applying ? <TileSpinner /> : null}
             </button>
           );
         })}
@@ -204,16 +237,8 @@ export function CallBackgroundEffectMenuBody({
               aria-checked={selected}
               aria-label={label}
               title={label}
-              onClick={() => {
-                if (!selected) control.onChange({ kind: 'space' });
-                onDone();
-              }}
-              className={cn(
-                'relative aspect-video overflow-hidden rounded-md border-2 transition-colors',
-                selected
-                  ? 'border-[color:var(--color-accent-9,#4a65d8)]'
-                  : 'border-transparent hover:border-neutral-7',
-              )}
+              onClick={() => choose({ kind: 'space' }, selected)}
+              className={cn(TILE_CLASS, tileBorder(selected))}
             >
               {control.spaceImageSrc ? (
                 <img
@@ -222,44 +247,30 @@ export function CallBackgroundEffectMenuBody({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <span
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      'linear-gradient(45deg, var(--space-accent-deep, #24433f), var(--space-accent, #3d6b66))',
-                  }}
-                >
-                  {control.spaceLogoSrc ? (
-                    <img
-                      src={control.spaceLogoSrc}
-                      alt=""
-                      className="absolute right-[12%] top-[14%] h-[30%] w-auto rounded-sm bg-white/90"
-                    />
-                  ) : null}
+                // Drawn when the menu opens; neutral placeholder for that moment.
+                <span className="absolute inset-0 flex items-center justify-center bg-muted">
+                  <Loader2
+                    className="h-4 w-4 animate-spin opacity-60"
+                    aria-hidden
+                  />
                 </span>
               )}
               <span className="absolute inset-x-0 bottom-0 truncate bg-black/45 px-1 text-left text-[10px] leading-4 text-white">
                 {label}
               </span>
-              {selected && applying ? (
-                <span className="absolute inset-0 flex items-center justify-center bg-black/30">
-                  <Loader2
-                    className="h-4 w-4 animate-spin text-white"
-                    aria-hidden
-                  />
-                </span>
-              ) : null}
+              {selected && applying ? <TileSpinner /> : null}
             </button>
           );
         })()}
       </div>
-      {control.uploads?.available ? (
+      {uploads?.available ? (
         <>
           <p className={cn('px-2 pb-1 pt-2', hintClass)}>
-            {t('callBackgroundUploadsLabel')}
+            {t('callBackgroundUploadsLabel')} ({uploadItems.length}/
+            {CALL_BACKGROUND_UPLOAD_LIMIT})
           </p>
           <div className="grid grid-cols-2 gap-1.5 px-2" role="group">
-            {(control.uploads.items ?? []).map((upload, index) => {
+            {uploadItems.map((upload, index) => {
               const selected =
                 control.effect.kind === 'upload' &&
                 control.effect.uploadId === upload.id;
@@ -273,85 +284,71 @@ export function CallBackgroundEffectMenuBody({
                     role="menuitemradio"
                     aria-checked={selected}
                     aria-label={label}
-                    title={label}
-                    onClick={() => {
-                      if (!selected) {
-                        control.onChange({
-                          kind: 'upload',
-                          uploadId: upload.id,
-                        });
-                      }
-                      onDone();
-                    }}
-                    className={cn(
-                      'relative block aspect-video w-full overflow-hidden rounded-md border-2 transition-colors',
-                      selected
-                        ? 'border-[color:var(--color-accent-9,#4a65d8)]'
-                        : 'border-transparent hover:border-neutral-7',
-                    )}
+                    onClick={() =>
+                      choose({ kind: 'upload', uploadId: upload.id }, selected)
+                    }
+                    className={cn(TILE_CLASS, tileBorder(selected))}
                   >
                     <img
                       src={upload.thumbnailSrc}
                       alt=""
                       className="h-full w-full object-cover"
                     />
-                    {selected && applying ? (
-                      <span className="absolute inset-0 flex items-center justify-center bg-black/30">
-                        <Loader2
-                          className="h-4 w-4 animate-spin text-white"
-                          aria-hidden
-                        />
-                      </span>
-                    ) : null}
+                    {selected && applying ? <TileSpinner /> : null}
                   </button>
                   <button
                     type="button"
                     aria-label={t('callBackgroundUploadRemove')}
                     title={t('callBackgroundUploadRemove')}
-                    onClick={() => control.uploads?.onRemove(upload.id)}
+                    onClick={() => uploads.onRemove(upload.id)}
                     className="absolute right-0.5 top-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
                   >
-                    <X className="h-3 w-3" aria-hidden />
+                    <Trash2 className="h-3 w-3" aria-hidden />
                   </button>
                 </div>
               );
             })}
-            <label
-              className={cn(
-                'relative flex aspect-video cursor-pointer flex-col items-center justify-center gap-0.5 rounded-md border-2 border-dashed border-neutral-7 text-[11px] transition-colors hover:bg-muted/60',
-                control.uploads.busy && 'pointer-events-none opacity-60',
-              )}
-              title={t('callBackgroundUploadAdd')}
-            >
-              {control.uploads.busy ? (
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-              ) : (
-                <ImagePlus className="h-4 w-4" aria-hidden />
-              )}
-              <span>{t('callBackgroundUploadAdd')}</span>
-              <input
-                type="file"
-                accept={CALL_BACKGROUND_UPLOAD_ACCEPT}
-                className="sr-only"
-                disabled={control.uploads.busy}
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  event.target.value = '';
-                  if (file) control.uploads?.onAdd(file);
-                }}
-              />
-            </label>
+            {uploadsFull ? null : (
+              <label
+                className={cn(
+                  'relative flex aspect-video cursor-pointer flex-col items-center justify-center gap-0.5 rounded-md border-2 border-dashed border-neutral-7 text-[11px] transition-colors hover:bg-muted/60',
+                  uploads.busy && 'pointer-events-none opacity-60',
+                )}
+                title={t('callBackgroundUploadAdd')}
+              >
+                {uploads.busy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <ImagePlus className="h-4 w-4" aria-hidden />
+                )}
+                <span>{t('callBackgroundUploadAdd')}</span>
+                <input
+                  type="file"
+                  accept={CALL_BACKGROUND_UPLOAD_ACCEPT}
+                  className="sr-only"
+                  disabled={uploads.busy}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = '';
+                    if (!file) return;
+                    void uploads.onAdd(file).then((ok) => {
+                      if (ok) onDone();
+                    });
+                  }}
+                />
+              </label>
+            )}
           </div>
-          <p className={cn('px-2 pt-1', hintClass)}>
-            {control.uploads.error === 'unsupported_type' ||
-            control.uploads.error === 'decode_failed'
-              ? t('callBackgroundUploadErrorType')
-              : control.uploads.error === 'too_large'
-              ? t('callBackgroundUploadErrorSize')
-              : control.uploads.error
-              ? t('callBackgroundUploadErrorFailed')
-              : t('callBackgroundUploadHint')}
-          </p>
+          {uploads.error ? (
+            <p className={cn('px-2 pt-1', hintClass)} role="alert">
+              {uploads.error === 'unsupported_type' ||
+              uploads.error === 'decode_failed'
+                ? t('callBackgroundUploadErrorType')
+                : uploads.error === 'too_large'
+                ? t('callBackgroundUploadErrorSize')
+                : t('callBackgroundUploadErrorFailed')}
+            </p>
+          ) : null}
         </>
       ) : null}
       {applying ? (
@@ -359,26 +356,13 @@ export function CallBackgroundEffectMenuBody({
           {t('callBackgroundEffectApplying')}
         </p>
       ) : failed ? (
-        <div className="space-y-1 px-2 pt-1" role="alert">
-          <p className={cn('flex items-start gap-1.5', hintClass)}>
-            <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0 text-amber-500" />
-            {isCameraOff
-              ? t('callBackgroundEffectFailedCameraOff')
-              : t('callBackgroundEffectFailedCameraOn')}
-          </p>
-          {isCameraOff ? (
-            <button
-              type="button"
-              onClick={() => {
-                onTurnCameraOnWithoutEffect();
-                onDone();
-              }}
-              className="w-full rounded-lg px-2 py-1 text-left text-1 font-medium underline-offset-2 hover:underline"
-            >
-              {t('callBackgroundEffectTurnOnWithout')}
-            </button>
-          ) : null}
-        </div>
+        <p
+          className={cn('flex items-start gap-1.5 px-2 pt-1', hintClass)}
+          role="alert"
+        >
+          <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0 text-amber-500" />
+          {t('callBackgroundEffectFailedCameraOn')}
+        </p>
       ) : control.slow && effectChosen && !isCameraOff ? (
         <p
           className={cn('flex items-start gap-1.5 px-2 pt-1', hintClass)}
@@ -418,7 +402,7 @@ export function CallBackgroundEffectTriggerIcon({
   const warn = control.status === 'failed' || control.slow;
   return (
     <span className="relative inline-flex" aria-hidden>
-      <Sparkles className={iconClassName} strokeWidth={strokeWidth} />
+      <SquareUser className={iconClassName} strokeWidth={strokeWidth} />
       {warn ? (
         <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-amber-500" />
       ) : null}
@@ -436,6 +420,7 @@ export function toCallBackgroundEffectControl(call: {
   spaceBackgroundImage?: string | null;
   callSpaceLogoUrl?: string | null;
   backgroundUploads?: CallBackgroundUploads | null;
+  onBackgroundMenuOpen?: () => void;
 }): CallBackgroundEffectControl {
   const uploads = call.backgroundUploads ?? null;
   return {
@@ -446,6 +431,7 @@ export function toCallBackgroundEffectControl(call: {
     onChange: (effect) => {
       void call.setBackgroundEffect(effect);
     },
+    onMenuOpen: () => call.onBackgroundMenuOpen?.(),
     spaceImageSrc: call.spaceBackgroundImage ?? null,
     spaceLogoSrc: call.callSpaceLogoUrl ?? null,
     uploads: uploads
@@ -454,12 +440,11 @@ export function toCallBackgroundEffectControl(call: {
           items: uploads.uploads,
           busy: uploads.busy,
           error: uploads.error,
-          onAdd: (file) => {
-            void uploads.add(file).then((id) => {
-              if (id) {
-                void call.setBackgroundEffect({ kind: 'upload', uploadId: id });
-              }
-            });
+          onAdd: async (file) => {
+            const id = await uploads.add(file);
+            if (!id) return false;
+            void call.setBackgroundEffect({ kind: 'upload', uploadId: id });
+            return true;
           },
           onRemove: (id) => {
             void uploads.remove(id);

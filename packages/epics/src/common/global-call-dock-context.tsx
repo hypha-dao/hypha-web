@@ -9,6 +9,7 @@ import {
   subscribeGroupCallPleaseLeave,
   useBlockAutoReload,
   useMatrix,
+  CALL_BACKGROUND_IMAGES,
   useSpaceBySlug,
   useSpaceGroupCall,
 } from '@hypha-platform/core/client';
@@ -196,14 +197,33 @@ function useGlobalCallDockValue() {
     onCallArtifactsUploaded,
     getCallLaunchContext: () => callLaunchContextRef.current,
   });
-  // #2563: the call's space background, drawn only while that effect is chosen in a call.
+  const inCallForBackground =
+    call.backgroundEffectSupported &&
+    call.callState !== 'idle' &&
+    call.callState !== 'error';
+  // #2563: once the Background menu is opened in a call, draw the space background (so its tile
+  // shows the real thing) and preload the built-in images (so switching to them is quick).
+  const [backgroundMenuOpened, setBackgroundMenuOpened] = React.useState(false);
+  const backgroundImagesPreloadedRef = React.useRef(false);
+  const onBackgroundMenuOpen = React.useCallback(() => {
+    setBackgroundMenuOpened(true);
+    if (backgroundImagesPreloadedRef.current) return;
+    backgroundImagesPreloadedRef.current = true;
+    for (const image of CALL_BACKGROUND_IMAGES) {
+      const img = new Image();
+      img.src = image.src;
+      void img.decode().catch(() => undefined);
+    }
+  }, []);
+  React.useEffect(() => {
+    if (!inCallForBackground) setBackgroundMenuOpened(false);
+  }, [inCallForBackground]);
+  // The call's space background: drawn while that effect is chosen or the menu was opened.
   const { space: callSpace } = useSpaceBySlug(activeSpaceSlug?.trim() ?? '');
   const spaceBackgroundUrl = useSpaceCallBackground({
     enabled:
-      call.backgroundEffectSupported &&
-      call.backgroundEffect.kind === 'space' &&
-      call.callState !== 'idle' &&
-      call.callState !== 'error',
+      inCallForBackground &&
+      (call.backgroundEffect.kind === 'space' || backgroundMenuOpened),
     spaceSlug: callSpace?.slug ?? null,
     leadImage: callSpace?.leadImage ?? null,
     logoUrl: callSpace?.logoUrl ?? null,
@@ -240,7 +260,7 @@ function useGlobalCallDockValue() {
   React.useEffect(() => {
     if (!chosenUploadId || !uploadedImageMap) return;
     if (!(chosenUploadId in uploadedImageMap)) {
-      void setBackgroundEffect({ kind: 'blur' });
+      void setBackgroundEffect({ kind: 'blur', strength: 'strong' });
     }
   }, [chosenUploadId, setBackgroundEffect, uploadedImageMap]);
   // A reload would drop an active call, or a recording still being kept or
@@ -1032,6 +1052,7 @@ function useGlobalCallDockValue() {
     ...callReactions,
     /** #2563: for the "This space" tile before its background is drawn. */
     callSpaceLogoUrl: callSpace?.logoUrl ?? null,
+    onBackgroundMenuOpen,
     /** #2563: the member's own background images on this device. */
     backgroundUploads,
     leave: leaveCall,

@@ -2,6 +2,7 @@ import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 import {
   CALL_BACKGROUND_ASSET_PATHS,
+  CALL_BACKGROUND_BLUR_RADII,
   CALL_BACKGROUND_BLUR_RADIUS,
   CALL_BACKGROUND_EFFECT_STORAGE_KEY,
   CALL_BACKGROUND_IMAGES,
@@ -257,8 +258,12 @@ describe('built-in images', () => {
   it('falls back to blur for an image that no longer exists', () => {
     expect(parseCallBackgroundEffect('image:removed-in-a-release')).toEqual({
       kind: 'blur',
+      strength: 'strong',
     });
-    expect(parseCallBackgroundEffect('image:')).toEqual({ kind: 'blur' });
+    expect(parseCallBackgroundEffect('image:')).toEqual({
+      kind: 'blur',
+      strength: 'strong',
+    });
   });
 
   it('maps images to the virtual background mode', () => {
@@ -269,7 +274,7 @@ describe('built-in images', () => {
       processorModeForEffect({ kind: 'image', imageId: 'unknown' }),
     ).toEqual({
       mode: 'background-blur',
-      blurRadius: CALL_BACKGROUND_BLUR_RADIUS,
+      blurRadius: CALL_BACKGROUND_BLUR_RADII.strong,
     });
   });
 
@@ -305,13 +310,13 @@ describe('space background', () => {
     ).toEqual({ mode: 'virtual-background', imagePath: 'blob:x' });
     expect(processorModeForEffect({ kind: 'space' })).toEqual({
       mode: 'background-blur',
-      blurRadius: CALL_BACKGROUND_BLUR_RADIUS,
+      blurRadius: CALL_BACKGROUND_BLUR_RADII.strong,
     });
     expect(
       processorModeForEffect({ kind: 'space' }, { spaceImageSrc: null }),
     ).toEqual({
       mode: 'background-blur',
-      blurRadius: CALL_BACKGROUND_BLUR_RADIUS,
+      blurRadius: CALL_BACKGROUND_BLUR_RADII.strong,
     });
   });
 });
@@ -321,7 +326,10 @@ describe('own images (upload)', () => {
     const effect = { kind: 'upload', uploadId: 'abc' } as const;
     expect(serializeCallBackgroundEffect(effect)).toBe('upload:abc');
     expect(parseCallBackgroundEffect('upload:abc')).toEqual(effect);
-    expect(parseCallBackgroundEffect('upload:')).toEqual({ kind: 'blur' });
+    expect(parseCallBackgroundEffect('upload:')).toEqual({
+      kind: 'blur',
+      strength: 'strong',
+    });
     expect(
       callBackgroundEffectsEqual(effect, { kind: 'upload', uploadId: 'abc' }),
     ).toBe(true);
@@ -337,7 +345,7 @@ describe('own images (upload)', () => {
     ).toEqual({ mode: 'virtual-background', imagePath: 'blob:a' });
     const blur = {
       mode: 'background-blur',
-      blurRadius: CALL_BACKGROUND_BLUR_RADIUS,
+      blurRadius: CALL_BACKGROUND_BLUR_RADII.strong,
     };
     expect(processorModeForEffect(effect, { uploadImageSrcs: {} })).toEqual(
       blur,
@@ -346,5 +354,48 @@ describe('own images (upload)', () => {
       blur,
     );
     expect(processorModeForEffect(effect)).toEqual(blur);
+  });
+});
+
+describe('blur strength', () => {
+  it('round-trips light (default) and strong', () => {
+    expect(serializeCallBackgroundEffect({ kind: 'blur' })).toBe('blur');
+    expect(
+      serializeCallBackgroundEffect({ kind: 'blur', strength: 'light' }),
+    ).toBe('blur');
+    expect(
+      serializeCallBackgroundEffect({ kind: 'blur', strength: 'strong' }),
+    ).toBe('blur:strong');
+    expect(parseCallBackgroundEffect('blur:strong')).toEqual({
+      kind: 'blur',
+      strength: 'strong',
+    });
+  });
+
+  it('compares strengths, light being the default', () => {
+    expect(
+      callBackgroundEffectsEqual(
+        { kind: 'blur' },
+        { kind: 'blur', strength: 'light' },
+      ),
+    ).toBe(true);
+    expect(
+      callBackgroundEffectsEqual(
+        { kind: 'blur' },
+        { kind: 'blur', strength: 'strong' },
+      ),
+    ).toBe(false);
+  });
+
+  it('maps each strength to its radius, strong being stronger', () => {
+    expect(
+      processorModeForEffect({ kind: 'blur', strength: 'strong' }),
+    ).toEqual({
+      mode: 'background-blur',
+      blurRadius: CALL_BACKGROUND_BLUR_RADII.strong,
+    });
+    expect(CALL_BACKGROUND_BLUR_RADII.strong).toBeGreaterThan(
+      CALL_BACKGROUND_BLUR_RADII.light,
+    );
   });
 });

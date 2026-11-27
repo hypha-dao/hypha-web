@@ -15,13 +15,12 @@ import {
   persistCallBackgroundEffect,
   processorModeForEffect,
   readStoredCallBackgroundEffect,
+  serializeCallBackgroundEffect,
   supportsCallBackgroundEffects,
 } from './call-background-effect';
 import {
   attachCallBackgroundProcessor,
-  CallBackgroundEffectError,
   type CallBackgroundProcessorHooks,
-  createCameraTrackWithBackgroundEffect,
   getCallBackgroundProcessor,
   switchCallBackgroundEffect,
   warmUpCallBackgroundEffect,
@@ -1478,10 +1477,73 @@ export function useSpaceGroupCall(
   const backgroundAttachInFlightRef = useRef(false);
 
   /**
-   * #2563: turns the camera on. Without an effect this is exactly `setCameraEnabled(true)`.
-   * With an effect and no processed track yet, the new track gets the effect before it is
-   * published, so others never see the unprocessed camera; if the effect cannot start, the
-   * camera stays off and the status is `failed`. Returns whether the camera is on.
+   * #2563: starts the effect on a camera track that is already published (Ger, 2026-11-27: the
+   * camera shows at once, the effect follows when ready, instead of waiting before publishing).
+   * Others see the plain camera for that moment. Logs timings (call debug).
+   */
+  const startBackgroundEffectOnLiveTrack = useCallback(
+    async (track: LocalVideoTrack, trigger: 'camera-on' | 'effect-change') => {
+      if (backgroundAttachInFlightRef.current) return;
+      backgroundAttachInFlightRef.current = true;
+      const requestEpoch = cameraRequestEpochRef.current;
+      const startedAt = performance.now();
+      logCallDebug('background-effect:start', {
+        trigger,
+        effect: serializeCallBackgroundEffect(backgroundEffectRef.current),
+      });
+      resetBackgroundFrameDrops();
+      setBackgroundEffectStatus('applying');
+      try {
+        await attachCallBackgroundProcessor(
+          track,
+          backgroundModeFor(backgroundEffectRef.current),
+          backgroundProcessorHooks,
+        );
+        // The choice may have changed while the processor was starting.
+        await switchCallBackgroundEffect(
+          track,
+          backgroundModeFor(backgroundEffectRef.current),
+        );
+        logCallDebug('background-effect:active', {
+          trigger,
+          elapsedMs: Math.round(performance.now() - startedAt),
+        });
+        if (requestEpoch === cameraRequestEpochRef.current) {
+          setBackgroundEffectStatus(
+            isCallBackgroundEffectActive(backgroundEffectRef.current)
+              ? 'active'
+              : 'idle',
+          );
+        }
+      } catch (err) {
+        logCallDebug('background-effect:start-failed', {
+          trigger,
+          elapsedMs: Math.round(performance.now() - startedAt),
+          message: err instanceof Error ? err.message : String(err),
+        });
+        if (requestEpoch === cameraRequestEpochRef.current) {
+          setBackgroundEffectStatus('failed');
+        }
+      } finally {
+        backgroundAttachInFlightRef.current = false;
+      }
+      refreshLocalPreview();
+      scheduleFeedBatched();
+    },
+    [
+      backgroundModeFor,
+      backgroundProcessorHooks,
+      refreshLocalPreview,
+      resetBackgroundFrameDrops,
+      scheduleFeedBatched,
+    ],
+  );
+
+  /**
+   * #2563: turns the camera on. Without an effect this is exactly `setCameraEnabled(true)`. With
+   * an effect, the camera is published at once and the effect is started on it without waiting
+   * (see `startBackgroundEffectOnLiveTrack`); a track that already has our processor keeps it
+   * (unmuting restarts it with the new capture). Returns whether the camera is on.
    */
   const enableLocalCamera = useCallback(
     async (lkRoom: LiveKitRoom): Promise<boolean> => {
@@ -1492,96 +1554,36 @@ export function useSpaceGroupCall(
       const existingHasProcessor = Boolean(
         getCallBackgroundProcessor(existing),
       );
-
+      let switchFailed = false;
+      if (existing && existingHasProcessor) {
+        try {
+          await switchCallBackgroundEffect(existing, backgroundModeFor(effect));
+        } catch (err) {
+          switchFailed = true;
+          logCallDebug('background-effect:switch-failed', {
+            trigger: 'camera-on',
+            message: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+      await participant.setCameraEnabled(true);
       if (
         !backgroundEffectSupportedRef.current ||
-        !isCallBackgroundEffectActive(effect) ||
-        existingHasProcessor
+        !isCallBackgroundEffectActive(effect)
       ) {
-        // Unmuting restarts our processor with the new camera capture (livekit-client
-        // `LocalTrack.setMediaStreamTrack`), so the effect continues; sync its mode first.
-        if (existing && existingHasProcessor) {
-          try {
-            await switchCallBackgroundEffect(
-              existing,
-              backgroundModeFor(effect),
-            );
-          } catch (err) {
-            // Privacy first: do not turn the camera on with the wrong (maybe no) effect.
-            logCallDebug('background-effect:switch-failed', {
-              message: err instanceof Error ? err.message : String(err),
-            });
-            setBackgroundEffectStatus('failed');
-            return false;
-          }
-        }
-        await participant.setCameraEnabled(true);
-        setBackgroundEffectStatus(
-          existingHasProcessor && isCallBackgroundEffectActive(effect)
-            ? 'active'
-            : 'idle',
-        );
+        setBackgroundEffectStatus('idle');
         return true;
       }
-
-      const requestEpoch = cameraRequestEpochRef.current;
-      if (existing) {
-        // A muted camera track without our processor: replace it (invisible to others, the
-        // camera is off) so the new track starts with the effect.
-        await participant.unpublishTrack(existing, true);
+      if (existingHasProcessor) {
+        setBackgroundEffectStatus(switchFailed ? 'failed' : 'active');
+        return true;
       }
-      resetBackgroundFrameDrops();
-      setBackgroundEffectStatus('applying');
-      let track: LocalVideoTrack;
-      try {
-        track = await createCameraTrackWithBackgroundEffect(
-          lkRoom,
-          backgroundModeFor(effect),
-          backgroundProcessorHooks,
-        );
-      } catch (err) {
-        if (requestEpoch !== cameraRequestEpochRef.current) {
-          return false;
-        }
-        if (err instanceof CallBackgroundEffectError) {
-          logCallDebug('background-effect:start-failed', {
-            message: err.message,
-          });
-          setBackgroundEffectStatus('failed');
-          return false;
-        }
-        setBackgroundEffectStatus('idle');
-        throw err;
-      }
-      if (requestEpoch !== cameraRequestEpochRef.current) {
-        // Camera turned off or call left while the effect was starting.
-        track.stop();
-        return false;
-      }
-      try {
-        // The choice may have changed while the processor was starting.
-        await switchCallBackgroundEffect(
-          track,
-          backgroundModeFor(backgroundEffectRef.current),
-        );
-        await participant.publishTrack(track);
-      } catch (err) {
-        track.stop();
-        if (err instanceof CallBackgroundEffectError) {
-          setBackgroundEffectStatus('failed');
-          return false;
-        }
-        setBackgroundEffectStatus('idle');
-        throw err;
-      }
-      setBackgroundEffectStatus(
-        isCallBackgroundEffectActive(backgroundEffectRef.current)
-          ? 'active'
-          : 'idle',
-      );
+      const track = participant.getTrackPublication(Track.Source.Camera)
+        ?.track as LocalVideoTrack | undefined;
+      if (track) void startBackgroundEffectOnLiveTrack(track, 'camera-on');
       return true;
     },
-    [backgroundModeFor, backgroundProcessorHooks, resetBackgroundFrameDrops],
+    [backgroundModeFor, startBackgroundEffectOnLiveTrack],
   );
 
   const applyScreenshareContentHints = useCallback(
@@ -2413,12 +2415,19 @@ export function useSpaceGroupCall(
         ) {
           setBackgroundEffectStatus('applying');
         }
+        const startedAt = performance.now();
         try {
           await switchCallBackgroundEffect(track, backgroundModeFor(effect));
+          logCallDebug('background-effect:switched', {
+            effect: serializeCallBackgroundEffect(effect),
+            elapsedMs: Math.round(performance.now() - startedAt),
+          });
           if (backgroundEffectRef.current !== effect) return;
           setBackgroundEffectStatus(active ? 'active' : 'idle');
         } catch (err) {
           logCallDebug('background-effect:switch-failed', {
+            effect: serializeCallBackgroundEffect(effect),
+            elapsedMs: Math.round(performance.now() - startedAt),
             message: err instanceof Error ? err.message : String(err),
           });
           if (backgroundEffectRef.current === effect) {
@@ -2432,40 +2441,12 @@ export function useSpaceGroupCall(
         return;
       }
 
-      backgroundAttachInFlightRef.current = true;
-      setBackgroundEffectStatus('applying');
-      try {
-        await attachCallBackgroundProcessor(
-          track,
-          backgroundModeFor(effect),
-          backgroundProcessorHooks,
-        );
-        await switchCallBackgroundEffect(
-          track,
-          backgroundModeFor(backgroundEffectRef.current),
-        );
-        setBackgroundEffectStatus(
-          isCallBackgroundEffectActive(backgroundEffectRef.current)
-            ? 'active'
-            : 'idle',
-        );
-      } catch (err) {
-        logCallDebug('background-effect:live-start-failed', {
-          message: err instanceof Error ? err.message : String(err),
-        });
-        setBackgroundEffectStatus('failed');
-      } finally {
-        backgroundAttachInFlightRef.current = false;
-      }
-      refreshLocalPreview();
-      scheduleFeedBatched();
+      await startBackgroundEffectOnLiveTrack(track, 'effect-change');
     },
     [
       backgroundModeFor,
-      backgroundProcessorHooks,
-      refreshLocalPreview,
       resetBackgroundFrameDrops,
-      scheduleFeedBatched,
+      startBackgroundEffectOnLiveTrack,
       warmUpBackgroundEffectIfSaved,
     ],
   );

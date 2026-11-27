@@ -187,6 +187,16 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Built-in call background images (#2563): fixed names, so a day plus revalidation.
+      {
+        source: '/call-backgrounds/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800',
+          },
+        ],
+      },
       {
         source: '/onesignal/:path*',
         headers: [

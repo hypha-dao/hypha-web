@@ -1600,6 +1600,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceBackgroundImage: spaceCallSpaceBackgroundImage,
     callSpaceLogoUrl: spaceCallSpaceLogoUrl,
     backgroundUploads: spaceCallBackgroundUploads,
+    onBackgroundMenuOpen: onSpaceCallBackgroundMenuOpen,
     tabBackgroundWhileInCall: spaceCallTabBackground,
     retryFromError: retrySpaceCall,
     dismissCallError: dismissSpaceCallError,
@@ -6571,6 +6572,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                   spaceBackgroundImage: spaceCallSpaceBackgroundImage,
                   callSpaceLogoUrl: spaceCallSpaceLogoUrl,
                   backgroundUploads: spaceCallBackgroundUploads,
+                  onBackgroundMenuOpen: onSpaceCallBackgroundMenuOpen,
                 })}
                 onVoiceProcessingPresetChange={
                   handleCallVoiceProcessingPresetChange

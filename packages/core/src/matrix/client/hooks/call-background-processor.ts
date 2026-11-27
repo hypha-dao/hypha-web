@@ -4,11 +4,8 @@
  * resolved processor mode (`processorModeForEffect`), since some images exist only at runtime.
  */
 
-import type { LocalVideoTrack, Room as LiveKitRoom } from 'livekit-client';
-import {
-  LocalVideoTrack as LiveKitLocalVideoTrack,
-  Track,
-} from 'livekit-client';
+import type { LocalVideoTrack } from 'livekit-client';
+import { LocalVideoTrack as LiveKitLocalVideoTrack } from 'livekit-client';
 import type {
   BackgroundProcessorWrapper,
   FrameProcessingStats,
@@ -126,11 +123,23 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   }
 }
 
+let warmUpPromise: Promise<void> | null = null;
+
 /**
  * Attaches a new processor to `track` and waits until it runs. Throws
- * {@link CallBackgroundEffectError} on any failure; the track itself is left as it was.
+ * {@link CallBackgroundEffectError} on any failure; the track itself is left as it was. A warm-up
+ * in progress loads the same assets; it is awaited instead of starting a second segmenter.
  */
 export async function attachCallBackgroundProcessor(
+  track: LocalVideoTrack,
+  mode: CallBackgroundProcessorMode,
+  hooks: CallBackgroundProcessorHooks = {},
+): Promise<void> {
+  await warmUpPromise?.catch(() => undefined);
+  await attachProcessor(track, mode, hooks);
+}
+
+async function attachProcessor(
   track: LocalVideoTrack,
   mode: CallBackgroundProcessorMode,
   hooks: CallBackgroundProcessorHooks = {},
@@ -178,8 +187,6 @@ export async function switchCallBackgroundEffect(
   return true;
 }
 
-let warmUpPromise: Promise<void> | null = null;
-
 /**
  * Warms the effect up before the camera needs it (#2563): the first start in a tab takes
  * seconds (WASM compile, model load, GPU setup, first segmentation), later starts ~0.5 s. Runs the
@@ -213,7 +220,7 @@ export function warmUpCallBackgroundEffect(): Promise<void> {
       onFirstFrame = resolve;
     });
     try {
-      await attachCallBackgroundProcessor(
+      await attachProcessor(
         track,
         { mode: 'background-blur', blurRadius: CALL_BACKGROUND_BLUR_RADIUS },
         { onFrameProcessed: () => onFirstFrame() },
@@ -229,46 +236,4 @@ export function warmUpCallBackgroundEffect(): Promise<void> {
     throw err;
   });
   return warmUpPromise;
-}
-
-/**
- * Creates the camera track as `setCameraEnabled(true)` would (same room capture defaults), with
- * the effect running before anything is published. Waits for the first processed frame too: the
- * package outputs a copy of the first raw frame at once (`BackgroundTransformer.transform`,
- * "less jarring initial state") and the first segmentation can take seconds, so publishing earlier
- * could show that unprocessed frame. On failure the new track is stopped and a
- * {@link CallBackgroundEffectError} is thrown, so the camera stays off.
- */
-export async function createCameraTrackWithBackgroundEffect(
-  lkRoom: LiveKitRoom,
-  mode: CallBackgroundProcessorMode,
-  hooks: CallBackgroundProcessorHooks = {},
-): Promise<LocalVideoTrack> {
-  // A warm-up in progress loads the same assets; wait instead of starting a second segmenter.
-  await warmUpPromise?.catch(() => undefined);
-  const tracks = await lkRoom.localParticipant.createTracks({ video: true });
-  const track = tracks.find(
-    (t): t is LocalVideoTrack => t.kind === Track.Kind.Video,
-  );
-  tracks.filter((t) => t !== track).forEach((t) => t.stop());
-  if (!track) {
-    throw new CallBackgroundEffectError('No camera track was created');
-  }
-  let onFirstFrame: () => void = () => undefined;
-  const firstProcessedFrame = new Promise<void>((resolve) => {
-    onFirstFrame = resolve;
-  });
-  try {
-    await attachCallBackgroundProcessor(track, mode, {
-      onFrameProcessed: (stats) => {
-        onFirstFrame();
-        hooks.onFrameProcessed?.(stats);
-      },
-    });
-    await withTimeout(firstProcessedFrame, PROCESSOR_START_TIMEOUT_MS);
-  } catch (err) {
-    track.stop();
-    throw err;
-  }
-  return track;
 }

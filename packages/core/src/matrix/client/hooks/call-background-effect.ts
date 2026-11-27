@@ -6,7 +6,8 @@
 
 export type CallBackgroundEffect =
   | { kind: 'none' }
-  | { kind: 'blur' }
+  /** Background blur; light when no strength is given. */
+  | { kind: 'blur'; strength?: CallBackgroundBlurStrength }
   /** A built-in image from {@link CALL_BACKGROUND_IMAGES}. */
   | { kind: 'image'; imageId: string }
   /** The call's space: its accent colours, logo and the Hypha mark, drawn at call time. */
@@ -72,8 +73,31 @@ export const CALL_BACKGROUND_EFFECT_NONE: CallBackgroundEffect = {
 export const CALL_BACKGROUND_EFFECT_STORAGE_KEY =
   'hypha-group-call-background-effect-v1';
 
-/** One blur strength for now (callout 1); the package default. */
-export const CALL_BACKGROUND_BLUR_RADIUS = 10;
+export type CallBackgroundBlurStrength = 'light' | 'strong';
+
+/**
+ * Blur sigma per strength, in texels of the package's 4x downsampled frame. The package keeps at
+ * most 16 taps each side, so the strong value spreads the weight evenly over that whole width.
+ */
+export const CALL_BACKGROUND_BLUR_RADII: Record<
+  CallBackgroundBlurStrength,
+  number
+> = { light: 10, strong: 28 };
+
+/** Light blur radius (the package default). */
+export const CALL_BACKGROUND_BLUR_RADIUS = CALL_BACKGROUND_BLUR_RADII.light;
+
+/** Used while an image is missing or not ready: strong, so the room stays hidden. */
+export const CALL_BACKGROUND_FALLBACK_BLUR: CallBackgroundEffect = {
+  kind: 'blur',
+  strength: 'strong',
+};
+
+export function callBackgroundBlurStrength(
+  effect: CallBackgroundEffect,
+): CallBackgroundBlurStrength | null {
+  return effect.kind === 'blur' ? effect.strength ?? 'light' : null;
+}
 
 /**
  * Exact `@mediapipe/tasks-vision` version `@livekit/track-processors` pins. The WASM files are
@@ -101,6 +125,9 @@ export function callBackgroundEffectsEqual(
   a: CallBackgroundEffect,
   b: CallBackgroundEffect,
 ): boolean {
+  if (a.kind === 'blur' && b.kind === 'blur') {
+    return callBackgroundBlurStrength(a) === callBackgroundBlurStrength(b);
+  }
   if (a.kind === 'image' && b.kind === 'image') return a.imageId === b.imageId;
   if (a.kind === 'upload' && b.kind === 'upload') {
     return a.uploadId === b.uploadId;
@@ -111,6 +138,9 @@ export function callBackgroundEffectsEqual(
 export function serializeCallBackgroundEffect(
   effect: CallBackgroundEffect,
 ): string {
+  if (effect.kind === 'blur') {
+    return effect.strength === 'strong' ? 'blur:strong' : 'blur';
+  }
   if (effect.kind === 'image') return `image:${effect.imageId}`;
   if (effect.kind === 'upload') return `upload:${effect.uploadId}`;
   return effect.kind;
@@ -125,17 +155,20 @@ export function parseCallBackgroundEffect(
 ): CallBackgroundEffect {
   const value = raw?.trim();
   if (value === 'blur') return { kind: 'blur' };
+  if (value === 'blur:strong') return { kind: 'blur', strength: 'strong' };
   if (value === 'space') return { kind: 'space' };
   if (value?.startsWith('upload:')) {
     const uploadId = value.slice('upload:'.length);
     // Whether it still exists is known only once this browser's images are loaded.
-    return uploadId ? { kind: 'upload', uploadId } : { kind: 'blur' };
+    return uploadId
+      ? { kind: 'upload', uploadId }
+      : CALL_BACKGROUND_FALLBACK_BLUR;
   }
   if (value?.startsWith('image:')) {
     const imageId = value.slice('image:'.length);
     return findCallBackgroundImage(imageId)
       ? { kind: 'image', imageId }
-      : { kind: 'blur' };
+      : CALL_BACKGROUND_FALLBACK_BLUR;
   }
   return CALL_BACKGROUND_EFFECT_NONE;
 }
@@ -185,6 +218,11 @@ export type CallBackgroundProcessorMode =
   | { mode: 'background-blur'; blurRadius: number }
   | { mode: 'virtual-background'; imagePath: string };
 
+const FALLBACK_BLUR_MODE: CallBackgroundProcessorMode = {
+  mode: 'background-blur',
+  blurRadius: CALL_BACKGROUND_BLUR_RADII.strong,
+};
+
 /**
  * The processor mode for an effect. An image that is missing (unknown built-in, space background
  * not drawn yet) resolves to blur, so the room stays hidden until the image is there.
@@ -198,22 +236,22 @@ export function processorModeForEffect(
       const src = context.uploadImageSrcs?.[effect.uploadId];
       return src
         ? { mode: 'virtual-background', imagePath: src }
-        : { mode: 'background-blur', blurRadius: CALL_BACKGROUND_BLUR_RADIUS };
+        : FALLBACK_BLUR_MODE;
     }
     case 'space':
       return context.spaceImageSrc
         ? { mode: 'virtual-background', imagePath: context.spaceImageSrc }
-        : { mode: 'background-blur', blurRadius: CALL_BACKGROUND_BLUR_RADIUS };
+        : FALLBACK_BLUR_MODE;
     case 'blur':
       return {
         mode: 'background-blur',
-        blurRadius: CALL_BACKGROUND_BLUR_RADIUS,
+        blurRadius: CALL_BACKGROUND_BLUR_RADII[effect.strength ?? 'light'],
       };
     case 'image': {
       const image = findCallBackgroundImage(effect.imageId);
       return image
         ? { mode: 'virtual-background', imagePath: image.src }
-        : { mode: 'background-blur', blurRadius: CALL_BACKGROUND_BLUR_RADIUS };
+        : FALLBACK_BLUR_MODE;
     }
     case 'none':
     default:

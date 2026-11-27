@@ -1,7 +1,8 @@
 /**
  * The member's own call background images (#2563), kept in this browser only (IndexedDB), never
  * uploaded. Each image is re-encoded to a 1920x1080 JPEG (cover crop), which also drops location
- * and camera metadata and applies the photo's orientation. The last three are kept.
+ * and camera metadata and applies the photo's orientation. Up to three; at the limit the member
+ * removes one before adding (nothing is replaced silently).
  *
  * Gone when site data is cleared, in private windows after closing, under storage pressure, or
  * (Safari) after 7 days without a visit; the effect then falls back to blur.
@@ -23,6 +24,7 @@ export type CallBackgroundUploadErrorCode =
   | 'unsupported_type'
   | 'too_large'
   | 'decode_failed'
+  | 'limit_reached'
   | 'storage_failed';
 
 export class CallBackgroundUploadError extends Error {
@@ -74,15 +76,12 @@ export function coverCropRect(
   };
 }
 
-/** Ids to delete so that at most `limit` remain, oldest first. */
-export function uploadIdsBeyondLimit(
-  uploads: ReadonlyArray<Pick<StoredCallBackgroundUpload, 'id' | 'createdAt'>>,
+/** Whether another image fits; at the limit the member removes one first (nothing is replaced). */
+export function canAddCallBackgroundUpload(
+  count: number,
   limit = CALL_BACKGROUND_UPLOAD_LIMIT,
-): string[] {
-  return [...uploads]
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(limit)
-    .map((upload) => upload.id);
+): boolean {
+  return count < limit;
 }
 
 const DB_NAME = 'hypha-call-backgrounds';
@@ -206,7 +205,7 @@ function newUploadId(): string {
 }
 
 /**
- * Re-encodes and stores a picked file, then drops the oldest beyond the limit. Throws
+ * Re-encodes and stores a picked file (refused at the limit). Throws
  * {@link CallBackgroundUploadError}.
  */
 export async function addCallBackgroundUpload(
@@ -214,6 +213,9 @@ export async function addCallBackgroundUpload(
 ): Promise<StoredCallBackgroundUpload> {
   const invalid = validateCallBackgroundUploadFile(file);
   if (invalid) throw new CallBackgroundUploadError(invalid);
+  if (!canAddCallBackgroundUpload((await listCallBackgroundUploads()).length)) {
+    throw new CallBackgroundUploadError('limit_reached');
+  }
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
@@ -239,9 +241,5 @@ export async function addCallBackgroundUpload(
   await withStore('readwrite', (store) => {
     store.put(upload);
   });
-  const existing = await listCallBackgroundUploads();
-  for (const id of uploadIdsBeyondLimit(existing)) {
-    await deleteCallBackgroundUpload(id).catch(() => undefined);
-  }
   return upload;
 }

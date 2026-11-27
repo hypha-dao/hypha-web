@@ -37,11 +37,11 @@ export function spaceCallBackgroundLayout(
   hasLogo: boolean,
   markAspect: number | null,
 ): { logo: Rect | null; mark: Rect | null } {
-  const logoSize = Math.round(height * 0.16);
+  const logoSize = Math.round(height * 0.18);
   const logo: Rect | null = hasLogo
     ? {
-        x: Math.round(width * 0.8 - logoSize / 2),
-        y: Math.round(height * 0.13),
+        x: Math.round(width * 0.82 - logoSize / 2),
+        y: Math.round(height * 0.11),
         width: logoSize,
         height: logoSize,
       }
@@ -109,10 +109,10 @@ export function drawSpaceCallBackground(
 
   // Luminous glow behind the logo.
   const glow = ctx.createRadialGradient(
-    width * 0.8,
+    width * 0.82,
     height * 0.2,
     0,
-    width * 0.8,
+    width * 0.82,
     height * 0.2,
     width * 0.55,
   );

@@ -966,6 +966,14 @@ export function HumanChatPanelInCallControls({
   /** The browser can run the effect; offered at every width (#2563). */
   const backgroundEffectAvailable = Boolean(backgroundEffect?.supported);
   /** Own toolbar button on wide screens; narrow screens use the More menu. */
+  // Opening the Background menu (toolbar menu or More sub-view) lets the call layer draw the
+  // space background and preload the images, so the tiles are real and switching is quick.
+  const backgroundMenuVisible =
+    isEffectsMenuOpen || (isMoreMenuOpen && moreMenuView === 'effects');
+  const onBackgroundMenuOpen = backgroundEffect?.onMenuOpen;
+  useEffect(() => {
+    if (backgroundMenuVisible) onBackgroundMenuOpen?.();
+  }, [backgroundMenuVisible, onBackgroundMenuOpen]);
   const showBackgroundEffectControl =
     showAdvancedCallControls && backgroundEffectAvailable;
   /** Narrow screens outside screenshare: a More menu holding Background (no Leave, it has a button). */
@@ -981,10 +989,6 @@ export function HumanChatPanelInCallControls({
         isCameraOff={isLocalVideoMuted}
         dark={isFull}
         backButton={backButton}
-        onTurnCameraOnWithoutEffect={() => {
-          backgroundEffect.onChange({ kind: 'none' });
-          if (isLocalVideoMuted) onToggleCamera();
-        }}
         onDone={() => {
           setIsEffectsMenuOpen(false);
           setIsMoreMenuOpen(false);
