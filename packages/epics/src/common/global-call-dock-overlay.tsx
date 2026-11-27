@@ -57,6 +57,7 @@ import { useCallMemberLabelResolver } from './human-chat-panel/use-call-member-l
 import type { UseMembers } from '../spaces';
 import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
 import { useGlobalCallDock } from './global-call-dock-context';
+import { toCallBackgroundEffectControl } from './human-chat-panel/human-chat-panel-call-background-effect-menu';
 import { useHumanChatPanel } from './human-chat-panel-context';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { useCallDockDocumentPip } from './use-call-dock-document-pip';
@@ -572,6 +573,15 @@ export function GlobalCallDockOverlay({
     voiceProcessingPreset,
     setVoiceProcessingPreset,
     unsupportedVoiceProcessingConstraints,
+    backgroundEffect,
+    setBackgroundEffect,
+    backgroundEffectStatus,
+    backgroundEffectSlow,
+    backgroundEffectSupported,
+    spaceBackgroundImage,
+    callSpaceLogoUrl,
+    backgroundUploads,
+    onBackgroundMenuOpen,
     captureMode,
     capturePreference,
     capturePreferenceSelected,
@@ -1211,6 +1221,17 @@ export function GlobalCallDockOverlay({
   ) => {
     void setVoiceProcessingPreset(preset);
   };
+  const backgroundEffectControl = toCallBackgroundEffectControl({
+    backgroundEffect,
+    setBackgroundEffect,
+    backgroundEffectStatus,
+    backgroundEffectSlow,
+    backgroundEffectSupported,
+    spaceBackgroundImage,
+    callSpaceLogoUrl,
+    backgroundUploads,
+    onBackgroundMenuOpen,
+  });
   const onCapturePreferenceChange = (
     mode: Exclude<SpaceGroupCallCaptureMode, 'none'>,
   ) => {
@@ -1630,6 +1651,7 @@ export function GlobalCallDockOverlay({
                   onStopScreenshare={onStopScreenshare}
                   voiceProcessingPreset={voiceProcessingPreset}
                   onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
+                  backgroundEffect={backgroundEffectControl}
                   unsupportedVoiceProcessingConstraints={
                     unsupportedVoiceProcessingConstraints
                   }
@@ -1704,6 +1726,7 @@ export function GlobalCallDockOverlay({
                     onVoiceProcessingPresetChange={
                       onVoiceProcessingPresetChange
                     }
+                    backgroundEffect={backgroundEffectControl}
                     unsupportedVoiceProcessingConstraints={
                       unsupportedVoiceProcessingConstraints
                     }
@@ -1750,6 +1773,7 @@ export function GlobalCallDockOverlay({
                 onStopScreenshare={onStopScreenshare}
                 voiceProcessingPreset={voiceProcessingPreset}
                 onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
+                backgroundEffect={backgroundEffectControl}
                 unsupportedVoiceProcessingConstraints={
                   unsupportedVoiceProcessingConstraints
                 }

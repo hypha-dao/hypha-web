@@ -66,6 +66,10 @@ const MIDDLEWARE_SKIPPED_PREFIXES = [
   'onesignal',
   '.well-known',
   'geo',
+  // Self-hosted third-party assets in public/ (#2563: MediaPipe WASM and model).
+  'vendor/',
+  // Built-in call background images in public/ (#2563).
+  'call-backgrounds/',
   '_next/static',
   '_next/image',
   'favicon.ico',
@@ -171,6 +175,26 @@ const nextConfig: NextConfig = {
         headers: [
           { key: 'Cache-Control', value: MCP_CACHE_CONTROL },
           { key: 'Vary', value: MCP_VARY },
+        ],
+      },
+      // Call background effect assets (#2563): paths carry the version, so cache for good.
+      {
+        source: '/vendor/mediapipe/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // Built-in call background images (#2563): fixed names, so a day plus revalidation.
+      {
+        source: '/call-backgrounds/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800',
+          },
         ],
       },
       {

@@ -1,6 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   AudioLines,
   Check,
@@ -23,6 +29,11 @@ import {
   VideoOff,
 } from 'lucide-react';
 import { CallHangUpIcon } from './call-hang-up-icon';
+import {
+  CallBackgroundEffectMenuBody,
+  type CallBackgroundEffectControl,
+  CallBackgroundEffectTriggerIcon,
+} from './human-chat-panel-call-background-effect-menu';
 import { useTranslations } from 'next-intl';
 import {
   AlertDialog,
@@ -67,6 +78,8 @@ type HumanChatPanelInCallControlsProps = {
   onVoiceProcessingPresetChange: (
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => void;
+  /** #2563: background effect on the local camera; no control when absent or unsupported. */
+  backgroundEffect?: CallBackgroundEffectControl | null;
   /** Which audio constraints the local device/browser can't actually apply (detected via `getCapabilities()` at join). */
   unsupportedVoiceProcessingConstraints?: {
     autoGainControl: boolean;
@@ -128,6 +141,7 @@ export function HumanChatPanelInCallControls({
   onStopScreenshare,
   voiceProcessingPreset,
   onVoiceProcessingPresetChange,
+  backgroundEffect = null,
   unsupportedVoiceProcessingConstraints = null,
   captureMode,
   capturePreference,
@@ -172,8 +186,10 @@ export function HumanChatPanelInCallControls({
   /** Share toolbar overflow: record, mic setup and leave (they would not fit the narrow share dock / PiP). */
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [moreMenuView, setMoreMenuView] = useState<
-    'root' | 'capture' | 'audio'
+    'root' | 'capture' | 'audio' | 'effects'
   >('root');
+  const [isEffectsMenuOpen, setIsEffectsMenuOpen] = useState(false);
+  const effectsMenuRef = useRef<HTMLDivElement | null>(null);
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
   const reactMenuContentRef = useRef<HTMLDivElement | null>(null);
   const reactMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -416,8 +432,9 @@ export function HumanChatPanelInCallControls({
   );
 
   const closeOtherToolbarMenus = useCallback(
-    (except?: 'audio' | 'capture' | 'react' | 'more') => {
+    (except?: 'audio' | 'capture' | 'react' | 'more' | 'effects') => {
       if (except !== 'more') setIsMoreMenuOpen(false);
+      if (except !== 'effects') setIsEffectsMenuOpen(false);
       if (except !== 'audio') setIsAudioMenuOpen(false);
       if (except !== 'capture') setIsCaptureMenuOpen(false);
       if (except !== 'react') setIsReactMenuOpen(false);
@@ -466,6 +483,9 @@ export function HumanChatPanelInCallControls({
       if (!moreMenuRef.current?.contains(target)) {
         setIsMoreMenuOpen(false);
       }
+      if (!effectsMenuRef.current?.contains(target)) {
+        setIsEffectsMenuOpen(false);
+      }
       if (
         !reactMenuContentRef.current?.contains(target) &&
         !reactMenuTriggerRef.current?.contains(target)
@@ -482,12 +502,14 @@ export function HumanChatPanelInCallControls({
       !isAudioMenuOpen &&
       !isCaptureMenuOpen &&
       !isReactMenuOpen &&
-      !isMoreMenuOpen
+      !isMoreMenuOpen &&
+      !isEffectsMenuOpen
     )
       return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsMoreMenuOpen(false);
+        setIsEffectsMenuOpen(false);
         setIsAudioMenuOpen(false);
         setIsCaptureMenuOpen(false);
         setIsReactMenuOpen(false);
@@ -495,7 +517,13 @@ export function HumanChatPanelInCallControls({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isAudioMenuOpen, isCaptureMenuOpen, isReactMenuOpen, isMoreMenuOpen]);
+  }, [
+    isAudioMenuOpen,
+    isCaptureMenuOpen,
+    isReactMenuOpen,
+    isMoreMenuOpen,
+    isEffectsMenuOpen,
+  ]);
 
   /**
    * In PiP, stop-capture confirmation renders inline inside this same menu
@@ -935,12 +963,95 @@ export function HumanChatPanelInCallControls({
       ) : null}
     </div>
   );
+  /** The browser can run the effect; offered at every width (#2563). */
+  const backgroundEffectAvailable = Boolean(backgroundEffect?.supported);
+  /** Own toolbar button on wide screens; narrow screens use the More menu. */
+  // Opening the Background menu (toolbar menu or More sub-view) lets the call layer draw the
+  // space background and preload the images, so the tiles are real and switching is quick.
+  const backgroundMenuVisible =
+    isEffectsMenuOpen || (isMoreMenuOpen && moreMenuView === 'effects');
+  const onBackgroundMenuOpen = backgroundEffect?.onMenuOpen;
+  useEffect(() => {
+    if (backgroundMenuVisible) onBackgroundMenuOpen?.();
+  }, [backgroundMenuVisible, onBackgroundMenuOpen]);
+  const showBackgroundEffectControl =
+    showAdvancedCallControls && backgroundEffectAvailable;
+  /** Narrow screens outside screenshare: a More menu holding Background (no Leave, it has a button). */
+  const showCompactMoreMenu =
+    !showAdvancedCallControls &&
+    backgroundEffectAvailable &&
+    !screenshareEssentialToolbar &&
+    !leaveOnly;
+  const renderEffectsMenuBody = (backButton?: ReactNode) =>
+    backgroundEffect ? (
+      <CallBackgroundEffectMenuBody
+        control={backgroundEffect}
+        isCameraOff={isLocalVideoMuted}
+        dark={isFull}
+        backButton={backButton}
+        onDone={() => {
+          setIsEffectsMenuOpen(false);
+          setIsMoreMenuOpen(false);
+        }}
+      />
+    ) : null;
+  /**
+   * #2563: camera background effect. Docked toolbar: in the left group after the camera (keeps
+   * the groups balanced); other toolbars: with the settings menus. Layout is #2597's. `align`
+   * says which edge of the trigger the popover keeps, so it opens towards the inside of the bar.
+   */
+  const renderEffectsMenu = (align: 'left' | 'right' = 'right') =>
+    showBackgroundEffectControl && backgroundEffect ? (
+      <div className="relative" ref={effectsMenuRef}>
+        <button
+          type="button"
+          className={audioSettingsBtn}
+          title={t('callBackgroundEffectLabel')}
+          aria-label={t('callBackgroundEffectLabel')}
+          aria-haspopup="menu"
+          aria-expanded={isEffectsMenuOpen}
+          onClick={() => {
+            closeOtherToolbarMenus('effects');
+            setIsEffectsMenuOpen((open) => !open);
+          }}
+        >
+          <CallBackgroundEffectTriggerIcon
+            control={backgroundEffect}
+            iconClassName={icon}
+            strokeWidth={lucideStroke}
+          />
+          <ChevronUp
+            className={menuChevronClass(isEffectsMenuOpen)}
+            aria-hidden
+          />
+        </button>
+        {isEffectsMenuOpen ? (
+          <div
+            role="menu"
+            onPointerDown={(event) => event.stopPropagation()}
+            className={cn(
+              'z-[60] max-h-[min(70vh,calc(100dvh-8rem),var(--hypha-call-dock-popover-max-h,9999px))] overflow-y-auto rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
+              isPipDensity
+                ? 'fixed bottom-14 left-1/2 w-[calc(100dvw-1rem)] max-w-52 -translate-x-1/2'
+                : cn(
+                    'absolute bottom-full mb-2 min-w-56 max-w-72',
+                    align === 'left' ? 'left-0' : 'right-0',
+                  ),
+              isFull && 'border-zinc-700 bg-zinc-900 text-white',
+            )}
+          >
+            {renderEffectsMenuBody()}
+          </div>
+        ) : null}
+      </div>
+    ) : null;
   const moreMenuItemClass =
     'flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50';
   /**
-   * Share toolbar only: record, mic setup and leave collapse into one
+   * Share toolbar: record, mic setup, background and leave collapse into one
    * overflow trigger so the narrow share dock / Document PiP stays small
-   * but these actions stay reachable while presenting (#2707).
+   * but these actions stay reachable while presenting (#2707). Narrow screens
+   * outside screenshare reuse it for Background only (#2563).
    */
   const renderMoreMenu = (
     <div className="relative" ref={moreMenuRef}>
@@ -1015,27 +1126,52 @@ export function HumanChatPanelInCallControls({
                       {t('callVoiceProcessingLabel')}
                     </span>
                   </button>
-                  <div className="-mx-0 my-1 h-px bg-neutral-6" />
                 </>
               ) : null}
-              <button
-                type="button"
-                role="menuitem"
-                disabled={callState === 'disconnecting'}
-                onClick={() => {
-                  setIsMoreMenuOpen(false);
-                  onLeave();
-                }}
-                className={moreMenuItemClass}
-              >
-                <span className="inline-flex items-center gap-2 text-red-600">
-                  <CallHangUpIcon className="h-4 w-4" strokeWidth={1.75} />
-                  {t('callLeave')}
-                </span>
-              </button>
+              {backgroundEffectAvailable && backgroundEffect ? (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => setMoreMenuView('effects')}
+                  className={moreMenuItemClass}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <CallBackgroundEffectTriggerIcon
+                      control={backgroundEffect}
+                      iconClassName="h-4 w-4"
+                      strokeWidth={2}
+                    />
+                    {t('callBackgroundEffectLabel')}
+                  </span>
+                </button>
+              ) : null}
+              {screenshareEssentialToolbar ? (
+                <>
+                  {showAdvancedCallControls || backgroundEffectAvailable ? (
+                    <div className="-mx-0 my-1 h-px bg-neutral-6" />
+                  ) : null}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={callState === 'disconnecting'}
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      onLeave();
+                    }}
+                    className={moreMenuItemClass}
+                  >
+                    <span className="inline-flex items-center gap-2 text-red-600">
+                      <CallHangUpIcon className="h-4 w-4" strokeWidth={1.75} />
+                      {t('callLeave')}
+                    </span>
+                  </button>
+                </>
+              ) : null}
             </>
           ) : moreMenuView === 'capture' ? (
             captureMenuBody
+          ) : moreMenuView === 'effects' ? (
+            renderEffectsMenuBody(moreMenuBackButton)
           ) : (
             audioMenuBody
           )}
@@ -1270,6 +1406,7 @@ export function HumanChatPanelInCallControls({
                         <Video className={icon} strokeWidth={lucideStroke} />
                       )}
                     </button>
+                    {renderEffectsMenu('left')}
                   </>
                 ) : null}
               </div>
@@ -1461,6 +1598,8 @@ export function HumanChatPanelInCallControls({
                   ) : null}
                   {showAdvancedCallControls ? renderCaptureMenu : null}
                   {showAdvancedCallControls ? renderAudioSettingsMenu : null}
+                  {renderEffectsMenu()}
+                  {showCompactMoreMenu ? renderMoreMenu : null}
                 </>
               ) : null}
               {leaveOnly && callReactionsToolbarVisible ? (

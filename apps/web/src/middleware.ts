@@ -352,6 +352,8 @@ export const config = {
     // on any other host. Keep in step with MIDDLEWARE_SKIPPED_PREFIXES in next.config.ts.
     // `robots.txt`, `sitemap.xml`, `llms.txt` — static files in public/ (#2696): served from the CDN
     // with no function run; without this they are redirected to /<locale>/... and end in a 404.
-    '/((?!_matrix|auth/|api/auth/|mcp|placeholder|icon|brand|onesignal|.well-known|geo|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt).*)',
+    // `vendor/` — self-hosted third-party assets in public/ (#2563: MediaPipe WASM and model).
+    // `call-backgrounds/` — built-in call background images in public/ (#2563).
+    '/((?!_matrix|auth/|api/auth/|mcp|placeholder|icon|brand|onesignal|.well-known|geo|vendor/|call-backgrounds/|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt).*)',
   ],
 };

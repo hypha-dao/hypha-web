@@ -9,10 +9,14 @@ import {
   subscribeGroupCallPleaseLeave,
   useBlockAutoReload,
   useMatrix,
+  CALL_BACKGROUND_IMAGES,
+  useSpaceBySlug,
   useSpaceGroupCall,
 } from '@hypha-platform/core/client';
 import { revalidateSpaceMemoryOrg } from '../coherence/hooks/use-space-memory-org';
 import { useCallReactions } from './human-chat-panel/use-call-reactions';
+import { useSpaceCallBackground } from './human-chat-panel/use-space-call-background';
+import { useCallBackgroundUploads } from './human-chat-panel/use-call-background-uploads';
 import {
   clearCallDismissedByUser,
   clearCallResumeSnapshot,
@@ -193,6 +197,72 @@ function useGlobalCallDockValue() {
     onCallArtifactsUploaded,
     getCallLaunchContext: () => callLaunchContextRef.current,
   });
+  const inCallForBackground =
+    call.backgroundEffectSupported &&
+    call.callState !== 'idle' &&
+    call.callState !== 'error';
+  // #2563: once the Background menu is opened in a call, draw the space background (so its tile
+  // shows the real thing) and preload the built-in images (so switching to them is quick).
+  const [backgroundMenuOpened, setBackgroundMenuOpened] = React.useState(false);
+  const backgroundImagesPreloadedRef = React.useRef(false);
+  const onBackgroundMenuOpen = React.useCallback(() => {
+    setBackgroundMenuOpened(true);
+    if (backgroundImagesPreloadedRef.current) return;
+    backgroundImagesPreloadedRef.current = true;
+    for (const image of CALL_BACKGROUND_IMAGES) {
+      const img = new Image();
+      img.src = image.src;
+      void img.decode().catch(() => undefined);
+    }
+  }, []);
+  React.useEffect(() => {
+    if (!inCallForBackground) setBackgroundMenuOpened(false);
+  }, [inCallForBackground]);
+  // The call's space background: drawn while that effect is chosen or the menu was opened.
+  const { space: callSpace } = useSpaceBySlug(activeSpaceSlug?.trim() ?? '');
+  const spaceBackgroundUrl = useSpaceCallBackground({
+    enabled:
+      inCallForBackground &&
+      (call.backgroundEffect.kind === 'space' || backgroundMenuOpened),
+    spaceSlug: callSpace?.slug ?? null,
+    leadImage: callSpace?.leadImage ?? null,
+    logoUrl: callSpace?.logoUrl ?? null,
+  });
+  const { setSpaceBackgroundImage } = call;
+  React.useEffect(() => {
+    void setSpaceBackgroundImage(spaceBackgroundUrl);
+  }, [setSpaceBackgroundImage, spaceBackgroundUrl]);
+  // #2563: the member's own images on this device, read only in a call.
+  const backgroundUploads = useCallBackgroundUploads({
+    enabled:
+      call.backgroundEffectSupported &&
+      call.callState !== 'idle' &&
+      call.callState !== 'error',
+  });
+  const { setUploadedBackgroundImages, setBackgroundEffect } = call;
+  const uploadedImageMap = React.useMemo(
+    () =>
+      backgroundUploads.uploads
+        ? Object.fromEntries(
+            backgroundUploads.uploads.map((upload) => [upload.id, upload.src]),
+          )
+        : null,
+    [backgroundUploads.uploads],
+  );
+  React.useEffect(() => {
+    void setUploadedBackgroundImages(uploadedImageMap);
+  }, [setUploadedBackgroundImages, uploadedImageMap]);
+  // A chosen image that is gone from this browser: switch to blur, no note (rare; re-pick it).
+  const chosenUploadId =
+    call.backgroundEffect.kind === 'upload'
+      ? call.backgroundEffect.uploadId
+      : null;
+  React.useEffect(() => {
+    if (!chosenUploadId || !uploadedImageMap) return;
+    if (!(chosenUploadId in uploadedImageMap)) {
+      void setBackgroundEffect({ kind: 'blur', strength: 'strong' });
+    }
+  }, [chosenUploadId, setBackgroundEffect, uploadedImageMap]);
   // A reload would drop an active call, or a recording still being kept or
   // uploaded: a stale tab shows the banner instead.
   useBlockAutoReload(
@@ -980,6 +1050,11 @@ function useGlobalCallDockValue() {
     cancelRefreshDevice,
     ...call,
     ...callReactions,
+    /** #2563: for the "This space" tile before its background is drawn. */
+    callSpaceLogoUrl: callSpace?.logoUrl ?? null,
+    onBackgroundMenuOpen,
+    /** #2563: the member's own background images on this device. */
+    backgroundUploads,
     leave: leaveCall,
   };
 }
