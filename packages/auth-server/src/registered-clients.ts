@@ -33,7 +33,9 @@ export const REGISTERED_CLIENTS: readonly RegisteredClient[] = [
       // one instead (a forum report, unverified): add it here after the first connection shows it.
       'cursor://anysphere.cursor-mcp/oauth/callback',
     ],
-    scopes: ['spaces:read', 'offline_access'],
+    // `signals:write` is granted only while the authorization server accepts it on the MCP
+    // resource (`MCP_WRITES_ENABLED`) and the person allows it on the consent page (#2744).
+    scopes: ['spaces:read', 'signals:write', 'offline_access'],
   },
 ];
 

@@ -6,6 +6,9 @@ import {
   type AuthServerDisabled,
 } from '@hypha-platform/auth-server/server';
 import {
+  SIGNAL_CREATE_LIMITS,
+  createMemoryWriteRateLimiter,
+  createSignal,
   getAbsoluteAppUrl,
   getMyMembership,
   getMyVote,
@@ -16,6 +19,7 @@ import {
   listSignals,
   listSpaces,
   resolveCaller,
+  type Caller,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { createRateSlot } from '../authorize-request';
@@ -38,6 +42,7 @@ function getMcpConfig() {
         resources: as.resources,
         allowedPersonIds: as.allowedPersonIds,
         scopesForResource: (resource) => allowedScopesForResource(resource, as),
+        writesEnabled: as.mcpWritesEnabled,
       }
     : { enabled: false };
   return (mcpConfig ??= loadMcpConfig(process.env, view));
@@ -45,6 +50,16 @@ function getMcpConfig() {
 
 // A coarse per-instance safety net; the platform firewall rule is the real flood control.
 const slot = createRateSlot({ limit: 120, windowMs: 60_000 });
+
+// Writes have their own, much tighter budget per person (in memory, per instance, #2744).
+const signalCreateLimiter = createMemoryWriteRateLimiter(SIGNAL_CREATE_LIMITS);
+
+/**
+ * The database connection for an action the caller starts. Today every caller gets the server
+ * connection and the rules are enforced in code; when the database can act under the person's
+ * identity, this is the one place that changes.
+ */
+const connectionFor: (caller: Caller) => typeof db = () => db;
 
 export const mcpHandlers = createMcpRequestHandlers({
   getConfig: getMcpConfig,
@@ -59,6 +74,11 @@ export const mcpHandlers = createMcpRequestHandlers({
       getMyVote({ spaceSlug, documentSlug, caller }, { db }),
     getMyMembership: ({ spaceSlug }, caller) =>
       getMyMembership({ spaceSlug, caller }, { db }),
+    createSignal: (input, caller) =>
+      createSignal(input, caller, {
+        db: connectionFor(caller),
+        rateLimiter: signalCreateLimiter,
+      }),
   },
   spaceUrl: (slug) => getAbsoluteAppUrl(getSpaceDhoPath(slug, 'overview')),
   proposalUrl: (spaceSlug, proposalSlug) =>

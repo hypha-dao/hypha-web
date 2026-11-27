@@ -4,6 +4,9 @@ import { mcpRoute } from './headers';
 import {
   consoleLogger,
   createHyphaMcpServer,
+  WRITE_SCOPE_MESSAGE,
+  WRITE_TOOL_SCOPES,
+  type McpAccess,
   type McpFeatures,
   type ToolCallLog,
 } from '@hypha-platform/mcp';
@@ -53,6 +56,50 @@ const unavailable = () =>
     },
     { 'retry-after': '300' },
   );
+
+/** Names of the tools a JSON-RPC request calls (a single message or a batch); none if unreadable. */
+async function calledToolNames(request: Request): Promise<string[]> {
+  if (request.method !== 'POST') return [];
+  let body: unknown;
+  try {
+    body = await request.clone().json();
+  } catch {
+    return [];
+  }
+  const messages = Array.isArray(body) ? body : [body];
+  const names: string[] = [];
+  for (const message of messages) {
+    if (!message || typeof message !== 'object') continue;
+    const { method, params } = message as {
+      method?: unknown;
+      params?: unknown;
+    };
+    const name = (params as { name?: unknown } | null | undefined)?.name;
+    if (method === 'tools/call' && typeof name === 'string') names.push(name);
+  }
+  return names;
+}
+
+/**
+ * The scope a call still needs, or null. A write tool called with a token that lacks its scope
+ * gets an HTTP 403 `insufficient_scope` naming the scopes to ask for (the MCP step-up), not a tool
+ * error: the client acts on the status, and may re-authorize. Only while writes are on (otherwise
+ * the tool does not exist and the server answers as for any unknown tool).
+ */
+async function missingWriteScope(
+  request: Request,
+  access: McpAccess,
+): Promise<string | null> {
+  if (access.kind !== 'caller') return null;
+  const granted = access.caller.via?.scopes ?? [];
+  for (const name of await calledToolNames(request)) {
+    const needed = (WRITE_TOOL_SCOPES as Record<string, string | undefined>)[
+      name
+    ];
+    if (needed && !granted.includes(needed)) return needed;
+  }
+  return null;
+}
 
 function hostOf(request: Request): string {
   return (
@@ -110,6 +157,19 @@ export function createMcpRequestHandlers(deps: McpRequestDeps) {
     });
     if (!authorized.ok) return authorized.response;
 
+    if (active.writesEnabled) {
+      const needed = await missingWriteScope(request, authorized.access);
+      if (needed) {
+        return json(
+          403,
+          { error: 'insufficient_scope', message: WRITE_SCOPE_MESSAGE },
+          {
+            'www-authenticate': `Bearer error="insufficient_scope", scope="${MCP_SCOPE} ${needed}", resource_metadata="${active.resourceMetadataUrl}"`,
+          },
+        );
+      }
+    }
+
     const handler = createMcpHandler(
       () =>
         createHyphaMcpServer({
@@ -122,6 +182,7 @@ export function createMcpRequestHandlers(deps: McpRequestDeps) {
           log: deps.log ?? consoleLogger,
           deadlineMs: deps.deadlineMs,
           clientId: authorized.clientId,
+          writesEnabled: active.writesEnabled,
         }),
       // Modern clients only (D34); never stream (no progress messages in this release).
       { legacy: 'reject', responseMode: 'json' },

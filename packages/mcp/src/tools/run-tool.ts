@@ -38,30 +38,54 @@ export function failureText(failure: Failure): string {
 
 class DeadlineError extends Error {}
 
+/** Ids of what a write touched, for its audit line. */
+export type WriteAudit = {
+  spaceId?: number;
+  signalId?: number;
+  duplicate?: boolean;
+};
+
 /**
  * The one wrapper every tool goes through: refuses callers that could not be resolved, applies
  * the per-tool deadline, turns expected failures into tool errors and unexpected exceptions
- * into a generic one (never raw text), and writes exactly one allow-listed log line.
+ * into a generic one (never raw text), and writes exactly one allow-listed log line. A write
+ * tool (`options.write`) gets the audit form of that line (`mcp.write`, ids only), whatever the
+ * outcome.
  */
 export async function runTool(
   deps: McpDeps,
   tool: string,
-  run: (
-    caller: UserCaller,
-  ) => Promise<
-    | { ok: true; result: { [key: string]: unknown }; itemCount?: number }
+  run: (caller: UserCaller) => Promise<
+    | {
+        ok: true;
+        result: { [key: string]: unknown };
+        itemCount?: number;
+        audit?: WriteAudit;
+      }
     | { ok: false; text: string; outcome: string }
   >,
+  options: { write?: boolean } = {},
 ): Promise<ToolResult> {
   const now = deps.now ?? Date.now;
   const started = now();
-  const finish = (outcome: string, itemCount?: number) =>
+  const personId =
+    deps.access.kind === 'caller' ? deps.access.caller.person.id : undefined;
+  const finish = (outcome: string, itemCount?: number, audit?: WriteAudit) =>
     deps.log({
       tool,
       outcome,
       durationMs: now() - started,
       clientId: deps.clientId ?? null,
       itemCount,
+      // A write always gets its audit line, refused and failed calls included.
+      ...(options.write
+        ? {
+            write: {
+              ...(personId !== undefined ? { personId } : {}),
+              ...(audit ?? {}),
+            },
+          }
+        : {}),
     });
 
   if (deps.access.kind === 'refused') {
@@ -85,7 +109,7 @@ export async function runTool(
       finish(out.outcome);
       return toolError(out.text);
     }
-    finish('ok', out.itemCount);
+    finish('ok', out.itemCount, out.audit);
     return toolOk(out.result);
   } catch (error) {
     if (error instanceof DeadlineError) {

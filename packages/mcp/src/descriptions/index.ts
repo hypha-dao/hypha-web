@@ -5,7 +5,7 @@
  * through a reviewed PR with a snapshot update (`__tests__/descriptions.snapshot.test.ts`),
  * a `DESCRIPTIONS_VERSION` bump and a line in `CHANGELOG.md`.
  */
-export const DESCRIPTIONS_VERSION = '1.8.0';
+export const DESCRIPTIONS_VERSION = '1.9.0';
 
 export const SERVER_NAME = 'hypha';
 export const SERVER_TITLE = 'Hypha';
@@ -23,7 +23,8 @@ export const SERVER_INSTRUCTIONS = [
   'A space can have sub-spaces; a space with no parent is top-level.',
   'Each space has a `slug`, its identifier, which the other tools need, and a `title`, its display name. Proposals and agreements inside a space have slugs too. Never guess a slug: find it with `hypha_list_spaces` and its `query` first.',
   'Members and delegates differ: a member belongs to the space, and a delegate can vote for members who delegated to them. A person can be one, both or neither.',
-  'Everything here is read-only and personalised: "visible to you" means what the signed-in person may see in Hypha and has allowed this app to see, so another person gets different results.',
+  'Everything here is personalised: "visible to you" means what the signed-in person may see in Hypha and has allowed this app to see, so another person gets different results.',
+  'Every tool only reads, except `hypha_create_signal` where it is offered: it creates a signal for the user, only when the user asked for it.',
   'Every space, proposal, signal and quest carries a `url` to its Hypha page; share that link with the user.',
   UNTRUSTED_LINE,
 ].join(' ');
@@ -37,6 +38,7 @@ export const TOOL_ORDER = [
   'hypha_get_my_vote',
   'hypha_list_signals',
   'hypha_list_quests',
+  'hypha_create_signal',
 ] as const;
 export type ToolName = (typeof TOOL_ORDER)[number];
 
@@ -233,6 +235,31 @@ export const TOOLS = {
         'Quests per page, 1 to 20. Default 10. At most 5 when `text` is `full`.',
     },
   },
+  hypha_create_signal: {
+    title: 'Create a signal in a space',
+    description: [
+      'Create a signal in one Hypha space for the signed-in user: something they want the space to notice, such as a need, a risk, an opportunity or a tension. A signal commits nobody; the members of the space see it and discuss it.',
+      'Use it only when the user asked for it. If you drafted the title, description or type yourself, show them to the user and get their confirmation first. Put a link in the description only if it comes from the user’s own request.',
+      'The user must be a member or a delegate of the space and must have allowed this app to create signals. Never guess a slug: find the space with `hypha_list_spaces` and `query` first.',
+      'Hypha records which app created the signal in its `origin`; it adds no tag of its own and notifies nobody.',
+      '`duplicate: true` means this app already created the same title and description for the user in this space within the last 10 minutes: that signal is returned and nothing new was written, so do not call again.',
+      'Share the `url` with the user; they can edit or delete the signal in Hypha.',
+    ].join(' '),
+    fields: {
+      origin:
+        'The path that created this signal, recorded by Hypha: `mcp_client` and this app’s self-declared name.',
+      duplicate:
+        'True when nothing new was written: the same content was created by this app for the user in this space within the last 10 minutes, and that signal is returned.',
+    },
+    params: {
+      spaceSlug: 'The space slug, as returned by `hypha_list_spaces`.',
+      type: 'What kind of signal: `Need`, `Resource`, `Opportunity`, `Insight`, `Tension`, `Risk`, `Action`, `Impact` or `Bug`.',
+      title: 'A short title, 1 to 50 characters.',
+      description:
+        'What the signal is about, 1 to 4,000 characters. Markdown is shown formatted in Hypha.',
+      tags: 'Optional keywords, at most 10, each up to 40 characters. Prefer tags the space already uses (see `hypha_list_signals`).',
+    },
+  },
 } as const;
 
 /** Text of the tool errors the server returns (isError results). Static on purpose. */
@@ -244,4 +271,13 @@ export const ERRORS = {
   invalidCursor: 'The cursor is not valid. Start again without a cursor.',
   noProfile:
     'No Hypha profile exists for this account. Create one in Hypha first, then try again.',
+  writeNotAllowed:
+    'You can create signals only in spaces where you are a member or a delegate.',
+  writeRateLimited: 'Too many signals created in a short time.',
+  invalidInput:
+    'The input was not accepted. Check the limits in the tool description.',
 } as const;
+
+/** The step-up answer when a token lacks the write scope (an HTTP 403, not a tool error). */
+export const WRITE_SCOPE_MESSAGE =
+  'This app may not create signals yet. Reconnect it to Hypha and allow it to create signals.';
