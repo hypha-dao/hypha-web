@@ -2,6 +2,7 @@ export * from './caller';
 export * from './failure';
 export * from './space-read-gate';
 export * from './policy';
+export * from './write-access';
 export * from './resolve-caller';
 export * from './visibility-rule';
 export * from './chain-cache';
