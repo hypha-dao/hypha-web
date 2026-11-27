@@ -9,6 +9,7 @@ import {
   type SpaceScreenLayoutKey,
 } from '@hypha-platform/core/space/screen-layout';
 import { Card, Switch } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -92,38 +93,20 @@ export function SpaceScreenLayoutFields({
           return (
             <li
               key={key}
-              className="flex items-center gap-3 border-t border-neutral-6 px-4 py-3"
+              className="flex items-center gap-3 border-t border-neutral-6 px-4 py-2"
             >
-              <div className="flex shrink-0 flex-col">
-                <button
-                  type="button"
-                  className="flex size-7 items-center justify-center text-neutral-11 hover:text-foreground disabled:opacity-30"
-                  aria-label={tSpaces('screenMoveUp', { screen: label })}
-                  disabled={disabled || index === 0}
-                  onClick={() =>
-                    commitOrder(moveVisibleSpaceScreen(order, rows, key, -1))
-                  }
+              <span className="w-6 shrink-0 text-right text-1 tabular-nums text-neutral-11">
+                {index + 1}
+              </span>
+              <div className="flex min-w-0 flex-1 flex-col">
+                <span
+                  className={cn(
+                    'text-2 font-medium',
+                    !checked && 'text-neutral-11',
+                  )}
                 >
-                  <ChevronUp className="size-4" strokeWidth={1.5} aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  className="flex size-7 items-center justify-center text-neutral-11 hover:text-foreground disabled:opacity-30"
-                  aria-label={tSpaces('screenMoveDown', { screen: label })}
-                  disabled={disabled || index === rows.length - 1}
-                  onClick={() =>
-                    commitOrder(moveVisibleSpaceScreen(order, rows, key, 1))
-                  }
-                >
-                  <ChevronDown
-                    className="size-4"
-                    strokeWidth={1.5}
-                    aria-hidden
-                  />
-                </button>
-              </div>
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="text-2 font-medium">{label}</span>
+                  {label}
+                </span>
                 {isPipeline ? (
                   <span className="text-1 text-neutral-11">
                     {tSpaces('pipelineEnabledDescription')}
@@ -134,6 +117,38 @@ export function SpaceScreenLayoutFields({
                     {tSpaces('screenOverviewAlwaysOn')}
                   </span>
                 ) : null}
+              </div>
+              <div className="flex shrink-0 border border-border">
+                <button
+                  type="button"
+                  className="flex size-8 items-center justify-center border-r border-border text-neutral-11 hover:bg-neutral-3 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30"
+                  aria-label={tSpaces('screenMoveUp', { screen: label })}
+                  disabled={disabled || index === 0}
+                  onClick={() =>
+                    commitOrder(moveVisibleSpaceScreen(order, rows, key, -1))
+                  }
+                >
+                  <ChevronUp
+                    className="size-3.5"
+                    strokeWidth={1.5}
+                    aria-hidden
+                  />
+                </button>
+                <button
+                  type="button"
+                  className="flex size-8 items-center justify-center text-neutral-11 hover:bg-neutral-3 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30"
+                  aria-label={tSpaces('screenMoveDown', { screen: label })}
+                  disabled={disabled || index === rows.length - 1}
+                  onClick={() =>
+                    commitOrder(moveVisibleSpaceScreen(order, rows, key, 1))
+                  }
+                >
+                  <ChevronDown
+                    className="size-3.5"
+                    strokeWidth={1.5}
+                    aria-hidden
+                  />
+                </button>
               </div>
               <Switch
                 checked={checked}
