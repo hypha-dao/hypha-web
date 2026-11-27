@@ -40,7 +40,8 @@ function authServerTables(): string[] {
 }
 
 const TABLES = authServerTables();
-const AS_TABLE = new RegExp(`\\b(?:${TABLES.join('|')})\\b`);
+// Case-insensitive, as SQL names are: `FROM AS_USER` is the same table.
+const AS_TABLE = new RegExp(`\\b(?:${TABLES.join('|')})\\b`, 'i');
 
 /** Tracked source files only (fast, and ignores build output). */
 function sourceFiles(): string[] {
@@ -79,6 +80,7 @@ describe('authorization server tables guard', () => {
     }
     // A Matrix application-service token is not one of them.
     expect(AS_TABLE.test('as_token')).toBe(false);
+    expect(AS_TABLE.test('select * from AS_USER')).toBe(true);
   });
 
   it('still recognises a table name (the scan is not empty)', () => {
