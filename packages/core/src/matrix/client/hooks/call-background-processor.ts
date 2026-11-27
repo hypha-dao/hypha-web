@@ -4,7 +4,10 @@
  */
 
 import type { LocalVideoTrack, Room as LiveKitRoom } from 'livekit-client';
-import { Track } from 'livekit-client';
+import {
+  LocalVideoTrack as LiveKitLocalVideoTrack,
+  Track,
+} from 'livekit-client';
 import type {
   BackgroundProcessorWrapper,
   FrameProcessingStats,
@@ -173,6 +176,59 @@ export async function switchCallBackgroundEffect(
   return true;
 }
 
+let warmUpPromise: Promise<void> | null = null;
+
+/**
+ * Warms the effect up before the camera needs it (#2563): the first start in a tab takes
+ * seconds (WASM compile, model load, GPU setup, first segmentation), later starts ~0.5 s. Runs the
+ * processor on a hidden canvas until its first processed frame, then throws it away. No camera is
+ * used and nothing is published. Called when joining with the camera and an effect saved; failures
+ * are only logged (the real start reports them). Concurrent calls share one run.
+ */
+export function warmUpCallBackgroundEffect(): Promise<void> {
+  warmUpPromise ??= (async () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 640;
+    canvas.height = 360;
+    const ctx = canvas.getContext('2d');
+    let tick = 0;
+    const draw = () => {
+      if (!ctx) return;
+      // Frames must change for captureStream to emit them.
+      ctx.fillStyle = tick++ % 2 ? '#808080' : '#7f7f7f';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    };
+    draw();
+    const timer = setInterval(draw, 50);
+    const source = canvas.captureStream(20).getVideoTracks()[0];
+    if (!source) {
+      clearInterval(timer);
+      throw new CallBackgroundEffectError('canvas.captureStream gave no track');
+    }
+    const track = new LiveKitLocalVideoTrack(source, undefined, true);
+    let onFirstFrame: () => void = () => undefined;
+    const firstFrame = new Promise<void>((resolve) => {
+      onFirstFrame = resolve;
+    });
+    try {
+      await attachCallBackgroundProcessor(
+        track,
+        { kind: 'blur' },
+        { onFrameProcessed: () => onFirstFrame() },
+      );
+      await withTimeout(firstFrame, PROCESSOR_START_TIMEOUT_MS);
+    } finally {
+      clearInterval(timer);
+      track.stop();
+      source.stop();
+    }
+  })().catch((err) => {
+    warmUpPromise = null;
+    throw err;
+  });
+  return warmUpPromise;
+}
+
 /**
  * Creates the camera track as `setCameraEnabled(true)` would (same room capture defaults), with
  * the effect running before anything is published. Waits for the first processed frame too: the
@@ -186,6 +242,8 @@ export async function createCameraTrackWithBackgroundEffect(
   effect: CallBackgroundEffect,
   hooks: CallBackgroundProcessorHooks = {},
 ): Promise<LocalVideoTrack> {
+  // A warm-up in progress loads the same assets; wait instead of starting a second segmenter.
+  await warmUpPromise?.catch(() => undefined);
   const tracks = await lkRoom.localParticipant.createTracks({ video: true });
   const track = tracks.find(
     (t): t is LocalVideoTrack => t.kind === Track.Kind.Video,

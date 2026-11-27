@@ -23,6 +23,7 @@ import {
   createCameraTrackWithBackgroundEffect,
   getCallBackgroundProcessor,
   switchCallBackgroundEffect,
+  warmUpCallBackgroundEffect,
 } from './call-background-processor';
 import { publishScreenShare } from './screenshare-publish-settings';
 import {
@@ -1440,6 +1441,20 @@ export function useSpaceGroupCall(
     backgroundFrameDropDetectorRef.current.reset();
     setBackgroundEffectSlow(false);
   }, []);
+  /** #2563: starts the effect's one-time warm-up while the call connects, if an effect is saved. */
+  const warmUpBackgroundEffectIfSaved = useCallback(() => {
+    if (
+      !backgroundEffectSupportedRef.current ||
+      !isCallBackgroundEffectActive(backgroundEffectRef.current)
+    ) {
+      return;
+    }
+    void warmUpCallBackgroundEffect().catch((err) => {
+      logCallDebug('background-effect:warm-up-failed', {
+        message: err instanceof Error ? err.message : String(err),
+      });
+    });
+  }, []);
   /** An effect start on the live camera track is in progress (see `setBackgroundEffect`). */
   const backgroundAttachInFlightRef = useRef(false);
 
@@ -1915,6 +1930,7 @@ export function useSpaceGroupCall(
           setCameraAccessBlocked(false);
         }
       }
+      if (enableCamera) warmUpBackgroundEffectIfSaved();
 
       setCallState('connecting');
 
@@ -2195,6 +2211,7 @@ export function useSpaceGroupCall(
       authToken,
       client,
       enableLocalCamera,
+      warmUpBackgroundEffectIfSaved,
       spaceSlug,
       roomId,
       refreshLocalPreview,
@@ -2351,7 +2368,9 @@ export function useSpaceGroupCall(
       );
       const track = publication?.track as LocalVideoTrack | undefined;
       if (!lkRoom || !track || publication?.isMuted) {
-        // Applied when the camera turns on; a start in progress picks the new choice up.
+        // Applied when the camera turns on; a start in progress picks the new choice up. In a call,
+        // warm up now so the camera turns on quickly.
+        if (lkRoom) warmUpBackgroundEffectIfSaved();
         setBackgroundEffectStatus((status) =>
           status === 'applying' ? status : 'idle',
         );
@@ -2412,6 +2431,7 @@ export function useSpaceGroupCall(
       refreshLocalPreview,
       resetBackgroundFrameDrops,
       scheduleFeedBatched,
+      warmUpBackgroundEffectIfSaved,
     ],
   );
 
