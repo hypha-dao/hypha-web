@@ -22,21 +22,16 @@ vi.mock('../../../space/utils', () => ({
 
 const findSpaceBySlug = vi.fn();
 const findSpaceHostFieldsBySlug = vi.fn();
-vi.mock('../../../space/server/queries', () => ({
-  findSpaceBySlug: (...a: unknown[]) => findSpaceBySlug(...a),
-  findSpaceHostFieldsBySlug: (...a: unknown[]) =>
-    findSpaceHostFieldsBySlug(...a),
-}));
-
 const getAllSpaces = vi.fn();
-vi.mock('../../../space/server/web3/get-all-spaces', () => ({
-  getAllSpaces: (...a: unknown[]) => getAllSpaces(...a),
-}));
-vi.mock('../../../space/server/web3/get-spaces-by-slugs', () => ({
-  getSpacesBySlugs: vi.fn(),
-}));
-vi.mock('../../../space/server/web3/get-spaces-by-web3-ids', () => ({
-  getSpacesByWeb3Ids: vi.fn(),
+// The data-access boundary is faked: no database, no query module.
+vi.mock('../../../data-access/spaces', () => ({
+  findSpaceBySlug: (_request: unknown, ...a: unknown[]) =>
+    findSpaceBySlug(...a),
+  findSpaceHostFieldsBySlug: (_request: unknown, ...a: unknown[]) =>
+    findSpaceHostFieldsBySlug(...a),
+  listAllSpaces: (_request: unknown, ...a: unknown[]) => getAllSpaces(...a),
+  listSpacesBySlugs: vi.fn(),
+  listSpacesByWeb3Ids: vi.fn(),
 }));
 
 vi.mock('../../../coherence/server/web3/get-member-voting-power', () => ({
@@ -69,7 +64,7 @@ vi.mock('../../../access/chain-reads', () => chain);
 
 import { buildSpacesListV2 } from '../spaces';
 const list = (q: Parameters<typeof buildSpacesListV2>[0]) =>
-  buildSpacesListV2(q, { kind: 'guest' }, { db: {} as never });
+  buildSpacesListV2(q, { kind: 'guest' });
 import {
   V2_EXPLICIT_OMISSIONS,
   V2_RESPONSE_DENYLIST,
@@ -209,8 +204,7 @@ describe('GET /api/v2/spaces (twin: GET /api/v1/spaces)', () => {
     // the filter received the caller, not a pre-filtered list
     expect(viewer.filterSpacesForViewer).toHaveBeenCalledWith(
       expect.any(Array),
-      { kind: 'guest' },
-      expect.anything(),
+      { actor: { kind: 'guest' } },
     );
   });
 

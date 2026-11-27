@@ -1,6 +1,11 @@
 import 'server-only';
 
-import type { DbConfig } from '../../server';
+import type { ReadCtx } from '../../data-access/types';
+import {
+  findSpaceById,
+  findSpaceHostFieldsBySlug,
+  findSpaceWithSubspacesBySlug,
+} from '../../data-access/spaces';
 import {
   readChainClock,
   readSpaceGovernanceBatch,
@@ -8,14 +13,8 @@ import {
   type SpaceGovernance,
   type SpaceVisibility,
 } from '../../access/chain-reads';
-import type { Caller } from '../../access/caller';
 import { failure, type Failure } from '../../access/failure';
 import { decideSpaceAccess, filterSpacesForCaller } from '../../access/policy';
-import {
-  findSpaceById,
-  findSpaceWithSubspacesBySlug,
-  findSpaceHostFieldsBySlug,
-} from '../../space/server/queries';
 import type { Space } from '../../space/types';
 
 export type GetSpaceInput = {
@@ -71,14 +70,13 @@ function toFacts(space: Space): SpaceFacts {
 /** A parent the caller cannot see (or that cannot be read) is reported as no parent. */
 async function visibleParentSlug(
   parentId: number | null | undefined,
-  caller: Caller,
-  config: DbConfig,
+  ctx: ReadCtx,
 ): Promise<string | null> {
   if (parentId == null) return null;
   try {
-    const parent = await findSpaceById({ id: parentId }, config);
+    const parent = await findSpaceById(ctx, { id: parentId });
     if (!parent) return null;
-    const { visible } = await filterSpacesForCaller([parent], caller, config);
+    const { visible } = await filterSpacesForCaller([parent], ctx);
     return visible[0]?.slug ?? null;
   } catch (error) {
     console.error('[features] parent lookup failed', error);
@@ -93,21 +91,20 @@ async function visibleParentSlug(
  */
 export async function getSpace(
   { slug, with: blocks = {} }: GetSpaceInput,
-  caller: Caller,
-  { db }: DbConfig,
+  ctx: ReadCtx,
 ): Promise<{ ok: true; data: SpaceDetail } | Failure> {
   try {
-    const host = await findSpaceHostFieldsBySlug({ slug }, { db });
+    const host = await findSpaceHostFieldsBySlug(ctx, { slug });
     if (!host) return failure('not_found', 'Space not found');
 
-    const decision = await decideSpaceAccess(host, caller, { db });
+    const decision = await decideSpaceAccess(host, ctx);
     if (decision.outcome === 'none') {
       return decision.failure.code === 'access_check_failed'
         ? decision.failure
         : failure('not_found', 'Space not found');
     }
 
-    const space = await findSpaceWithSubspacesBySlug({ slug }, { db });
+    const space = await findSpaceWithSubspacesBySlug(ctx, { slug });
     // The access decision was made on `host`; the loaded space must be that same space.
     if (!space || space.id !== host.id) {
       return failure('not_found', 'Space not found');
@@ -133,8 +130,8 @@ export async function getSpace(
           ? optional(readSpaceGovernanceBatch([id]))
           : Promise.resolve(null),
         readChainClock(),
-        filterSpacesForCaller(space.subspaces ?? [], caller, { db }),
-        visibleParentSlug(space.parentId, caller, { db }),
+        filterSpacesForCaller(space.subspaces ?? [], ctx),
+        visibleParentSlug(space.parentId, ctx),
       ]);
     // The sub-spaces leave the feature filtered per caller, like any list.
     if (siblings.levelsUnreadable) {

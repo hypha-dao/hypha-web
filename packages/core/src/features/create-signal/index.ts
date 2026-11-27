@@ -2,17 +2,16 @@ import 'server-only';
 
 import { z } from 'zod';
 
-import type { DbConfig } from '../../server';
-import type { Caller } from '../../access/caller';
+import type { WriteCtx } from '../../data-access/types';
+import { createSignalUnlessDuplicate } from '../../data-access/signals';
+import { findSpaceHostFieldsBySlug } from '../../data-access/spaces';
 import { failure, type Failure } from '../../access/failure';
 import {
   decideSpaceWrite,
   type WriteAccessDeps,
 } from '../../access/write-access';
 import { COHERENCE_SIGNAL_TYPES } from '../../coherence/coherence-types';
-import { createSignalUnlessDuplicate } from '../../coherence/server/signal-write-store';
-import { mcpClientOrigin, type OriginView } from '../../origin';
-import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
+import type { OriginView } from '../../origin';
 import {
   DUPLICATE_WINDOW_MS,
   contentFingerprint,
@@ -61,7 +60,7 @@ export type CreatedSignal = {
   origin: OriginView;
 };
 
-export type CreateSignalDeps = DbConfig & {
+export type CreateSignalDeps = {
   rateLimiter: WriteRateLimiter;
   /** Test seam for the membership chain read. */
   readMembership?: WriteAccessDeps['readMembership'];
@@ -93,20 +92,26 @@ function cleanTags(tags: string[] | undefined): string[] {
  * Feature function "create a signal" for a person acting through an AI client (#2744). In order:
  * validate the input, find the space, apply the write rule (scope, grant, visibility, on-chain
  * member or delegate), take one write from the person's rate budget, then create the signal unless
- * an identical one was created in the duplicate window. The origin comes from the verified token
- * (client id and the client's self-declared name), never from the input. Nobody is notified.
+ * an identical one was created in the duplicate window. The origin is built by the edge from the
+ * verified token (client id and the client's self-declared name), never from the input, and must
+ * match the actor: an AI client origin with the same client id as the token. Nobody is notified.
  */
 export async function createSignal(
   input: CreateSignalInput,
-  caller: Caller,
-  { db, rateLimiter, readMembership }: CreateSignalDeps,
+  ctx: WriteCtx,
+  { rateLimiter, readMembership }: CreateSignalDeps,
 ): Promise<{ ok: true; data: CreatedSignal } | Failure> {
+  const caller = ctx.actor;
   if (caller.kind !== 'user' || !caller.via) {
     return failure('unauthenticated', 'A verified user is required.');
   }
   const clientId = caller.via.clientId?.trim();
   if (!clientId) {
     // A write is always attributed to a client; a token without one is refused, not anonymous.
+    return failure('forbidden', 'This app was not allowed to write.');
+  }
+  // The edge builds the origin; it has to name this same client, or nothing is written.
+  if (ctx.origin.kind !== 'mcp_client' || ctx.origin.clientId !== clientId) {
     return failure('forbidden', 'This app was not allowed to write.');
   }
 
@@ -118,19 +123,19 @@ export async function createSignal(
   const { spaceSlug, type, title, description } = parsed.data;
   const tags = cleanTags(parsed.data.tags);
 
-  const space = await findSpaceHostFieldsBySlug({ slug: spaceSlug }, { db });
+  const space = await findSpaceHostFieldsBySlug(ctx, { slug: spaceSlug });
   if (!space) return failure('not_found', 'Space not found');
 
   const allowed = await decideSpaceWrite(
     space,
-    caller,
+    ctx,
     { scope: SIGNALS_WRITE_SCOPE },
-    { db, readMembership },
+    { readMembership },
   );
   if (!allowed.ok) return allowed;
 
   // After the access checks, so a refused call spends nothing; a duplicate still counts.
-  const slot = rateLimiter.take(signalCreateRateKey(caller.person.id));
+  const slot = await rateLimiter.take(signalCreateRateKey(caller.person.id));
   if (!slot.ok) {
     return failure('rate_limited', 'Too many signals created.', {
       retryAfterSeconds: slot.retryAfterSeconds,
@@ -148,6 +153,7 @@ export async function createSignal(
   const wantedDescription = normaliseForDuplicate(description);
 
   const created = await createSignalUnlessDuplicate(
+    ctx,
     {
       spaceId: space.id,
       creatorId: caller.person.id,
@@ -162,13 +168,6 @@ export async function createSignal(
       sameContent: (row) =>
         normaliseForDuplicate(row.title) === wantedTitle &&
         normaliseForDuplicate(row.description) === wantedDescription,
-    },
-    {
-      db,
-      origin: mcpClientOrigin({
-        clientId,
-        clientName: caller.via.clientName ?? null,
-      }),
     },
   );
 

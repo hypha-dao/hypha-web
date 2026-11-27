@@ -1,13 +1,14 @@
 import 'server-only';
 
-import type { DbConfig } from '../../server';
+import type { ReadCtx } from '../../data-access/types';
+import { findProposalDocumentsPage } from '../../data-access/proposals';
+import { findSpaceHostFieldsBySlug } from '../../data-access/spaces';
 import {
   readChainClock,
   readProposalCoreBatch,
   readProposalOutcomeIds,
   readSpaceGovernanceBatch,
 } from '../../access/chain-reads';
-import type { Caller } from '../../access/caller';
 import { failure, type Failure } from '../../access/failure';
 import { decideSpaceAccess } from '../../access/policy';
 import {
@@ -17,8 +18,6 @@ import {
   type ProposalTally,
 } from '../../access/proposal-status';
 import { toPublicCreator } from '../../api-v2/public-profile';
-import { findProposalDocumentsPage } from '../../governance/server/queries';
-import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
 
 export type ListProposalsInput = {
   spaceSlug: string;
@@ -74,17 +73,15 @@ export type ListProposalsData = {
  */
 export async function listProposals(
   input: ListProposalsInput,
-  caller: Caller,
-  { db }: DbConfig,
+  ctx: ReadCtx,
 ): Promise<{ ok: true; data: ListProposalsData } | Failure> {
   try {
-    const host = await findSpaceHostFieldsBySlug(
-      { slug: input.spaceSlug },
-      { db },
-    );
+    const host = await findSpaceHostFieldsBySlug(ctx, {
+      slug: input.spaceSlug,
+    });
     if (!host) return failure('not_found', 'Space not found');
 
-    const decision = await decideSpaceAccess(host, caller, { db });
+    const decision = await decideSpaceAccess(host, ctx);
     if (decision.outcome === 'none') {
       return decision.failure.code === 'access_check_failed'
         ? decision.failure
@@ -92,17 +89,14 @@ export async function listProposals(
     }
 
     const state = input.state ?? 'both';
-    const page = await findProposalDocumentsPage(
-      {
-        spaceId: host.id,
-        states: state === 'both' ? ['proposal', 'agreement'] : [state],
-        searchTerm: input.searchTerm,
-        direction: input.direction ?? 'desc',
-        offset: input.paging.offset,
-        limit: input.paging.limit,
-      },
-      { db },
-    );
+    const page = await findProposalDocumentsPage(ctx, {
+      spaceId: host.id,
+      states: state === 'both' ? ['proposal', 'agreement'] : [state],
+      searchTerm: input.searchTerm,
+      direction: input.direction ?? 'desc',
+      offset: input.paging.offset,
+      limit: input.paging.limit,
+    });
 
     const web3SpaceId =
       typeof host.web3SpaceId === 'number' ? host.web3SpaceId : null;

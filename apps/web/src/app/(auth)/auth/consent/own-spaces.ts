@@ -1,6 +1,5 @@
 import 'server-only';
 import { listSpaces, resolveCaller } from '@hypha-platform/core/server';
-import { db } from '@hypha-platform/storage-postgres';
 
 export type PickerSpace = {
   /** Database space id: what the grant stores. */
@@ -21,16 +20,13 @@ export async function loadPickerSpaces(
   personSub: string,
 ): Promise<PickerSpace[] | null> {
   try {
-    const resolved = await resolveCaller(
-      {
-        kind: 'user',
-        sub: personSub,
-        clientId: null,
-        scopes: [],
-        spaceGrants: null,
-      },
-      { db },
-    );
+    const resolved = await resolveCaller({
+      kind: 'user',
+      sub: personSub,
+      clientId: null,
+      scopes: [],
+      spaceGrants: null,
+    });
     if (!resolved.ok) return null;
     const result = await listSpaces(
       {
@@ -42,8 +38,7 @@ export async function loadPickerSpaces(
         omitFlagArchived: true,
         titleOrder: 'asc',
       },
-      resolved.caller,
-      { db },
+      { actor: resolved.caller },
     );
     if (!result.ok) return null;
     return result.data.items.map((space) => ({

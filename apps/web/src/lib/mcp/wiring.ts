@@ -8,8 +8,10 @@ import {
 } from '@hypha-platform/auth-server/server';
 import {
   SIGNAL_CREATE_LIMITS,
+  asWriteRateLimiter,
   createMemoryWriteRateLimiter,
   createSignal,
+  failure,
   getAbsoluteAppUrl,
   getMyMembership,
   getMyVote,
@@ -19,17 +21,18 @@ import {
   listQuests,
   listSignals,
   listSpaces,
+  mcpClientOrigin,
   resolveCaller,
-  type Caller,
+  type WriteRateLimiter,
 } from '@hypha-platform/core/server';
-import { db } from '@hypha-platform/storage-postgres';
 import { createRateSlot } from '../authorize-request';
 import { loadMcpConfig, type AuthServerView } from './config';
 import { createMcpRequestHandlers } from './request-handler';
 
 /**
- * The one place that wires the hosted MCP server into the app: configuration, the database,
- * the feature functions and the real links. Route files import the handlers from here.
+ * The one place that wires the hosted MCP server into the app: configuration, the feature
+ * functions with the caller's context, and the real links. Route files import the handlers from
+ * here. No database handle passes through: features reach data through the data-access boundary.
  */
 let authServer: AuthServerConfig | AuthServerDisabled | undefined;
 let mcpConfig: ReturnType<typeof loadMcpConfig> | undefined;
@@ -53,33 +56,43 @@ function getMcpConfig() {
 const slot = createRateSlot({ limit: 120, windowMs: 60_000 });
 
 // Writes have their own, much tighter budget per person (in memory, per instance, #2744).
-const signalCreateLimiter = createMemoryWriteRateLimiter(SIGNAL_CREATE_LIMITS);
-
-/**
- * The database connection for an action the caller starts. Today every caller gets the server
- * connection and the rules are enforced in code; when the database can act under the person's
- * identity, this is the one place that changes.
- */
-const connectionFor: (caller: Caller) => typeof db = () => db;
+const signalCreateLimiter = asWriteRateLimiter(
+  createMemoryWriteRateLimiter(SIGNAL_CREATE_LIMITS),
+);
+function getSignalCreateLimiter(): WriteRateLimiter {
+  return signalCreateLimiter;
+}
 
 export const mcpHandlers = createMcpRequestHandlers({
   getConfig: getMcpConfig,
-  resolve: (claims) => resolveCaller(claims, { db }),
+  resolve: (claims) => resolveCaller(claims),
   features: {
-    listSpaces: (input, caller) => listSpaces(input, caller, { db }),
-    getSpace: (input, caller) => getSpace(input, caller, { db }),
-    listProposals: (input, caller) => listProposals(input, caller, { db }),
-    listSignals: (input, caller) => listSignals(input, caller, { db }),
-    listQuests: (input, caller) => listQuests(input, caller, { db }),
+    listSpaces: (input, caller) => listSpaces(input, { actor: caller }),
+    getSpace: (input, caller) => getSpace(input, { actor: caller }),
+    listProposals: (input, caller) => listProposals(input, { actor: caller }),
+    listSignals: (input, caller) => listSignals(input, { actor: caller }),
+    listQuests: (input, caller) => listQuests(input, { actor: caller }),
     getMyVote: ({ spaceSlug, documentSlug }, caller) =>
-      getMyVote({ spaceSlug, documentSlug, caller }, { db }),
+      getMyVote({ spaceSlug, documentSlug }, { actor: caller }),
     getMyMembership: ({ spaceSlug }, caller) =>
-      getMyMembership({ spaceSlug, caller }, { db }),
-    createSignal: (input, caller) =>
-      createSignal(input, caller, {
-        db: connectionFor(caller),
-        rateLimiter: signalCreateLimiter,
-      }),
+      getMyMembership({ spaceSlug }, { actor: caller }),
+    createSignal: async (input, caller) => {
+      // The edge names the path: an AI client through the authorization server. A write is
+      // always attributed to a client; a token without one is refused, as the feature does.
+      const clientId = caller.via?.clientId?.trim();
+      if (!clientId) {
+        return failure('forbidden', 'This app was not allowed to write.');
+      }
+      const origin = mcpClientOrigin({
+        clientId,
+        clientName: caller.via?.clientName ?? null,
+      });
+      return createSignal(
+        input,
+        { actor: caller, origin },
+        { rateLimiter: getSignalCreateLimiter() },
+      );
+    },
   },
   spaceUrl: (slug) => getAbsoluteAppUrl(getSpaceDhoPath(slug, 'overview')),
   proposalUrl: (spaceSlug, proposalSlug) =>

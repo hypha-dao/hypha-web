@@ -5,10 +5,29 @@ import { createHash } from 'node:crypto';
  * the duplicate rule for retries. Signals are the first user; quests and the vote reuse them.
  */
 
-/** Take one write for `key`; `retryAfterSeconds` is set when a limit is hit. */
+/** One write taken, or refused with the seconds after which to try again. */
+export type RateDecision =
+  | { ok: true }
+  | { ok: false; retryAfterSeconds: number };
+
+/**
+ * Take one write for `key`; `retryAfterSeconds` is set when a limit is hit. Asynchronous, so a
+ * shared store (the platform firewall) can stand behind it.
+ */
 export type WriteRateLimiter = {
-  take(key: string): { ok: true } | { ok: false; retryAfterSeconds: number };
+  take(key: string): Promise<RateDecision>;
 };
+
+/** The in-memory limiter answers at once; `asWriteRateLimiter` puts it behind the async contract. */
+export type MemoryWriteRateLimiter = {
+  take(key: string): RateDecision;
+};
+
+export function asWriteRateLimiter(
+  limiter: MemoryWriteRateLimiter,
+): WriteRateLimiter {
+  return { take: async (key) => limiter.take(key) };
+}
 
 export type RateWindow = { limit: number; windowMs: number };
 
@@ -33,7 +52,7 @@ export const signalCreateRateKey = (personId: number) =>
 export function createMemoryWriteRateLimiter(
   windows: readonly RateWindow[],
   now: () => number = Date.now,
-): WriteRateLimiter {
+): MemoryWriteRateLimiter {
   const counters = windows.map(
     () => new Map<string, { start: number; count: number }>(),
   );

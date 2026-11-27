@@ -232,4 +232,19 @@ describe.skipIf(!HAS_DB)('queries behind the MCP features (database)', () => {
       await findSpaceWithSubspacesBySlug({ slug: `${PREFIX}-nope` }, { db }),
     ).toBeNull();
   });
+
+  it('the data-access boundary reads the same rows through the resolver (#2745)', async () => {
+    const spaces = await import('../../data-access/spaces');
+    const request = {
+      actor: { kind: 'service' as const, name: 'integration-test' },
+    };
+    const host = await spaces.findSpaceHostFieldsBySlug(request, {
+      slug: `${PREFIX}-a`,
+    });
+    expect(host).toMatchObject({ id: spaceId });
+    const space = await spaces.findSpaceWithSubspacesBySlug(request, {
+      slug: `${PREFIX}-a`,
+    });
+    expect(space?.subspaces.map((s) => s.id)).toEqual([childId]);
+  });
 });

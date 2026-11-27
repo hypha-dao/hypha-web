@@ -9,7 +9,6 @@ vi.mock('../viewer-access', () => ({ filterSpacesForViewer: vi.fn() }));
 
 import { decideSpaceAccess, hasScope } from '../policy';
 
-const db = {} as never;
 const via = (spaceGrants: number[] | null) => ({
   clientId: 'c',
   scopes: ['spaces:read'],
@@ -26,13 +25,15 @@ beforeEach(() => {
 
 describe('AccessPolicy: decideSpaceAccess', () => {
   it('full when grants, on-chain id and the matrix all allow', async () => {
-    expect(await decideSpaceAccess(space, mcp(), { db })).toEqual({
+    expect(await decideSpaceAccess(space, { actor: mcp() })).toEqual({
       outcome: 'full',
     });
   });
 
   it('none outside the grants, without asking the matrix', async () => {
-    expect(await decideSpaceAccess(space, mcp([1, 2]), { db })).toMatchObject({
+    expect(
+      await decideSpaceAccess(space, { actor: mcp([1, 2]) }),
+    ).toMatchObject({
       outcome: 'none',
       failure: { code: 'not_found' },
     });
@@ -40,21 +41,22 @@ describe('AccessPolicy: decideSpaceAccess', () => {
   });
 
   it('an empty grant list grants nothing; null means no restriction', async () => {
-    expect((await decideSpaceAccess(space, mcp([]), { db })).outcome).toBe(
+    expect((await decideSpaceAccess(space, { actor: mcp([]) })).outcome).toBe(
       'none',
     );
-    expect((await decideSpaceAccess(space, mcp(null), { db })).outcome).toBe(
+    expect((await decideSpaceAccess(space, { actor: mcp(null) })).outcome).toBe(
       'full',
     );
-    expect((await decideSpaceAccess(space, mcp([5]), { db })).outcome).toBe(
+    expect((await decideSpaceAccess(space, { actor: mcp([5]) })).outcome).toBe(
       'full',
     );
   });
 
   it('a grant-aware caller is refused a space with no on-chain id', async () => {
-    const d = await decideSpaceAccess({ id: 5, web3SpaceId: null }, mcp(), {
-      db,
-    });
+    const d = await decideSpaceAccess(
+      { id: 5, web3SpaceId: null },
+      { actor: mcp() },
+    );
     expect(d.outcome).toBe('none');
     expect(gate).not.toHaveBeenCalled();
   });
@@ -62,19 +64,19 @@ describe('AccessPolicy: decideSpaceAccess', () => {
   it('other callers keep the matrix verdict for a space with no on-chain id', async () => {
     const api = { kind: 'user', person: {}, address: '0x1' } as never;
     expect(
-      (await decideSpaceAccess({ id: 5, web3SpaceId: null }, api, { db }))
+      (await decideSpaceAccess({ id: 5, web3SpaceId: null }, { actor: api }))
         .outcome,
     ).toBe('full');
   });
 
   it('none carries the matrix failure (refused, or the check failed closed)', async () => {
     gate.mockResolvedValue({ ok: false, code: 'forbidden' });
-    expect(await decideSpaceAccess(space, mcp(), { db })).toMatchObject({
+    expect(await decideSpaceAccess(space, { actor: mcp() })).toMatchObject({
       outcome: 'none',
       failure: { code: 'forbidden' },
     });
     gate.mockResolvedValue({ ok: false, code: 'access_check_failed' });
-    expect(await decideSpaceAccess(space, mcp(), { db })).toMatchObject({
+    expect(await decideSpaceAccess(space, { actor: mcp() })).toMatchObject({
       outcome: 'none',
       failure: { code: 'access_check_failed' },
     });
@@ -82,7 +84,7 @@ describe('AccessPolicy: decideSpaceAccess', () => {
 
   it('never returns minimal in this release', async () => {
     for (const g of [null, [5], []] as const) {
-      const d = await decideSpaceAccess(space, mcp(g as never), { db });
+      const d = await decideSpaceAccess(space, { actor: mcp(g as never) });
       expect(d.outcome).not.toBe('minimal');
     }
   });

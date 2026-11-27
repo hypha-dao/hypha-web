@@ -1,7 +1,7 @@
 import 'server-only';
 
-import { spaces as spacesTable } from '@hypha-platform/storage-postgres';
-import type { DbConfig } from '../server';
+import type { ReadCtx } from '../data-access/types';
+import { readSpaceTree } from '../data-access/organisation';
 import { ChainFactsCache } from './chain-cache';
 import {
   NO_RELATION,
@@ -17,7 +17,6 @@ import {
   type SpaceMembersAndExecutor,
   type SpaceVisibility,
 } from './chain-reads';
-import type { Caller } from './caller';
 
 /**
  * Bulk, cached resolution of "how is this viewer related to these spaces".
@@ -153,16 +152,10 @@ export async function getViewerSpaceIds(
  * the node (same definition as `findAllOrganizationSpacesForNodeById`: climb to
  * the root, take every descendant). Returns web3 space id -> organisation root.
  */
-async function loadOrganisationRoots({
-  db,
-}: DbConfig): Promise<Map<number, number>> {
-  const rows = await db
-    .select({
-      id: spacesTable.id,
-      parentId: spacesTable.parentId,
-      web3SpaceId: spacesTable.web3SpaceId,
-    })
-    .from(spacesTable);
+async function loadOrganisationRoots(
+  ctx: ReadCtx,
+): Promise<Map<number, number>> {
+  const rows = await readSpaceTree(ctx);
 
   const parentOf = new Map<number, number | null>(
     rows.map((r) => [r.id, r.parentId ?? null]),
@@ -191,11 +184,11 @@ async function loadOrganisationRoots({
  * targets the viewer is not already directly in.
  */
 export async function relationsForSpaces(
-  caller: Caller,
+  ctx: ReadCtx,
   targets: number[],
   levelOf: (web3SpaceId: number) => number | undefined,
-  { db }: DbConfig,
 ): Promise<Map<number, SpaceRelation>> {
+  const caller = ctx.actor;
   const out = new Map<number, SpaceRelation>();
   const address = caller.kind === 'user' ? caller.address : null;
   const signedIn = Boolean(address);
@@ -219,7 +212,7 @@ export async function relationsForSpaces(
   if (level2NotDirect.length === 0) return out;
 
   // Organisation siblings (DB grouping, one read).
-  const roots = await loadOrganisationRoots({ db });
+  const roots = await loadOrganisationRoots(ctx);
   const directRoots = new Set<number>();
   for (const id of facts.directSpaceIds) {
     const root = roots.get(id);
@@ -261,18 +254,16 @@ export async function filterSpacesForViewer<
   T extends { web3SpaceId?: number | null },
 >(
   spaces: T[],
-  caller: Caller,
-  config: DbConfig,
+  ctx: ReadCtx,
 ): Promise<{ visible: T[]; levels: Map<number, SpaceVisibility> }> {
   const ids = spaces
     .map((s) => s.web3SpaceId)
     .filter((id): id is number => typeof id === 'number');
   const levels = await getSpaceLevels(ids);
   const relations = await relationsForSpaces(
-    caller,
+    ctx,
     [...levels.keys()],
     (id) => levels.get(id)?.discoverability,
-    config,
   );
 
   const visible = spaces.filter((space) => {

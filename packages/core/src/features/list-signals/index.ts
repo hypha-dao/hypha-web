@@ -1,32 +1,33 @@
 import 'server-only';
 
-import type { DbConfig } from '../../server';
-import type { Caller } from '../../access/caller';
-import { failure, type Failure } from '../../access/failure';
-import { decideSpaceAccess } from '../../access/policy';
-import { COHERENCE_PRIORITIES } from '../../coherence/coherence-priorities';
-import { COHERENCE_TYPES } from '../../coherence/coherence-types';
+import type { ReadCtx } from '../../data-access/types';
 import {
   countSignals,
+  readSignalWorkflowConfig,
   selectPersonDisplayNames,
   selectSignalUpvotes,
   selectSignalsPage,
   selectTokenSymbolsByAddress,
   selectTopSignalTags,
   summariseSignals,
-  type SignalFilter,
-  type SignalOrder,
-  type SignalRow,
-  type SignalWorkflowView,
+} from '../../data-access/signals';
+import { findSpaceHostFieldsBySlug } from '../../data-access/spaces';
+import { failure, type Failure } from '../../access/failure';
+import { decideSpaceAccess } from '../../access/policy';
+import { COHERENCE_PRIORITIES } from '../../coherence/coherence-priorities';
+import { COHERENCE_TYPES } from '../../coherence/coherence-types';
+import type {
+  SignalFilter,
+  SignalOrder,
+  SignalRow,
+  SignalWorkflowView,
 } from '../../coherence/server/list-signals-queries';
-import { readSignalWorkflowConfig } from '../../coherence/server/signal-workflow';
 import {
   normalizeAssigneeIds,
   resolveDefaultBoard,
   type SignalWorkflowConfig,
 } from '../../coherence/signal-workflow';
 import { parseCapitalKeys, type CapitalKey } from '../../network/capitals';
-import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
 import { originViewFromColumns, type OriginView } from '../../origin';
 
 export type ListSignalsInput = {
@@ -168,23 +169,22 @@ function asPayouts(value: unknown): { amount: string; token: string }[] {
  */
 export async function listSignals(
   input: ListSignalsInput,
-  caller: Caller,
-  { db }: DbConfig,
+  ctx: ReadCtx,
 ): Promise<{ ok: true; data: ListSignalsData } | Failure> {
   try {
-    const host = await findSpaceHostFieldsBySlug(
-      { slug: input.spaceSlug },
-      { db },
-    );
+    const host = await findSpaceHostFieldsBySlug(ctx, {
+      slug: input.spaceSlug,
+    });
     if (!host) return failure('not_found', 'Space not found');
 
-    const decision = await decideSpaceAccess(host, caller, { db });
+    const decision = await decideSpaceAccess(host, ctx);
     if (decision.outcome === 'none') {
       return decision.failure.code === 'access_check_failed'
         ? decision.failure
         : failure('not_found', 'Space not found');
     }
 
+    const caller = ctx.actor;
     const personId = caller.kind === 'user' ? caller.person.id : null;
     if (
       (input.createdByMe || input.legacy?.assignedToMe) &&
@@ -193,7 +193,7 @@ export async function listSignals(
       return failure('unauthenticated', 'This needs a signed-in user.');
     }
 
-    const config = await readSignalWorkflowConfig({ spaceId: host.id }, { db });
+    const config = await readSignalWorkflowConfig(ctx, { spaceId: host.id });
     const workflow = workflowView(config);
     const categoryOf = new Map(
       config.statuses.map((status) => [status.slug, status.category]),
@@ -232,27 +232,20 @@ export async function listSignals(
     const wantsSummary = input.withSummary !== false;
 
     const [rows, counts, topTags] = await Promise.all([
-      selectSignalsPage(
-        { db },
-        {
-          filter,
-          workflow,
-          order: input.order ?? 'mostrecent',
-          offset,
-          limit,
-          descriptionChars:
-            mode === 'none'
-              ? null
-              : mode === 'full'
-              ? 'all'
-              : EXCERPT_READ_CHARS,
-        },
-      ),
+      selectSignalsPage(ctx, {
+        filter,
+        workflow,
+        order: input.order ?? 'mostrecent',
+        offset,
+        limit,
+        descriptionChars:
+          mode === 'none' ? null : mode === 'full' ? 'all' : EXCERPT_READ_CHARS,
+      }),
       wantsSummary
-        ? summariseSignals({ db }, filter, workflow)
-        : countSignals({ db }, filter, workflow),
+        ? summariseSignals(ctx, filter, workflow)
+        : countSignals(ctx, filter, workflow),
       wantsSummary
-        ? selectTopSignalTags({ db }, filter, workflow, TOP_TAGS)
+        ? selectTopSignalTags(ctx, filter, workflow, TOP_TAGS)
         : Promise.resolve([]),
     ]);
 
@@ -269,12 +262,12 @@ export async function listSignals(
     ];
     const [upvotes, names, symbols] = await Promise.all([
       selectSignalUpvotes(
-        { db },
+        ctx,
         rows.map((row) => row.id),
         personId,
       ),
-      selectPersonDisplayNames({ db }, allAssignees),
-      selectTokenSymbolsByAddress({ db }, allTokens),
+      selectPersonDisplayNames(ctx, allAssignees),
+      selectTokenSymbolsByAddress(ctx, allTokens),
     ]);
 
     const toItem = (row: SignalRow): SignalItem => {

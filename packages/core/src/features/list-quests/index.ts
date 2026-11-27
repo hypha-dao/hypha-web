@@ -1,8 +1,12 @@
 import 'server-only';
 
-import type { DbConfig } from '../../server';
+import type { ReadCtx } from '../../data-access/types';
+import {
+  readQuestsListing,
+  selectQuestProposalDocuments,
+} from '../../data-access/quests';
+import { findSpaceHostFieldsBySlug } from '../../data-access/spaces';
 import { readProposalOutcomeIds } from '../../access/chain-reads';
-import type { Caller } from '../../access/caller';
 import { failure, type Failure } from '../../access/failure';
 import { decideSpaceAccess } from '../../access/policy';
 import {
@@ -14,12 +18,7 @@ import type {
   QuestMilestoneStatus,
   QuestStatus,
 } from '../../space-quests/constants';
-import { selectQuestProposalDocuments } from '../../space-quests/server/list-quests-queries';
-import {
-  readQuestsListing,
-  type QuestListingRecord,
-} from '../../space-quests/server/list-quests-read';
-import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
+import type { QuestListingRecord } from '../../space-quests/server/list-quests-read';
 import type { OriginView } from '../../origin';
 
 export type ListQuestsInput = {
@@ -111,23 +110,22 @@ const ADDRESS = /^0x[0-9a-fA-F]{40}$/;
  */
 export async function listQuests(
   input: ListQuestsInput,
-  caller: Caller,
-  { db }: DbConfig,
+  ctx: ReadCtx,
 ): Promise<{ ok: true; data: ListQuestsData } | Failure> {
   try {
-    const host = await findSpaceHostFieldsBySlug(
-      { slug: input.spaceSlug },
-      { db },
-    );
+    const host = await findSpaceHostFieldsBySlug(ctx, {
+      slug: input.spaceSlug,
+    });
     if (!host) return failure('not_found', 'Space not found');
 
-    const decision = await decideSpaceAccess(host, caller, { db });
+    const decision = await decideSpaceAccess(host, ctx);
     if (decision.outcome === 'none') {
       return decision.failure.code === 'access_check_failed'
         ? decision.failure
         : failure('not_found', 'Space not found');
     }
 
+    const caller = ctx.actor;
     const personId = caller.kind === 'user' ? caller.person.id : null;
     if (input.mine && personId === null) {
       return failure('unauthenticated', 'This needs a signed-in user.');
@@ -136,17 +134,14 @@ export async function listQuests(
     const limit = Math.min(Math.max(Math.trunc(input.paging.limit), 1), 100);
     const offset = Math.max(Math.trunc(input.paging.offset), 0);
     // Filters, counts and paging happen in the database, scoped to the one checked space.
-    const listing = await readQuestsListing(
-      { db },
-      {
-        spaceId: host.id,
-        mineOfPersonId: input.mine ? personId ?? undefined : undefined,
-        status: input.status,
-        includeArchived: input.includeArchived ?? false,
-        offset,
-        limit,
-      },
-    );
+    const listing = await readQuestsListing(ctx, {
+      spaceId: host.id,
+      mineOfPersonId: input.mine ? personId ?? undefined : undefined,
+      status: input.status,
+      includeArchived: input.includeArchived ?? false,
+      offset,
+      limit,
+    });
     const page = listing.items;
     const isLead = (quest: QuestListingRecord) =>
       personId !== null && quest.leadPersonId === personId;
@@ -167,7 +162,7 @@ export async function listQuests(
           .filter((id): id is number => typeof id === 'number'),
       ),
     ];
-    const documents = await selectQuestProposalDocuments({ db }, documentIds);
+    const documents = await selectQuestProposalDocuments(ctx, documentIds);
 
     const linkedOf = (quest: QuestListingRecord) => {
       const document =

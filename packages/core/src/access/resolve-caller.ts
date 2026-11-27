@@ -1,7 +1,7 @@
 import 'server-only';
 
-import type { DbConfig } from '../server';
-import { findPersonBySub } from '../people/server/queries';
+import { findPersonBySub } from '../data-access/people';
+import type { ServiceActor } from '../data-access/types';
 import type { Caller } from './caller';
 import { failure, type Failure } from './failure';
 
@@ -26,8 +26,11 @@ export type VerifiedClaims = {
  * The one place a token subject becomes a person. Moving from `people.sub` to another
  * person reference later is a change in this function only.
  */
-async function findPersonForClaims(claims: VerifiedClaims, { db }: DbConfig) {
-  return findPersonBySub({ sub: claims.sub }, { db });
+/** No person is known yet: the lookup runs as the identity service. */
+const IDENTITY: ServiceActor = { kind: 'service', name: 'identity' };
+
+async function findPersonForClaims(claims: VerifiedClaims) {
+  return findPersonBySub({ actor: IDENTITY }, { sub: claims.sub });
 }
 
 /**
@@ -35,10 +38,7 @@ async function findPersonForClaims(claims: VerifiedClaims, { db }: DbConfig) {
  * never produces a guest. A person without a Hypha profile is a typed failure (a clear
  * tool error), not a guest.
  */
-export async function resolveCaller(
-  claims: VerifiedClaims,
-  config: DbConfig,
-): Promise<
+export async function resolveCaller(claims: VerifiedClaims): Promise<
   | {
       ok: true;
       caller: Extract<Caller, { kind: 'user' }> & {
@@ -47,7 +47,7 @@ export async function resolveCaller(
     }
   | Failure
 > {
-  const person = await findPersonForClaims(claims, config);
+  const person = await findPersonForClaims(claims);
   if (!person) {
     return failure(
       'no_profile',

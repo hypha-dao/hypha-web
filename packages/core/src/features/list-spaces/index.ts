@@ -1,19 +1,20 @@
 import 'server-only';
 
-import type { DbConfig } from '../../server';
+import type { ReadCtx } from '../../data-access/types';
+import {
+  listAllSpaces,
+  listSpacesBySlugs,
+  listSpacesByWeb3Ids,
+} from '../../data-access/spaces';
 import {
   readChainClock,
   readSpaceGovernanceBatch,
   type SpaceGovernance,
   type SpaceVisibility,
 } from '../../access/chain-reads';
-import type { Caller } from '../../access/caller';
 import { failure, type Failure } from '../../access/failure';
 import { filterSpacesForCaller } from '../../access/policy';
 import { getViewerSpaceIds } from '../../access/viewer-access';
-import { getAllSpaces } from '../../space/server/web3/get-all-spaces';
-import { getSpacesBySlugs } from '../../space/server/web3/get-spaces-by-slugs';
-import { getSpacesByWeb3Ids } from '../../space/server/web3/get-spaces-by-web3-ids';
 import type { Space } from '../../space/types';
 import { isSpaceArchived } from '../../space/utils';
 
@@ -79,16 +80,19 @@ export type ListSpacesData = {
   memberCountByWeb3Id: Map<number, number>;
 };
 
-async function listSources(input: ListSpacesInput): Promise<Space[]> {
+async function listSources(
+  input: ListSpacesInput,
+  ctx: ReadCtx,
+): Promise<Space[]> {
   const options =
     input.parentOnly !== undefined
       ? { parentOnly: input.parentOnly }
       : undefined;
   if (input.web3SpaceIds) {
-    return getSpacesByWeb3Ids(input.web3SpaceIds, options);
+    return listSpacesByWeb3Ids(ctx, input.web3SpaceIds, options);
   }
-  if (input.slugs) return getSpacesBySlugs(input.slugs, options);
-  return getAllSpaces({
+  if (input.slugs) return listSpacesBySlugs(ctx, input.slugs, options);
+  return listAllSpaces(ctx, {
     search: input.search,
     parentOnly: input.parentOnly,
     omitArchived: input.omitArchived,
@@ -103,11 +107,11 @@ async function listSources(input: ListSpacesInput): Promise<Space[]> {
  */
 export async function listSpaces(
   input: ListSpacesInput,
-  caller: Caller,
-  { db }: DbConfig,
+  ctx: ReadCtx,
 ): Promise<{ ok: true; data: ListSpacesData } | Failure> {
+  const caller = ctx.actor;
   try {
-    let spaces = await listSources(input);
+    let spaces = await listSources(input, ctx);
 
     // The omit filters apply on every source (v1 only honours them for the default one).
     if (input.omitFlagArchived) {
@@ -127,8 +131,7 @@ export async function listSpaces(
 
     const { visible, levels, levelsUnreadable } = await filterSpacesForCaller(
       spaces,
-      caller,
-      { db },
+      ctx,
     );
     if (levelsUnreadable) {
       return failure(

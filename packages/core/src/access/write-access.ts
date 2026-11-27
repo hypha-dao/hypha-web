@@ -1,7 +1,6 @@
 import 'server-only';
 
-import type { DbConfig } from '../server';
-import type { Caller } from './caller';
+import type { ReadCtx } from '../data-access/types';
 import { readMemberAndDelegate } from './chain-reads';
 import { failure, type Failure } from './failure';
 import { decideSpaceAccess, hasScope } from './policy';
@@ -9,7 +8,7 @@ import { decideSpaceAccess, hasScope } from './policy';
 type SpaceRef = { id: number; web3SpaceId: number | null | undefined };
 
 /** The chain read is injectable so the rule can be tested without a chain. */
-export type WriteAccessDeps = DbConfig & {
+export type WriteAccessDeps = {
   readMembership?: typeof readMemberAndDelegate;
 };
 
@@ -30,10 +29,11 @@ export type WriteAccessDeps = DbConfig & {
  */
 export async function decideSpaceWrite(
   space: SpaceRef,
-  caller: Caller,
+  ctx: ReadCtx,
   { scope }: { scope: string },
-  { db, readMembership = readMemberAndDelegate }: WriteAccessDeps,
+  { readMembership = readMemberAndDelegate }: WriteAccessDeps = {},
 ): Promise<{ ok: true } | Failure> {
+  const caller = ctx.actor;
   if (caller.kind !== 'user' || !caller.via) {
     return failure('unauthenticated', 'A verified user is required.');
   }
@@ -45,7 +45,7 @@ export async function decideSpaceWrite(
     return failure('not_found', 'Space not found');
   }
 
-  const read = await decideSpaceAccess(space, caller, { db });
+  const read = await decideSpaceAccess(space, ctx);
   if (read.outcome === 'none') {
     return read.failure.code === 'access_check_failed'
       ? read.failure

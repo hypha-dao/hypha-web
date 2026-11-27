@@ -5,14 +5,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  * relations (non-member, member, delegate, organisation sibling), a space without an
  * on-chain id, an item of another space, per-space grants, aggregates after the gate, and
  * fail closed on a chain-read failure. The access policy, the gate and the viewer rule are
- * REAL here; only chain reads, the database and the space modules are faked.
+ * REAL here; only chain reads and the data-access boundary (#2745) are faked.
  */
 
 vi.mock('server-only', () => ({}));
 
 const dbRows = vi.hoisted(() => ({ rows: [] as unknown[] }));
-vi.mock('@hypha-platform/storage-postgres', () => ({
-  spaces: { id: 'id', parentId: 'parentId', web3SpaceId: 'web3SpaceId' },
+vi.mock('../../data-access/organisation', () => ({
+  readSpaceTree: async () => dbRows.rows,
 }));
 
 const chain = vi.hoisted(() => ({
@@ -39,9 +39,12 @@ const findProposalVoteRefBySlug = vi.hoisted(() => vi.fn());
 const voteRefs = vi.hoisted(() => ({
   bySpaceAndSlug: new Map<string, unknown>(),
 }));
-vi.mock('../../governance/server/queries', () => ({
-  findProposalDocumentsPage,
-  findProposalVoteRefBySlug,
+// The spies keep the data function's argument order: (input, request).
+vi.mock('../../data-access/proposals', () => ({
+  findProposalDocumentsPage: (request: unknown, input: unknown) =>
+    findProposalDocumentsPage(input, request),
+  findProposalVoteRefBySlug: (request: unknown, input: unknown) =>
+    findProposalVoteRefBySlug(input, request),
 }));
 const memberPower = vi.hoisted(() => vi.fn());
 vi.mock('../../coherence/server/web3/get-member-voting-power', () => ({
@@ -53,10 +56,8 @@ const quests = vi.hoisted(() => ({
   docs: vi.fn(),
   activate: vi.fn(),
 }));
-vi.mock('../../space-quests/server/list-quests-read', () => ({
+vi.mock('../../data-access/quests', () => ({
   readQuestsListing: quests.list,
-}));
-vi.mock('../../space-quests/server/list-quests-queries', () => ({
   selectQuestProposalDocuments: quests.docs,
 }));
 // the feature must never reach a write path: this spy has to stay uncalled
@@ -73,16 +74,7 @@ const sig = vi.hoisted(() => ({
   names: vi.fn(),
   symbols: vi.fn(),
 }));
-vi.mock('../../coherence/server/list-signals-queries', () => ({
-  selectSignalsPage: sig.page,
-  countSignals: sig.count,
-  summariseSignals: sig.summary,
-  selectTopSignalTags: sig.tags,
-  selectSignalUpvotes: sig.upvotes,
-  selectPersonDisplayNames: sig.names,
-  selectTokenSymbolsByAddress: sig.symbols,
-}));
-vi.mock('../../coherence/server/signal-workflow', () => ({
+vi.mock('../../data-access/signals', () => ({
   readSignalWorkflowConfig: vi.fn(async () => ({
     statuses: [
       {
@@ -97,6 +89,13 @@ vi.mock('../../coherence/server/signal-workflow', () => ({
       { slug: 'general', name: 'General', color: 'neutral', position: 0 },
     ],
   })),
+  selectSignalsPage: sig.page,
+  countSignals: sig.count,
+  summariseSignals: sig.summary,
+  selectTopSignalTags: sig.tags,
+  selectSignalUpvotes: sig.upvotes,
+  selectPersonDisplayNames: sig.names,
+  selectTokenSymbolsByAddress: sig.symbols,
 }));
 
 const isOnChainMemberOrDelegate = vi.fn();
@@ -106,36 +105,32 @@ vi.mock('../../space/server/is-on-chain-member-or-delegate', () => ({
 }));
 
 const all = vi.hoisted(() => ({ spaces: [] as unknown[] }));
-vi.mock('../../space/server/web3/get-all-spaces', () => ({
-  getAllSpaces: vi.fn(async () => all.spaces),
-}));
-vi.mock('../../space/server/web3/get-spaces-by-slugs', () => ({
-  getSpacesBySlugs: vi.fn(),
-}));
-vi.mock('../../space/server/web3/get-spaces-by-web3-ids', () => ({
-  getSpacesByWeb3Ids: vi.fn(),
-}));
 vi.mock('../../space/utils', () => ({ isSpaceArchived: () => false }));
 
 const hostFields = vi.hoisted(() => ({
   bySlug: new Map<string, unknown>(),
   full: new Map<string, unknown>(),
 }));
-vi.mock('../../space/server/queries', () => ({
+vi.mock('../../data-access/spaces', () => ({
+  listAllSpaces: vi.fn(async () => all.spaces),
+  listSpacesBySlugs: vi.fn(),
+  listSpacesByWeb3Ids: vi.fn(),
   findSpaceHostFieldsBySlug: vi.fn(
-    async ({ slug }: { slug: string }) => hostFields.bySlug.get(slug) ?? null,
+    async (_request: unknown, { slug }: { slug: string }) =>
+      hostFields.bySlug.get(slug) ?? null,
   ),
   findSpaceWithSubspacesBySlug: vi.fn(
-    async ({ slug }: { slug: string }) => hostFields.full.get(slug) ?? null,
+    async (_request: unknown, { slug }: { slug: string }) =>
+      hostFields.full.get(slug) ?? null,
   ),
   findSpaceById: vi.fn(
-    async ({ id }: { id: number }) =>
+    async (_request: unknown, { id }: { id: number }) =>
       [...hostFields.full.values()].find(
         (row) => (row as { id: number }).id === id,
       ) ?? null,
   ),
 }));
-vi.mock('../../people/server/queries', () => ({ findPersonBySub: vi.fn() }));
+vi.mock('../../data-access/people', () => ({ findPersonBySub: vi.fn() }));
 
 import { clearChainFactsCaches } from '../../access/viewer-access';
 import { listSpaces } from '../list-spaces';
@@ -147,9 +142,6 @@ import { listSignals } from '../list-signals';
 import { listQuests } from '../list-quests';
 
 const ADDR = '0xabc0000000000000000000000000000000000001' as const;
-const db = {
-  select: () => ({ from: () => Promise.resolve(dbRows.rows) }),
-} as never;
 const via = (spaceGrants: number[] | null = null) => ({
   clientId: 'https://client.example/cimd.json',
   scopes: ['spaces:read'],
@@ -223,7 +215,7 @@ beforeEach(() => {
 });
 
 const listed = async (caller: unknown, input = {}) => {
-  const r = await listSpaces(input, caller as never, { db });
+  const r = await listSpaces(input, { actor: caller as never });
   if (!r.ok) throw new Error(`unexpected failure ${r.code}`);
   return r.data;
 };
@@ -305,7 +297,7 @@ describe('visibility: list spaces', () => {
 
   it('fails closed when the access levels cannot be read', async () => {
     chain.readSpaceVisibilityBatch.mockRejectedValue(new Error('rpc'));
-    const r = await listSpaces({}, mcpUser(), { db });
+    const r = await listSpaces({}, { actor: mcpUser() });
     expect(r).toMatchObject({ ok: false, code: 'access_check_failed' });
   });
 
@@ -430,9 +422,9 @@ describe('visibility: list spaces', () => {
     it('fails the call when the membership cannot be read (never an empty list)', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => undefined);
       chain.readMemberSpaceIds.mockRejectedValue(new Error('rpc'));
-      expect(await listSpaces({ mine: true }, mcpUser(), { db })).toMatchObject(
-        { ok: false, code: 'access_check_failed' },
-      );
+      expect(
+        await listSpaces({ mine: true }, { actor: mcpUser() }),
+      ).toMatchObject({ ok: false, code: 'access_check_failed' });
     });
 
     it('with authoritative, fails instead of under-reporting when a delegate space cannot be read', async () => {
@@ -444,13 +436,13 @@ describe('visibility: list spaces', () => {
       );
       chain.readDelegatorsBatch.mockResolvedValue(new Map());
       const strict = { mine: true, authoritative: true };
-      expect(await listSpaces(strict, mcpUser(), { db })).toMatchObject({
+      expect(await listSpaces(strict, { actor: mcpUser() })).toMatchObject({
         ok: false,
         code: 'access_check_failed',
       });
       // authoritative is its own switch: it fails the plain list too
       expect(
-        await listSpaces({ authoritative: true }, mcpUser(), { db }),
+        await listSpaces({ authoritative: true }, { actor: mcpUser() }),
       ).toMatchObject({ ok: false, code: 'access_check_failed' });
       // without it, mine filters what could be read (the filter and the guarantee are separate)
       expect(await slugsOf(mcpUser(), { mine: true })).toEqual(['s1']);
@@ -475,7 +467,7 @@ describe('visibility: list spaces', () => {
 
     it('needs a verified user with a wallet address', async () => {
       expect(
-        await listSpaces({ mine: true }, { kind: 'guest' } as never, { db }),
+        await listSpaces({ mine: true }, { actor: { kind: 'guest' } as never }),
       ).toMatchObject({ ok: false, code: 'unauthenticated' });
       const noAddress = {
         kind: 'user',
@@ -483,9 +475,9 @@ describe('visibility: list spaces', () => {
         address: null,
         via: via(),
       } as never;
-      expect(await listSpaces({ mine: true }, noAddress, { db })).toMatchObject(
-        { ok: false, code: 'invalid_identity' },
-      );
+      expect(
+        await listSpaces({ mine: true }, { actor: noAddress }),
+      ).toMatchObject({ ok: false, code: 'invalid_identity' });
     });
 
     it('keeps the visible spaces for resolving a parent slug', async () => {
@@ -507,7 +499,7 @@ describe('visibility: list spaces', () => {
 
 describe('visibility: get my membership', () => {
   const ask = (slug: string, caller: unknown) =>
-    getMyMembership({ spaceSlug: slug, caller: caller as never }, { db });
+    getMyMembership({ spaceSlug: slug }, { actor: caller as never });
 
   it('a member of a space-level space: true (grant-aware caller passes the matrix)', async () => {
     isOnChainMemberOrDelegate.mockResolvedValue(true);
@@ -580,7 +572,7 @@ describe('visibility: get my membership', () => {
 
 describe('visibility: get space', () => {
   const ask = (slug: string, caller: unknown, blocks = {}) =>
-    getSpace({ slug, with: blocks }, caller as never, { db });
+    getSpace({ slug, with: blocks }, { actor: caller as never });
   const ALL = { governance: true, visibility: true, counts: true };
 
   beforeEach(() => {
@@ -800,8 +792,7 @@ describe('visibility: list proposals', () => {
   ) =>
     listProposals(
       { spaceSlug: slug, paging: { offset: 0, limit: 20 }, ...extra },
-      caller as never,
-      { db },
+      { actor: caller as never },
     );
 
   beforeEach(() => {
@@ -986,10 +977,7 @@ describe('visibility: list proposals', () => {
 describe('visibility: get my vote', () => {
   const OTHER_VOTER = '0xdddd000000000000000000000000000000000009';
   const ask = (slug: string, caller: unknown, documentSlug = 'prop') =>
-    getMyVote(
-      { spaceSlug: slug, documentSlug, caller: caller as never },
-      { db },
-    );
+    getMyVote({ spaceSlug: slug, documentSlug }, { actor: caller as never });
 
   beforeEach(() => {
     voteRefs.bySpaceAndSlug = new Map([
@@ -1238,8 +1226,7 @@ describe('visibility: list signals', () => {
   ) =>
     listSignals(
       { spaceSlug: slug, paging: { offset: 0, limit: 20 }, ...extra },
-      caller as never,
-      { db },
+      { actor: caller as never },
     );
 
   beforeEach(() => {
@@ -1527,8 +1514,7 @@ describe('visibility: list quests', () => {
   ) =>
     listQuests(
       { spaceSlug: slug, paging: { offset: 0, limit: 20 }, ...extra },
-      caller as never,
-      { db },
+      { actor: caller as never },
     );
   const slugsOf = async (
     slug: string,
