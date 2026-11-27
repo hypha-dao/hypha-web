@@ -98,7 +98,8 @@ import type { UseMembers } from '../../spaces/hooks/types';
 import { SignalTagMergeDialog } from './signal-tag-merge-dialog';
 import { SignalImagePicker } from './signal-image-picker';
 import { SignalTagPeopleField } from './signal-tag-people-field';
-import { LegacySignalFieldsDisclosure } from './legacy-signal-fields/legacy-signal-fields-form';
+import { SignalTagsField } from './signal-tags-field';
+import { SignalBoardField } from './signal-board-field';
 import { SIGNAL_BOARD_META_TEXT_CLASS } from '../utils/signal-tag-badge-styles';
 import { EXCHANGE_SIGNAL_CAPITALS_KEY } from '../../network-exchange/exchange-draft-keys';
 
@@ -1249,6 +1250,13 @@ export const CreateSignalForm = ({
                 )}
               />
             </SignalTypeSection>
+            <section
+              data-testid="signal-form-categorize"
+              className="flex flex-col gap-6 border-t border-border pt-8"
+            >
+              <SignalTagsField disabled={isMutating} />
+              <SignalBoardField workflow={workflow} disabled={isMutating} />
+            </section>
             {mode === 'create' && votingModeStatus === 'error' ? (
               <section className="flex flex-col gap-3 border-t border-border pt-8">
                 <Label className="text-foreground">
@@ -1432,10 +1440,8 @@ export const CreateSignalForm = ({
               </div>
             </section>
 
-            <div className="relative flex w-full flex-col items-end gap-3 pt-8">
+            <div className="flex w-full flex-col items-end gap-3 pt-8">
               <SignalFormRootError control={form.control} />
-              {/* TODO: Temporary for Reciprocal Exchange. Delete with legacy-signal-fields/. */}
-              <LegacySignalFieldsDisclosure disabled={isMutating} />
               <div className="flex w-full justify-end gap-2">
                 <Button
                   type="submit"

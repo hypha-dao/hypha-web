@@ -12,6 +12,8 @@ import type {
 } from '@hypha-platform/core/client';
 import { cn, stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import { SignalTypeBadge } from './signal-type-badge';
+import { SignalTagBadges } from './signal-tag-badges';
+import { SIGNAL_TAG_BADGE_CLASS } from '../utils/signal-tag-badge-styles';
 import { SignalUpvoteButton } from './signal-upvote-button';
 import { ActionGate } from '../../common/action-capabilities';
 import { SignalMediaChips } from './signal-media-chips';
@@ -63,6 +65,8 @@ type SignalFeedRowProps = {
   refresh?: () => Promise<unknown>;
   sort: SignalSort;
   summaryState?: SignalUpvoteSummaryState;
+  /** Board name; null when the space has a single board (nothing to tell apart). */
+  boardLabel?: string | null;
 };
 
 export function SignalFeedRow({
@@ -78,6 +82,7 @@ export function SignalFeedRow({
   refresh,
   sort,
   summaryState,
+  boardLabel = null,
 }: SignalFeedRowProps) {
   const t = useTranslations('CoherenceTab');
   const format = useFormatter();
@@ -89,6 +94,7 @@ export function SignalFeedRow({
     [signal.description],
   );
   const media = React.useMemo(() => countSignalMedia(signal), [signal]);
+  const hasTags = Array.isArray(signal.tags) && signal.tags.length > 0;
   const created = shortDate(signal.createdAt);
   const comments = signalDiscussionCount(signal.messages, activity);
   const lastReply =
@@ -120,6 +126,26 @@ export function SignalFeedRow({
           <p className="mb-0 mt-1.5 truncate text-1 text-muted-foreground">
             {about}
           </p>
+        ) : null}
+        {hasTags || boardLabel ? (
+          <div
+            data-testid="signal-card-categories"
+            className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5"
+          >
+            {boardLabel ? (
+              <span
+                data-testid="signal-card-board"
+                title={t('signalFormBoard')}
+                className={cn(
+                  SIGNAL_TAG_BADGE_CLASS,
+                  'inline-flex items-center border px-1.5 py-0.5 text-foreground',
+                )}
+              >
+                {boardLabel}
+              </span>
+            ) : null}
+            <SignalTagBadges tags={signal.tags} />
+          </div>
         ) : null}
         <div
           data-testid="signal-card-meta"

@@ -13,6 +13,7 @@ import {
   rankSignals,
   signalListUpvoteSummaryState,
   useFindCoherences,
+  useSignalWorkflow,
   useSpaceBySlug,
   type SignalSort,
   type SignalTimeFrame,
@@ -32,6 +33,7 @@ import {
 } from '../hooks/use-signal-voting-mode';
 import { SignalFeedFilters } from './signal-feed-filters';
 import { SignalFeedRow } from './signal-feed-row';
+import { signalBoardLabel } from '../lib/signal-board-label';
 import { useDebouncedFeedTitle } from '../lib/use-debounced-feed-title';
 import type { UseMembers } from '../../spaces/hooks/types';
 
@@ -60,6 +62,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   const searchParams = useSearchParams();
 
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
+  const { workflow } = useSignalWorkflow(spaceSlug);
   const {
     canMutate,
     isLoading: isMembershipLoading,
@@ -281,6 +284,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
                 refresh={refresh}
                 sort={sort}
                 summaryState={upvoteSummaryState}
+                boardLabel={signalBoardLabel(signal.board, workflow)}
               />
             ) : null,
           )}

@@ -14,7 +14,6 @@ import {
   FormMessage,
   Input,
   LucideReactIcon,
-  MultiSelect,
   RequirementMark,
   Skeleton,
   Switch,
@@ -22,10 +21,7 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import {
   COHERENCE_PRIORITY_OPTIONS,
-  COHERENCE_TAGS,
-  collectExistingTags,
   parseCapitalKeys,
-  useFindCoherences,
   type CapitalKey,
   type SignalFormValues,
 } from '@hypha-platform/core/client';
@@ -40,9 +36,9 @@ import {
 } from '../../utils/signal-due-date';
 
 /**
- * TODO: Temporary for Reciprocal Exchange. Delete this folder, and the
- * insertion points in `create-signal-form.tsx` and `signal-page.tsx`, when
- * Reciprocal Exchange no longer reads these columns.
+ * Hidden legacy signal fields (#2763 D5): not rendered anywhere since #2764;
+ * the columns and stored values are kept. Tags and board moved out to
+ * first-class fields (`signal-tags-field.tsx`, `signal-board-field.tsx`).
  *
  * The control stays absolutely positioned in the form's existing lower-right
  * padding. Opened fields are in normal flow, directly above the button row.
@@ -89,15 +85,6 @@ function LegacySignalFieldsForm({ disabled }: { disabled: boolean }) {
   const t = useTranslations('CoherenceTab');
   const tCapitals = useTranslations('NetworkExchange');
   const { tokens, isLoading: isLoadingTokens } = useTokens({ spaceSlug });
-  const { coherences: spaceSignals } = useFindCoherences({
-    spaceSlug,
-    includeArchived: true,
-  });
-  const existingBoardTags = React.useMemo(
-    () =>
-      collectExistingTags((spaceSignals ?? []).map((signal) => signal.tags)),
-    [spaceSignals],
-  );
   const priorityOptions = React.useMemo(() => {
     return COHERENCE_PRIORITY_OPTIONS.map(
       ({ priority, icon, colorVariant }) => ({
@@ -114,10 +101,6 @@ function LegacySignalFieldsForm({ disabled }: { disabled: boolean }) {
       }),
     );
   }, [t]);
-  const tagOptions = React.useMemo(
-    () => signalTagOptions(t, existingBoardTags),
-    [existingBoardTags, t],
-  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -207,58 +190,6 @@ function LegacySignalFieldsForm({ disabled }: { disabled: boolean }) {
       />
       <FormField
         control={form.control}
-        name="tags"
-        render={({ field }) => (
-          <FormItem className="border-t border-border pt-6">
-            <FormLabel className="text-foreground">{t('tags')}</FormLabel>
-            <FormControl>
-              <MultiSelect
-                placeholder={t('selectOneOrMore')}
-                searchPlaceholder={
-                  t.has('searchOrCreateTag')
-                    ? t('searchOrCreateTag')
-                    : 'Type to search or create a tag'
-                }
-                options={tagOptions}
-                value={field.value}
-                allowToggleAll={false}
-                allowCreate={true}
-                maxCount={2}
-                uiStyle="tag-picker"
-                labels={{
-                  more: (count) =>
-                    t.has('tagsMore' as never)
-                      ? `${t('tagsMore' as never)} ${count}`
-                      : `+ ${count} more`,
-                  noRecentTags: t.has('noRecentTags' as never)
-                    ? t('noRecentTags' as never)
-                    : 'No recent tags yet. Start typing to search tags.',
-                  noResults: t.has('noResults' as never)
-                    ? t('noResults' as never)
-                    : 'No results found.',
-                  mostUsed: t.has('mostUsedTagsHeading' as never)
-                    ? t('mostUsedTagsHeading' as never)
-                    : '--- Most used tags ---',
-                  create: (term) =>
-                    t.has('createTag' as never)
-                      ? `${t('createTag' as never)} "${term}"`
-                      : `Create "${term}"`,
-                  clear: t.has('clear' as never)
-                    ? t('clear' as never)
-                    : 'Clear',
-                  close: t.has('close' as never)
-                    ? t('close' as never)
-                    : 'Close',
-                }}
-                onValueChange={field.onChange}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
         name="dueAt"
         render={({ field }) => (
           <FormItem className="border-t border-border pt-6">
@@ -299,151 +230,4 @@ function LegacySignalFieldsForm({ disabled }: { disabled: boolean }) {
       </section>
     </div>
   );
-}
-
-type TagOptionRow = {
-  value: string;
-  label: string;
-  kind: 'option' | 'heading' | 'separator';
-};
-
-function signalTagOptions(
-  t: ReturnType<typeof useTranslations<'CoherenceTab'>>,
-  existingBoardTags: string[],
-): TagOptionRow[] {
-  const labelFor = (tag: string) =>
-    t.has(`tagLabels.${tag}` as never) ? t(`tagLabels.${tag}` as never) : tag;
-  const categoryLabelFor = (key: string, fallback: string) =>
-    t.has(`tagCategories.${key}` as never)
-      ? t(`tagCategories.${key}` as never)
-      : fallback;
-
-  const tagsByCategory: Array<{ title: string; tags: readonly string[] }> = [
-    {
-      title: categoryLabelFor('purposeDirection', 'Purpose & Direction'),
-      tags: [
-        'Purpose',
-        'North Star',
-        'Vision',
-        'Strategy',
-        'Values',
-        'Principles',
-        'Milestones',
-        'Impact Goals',
-      ],
-    },
-    {
-      title: categoryLabelFor('broaderContext', 'Broader Context'),
-      tags: [
-        'Trend',
-        'Social Conditions',
-        'Planetary Boundaries',
-        'Policy',
-        'Regulation',
-        'Emergency Response',
-      ],
-    },
-    {
-      title: categoryLabelFor('peopleRoles', 'People & Roles'),
-      tags: [
-        'Project',
-        'Quest',
-        'Job',
-        'Skill',
-        'Advisory Support',
-        'Volunteering',
-      ],
-    },
-    {
-      title: categoryLabelFor('ecosystemMapping', 'Ecosystem Mapping'),
-      tags: [
-        'Serving Audience',
-        'Customers',
-        'Users',
-        'Communities',
-        'Beneficiaries',
-        'Partners',
-      ],
-    },
-    {
-      title: categoryLabelFor('operatingCoherence', 'Operating Coherence'),
-      tags: [
-        'Governance',
-        'Processes',
-        'Structure',
-        'Rhythms',
-        'Support Systems',
-      ],
-    },
-    {
-      title: categoryLabelFor('needsResources', 'Needs & Resources'),
-      tags: ['Needs', 'Resources', 'Fundraising', 'Matchmaking'],
-    },
-    {
-      title: categoryLabelFor('valueModel', 'Value & Model'),
-      tags: [
-        'Innovation',
-        'Products',
-        'Services',
-        'Product-Market Fit',
-        'Business Model',
-        'Data',
-        'Knowledge',
-        'Intellectual Property',
-      ],
-    },
-    {
-      title: categoryLabelFor('evidenceImpact', 'Evidence & Impact'),
-      tags: ['Proof of Action', 'Proof of Impact', 'Learning', 'Feedback Loop'],
-    },
-  ];
-
-  const canonicalTags = new Set(COHERENCE_TAGS as readonly string[]);
-  const grouped = tagsByCategory.flatMap((category, categoryIndex) => {
-    const rows: TagOptionRow[] = [
-      {
-        value: `__heading__${categoryIndex}`,
-        label: category.title,
-        kind: 'heading',
-      },
-      ...category.tags
-        .filter((tag) => canonicalTags.has(tag))
-        .map((tag) => ({
-          value: tag,
-          label: labelFor(tag),
-          kind: 'option' as const,
-        })),
-    ];
-    if (categoryIndex < tagsByCategory.length - 1) {
-      rows.push({
-        value: `__separator__${categoryIndex}`,
-        label: '',
-        kind: 'separator',
-      });
-    }
-    return rows;
-  });
-
-  const usedOnBoard = existingBoardTags.filter(
-    (tag) => !canonicalTags.has(tag),
-  );
-  if (usedOnBoard.length === 0) return grouped;
-  return [
-    {
-      value: '__heading__board',
-      label: t('usedOnThisBoard'),
-      kind: 'heading',
-    },
-    ...usedOnBoard.map((tag) => ({
-      value: tag,
-      label: tag,
-      kind: 'option' as const,
-    })),
-    {
-      value: '__separator__board',
-      label: '',
-      kind: 'separator',
-    },
-    ...grouped,
-  ];
 }

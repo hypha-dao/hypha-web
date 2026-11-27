@@ -47,37 +47,34 @@ describe('legacy signal fields', () => {
     expect(shown?.dueAt).toBeInstanceOf(Date);
   });
 
-  it('is one absolute insertion in the form and one nullable insertion on the page', () => {
+  it('is not rendered in the form or on the signal page (#2763 D5)', () => {
     const form = readFileSync(
       join(here, '../../create-signal-form.tsx'),
       'utf8',
     );
     const page = readFileSync(join(here, '../../signal-page.tsx'), 'utf8');
+    expect(form).not.toContain('<LegacySignalFieldsDisclosure');
+    expect(form).not.toContain('legacy-signal-fields');
+    expect(page).not.toContain('<LegacySignalFieldsDetail');
+    expect(page).not.toContain('legacy-signal-fields');
+  });
+
+  it('leaves tags and board to the first-class fields after the type picker', () => {
+    const form = readFileSync(
+      join(here, '../../create-signal-form.tsx'),
+      'utf8',
+    );
     const disclosure = readFileSync(
       join(here, '../legacy-signal-fields-form.tsx'),
       'utf8',
     );
-    expect(form.match(/<LegacySignalFieldsDisclosure/g)).toHaveLength(1);
-    expect(form).toContain(
-      'relative flex w-full flex-col items-end gap-3 pt-8',
+    expect(disclosure).not.toContain('name="tags"');
+    expect(disclosure).not.toContain('name="board"');
+    const typeSectionEnd = form.indexOf('</SignalTypeSection>');
+    expect(typeSectionEnd).toBeGreaterThan(-1);
+    expect(form.indexOf('<SignalTagsField')).toBeGreaterThan(typeSectionEnd);
+    expect(form.indexOf('<SignalBoardField')).toBeGreaterThan(
+      form.indexOf('<SignalTagsField'),
     );
-    expect(form).toContain('flex w-full justify-end gap-2');
-    expect(form.indexOf('<LegacySignalFieldsDisclosure')).toBeLessThan(
-      form.indexOf('flex w-full justify-end gap-2'),
-    );
-    expect(page.match(/<LegacySignalFieldsDetail/g)).toHaveLength(1);
-    expect(page.indexOf('<SignalMediaSection')).toBeLessThan(
-      page.indexOf('<LegacySignalFieldsDetail'),
-    );
-    expect(disclosure).toContain('absolute right-0 top-2');
-    expect(disclosure).toContain('className="w-full self-stretch"');
-    expect(disclosure).not.toContain('absolute bottom-full');
-    const toggle = disclosure.slice(
-      disclosure.indexOf('data-testid="legacy-signal-fields-toggle"') - 80,
-      disclosure.indexOf('</button>'),
-    );
-    expect(toggle).not.toContain('aria-label');
-    expect(toggle).not.toContain('title=');
-    expect(toggle).toContain('<ChevronDown');
   });
 });

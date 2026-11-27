@@ -14,6 +14,7 @@ import {
   useMe,
   usePeopleBySubs,
   usePersonById,
+  useSignalWorkflow,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
@@ -44,7 +45,8 @@ import { SignalTypeBadge } from './signal-type-badge';
 import { SignalUpvoteButton } from './signal-upvote-button';
 import { useVoteEnabled } from '../../common/action-capabilities';
 import { SignalVideoPlayer } from './signal-video-player';
-import { LegacySignalFieldsDetail } from './legacy-signal-fields/legacy-signal-fields-detail';
+import { SignalTagBadges } from './signal-tag-badges';
+import { signalBoardLabel } from '../lib/signal-board-label';
 
 const SECTION_LABEL_CLASS =
   'text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground';
@@ -292,6 +294,7 @@ export function SignalPage({
   const shortDate = useSignalShortDate();
 
   const { space } = useSpaceBySlug(spaceSlug);
+  const { workflow } = useSignalWorkflow(spaceSlug);
   const {
     votingMode,
     status: votingModeStatus,
@@ -474,6 +477,7 @@ export function SignalPage({
   }
 
   const created = shortDate(signal.createdAt);
+  const boardLabel = signalBoardLabel(signal.board, workflow);
   const comments = signalDiscussionCount(signal.messages, activity);
   const fullName = (p?: { name?: string | null; surname?: string | null }) =>
     [p?.name, p?.surname].filter(Boolean).join(' ').trim();
@@ -609,6 +613,22 @@ export function SignalPage({
             {created ? (
               <MetaItem label={t('signalCreatedLabel')}>{created}</MetaItem>
             ) : null}
+            {boardLabel ? (
+              <MetaItem label={t('signalFormBoard')}>
+                <span className="break-words" data-testid="signal-page-board">
+                  {boardLabel}
+                </span>
+              </MetaItem>
+            ) : null}
+            {signal.tags && signal.tags.length > 0 ? (
+              <MetaItem label={t('tags')}>
+                <SignalTagBadges
+                  tags={signal.tags}
+                  maxVisible={signal.tags.length}
+                  className="max-w-full"
+                />
+              </MetaItem>
+            ) : null}
             {lastReply ? (
               <MetaItem label={t('signalLastReplyLabel')}>
                 <span className="break-words">{lastReply}</span>
@@ -655,9 +675,6 @@ export function SignalPage({
       ) : null}
 
       <SignalMediaSection signal={signal} />
-
-      {/* TODO: Temporary for Reciprocal Exchange. Delete with legacy-signal-fields/. */}
-      <LegacySignalFieldsDetail signal={signal} />
     </div>
   );
 }

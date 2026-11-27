@@ -37,6 +37,7 @@ vi.mock('@hypha-platform/core/client', () => ({
   usePeopleBySubs: () => ({ peopleBySub: new Map() }),
   usePersonById: () => ({ person: undefined }),
   useSpaceBySlug: () => ({ space: undefined }),
+  useSignalWorkflow: () => ({ workflow: undefined }),
 }));
 vi.mock('next/link', () => ({
   default: ({

@@ -20,9 +20,8 @@ const SECTION_LABEL_CLASS =
   'm-0 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground';
 
 /**
- * TODO: Temporary for Reciprocal Exchange. Delete this folder, and the
- * insertion points in `create-signal-form.tsx` and `signal-page.tsx`, when
- * Reciprocal Exchange no longer reads these columns.
+ * Hidden legacy signal fields (#2763 D5): not rendered anywhere since #2764,
+ * the columns and stored values are kept. Remove once nothing reads them.
  *
  * Renders nothing when every legacy field is still at its empty default.
  * The page inserts this after the other detail sections, so an empty signal

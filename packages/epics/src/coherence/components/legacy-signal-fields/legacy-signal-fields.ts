@@ -8,9 +8,8 @@ import {
 } from '../../../../../core/src/network/capitals';
 
 /**
- * TODO: Temporary for Reciprocal Exchange. Delete this folder, and the
- * insertion points in `create-signal-form.tsx` and `signal-page.tsx`, when
- * Reciprocal Exchange no longer reads these columns.
+ * Hidden legacy signal fields (#2763 D5): not rendered anywhere since #2764,
+ * the columns and stored values are kept. Remove once nothing reads them.
  *
  * Priority `medium` is the value stored for every signal that never opened
  * these fields, so it does not count as filled.
