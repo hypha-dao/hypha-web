@@ -51,6 +51,20 @@ describe('resolveCaller (verified authorization-server claims only)', () => {
     });
   });
 
+  it('carries the client name of the token, or null when it has none (#2756)', async () => {
+    findPersonBySub.mockResolvedValue({ id: 9, address: null });
+    expect(
+      await resolveCaller({ ...claims, clientName: 'Example AI' }, { db }),
+    ).toMatchObject({
+      ok: true,
+      caller: { via: { clientName: 'Example AI' } },
+    });
+    expect(await resolveCaller(claims, { db })).toMatchObject({
+      ok: true,
+      caller: { via: { clientName: null } },
+    });
+  });
+
   it('a person without a profile is a typed failure, never a guest', async () => {
     findPersonBySub.mockResolvedValue(null);
     const r = await resolveCaller(claims, { db });

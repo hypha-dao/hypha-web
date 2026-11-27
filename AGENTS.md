@@ -204,6 +204,7 @@ Never reverse this direction. Circular deps are a build failure.
 
 - `packages/chat-server` — AI chat using Vercel AI SDK with OpenRouter provider.
 - `packages/mcp` — hosted MCP server (`mcp.hypha.earth`) exposing Hypha platform data as AI context tools; tool list in `packages/mcp/src/descriptions/`.
+- **Authorization server tables are off limits:** code outside `packages/auth-server` never reads or writes the `as_*` tables. What the app needs about a client or a grant comes from the claims of the verified access token (`space_grants`, `client_name`); the authorization server reaches app data only through the interfaces it is given. Guarded by `packages/auth-server/src/__tests__/as-tables-guard.test.ts`.
 - Coherence (under `packages/epics/src/coherence/`) — Matrix-based human chat rooms per space. Uses `matrix-js-sdk` pinned version (checked by `scripts/check-matrix-js-sdk-version.mjs`).
 
 ### Authentication Pattern (Server-Side)

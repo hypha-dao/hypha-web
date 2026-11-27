@@ -198,8 +198,20 @@ describe('authorizeRequest: the space grants of the token reach the resolver', (
       surface,
       d,
     );
-    return { r, seen: seen as { spaceGrants?: number[] | null } | undefined };
+    return {
+      r,
+      seen: seen as
+        | { spaceGrants?: number[] | null; clientName?: string | null }
+        | undefined,
+    };
   };
+
+  it('the client name of the token reaches the resolver; none gives null (#2756)', async () => {
+    expect(
+      (await claimsSeen({ client_name: 'Example AI' })).seen?.clientName,
+    ).toBe('Example AI');
+    expect((await claimsSeen({})).seen?.clientName).toBeNull();
+  });
 
   it('"all" becomes null (no restriction beyond the person\'s own rights)', async () => {
     const { seen } = await claimsSeen({ space_grants: 'all' });

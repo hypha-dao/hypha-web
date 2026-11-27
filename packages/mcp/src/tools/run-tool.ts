@@ -38,30 +38,54 @@ export function failureText(failure: Failure): string {
 
 class DeadlineError extends Error {}
 
+/** Ids of what a write touched, for its audit line. */
+export type WriteAudit = {
+  spaceId?: number;
+  signalId?: number;
+  duplicate?: boolean;
+};
+
 /**
  * The one wrapper every tool goes through: refuses callers that could not be resolved, applies
  * the per-tool deadline, turns expected failures into tool errors and unexpected exceptions
- * into a generic one (never raw text), and writes exactly one allow-listed log line.
+ * into a generic one (never raw text), and writes exactly one allow-listed log line. A write
+ * tool (`options.write`) gets the audit form of that line (`mcp.write`, ids only), whatever the
+ * outcome.
  */
 export async function runTool(
   deps: McpDeps,
   tool: string,
-  run: (
-    caller: UserCaller,
-  ) => Promise<
-    | { ok: true; result: { [key: string]: unknown }; itemCount?: number }
+  run: (caller: UserCaller) => Promise<
+    | {
+        ok: true;
+        result: { [key: string]: unknown };
+        itemCount?: number;
+        audit?: WriteAudit;
+      }
     | { ok: false; text: string; outcome: string }
   >,
+  options: { write?: boolean } = {},
 ): Promise<ToolResult> {
   const now = deps.now ?? Date.now;
   const started = now();
-  const finish = (outcome: string, itemCount?: number) =>
+  const personId =
+    deps.access.kind === 'caller' ? deps.access.caller.person.id : undefined;
+  const finish = (outcome: string, itemCount?: number, audit?: WriteAudit) =>
     deps.log({
       tool,
       outcome,
       durationMs: now() - started,
       clientId: deps.clientId ?? null,
       itemCount,
+      // A write always gets its audit line, refused and failed calls included.
+      ...(options.write
+        ? {
+            write: {
+              ...(personId !== undefined ? { personId } : {}),
+              ...(audit ?? {}),
+            },
+          }
+        : {}),
     });
 
   if (deps.access.kind === 'refused') {
@@ -71,9 +95,10 @@ export async function runTool(
   const caller = deps.access.caller;
 
   let timer: ReturnType<typeof setTimeout> | undefined;
+  const work = run(caller);
   try {
     const out = await Promise.race([
-      run(caller),
+      work,
       new Promise<never>((_, reject) => {
         timer = setTimeout(
           () => reject(new DeadlineError()),
@@ -85,12 +110,24 @@ export async function runTool(
       finish(out.outcome);
       return toolError(out.text);
     }
-    finish('ok', out.itemCount);
+    finish('ok', out.itemCount, out.audit);
     return toolOk(out.result);
   } catch (error) {
     if (error instanceof DeadlineError) {
       finish('timeout');
-      return toolError(ERRORS.timeout);
+      if (!options.write) return toolError(ERRORS.timeout);
+      // The deadline does not cancel the work: a write can still commit. Keep watching it and
+      // record how it ended, with its ids, in a second audit line (best effort; `keepAlive` keeps
+      // the platform from freezing the function first). The model is told the outcome is unknown.
+      const late = work.then(
+        (out) =>
+          out.ok
+            ? finish('late_ok', out.itemCount, out.audit)
+            : finish(`late_${out.outcome}`),
+        () => finish('late_error'),
+      );
+      deps.keepAlive?.(late);
+      return toolError(ERRORS.writeTimeout);
     }
     // Raw error text can carry data; the operator gets the outcome, the model a generic line.
     finish('error');

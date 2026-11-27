@@ -13,6 +13,8 @@ import type {
   ListSignalsInput,
   ListQuestsData,
   ListQuestsInput,
+  CreateSignalInput,
+  CreatedSignal,
 } from '@hypha-platform/core/server';
 
 /**
@@ -61,6 +63,11 @@ export type McpFeatures = {
     input: { spaceSlug: string },
     caller: UserCaller,
   ): Promise<{ ok: true; data: MyMembership } | Failure>;
+  /** The one write (#2744); only reached while `writesEnabled` is true. */
+  createSignal(
+    input: CreateSignalInput,
+    caller: UserCaller,
+  ): Promise<{ ok: true; data: CreatedSignal } | Failure>;
 };
 
 /** The allow-listed fields of the one log line per tool call (see `log.ts`). */
@@ -70,6 +77,14 @@ export type ToolCallLog = {
   durationMs: number;
   clientId?: string | null;
   itemCount?: number;
+  /** Set on a write tool: the line becomes the audit line `mcp.write`. Ids only. */
+  write?: {
+    /** Absent when the caller could not be resolved. */
+    personId?: number;
+    spaceId?: number;
+    signalId?: number;
+    duplicate?: boolean;
+  };
 };
 
 export type McpDeps = {
@@ -84,6 +99,16 @@ export type McpDeps = {
   /** Link to a quest page, built from the two slugs and the app base URL, never from content. */
   questUrl(spaceSlug: string, questSlug: string): string;
   log(entry: ToolCallLog): void;
+  /**
+   * Keep the function alive until `work` settles after the response was sent (the platform's
+   * post-response hook). Used when a write outlives the deadline, so its outcome is still logged.
+   */
+  keepAlive?(work: Promise<unknown>): void;
+  /**
+   * Whether write tools are offered (`MCP_WRITES_ENABLED`, the same switch that lets the
+   * authorization server grant the write scope). Off or absent: they are not registered at all.
+   */
+  writesEnabled?: boolean;
   /** Per-tool deadline in milliseconds. */
   deadlineMs?: number;
   clientId?: string | null;

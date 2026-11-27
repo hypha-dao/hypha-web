@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { allowedScopesForResource } from '@hypha-platform/auth-server/server';
 import { loadMcpConfig, type AuthServerView } from '../config';
 
-const AS: AuthServerView = {
-  enabled: true,
+const AS = {
+  enabled: true as const,
   issuer: 'https://auth.example.com',
   resources: ['https://mcp.example.com/mcp'],
   allowedPersonIds: new Set(['p1']),
-  scopesForResource: () => ['spaces:read', 'offline_access'],
-};
+  scopesForResource: (): readonly string[] => ['spaces:read', 'offline_access'],
+  writesEnabled: false,
+} satisfies AuthServerView;
 
 describe('loadMcpConfig', () => {
   it('is off by default and only the exact string "true" turns it on', () => {
@@ -100,6 +101,14 @@ describe('loadMcpConfig', () => {
       loadMcpConfig({ MCP_SERVER_ENABLED: 'true' }, real).active
         ?.scopesSupported,
     ).not.toContain('signals:write');
+  });
+
+  it('carries the write switch of the authorization server, off unless it is on (#2744)', () => {
+    const on = { MCP_SERVER_ENABLED: 'true' };
+    expect(loadMcpConfig(on, AS).active?.writesEnabled).toBe(false);
+    expect(
+      loadMcpConfig(on, { ...AS, writesEnabled: true }).active?.writesEnabled,
+    ).toBe(true);
   });
 
   it('while off with no resource configured, it still knows its own host (so the unavailable answer works)', () => {

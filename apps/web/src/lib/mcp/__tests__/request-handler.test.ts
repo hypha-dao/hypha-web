@@ -49,7 +49,12 @@ function setup(
       issuer: TEST_ISSUER,
       resources: [AUDIENCE],
       allowedPersonIds: new Set([TEST_PERSON]),
-      scopesForResource: () => ['spaces:read', 'offline_access'],
+      scopesForResource: () =>
+        env.MCP_WRITES_ENABLED === 'true'
+          ? ['spaces:read', 'signals:write', 'offline_access']
+          : ['spaces:read', 'offline_access'],
+      // The switch is the authorization server's; tests pass it through this env name.
+      writesEnabled: env.MCP_WRITES_ENABLED === 'true',
     },
   );
   const features = {
@@ -340,6 +345,157 @@ describe('the real SDK client against the handler', () => {
     expect(r.isError).toBe(true);
     expect(r.content[0]!.text).toMatch(/Try again in \d+ seconds/);
     expect(features.listSpaces).not.toHaveBeenCalled();
+    await client.close();
+  });
+});
+
+describe('the write tool and the step-up (#2744)', () => {
+  const WRITES = { MCP_WRITES_ENABLED: 'true' };
+  const createSignal = vi.fn(async () => ({
+    ok: true as const,
+    data: {
+      id: 1,
+      spaceId: 2,
+      slug: 'coh-1',
+      spaceSlug: 'alpha',
+      type: 'Need',
+      title: 'Water',
+      description: 'Dry well',
+      tags: [],
+      createdAt: '2026-11-27T10:00:00.000Z',
+      duplicate: false,
+      origin: { kind: 'mcp_client' as const, clientLabel: 'Example AI' },
+    },
+  }));
+  /** A resolver that keeps what the token said, as the real one does. */
+  const resolve: McpRequestDeps['resolve'] = async (claims) =>
+    ({
+      ok: true,
+      caller: {
+        kind: 'user',
+        person: { id: 1 },
+        address: '0x1',
+        via: {
+          clientId: claims.clientId,
+          scopes: claims.scopes,
+          spaceGrants: null,
+          clientName: claims.clientName ?? null,
+        },
+      },
+    } as never);
+  const withWrite = (env: Record<string, string> = WRITES) => {
+    const made = setup(env, { resolve });
+    (made.features as Record<string, unknown>).createSignal = createSignal;
+    return made;
+  };
+  const rpc = (token: string, body: unknown) =>
+    post(AUDIENCE, {
+      headers: {
+        authorization: `Bearer ${token}`,
+        accept: 'application/json, text/event-stream',
+      },
+      body: JSON.stringify(body),
+    });
+  const callWrite = {
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'tools/call',
+    params: { name: 'hypha_create_signal', arguments: {} },
+  };
+
+  it('a write call without the scope gets a 403 step-up challenge naming the scopes', async () => {
+    const { handlers } = withWrite();
+    const token = await issuer.sign(AUDIENCE, { scope: 'spaces:read' });
+    for (const body of [callWrite, [callWrite]]) {
+      const r = await handlers.mcp(rpc(token, body));
+      expect(r.status).toBe(403);
+      const challenge = r.headers.get('www-authenticate') ?? '';
+      expect(challenge).toContain('error="insufficient_scope"');
+      expect(challenge).toContain('scope="spaces:read signals:write"');
+      expect(challenge).toContain(`resource_metadata="${METADATA}"`);
+      expect(await r.json()).toMatchObject({ error: 'insufficient_scope' });
+      expectHeaders(r);
+    }
+    expect(createSignal).not.toHaveBeenCalled();
+  });
+
+  it('the refused write gets its audit line, ids only', async () => {
+    const { handlers, logs } = withWrite();
+    const token = await issuer.sign(AUDIENCE, { scope: 'spaces:read' });
+    await handlers.mcp(
+      rpc(token, {
+        ...callWrite,
+        params: {
+          name: 'hypha_create_signal',
+          arguments: { title: 'Secret title' },
+        },
+      }),
+    );
+    expect(logs).toEqual([
+      {
+        tool: 'hypha_create_signal',
+        outcome: 'insufficient_scope',
+        durationMs: 0,
+        clientId: expect.any(String),
+        write: { personId: 1 },
+      },
+    ]);
+    expect(JSON.stringify(logs)).not.toContain('Secret title');
+  });
+
+  it('no step-up for read calls, or while writes are off (the tool does not exist then)', async () => {
+    const token = await issuer.sign(AUDIENCE, { scope: 'spaces:read' });
+    const read = {
+      ...callWrite,
+      params: { name: 'hypha_list_spaces', arguments: {} },
+    };
+    const on = withWrite();
+    expect((await on.handlers.mcp(rpc(token, read))).status).not.toBe(403);
+    const off = withWrite({});
+    expect((await off.handlers.mcp(rpc(token, callWrite))).status).not.toBe(
+      403,
+    );
+  });
+
+  it('with the scope: the tool is listed, and called with the client name from the token', async () => {
+    const { handlers, logs } = withWrite();
+    const token = await issuer.sign(AUDIENCE, {
+      scope: 'spaces:read signals:write',
+      extra: { client_name: 'Example AI' },
+    });
+    const client = await connectClient(handlers, token);
+    const names = (await client.listTools()).tools.map((t) => t.name);
+    expect(names.at(-1)).toBe('hypha_create_signal');
+    const r = (await client.callTool({
+      name: 'hypha_create_signal',
+      arguments: {
+        spaceSlug: 'alpha',
+        type: 'Need',
+        title: 'Water',
+        description: 'Dry well',
+      },
+    })) as { isError?: boolean };
+    expect(r.isError).toBeFalsy();
+    const passed = (
+      createSignal.mock.calls as unknown as [
+        unknown,
+        { via: { clientName: string | null; scopes: string[] } },
+      ][]
+    )[0]![1];
+    expect(passed.via.clientName).toBe('Example AI');
+    expect(passed.via.scopes).toContain('signals:write');
+    expect(logs.at(-1)).toMatchObject({ write: { personId: 1, signalId: 1 } });
+    await client.close();
+  });
+
+  it('while writes are off the tool is not listed, even for a token with the scope', async () => {
+    const { handlers } = withWrite({});
+    const token = await issuer.sign(AUDIENCE, {
+      scope: 'spaces:read signals:write',
+    });
+    const client = await connectClient(handlers, token);
+    const names = (await client.listTools()).tools.map((t) => t.name);
+    expect(names).not.toContain('hypha_create_signal');
     await client.close();
   });
 });
