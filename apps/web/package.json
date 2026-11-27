@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "next lint",
     "check-types": "node --max-old-space-size=6144 ./node_modules/typescript/bin/tsc --noEmit",
-    "postinstall": "if [ ! -f .env ] && [ -z \"$CI\" ]; then cp .env.template .env; fi",
+    "postinstall": "node -e \"const fs=require('fs');if(!process.env.CI&&!fs.existsSync('.env'))fs.copyFileSync('.env.template','.env')\"",
     "test": "vitest run"
   },
   "dependencies": {
