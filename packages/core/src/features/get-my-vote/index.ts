@@ -1,6 +1,8 @@
 import 'server-only';
 
-import type { DbConfig } from '../../server';
+import type { ReadCtx } from '../../data-access/types';
+import { findProposalVoteRefBySlug } from '../../data-access/proposals';
+import { findSpaceHostFieldsBySlug } from '../../data-access/spaces';
 import {
   readChainClock,
   readIsProposalWithdrawn,
@@ -8,7 +10,6 @@ import {
   readProposalCoreBatch,
   readProposalVoters,
 } from '../../access/chain-reads';
-import type { Caller } from '../../access/caller';
 import { failure, type Failure } from '../../access/failure';
 import { decideSpaceAccess } from '../../access/policy';
 import {
@@ -16,8 +17,6 @@ import {
   type CanVoteReason,
 } from '../../access/proposal-status';
 import { getMemberVotingPower } from '../../coherence/server/web3/get-member-voting-power';
-import { findProposalVoteRefBySlug } from '../../governance/server/queries';
-import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
 
 export type MyVote = {
   hasVoted: boolean;
@@ -43,13 +42,10 @@ export type MyVote = {
  * caller's own vote and are never returned.
  */
 export async function getMyVote(
-  {
-    spaceSlug,
-    documentSlug,
-    caller,
-  }: { spaceSlug: string; documentSlug: string; caller: Caller },
-  { db }: DbConfig,
+  { spaceSlug, documentSlug }: { spaceSlug: string; documentSlug: string },
+  ctx: ReadCtx,
 ): Promise<{ ok: true; data: MyVote } | Failure> {
+  const caller = ctx.actor;
   if (caller.kind !== 'user') {
     return failure('unauthenticated', 'A verified user is required.');
   }
@@ -59,20 +55,20 @@ export async function getMyVote(
   const address = caller.address;
 
   try {
-    const host = await findSpaceHostFieldsBySlug({ slug: spaceSlug }, { db });
+    const host = await findSpaceHostFieldsBySlug(ctx, { slug: spaceSlug });
     if (!host) return failure('not_found', 'Space not found');
 
-    const decision = await decideSpaceAccess(host, caller, { db });
+    const decision = await decideSpaceAccess(host, ctx);
     if (decision.outcome === 'none') {
       return decision.failure.code === 'access_check_failed'
         ? decision.failure
         : failure('not_found', 'Space not found');
     }
 
-    const ref = await findProposalVoteRefBySlug(
-      { spaceId: host.id, slug: documentSlug },
-      { db },
-    );
+    const ref = await findProposalVoteRefBySlug(ctx, {
+      spaceId: host.id,
+      slug: documentSlug,
+    });
     if (
       !ref ||
       ref.web3ProposalId == null ||

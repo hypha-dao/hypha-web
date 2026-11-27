@@ -1,14 +1,13 @@
 import 'server-only';
 
-import type { DbConfig } from '../../server';
+import type { ReadCtx } from '../../data-access/types';
+import { findSpaceHostFieldsBySlug } from '../../data-access/spaces';
 import {
   readChainClock,
   readMemberAndDelegate,
 } from '../../access/chain-reads';
-import type { Caller } from '../../access/caller';
 import { failure, type Failure } from '../../access/failure';
 import { decideSpaceAccess } from '../../access/policy';
-import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
 
 export type MyMembership = {
   /** `null` = unknown (the space has no on-chain id), never `false`. */
@@ -25,9 +24,10 @@ export type MyMembership = {
  * valid state. Uses the same `readMemberAndDelegate` as the vote read so the two cannot drift.
  */
 export async function getMyMembership(
-  { spaceSlug, caller }: { spaceSlug: string; caller: Caller },
-  { db }: DbConfig,
+  { spaceSlug }: { spaceSlug: string },
+  ctx: ReadCtx,
 ): Promise<{ ok: true; data: MyMembership } | Failure> {
+  const caller = ctx.actor;
   if (caller.kind !== 'user') {
     return failure('unauthenticated', 'A verified user is required.');
   }
@@ -35,19 +35,14 @@ export async function getMyMembership(
     return failure('invalid_identity', 'Could not verify your identity.');
   }
 
-  const host = await findSpaceHostFieldsBySlug({ slug: spaceSlug }, { db });
+  const host = await findSpaceHostFieldsBySlug(ctx, { slug: spaceSlug });
   if (!host) return failure('not_found', 'Space not found');
 
   // Grants and the on-chain id rule always apply to a grant-aware caller; the transparency
   // matrix applies to it too (the API keeps its no-gate answer about the caller).
-  const decision = await decideSpaceAccess(
-    host,
-    caller,
-    { db },
-    {
-      matrix: caller.via !== undefined,
-    },
-  );
+  const decision = await decideSpaceAccess(host, ctx, {
+    matrix: caller.via !== undefined,
+  });
   if (decision.outcome === 'none') {
     return decision.failure.code === 'access_check_failed'
       ? decision.failure

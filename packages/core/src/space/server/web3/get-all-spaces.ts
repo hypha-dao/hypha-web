@@ -1,6 +1,7 @@
 'use server';
 
 import { db } from '@hypha-platform/storage-postgres';
+import type { DbConfig } from '../../../common/server/types';
 import { findAllSpaces } from '@hypha-platform/core/server';
 import { Space, isSpaceArchived } from '@hypha-platform/core/client';
 import {
@@ -19,9 +20,11 @@ interface GetAllSpacesProps {
 
 export async function getAllSpaces(
   props: GetAllSpacesProps = {},
+  // Optional, for the data-access boundary (#2745); existing callers keep the default.
+  connection: DbConfig['db'] = db,
 ): Promise<Space[]> {
   try {
-    const spaces = await findAllSpaces({ db }, props);
+    const spaces = await findAllSpaces({ db: connection }, props);
 
     const spacesWithWeb3Id = spaces.filter(
       ({ web3SpaceId }) => web3SpaceId !== null,

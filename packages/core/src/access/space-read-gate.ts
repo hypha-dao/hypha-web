@@ -1,8 +1,7 @@
 import 'server-only';
 
-import type { DbConfig } from '../server';
+import type { ReadCtx } from '../data-access/types';
 import { isOnChainMemberOrDelegate } from '../space/server/is-on-chain-member-or-delegate';
-import type { Caller } from './caller';
 import { failure, type Failure } from './failure';
 import { isLevelSatisfied } from './visibility-rule';
 import { getSpaceLevels, relationsForSpaces } from './viewer-access';
@@ -33,9 +32,9 @@ const CHECK_FAILED = failure(
  */
 export async function authorizeSpaceRead(
   space: { id: number; web3SpaceId: number | null | undefined },
-  caller: Caller,
-  { db }: DbConfig,
+  ctx: ReadCtx,
 ): Promise<{ ok: true } | Failure> {
+  const caller = ctx.actor;
   const web3SpaceId = space.web3SpaceId;
   if (web3SpaceId == null) return { ok: true };
 
@@ -67,12 +66,7 @@ export async function authorizeSpaceRead(
     const direct = await isOnChainMemberOrDelegate(web3SpaceId, address);
     if (direct) return { ok: true };
 
-    const relations = await relationsForSpaces(
-      caller,
-      [web3SpaceId],
-      () => level,
-      { db },
-    );
+    const relations = await relationsForSpaces(ctx, [web3SpaceId], () => level);
     const relation = relations.get(web3SpaceId);
     if (relation && isLevelSatisfied(level, relation)) return { ok: true };
   } catch (error) {

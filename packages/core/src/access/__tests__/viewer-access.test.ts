@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 const dbRows = vi.hoisted(() => ({ rows: [] as unknown[] }));
-vi.mock('@hypha-platform/storage-postgres', () => ({
-  spaces: { id: 'id', parentId: 'parentId', web3SpaceId: 'web3SpaceId' },
+vi.mock('../../data-access/organisation', () => ({
+  readSpaceTree: async () => dbRows.rows,
 }));
 
 const chain = vi.hoisted(() => ({
@@ -24,9 +24,6 @@ import {
 import { isLevelSatisfied } from '../visibility-rule';
 
 const ADDR = '0xabc0000000000000000000000000000000000001' as const;
-const db = {
-  select: () => ({ from: () => Promise.resolve(dbRows.rows) }),
-} as never;
 const guest = { kind: 'guest' } as const;
 const user = { kind: 'user', person: { id: 1 }, address: ADDR } as never;
 
@@ -67,7 +64,7 @@ beforeEach(() => {
 });
 
 const slugs = async (caller: unknown) =>
-  (await filterSpacesForViewer(spaces, caller as never, { db })).visible.map(
+  (await filterSpacesForViewer(spaces, { actor: caller as never })).visible.map(
     (s) => s.slug,
   );
 
@@ -149,8 +146,7 @@ describe('filterSpacesForViewer (the viewer-aware list)', () => {
   it('a space with no on-chain id is not listed', async () => {
     const r = await filterSpacesForViewer(
       [...spaces, { id: 99, slug: 'off', web3SpaceId: null }],
-      guest,
-      { db },
+      { actor: guest },
     );
     expect(r.visible.map((s) => s.slug)).not.toContain('off');
   });
@@ -186,7 +182,7 @@ describe('cost and cache (chain facts)', () => {
 
 describe('relationsForSpaces', () => {
   it('guest: no relation and no chain reads', async () => {
-    const r = await relationsForSpaces(guest, [3], () => 2, { db });
+    const r = await relationsForSpaces({ actor: guest }, [3], () => 2);
     expect(r.get(3)).toMatchObject({ signedIn: false, direct: false });
     expect(chain.readMemberSpaceIds).not.toHaveBeenCalled();
   });

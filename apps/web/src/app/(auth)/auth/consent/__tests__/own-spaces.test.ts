@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
-vi.mock('@hypha-platform/storage-postgres', () => ({ db: {} }));
 
 const listSpaces = vi.fn();
 vi.mock('@hypha-platform/core/server', () => ({
@@ -37,8 +36,7 @@ describe('loadPickerSpaces', () => {
     const result = await loadPickerSpaces('did:privy:a');
     expect(listSpaces).toHaveBeenCalledWith(
       expect.objectContaining({ mine: true, parentOnly: false }),
-      expect.anything(),
-      expect.anything(),
+      { actor: { kind: 'user' } },
     );
     expect(result).toEqual([
       {
