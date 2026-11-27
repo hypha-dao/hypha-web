@@ -291,3 +291,27 @@ describe('built-in images', () => {
     );
   });
 });
+
+describe('space background', () => {
+  it('round-trips the space effect', () => {
+    expect(serializeCallBackgroundEffect({ kind: 'space' })).toBe('space');
+    expect(parseCallBackgroundEffect('space')).toEqual({ kind: 'space' });
+    expect(isCallBackgroundEffectActive({ kind: 'space' })).toBe(true);
+  });
+
+  it('uses the drawn image once it exists, blur until then', () => {
+    expect(
+      processorModeForEffect({ kind: 'space' }, { spaceImageSrc: 'blob:x' }),
+    ).toEqual({ mode: 'virtual-background', imagePath: 'blob:x' });
+    expect(processorModeForEffect({ kind: 'space' })).toEqual({
+      mode: 'background-blur',
+      blurRadius: CALL_BACKGROUND_BLUR_RADIUS,
+    });
+    expect(
+      processorModeForEffect({ kind: 'space' }, { spaceImageSrc: null }),
+    ).toEqual({
+      mode: 'background-blur',
+      blurRadius: CALL_BACKGROUND_BLUR_RADIUS,
+    });
+  });
+});

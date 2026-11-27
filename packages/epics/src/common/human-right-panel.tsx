@@ -1597,6 +1597,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     backgroundEffectStatus: spaceCallBackgroundEffectStatus,
     backgroundEffectSlow: spaceCallBackgroundEffectSlow,
     backgroundEffectSupported: spaceCallBackgroundEffectSupported,
+    spaceBackgroundImage: spaceCallSpaceBackgroundImage,
+    callSpaceLogoUrl: spaceCallSpaceLogoUrl,
     tabBackgroundWhileInCall: spaceCallTabBackground,
     retryFromError: retrySpaceCall,
     dismissCallError: dismissSpaceCallError,
@@ -6565,6 +6567,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                   backgroundEffectStatus: spaceCallBackgroundEffectStatus,
                   backgroundEffectSlow: spaceCallBackgroundEffectSlow,
                   backgroundEffectSupported: spaceCallBackgroundEffectSupported,
+                  spaceBackgroundImage: spaceCallSpaceBackgroundImage,
+                  callSpaceLogoUrl: spaceCallSpaceLogoUrl,
                 })}
                 onVoiceProcessingPresetChange={
                   handleCallVoiceProcessingPresetChange

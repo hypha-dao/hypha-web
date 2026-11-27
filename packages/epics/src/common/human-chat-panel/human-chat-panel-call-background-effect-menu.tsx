@@ -19,6 +19,10 @@ export type CallBackgroundEffectControl = {
   /** False where the browser cannot run the effect; the control is not shown. */
   supported: boolean;
   onChange: (effect: CallBackgroundEffect) => void;
+  /** The call's space background once drawn (`blob:`), for the "This space" tile. */
+  spaceImageSrc: string | null;
+  /** The call's space logo, for the tile before the background is drawn. */
+  spaceLogoSrc: string | null;
 };
 
 const OPTIONS: Array<{
@@ -167,6 +171,64 @@ export function CallBackgroundEffectMenuBody({
             </button>
           );
         })}
+        {(() => {
+          const selected = control.effect.kind === 'space';
+          const label = t('callBackgroundSpace');
+          return (
+            <button
+              type="button"
+              role="menuitemradio"
+              aria-checked={selected}
+              aria-label={label}
+              title={label}
+              onClick={() => {
+                if (!selected) control.onChange({ kind: 'space' });
+                onDone();
+              }}
+              className={cn(
+                'relative aspect-video overflow-hidden rounded-md border-2 transition-colors',
+                selected
+                  ? 'border-[color:var(--color-accent-9,#4a65d8)]'
+                  : 'border-transparent hover:border-neutral-7',
+              )}
+            >
+              {control.spaceImageSrc ? (
+                <img
+                  src={control.spaceImageSrc}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      'linear-gradient(45deg, var(--space-accent-deep, #24433f), var(--space-accent, #3d6b66))',
+                  }}
+                >
+                  {control.spaceLogoSrc ? (
+                    <img
+                      src={control.spaceLogoSrc}
+                      alt=""
+                      className="absolute right-[12%] top-[14%] h-[30%] w-auto rounded-sm bg-white/90"
+                    />
+                  ) : null}
+                </span>
+              )}
+              <span className="absolute inset-x-0 bottom-0 truncate bg-black/45 px-1 text-left text-[10px] leading-4 text-white">
+                {label}
+              </span>
+              {selected && applying ? (
+                <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+                  <Loader2
+                    className="h-4 w-4 animate-spin text-white"
+                    aria-hidden
+                  />
+                </span>
+              ) : null}
+            </button>
+          );
+        })()}
       </div>
       {applying ? (
         <p className={cn('px-2 pt-1', hintClass)} role="status">
@@ -247,6 +309,8 @@ export function toCallBackgroundEffectControl(call: {
   backgroundEffectSlow: boolean;
   backgroundEffectSupported: boolean;
   setBackgroundEffect: (effect: CallBackgroundEffect) => Promise<void>;
+  spaceBackgroundImage?: string | null;
+  callSpaceLogoUrl?: string | null;
 }): CallBackgroundEffectControl {
   return {
     effect: call.backgroundEffect,
@@ -256,5 +320,7 @@ export function toCallBackgroundEffectControl(call: {
     onChange: (effect) => {
       void call.setBackgroundEffect(effect);
     },
+    spaceImageSrc: call.spaceBackgroundImage ?? null,
+    spaceLogoSrc: call.callSpaceLogoUrl ?? null,
   };
 }

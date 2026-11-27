@@ -1,6 +1,7 @@
 /**
  * Runs the background effect (#2563) on a LiveKit camera track with `@livekit/track-processors`.
- * The package (and MediaPipe) is imported only when an effect is first used.
+ * The package (and MediaPipe) is imported only when an effect is first used. Functions take the
+ * resolved processor mode (`processorModeForEffect`), since some images exist only at runtime.
  */
 
 import type { LocalVideoTrack, Room as LiveKitRoom } from 'livekit-client';
@@ -14,8 +15,8 @@ import type {
 } from '@livekit/track-processors';
 import {
   CALL_BACKGROUND_ASSET_PATHS,
-  type CallBackgroundEffect,
-  processorModeForEffect,
+  CALL_BACKGROUND_BLUR_RADIUS,
+  type CallBackgroundProcessorMode,
 } from './call-background-effect';
 
 /** Name of our processor on the track, to tell it apart from any other processor. */
@@ -66,8 +67,9 @@ export function getCallBackgroundProcessor(
  * failed image load and would keep rendering without it, which could show the room; a failure here
  * is an effect failure instead. Loaded as the package loads it (anonymous CORS), so it is cached.
  */
-async function preloadEffectImage(effect: CallBackgroundEffect): Promise<void> {
-  const mode = processorModeForEffect(effect);
+async function preloadEffectImage(
+  mode: CallBackgroundProcessorMode,
+): Promise<void> {
   if (mode.mode !== 'virtual-background') return;
   try {
     const img = new Image();
@@ -83,7 +85,7 @@ async function preloadEffectImage(effect: CallBackgroundEffect): Promise<void> {
 }
 
 async function createProcessor(
-  effect: CallBackgroundEffect,
+  mode: CallBackgroundProcessorMode,
   hooks: CallBackgroundProcessorHooks,
 ): Promise<BackgroundProcessorWrapper> {
   const mod = await loadTrackProcessors();
@@ -94,7 +96,7 @@ async function createProcessor(
   }
   return mod.BackgroundProcessor(
     {
-      ...processorModeForEffect(effect),
+      ...mode,
       assetPaths: { ...CALL_BACKGROUND_ASSET_PATHS },
       onFrameProcessed: hooks.onFrameProcessed,
     },
@@ -130,13 +132,13 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
  */
 export async function attachCallBackgroundProcessor(
   track: LocalVideoTrack,
-  effect: CallBackgroundEffect,
+  mode: CallBackgroundProcessorMode,
   hooks: CallBackgroundProcessorHooks = {},
 ): Promise<void> {
   let processor: BackgroundProcessorWrapper | null = null;
   try {
-    await preloadEffectImage(effect);
-    processor = await createProcessor(effect, hooks);
+    await preloadEffectImage(mode);
+    processor = await createProcessor(mode, hooks);
     await withTimeout(
       track.setProcessor(processor),
       PROCESSOR_START_TIMEOUT_MS,
@@ -160,13 +162,13 @@ export async function attachCallBackgroundProcessor(
  */
 export async function switchCallBackgroundEffect(
   track: LocalVideoTrack,
-  effect: CallBackgroundEffect,
+  mode: CallBackgroundProcessorMode,
 ): Promise<boolean> {
   const processor = getCallBackgroundProcessor(track);
   if (!processor) return false;
-  await preloadEffectImage(effect);
+  await preloadEffectImage(mode);
   try {
-    await processor.switchTo(processorModeForEffect(effect));
+    await processor.switchTo(mode);
   } catch (err) {
     throw new CallBackgroundEffectError(
       'Background effect failed to switch',
@@ -213,7 +215,7 @@ export function warmUpCallBackgroundEffect(): Promise<void> {
     try {
       await attachCallBackgroundProcessor(
         track,
-        { kind: 'blur' },
+        { mode: 'background-blur', blurRadius: CALL_BACKGROUND_BLUR_RADIUS },
         { onFrameProcessed: () => onFirstFrame() },
       );
       await withTimeout(firstFrame, PROCESSOR_START_TIMEOUT_MS);
@@ -239,7 +241,7 @@ export function warmUpCallBackgroundEffect(): Promise<void> {
  */
 export async function createCameraTrackWithBackgroundEffect(
   lkRoom: LiveKitRoom,
-  effect: CallBackgroundEffect,
+  mode: CallBackgroundProcessorMode,
   hooks: CallBackgroundProcessorHooks = {},
 ): Promise<LocalVideoTrack> {
   // A warm-up in progress loads the same assets; wait instead of starting a second segmenter.
@@ -257,7 +259,7 @@ export async function createCameraTrackWithBackgroundEffect(
     onFirstFrame = resolve;
   });
   try {
-    await attachCallBackgroundProcessor(track, effect, {
+    await attachCallBackgroundProcessor(track, mode, {
       onFrameProcessed: (stats) => {
         onFirstFrame();
         hooks.onFrameProcessed?.(stats);

@@ -118,13 +118,15 @@ function loadImageData(
   });
 }
 
-async function sampleImageToAccent(src: string): Promise<string | null> {
+/** Exported for the call's space background (#2563). */
+export async function sampleImageToAccent(src: string): Promise<string | null> {
   const data = await loadImageData(src, 96);
   if (!data) return null;
   return readBannerAccent(data).hex;
 }
 
-async function sampleBannerReading(src: string): Promise<{
+/** Exported for the call's space background (#2563). */
+export async function sampleBannerReading(src: string): Promise<{
   hex: string | null;
   profile: BannerAccentProfile | null;
 }> {

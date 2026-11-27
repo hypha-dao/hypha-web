@@ -13,6 +13,7 @@ import {
   createCallBackgroundFrameDropDetector,
   isCallBackgroundEffectActive,
   persistCallBackgroundEffect,
+  processorModeForEffect,
   readStoredCallBackgroundEffect,
   supportsCallBackgroundEffects,
 } from './call-background-effect';
@@ -486,6 +487,11 @@ export function useSpaceGroupCall(
   const [backgroundEffectSupported, setBackgroundEffectSupported] =
     useState(false);
   const backgroundEffectSupportedRef = useRef(false);
+  /** Drawn background of the call's space (`blob:` URL), set by the UI layer; null until ready. */
+  const [spaceBackgroundImage, setSpaceBackgroundImageState] = useState<
+    string | null
+  >(null);
+  const spaceBackgroundImageRef = useRef<string | null>(null);
   /** Bumped on every camera on/off request and on cleanup; a pending effect start checks it. */
   const cameraRequestEpochRef = useRef(0);
   const backgroundFrameDropDetectorRef = useRef(
@@ -1441,6 +1447,14 @@ export function useSpaceGroupCall(
     backgroundFrameDropDetectorRef.current.reset();
     setBackgroundEffectSlow(false);
   }, []);
+  /** #2563: the processor mode for an effect, with the runtime images resolved. */
+  const backgroundModeFor = useCallback(
+    (effect: CallBackgroundEffect) =>
+      processorModeForEffect(effect, {
+        spaceImageSrc: spaceBackgroundImageRef.current,
+      }),
+    [],
+  );
   /** #2563: starts the effect's one-time warm-up while the call connects, if an effect is saved. */
   const warmUpBackgroundEffectIfSaved = useCallback(() => {
     if (
@@ -1483,7 +1497,10 @@ export function useSpaceGroupCall(
         // `LocalTrack.setMediaStreamTrack`), so the effect continues; sync its mode first.
         if (existing && existingHasProcessor) {
           try {
-            await switchCallBackgroundEffect(existing, effect);
+            await switchCallBackgroundEffect(
+              existing,
+              backgroundModeFor(effect),
+            );
           } catch (err) {
             // Privacy first: do not turn the camera on with the wrong (maybe no) effect.
             logCallDebug('background-effect:switch-failed', {
@@ -1514,7 +1531,7 @@ export function useSpaceGroupCall(
       try {
         track = await createCameraTrackWithBackgroundEffect(
           lkRoom,
-          effect,
+          backgroundModeFor(effect),
           backgroundProcessorHooks,
         );
       } catch (err) {
@@ -1538,7 +1555,10 @@ export function useSpaceGroupCall(
       }
       try {
         // The choice may have changed while the processor was starting.
-        await switchCallBackgroundEffect(track, backgroundEffectRef.current);
+        await switchCallBackgroundEffect(
+          track,
+          backgroundModeFor(backgroundEffectRef.current),
+        );
         await participant.publishTrack(track);
       } catch (err) {
         track.stop();
@@ -1556,7 +1576,7 @@ export function useSpaceGroupCall(
       );
       return true;
     },
-    [backgroundProcessorHooks, resetBackgroundFrameDrops],
+    [backgroundModeFor, backgroundProcessorHooks, resetBackgroundFrameDrops],
   );
 
   const applyScreenshareContentHints = useCallback(
@@ -2381,9 +2401,11 @@ export function useSpaceGroupCall(
       const active = isCallBackgroundEffectActive(effect);
       if (getCallBackgroundProcessor(track)) {
         // An image may take a moment to load; the previous effect stays meanwhile.
-        if (effect.kind === 'image') setBackgroundEffectStatus('applying');
+        if (effect.kind === 'image' || effect.kind === 'space') {
+          setBackgroundEffectStatus('applying');
+        }
         try {
-          await switchCallBackgroundEffect(track, effect);
+          await switchCallBackgroundEffect(track, backgroundModeFor(effect));
           if (backgroundEffectRef.current !== effect) return;
           setBackgroundEffectStatus(active ? 'active' : 'idle');
         } catch (err) {
@@ -2406,10 +2428,13 @@ export function useSpaceGroupCall(
       try {
         await attachCallBackgroundProcessor(
           track,
-          effect,
+          backgroundModeFor(effect),
           backgroundProcessorHooks,
         );
-        await switchCallBackgroundEffect(track, backgroundEffectRef.current);
+        await switchCallBackgroundEffect(
+          track,
+          backgroundModeFor(backgroundEffectRef.current),
+        );
         setBackgroundEffectStatus(
           isCallBackgroundEffectActive(backgroundEffectRef.current)
             ? 'active'
@@ -2427,12 +2452,44 @@ export function useSpaceGroupCall(
       scheduleFeedBatched();
     },
     [
+      backgroundModeFor,
       backgroundProcessorHooks,
       refreshLocalPreview,
       resetBackgroundFrameDrops,
       scheduleFeedBatched,
       warmUpBackgroundEffectIfSaved,
     ],
+  );
+
+  /**
+   * #2563: the UI layer hands over the drawn background of the call's space (or null). Until it
+   * arrives the "space" effect runs as blur; when it changes, a running effect switches to it.
+   */
+  const setSpaceBackgroundImage = useCallback(
+    async (src: string | null) => {
+      if (spaceBackgroundImageRef.current === src) return;
+      spaceBackgroundImageRef.current = src;
+      setSpaceBackgroundImageState(src);
+      if (backgroundEffectRef.current.kind !== 'space') return;
+      const publication =
+        liveKitRoomRef.current?.localParticipant.getTrackPublication(
+          Track.Source.Camera,
+        );
+      const track = publication?.track as LocalVideoTrack | undefined;
+      if (!track || !getCallBackgroundProcessor(track)) return;
+      try {
+        await switchCallBackgroundEffect(
+          track,
+          backgroundModeFor(backgroundEffectRef.current),
+        );
+      } catch (err) {
+        // The previous mode (blur) stays on.
+        logCallDebug('background-effect:space-image-switch-failed', {
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+    },
+    [backgroundModeFor],
   );
 
   const setScreensharingEnabled = useCallback(
@@ -3428,6 +3485,9 @@ export function useSpaceGroupCall(
     backgroundEffectSlow,
     /** False where the browser cannot run the effect; the control is hidden then. */
     backgroundEffectSupported,
+    /** Drawn background of the call's space (`blob:` URL) and its setter (UI layer draws it). */
+    spaceBackgroundImage,
+    setSpaceBackgroundImage,
     /** WCUX-SHARE-VOICE-5: auto voice boost while presenting from Speech preset. */
     isScreensharing,
     /** Another participant is presenting — local share start is blocked (one at a time). */

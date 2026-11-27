@@ -8,7 +8,15 @@ export type CallBackgroundEffect =
   | { kind: 'none' }
   | { kind: 'blur' }
   /** A built-in image from {@link CALL_BACKGROUND_IMAGES}. */
-  | { kind: 'image'; imageId: string };
+  | { kind: 'image'; imageId: string }
+  /** The call's space: its accent colours, logo and the Hypha mark, drawn at call time. */
+  | { kind: 'space' };
+
+/** Images that exist only at runtime, for {@link processorModeForEffect}. */
+export type CallBackgroundEffectContext = {
+  /** Drawn background of the call's space (`blob:` URL), when ready. */
+  spaceImageSrc?: string | null;
+};
 
 /** A built-in background image (served from `apps/web/public/call-backgrounds/`). */
 export type CallBackgroundImage = {
@@ -108,6 +116,7 @@ export function parseCallBackgroundEffect(
 ): CallBackgroundEffect {
   const value = raw?.trim();
   if (value === 'blur') return { kind: 'blur' };
+  if (value === 'space') return { kind: 'space' };
   if (value?.startsWith('image:')) {
     const imageId = value.slice('image:'.length);
     return findCallBackgroundImage(imageId)
@@ -162,10 +171,19 @@ export type CallBackgroundProcessorMode =
   | { mode: 'background-blur'; blurRadius: number }
   | { mode: 'virtual-background'; imagePath: string };
 
+/**
+ * The processor mode for an effect. An image that is missing (unknown built-in, space background
+ * not drawn yet) resolves to blur, so the room stays hidden until the image is there.
+ */
 export function processorModeForEffect(
   effect: CallBackgroundEffect,
+  context: CallBackgroundEffectContext = {},
 ): CallBackgroundProcessorMode {
   switch (effect.kind) {
+    case 'space':
+      return context.spaceImageSrc
+        ? { mode: 'virtual-background', imagePath: context.spaceImageSrc }
+        : { mode: 'background-blur', blurRadius: CALL_BACKGROUND_BLUR_RADIUS };
     case 'blur':
       return {
         mode: 'background-blur',

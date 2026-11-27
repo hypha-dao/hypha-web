@@ -9,10 +9,12 @@ import {
   subscribeGroupCallPleaseLeave,
   useBlockAutoReload,
   useMatrix,
+  useSpaceBySlug,
   useSpaceGroupCall,
 } from '@hypha-platform/core/client';
 import { revalidateSpaceMemoryOrg } from '../coherence/hooks/use-space-memory-org';
 import { useCallReactions } from './human-chat-panel/use-call-reactions';
+import { useSpaceCallBackground } from './human-chat-panel/use-space-call-background';
 import {
   clearCallDismissedByUser,
   clearCallResumeSnapshot,
@@ -193,6 +195,22 @@ function useGlobalCallDockValue() {
     onCallArtifactsUploaded,
     getCallLaunchContext: () => callLaunchContextRef.current,
   });
+  // #2563: the call's space background, drawn only while that effect is chosen in a call.
+  const { space: callSpace } = useSpaceBySlug(activeSpaceSlug?.trim() ?? '');
+  const spaceBackgroundUrl = useSpaceCallBackground({
+    enabled:
+      call.backgroundEffectSupported &&
+      call.backgroundEffect.kind === 'space' &&
+      call.callState !== 'idle' &&
+      call.callState !== 'error',
+    spaceSlug: callSpace?.slug ?? null,
+    leadImage: callSpace?.leadImage ?? null,
+    logoUrl: callSpace?.logoUrl ?? null,
+  });
+  const { setSpaceBackgroundImage } = call;
+  React.useEffect(() => {
+    void setSpaceBackgroundImage(spaceBackgroundUrl);
+  }, [setSpaceBackgroundImage, spaceBackgroundUrl]);
   // A reload would drop an active call, or a recording still being kept or
   // uploaded: a stale tab shows the banner instead.
   useBlockAutoReload(
@@ -980,6 +998,8 @@ function useGlobalCallDockValue() {
     cancelRefreshDevice,
     ...call,
     ...callReactions,
+    /** #2563: for the "This space" tile before its background is drawn. */
+    callSpaceLogoUrl: callSpace?.logoUrl ?? null,
     leave: leaveCall,
   };
 }
