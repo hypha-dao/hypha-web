@@ -4774,7 +4774,7 @@
     "signalFormAssigneeSearch": "Search members…",
     "signalFormAssigneeEmpty": "No members found.",
     "signalFormVotingPower": "Your voting power",
-    "signalFormVotingPowerHint": "Choose how much of your voting power to back this signal. Defaults to 100%, but you can adjust or remove it anytime.",
+    "signalFormVotingPowerHint": "Choose how much of your voting power to use in support of this signal. The default is 100%, but you can adjust or withdraw your support at any time.",
     "indicativeTokens": "Indicative amount",
     "indicativeTokensHint": "These amounts define the request or resource. No funds move until a proposal is created and approved.",
     "shareWithNetwork": "Share with the network",
@@ -4901,9 +4901,12 @@
     "signalCreatorAgent": "AI Agent",
     "signalCreatorRelay": "Relay space",
     "openDiscussion": "Open discussion",
+    "signalConvert": "Convert",
+    "signalConvertQuest": "Quest",
+    "signalConvertProposal": "Proposal",
     "signalAttachmentsLabel": "Attachments",
     "signalNotFound": "This signal could not be found.",
-    "signalFormVoteWithPercent": "Vote with % of your voting power",
+    "signalFormVoteWithPercent": "Decide how much voting power to give this signal",
     "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} of {max}",
     "unknownMember": "Unknown",
     "signalFormTagPeople": "Tag people",
@@ -5808,7 +5811,7 @@
   "SpaceContext": {
     "title": "Context",
     "progress": "{ratified} of {total} approved",
-    "propose": "Propose for voting",
+    "propose": "Submit for voting",
     "filters": {
       "all": "All",
       "proposed": "On Voting",
@@ -5858,7 +5861,7 @@
       "loadLatest": "Load latest",
       "saveDraft": "Save draft",
       "saving": "Saving…",
-      "propose": "Propose for voting",
+      "propose": "Submit for voting",
       "skills": {
         "review": "Is this a good {section}? What is missing or vague?",
         "refine": "Refine the shared draft using what we discussed above.",
@@ -5979,7 +5982,7 @@
       "title": "Submit this quest?",
       "body": "This submits the quest as a proposal for {space} to vote on. The quest stays proposed until the vote passes.",
       "cancel": "Cancel",
-      "submit": "Submit for a vote"
+      "submit": "Submit for voting"
     },
     "drafts": {
       "empty": "You have no saved quest drafts in this space.",

@@ -1657,7 +1657,7 @@ export function nextQuestStepAfterUpdate({
 }
 
 export const QUEST_DRAFT_READY_REPLY =
-  "Your quest draft is ready. Click CREATE PROPOSAL whenever you're ready to submit it as a proposal for voting.";
+  "Your quest draft is ready. Click SUBMIT FOR VOTING whenever you're ready to submit it as a proposal for voting.";
 
 export type QuestDraftTurnHistoryItem = {
   role: 'user' | 'agent';

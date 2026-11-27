@@ -33,6 +33,7 @@ import { prepareSignalDescriptionMarkdown } from '../utils/signal-description-ma
 import { splitSignalMedia } from '../utils/signal-media';
 import { signalDiscussionCount } from '../utils/signal-room-replies';
 import { resolveSignalVideo } from '../utils/signal-video';
+import { SignalConvertMenu } from './signal-convert-menu';
 import { SignalCreatorActions } from './signal-creator-actions';
 import { useSignalShortDate } from './signal-feed-row';
 import { SignalTagBadges } from './signal-tag-badges';
@@ -536,6 +537,17 @@ export function SignalPage({
                 <span aria-hidden>→</span>
               </button>
             ) : null}
+            {readOnly ? null : (
+              <SignalConvertMenu
+                lang={lang}
+                spaceSlug={spaceSlug}
+                source={{
+                  title: signal.title,
+                  description: signal.description,
+                  board: signal.board,
+                }}
+              />
+            )}
           </div>
 
           {description ? (

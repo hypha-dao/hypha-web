@@ -77,7 +77,7 @@ import { mutate } from 'swr';
 import { useParams, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { PersonAvatar } from '../../people/components/person-avatar';
-import { domainBoardChoices, SignalDomainSelect } from './signal-domain';
+import { domainBoardChoices, SignalDomainCards } from './signal-domain';
 import { SignalTypePickerGrid, SignalTypeSection } from './signal-type-section';
 import { ButtonClose } from '../../common/button-close';
 import { ButtonBack } from '../../common/button-back';
@@ -214,8 +214,6 @@ function scrollSignalField(form: HTMLFormElement | null, fieldPath: string) {
   }
   target.scrollIntoView({ block: 'center' });
 }
-
-const CREATOR_VOTE_PRESETS = [25, 50, 75, 100] as const;
 
 export const CreateSignalForm = ({
   spaceId,
@@ -1276,11 +1274,11 @@ export const CreateSignalForm = ({
                       ? field.value
                       : resolveDefaultBoard(workflow);
                   return (
-                    <FormItem className="max-w-sm" data-signal-field="domain">
+                    <FormItem className="mb-8" data-signal-field="domain">
                       <FormLabel className="text-foreground">
                         {t('signalFormBoard')}
                       </FormLabel>
-                      <SignalDomainSelect
+                      <SignalDomainCards
                         value={value}
                         boards={choices}
                         onChange={field.onChange}
@@ -1336,30 +1334,6 @@ export const CreateSignalForm = ({
                   disabled={isMutating}
                   aria-label={t('signalFormVoteWithPercent')}
                 />
-                <div className="grid grid-cols-4 gap-2">
-                  {CREATOR_VOTE_PRESETS.map((preset) => {
-                    const selected = creatorVotePercent === preset;
-                    return (
-                      <Button
-                        key={preset}
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        colorVariant="neutral"
-                        aria-pressed={selected}
-                        disabled={isMutating}
-                        onClick={() => setCreatorVotePercent(preset)}
-                        className={cn(
-                          'tabular-nums',
-                          selected &&
-                            'border-foreground bg-foreground text-background hover:border-foreground hover:bg-foreground hover:text-background',
-                        )}
-                      >
-                        {preset}%
-                      </Button>
-                    );
-                  })}
-                </div>
                 <p className="text-sm text-muted-foreground">
                   {t('signalFormVotingPowerHint')}
                 </p>

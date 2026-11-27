@@ -1483,7 +1483,7 @@ export function SpaceQuestCreateDraft({
                     data-testid="create-quest-button"
                     className="bg-foreground text-background hover:bg-foreground/90"
                   >
-                    CREATE PROPOSAL
+                    {tDrafts('confirm.submit')}
                   </Button>
                 </div>
                 <button

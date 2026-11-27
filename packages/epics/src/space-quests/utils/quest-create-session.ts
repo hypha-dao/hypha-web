@@ -87,6 +87,9 @@ function readDraft(value: unknown): QuestDraftStateSnapshot {
   if (typeof row.targetDate === 'string' || row.targetDate === null) {
     draft.targetDate = row.targetDate;
   }
+  if (typeof row.domain === 'string' || row.domain === null) {
+    draft.domain = row.domain;
+  }
   if (Array.isArray(row.rewards)) {
     draft.rewards = row.rewards.filter(
       (reward): reward is QuestDraftStateSnapshot['rewards'][number] =>

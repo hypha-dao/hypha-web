@@ -94,6 +94,62 @@ export function SignalDomainMark({
   );
 }
 
+/** Compact domain choices for a form. One card is selected. */
+export function SignalDomainCards({
+  value,
+  boards,
+  onChange,
+  disabled,
+  ariaLabel,
+}: {
+  value: string;
+  boards: readonly SignalBoardDefinition[];
+  onChange: (slug: string) => void;
+  disabled?: boolean;
+  ariaLabel: string;
+}) {
+  if (boards.length === 0) return null;
+  const selected =
+    boards.find((board) => board.slug === value)?.slug ?? boards[0]?.slug;
+
+  return (
+    <div
+      role="radiogroup"
+      aria-label={ariaLabel}
+      data-testid="signal-domain-cards"
+      className="flex flex-wrap gap-2"
+    >
+      {boards.map((board) => {
+        const active = board.slug === selected;
+        return (
+          <button
+            key={board.slug}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            disabled={disabled}
+            data-testid={`signal-domain-card-${board.slug}`}
+            onClick={() => onChange(board.slug)}
+            className={cn(
+              'inline-flex h-8 min-w-0 items-center gap-1.5 border px-2.5 text-1 leading-none',
+              'disabled:pointer-events-none disabled:opacity-50',
+              active
+                ? 'border-foreground bg-foreground text-background'
+                : 'border-border bg-transparent text-foreground hover:border-foreground/40',
+            )}
+          >
+            <SignalDomainDot
+              color={board.color}
+              className={active ? 'ring-1 ring-background' : undefined}
+            />
+            <span className="truncate">{board.name}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function SignalDomainSelect({
   value,
   boards,

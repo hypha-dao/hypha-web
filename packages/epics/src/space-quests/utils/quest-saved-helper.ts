@@ -228,7 +228,8 @@ function withoutCreateFlowQuestions(reply: string, message: string): string {
     if (
       text === QUEST_DRAFT_READY_REPLY ||
       text.includes('CREATE QUEST') ||
-      text.includes('CREATE PROPOSAL')
+      text.includes('CREATE PROPOSAL') ||
+      text.includes('SUBMIT FOR VOTING')
     ) {
       continue;
     }

@@ -49,6 +49,7 @@ vi.mock('next-intl', () => ({
         'drafts.saving': 'Saving…',
         'drafts.savedAuto': 'Draft saved automatically',
         'drafts.retry': "Couldn't save. Retry",
+        'confirm.submit': 'Submit for voting',
       } as Record<string, string>
     )[key] ?? key),
 }));
@@ -178,7 +179,7 @@ describe('quest create draft heading', () => {
       screen.getByTestId('cancel-quest-button').parentElement?.contains(status),
     ).toBe(false);
     const create = screen.getByTestId('create-quest-button');
-    expect(create.textContent).toBe('CREATE PROPOSAL');
+    expect(create.textContent).toBe('Submit for voting');
     const discussion = screen.getByTestId('open-quest-discussion-button');
     expect(discussion.textContent).toContain('Open discussion');
     expect(discussion.textContent).toContain('→');

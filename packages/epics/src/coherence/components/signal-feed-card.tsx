@@ -118,7 +118,7 @@ export function SignalFeedCard({
         <Link
           href={href}
           data-testid="signal-card-open"
-          className="relative z-10 ml-auto inline-flex h-9 shrink-0 items-center gap-1 border border-border bg-transparent px-3 text-1 font-medium text-foreground hover:bg-foreground/5"
+          className="relative z-10 ml-auto inline-flex h-7 min-h-0 shrink-0 items-center gap-1 border border-border bg-transparent px-3 text-1 font-medium leading-none text-foreground hover:bg-foreground/5"
         >
           {t('signalOpen')}
           <span aria-hidden>›</span>
