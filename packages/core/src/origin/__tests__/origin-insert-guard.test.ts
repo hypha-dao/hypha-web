@@ -13,6 +13,8 @@ const SCAN_ROOTS = ['packages', 'apps'];
 const ALLOWED = new Set([
   // The data layer.
   'packages/core/src/coherence/server/mutations.ts',
+  // Signal creation for AI clients (#2744): its own insert, with the origin from an `Origin`.
+  'packages/core/src/coherence/server/signal-write-store.ts',
   'packages/core/src/space-quests/server/mutations.ts',
   // Test fixtures that seed rows with an explicit origin.
   'packages/core/src/features/__tests__/list-signals.db.integration.test.ts',
