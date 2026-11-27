@@ -1132,6 +1132,37 @@ function needsHyphaProfileForMatrixLabel(
   return needsHyphaProfileResolutionForMatrixLabel(label);
 }
 
+/** "Unknown" is a stand-in while a profile is missing, not a person's name. */
+function omitPlaceholderLabel(
+  label: string | null | undefined,
+  placeholder: string,
+): string {
+  const text = label?.trim() ?? '';
+  if (!text || text === placeholder.trim()) return '';
+  return text;
+}
+
+/** Same grey bar the conversation list uses while a title is still missing. */
+function MessageNameMask({
+  label,
+  className,
+}: {
+  label: string;
+  className?: string;
+}) {
+  return (
+    <span
+      role="status"
+      aria-busy="true"
+      aria-label={label}
+      className={cn(
+        'my-0.5 block h-4 w-32 max-w-[60%] shrink-0 animate-pulse rounded-sm bg-neutral-5',
+        className,
+      )}
+    />
+  );
+}
+
 function formatPersonDisplayName(p: {
   name?: string | null;
   surname?: string | null;
@@ -1778,18 +1809,20 @@ export function HumanChatPanelMessageBubble({
     message.role === 'member' ? message.senderMatrixId?.trim() : undefined;
   const replyMatrixId = replyTo?.sourceUserId?.trim() || undefined;
 
+  const unknownMemberLabel = t('unknownMember');
   const resolveSenderProfile =
     Boolean(senderMatrixId) &&
     needsHyphaProfileForMatrixLabel(
-      // Empty string from filtered technical roster labels must not block
-      // falling through to message.senderName / person lookup.
-      rosterSenderLabel || message.senderName,
+      // "Unknown" is not a name — keep looking up the Hypha profile.
+      omitPlaceholderLabel(rosterSenderLabel, unknownMemberLabel) ||
+        omitPlaceholderLabel(message.senderName, unknownMemberLabel),
       senderMatrixId,
     );
   const resolveReplyProfile =
     Boolean(replyMatrixId) &&
     needsHyphaProfileForMatrixLabel(
-      rosterReplyLabel || replyTo?.authorLabel,
+      omitPlaceholderLabel(rosterReplyLabel, unknownMemberLabel) ||
+        omitPlaceholderLabel(replyTo?.authorLabel, unknownMemberLabel),
       replyMatrixId,
     );
 
@@ -1836,16 +1869,24 @@ export function HumanChatPanelMessageBubble({
     const fromPerson = senderPerson
       ? formatPersonDisplayName(senderPerson)
       : '';
+    const rosterLabel = omitPlaceholderLabel(
+      rosterSenderLabel,
+      t('unknownMember'),
+    );
+    const storedLabel = omitPlaceholderLabel(
+      message.senderName,
+      t('unknownMember'),
+    );
     const visible =
       message.senderMatrixId != null
-        ? visibleMatrixMemberName(
+        ? pickUserVisibleMemberLabel(
             message.senderMatrixId,
             fromPerson,
-            rosterSenderLabel,
-            message.senderName,
-          )
-        : fromPerson || rosterSenderLabel?.trim() || message.senderName?.trim();
-    return visible || t('unknownMember');
+            rosterLabel,
+            storedLabel,
+          ) ?? ''
+        : fromPerson || rosterLabel || storedLabel;
+    return visible;
   }, [
     agentMentionLabel,
     message.agentSpecialistId,
@@ -1863,16 +1904,24 @@ export function HumanChatPanelMessageBubble({
       return agentMentionLabel;
     }
     const fromPerson = replyPerson ? formatPersonDisplayName(replyPerson) : '';
+    const rosterLabel = omitPlaceholderLabel(
+      rosterReplyLabel,
+      t('unknownMember'),
+    );
+    const storedLabel = omitPlaceholderLabel(
+      replyTo.authorLabel,
+      t('unknownMember'),
+    );
     const visible =
       replyTo.sourceUserId != null
-        ? visibleMatrixMemberName(
+        ? pickUserVisibleMemberLabel(
             replyTo.sourceUserId,
             fromPerson,
-            rosterReplyLabel,
-            replyTo.authorLabel,
-          )
-        : fromPerson || rosterReplyLabel?.trim() || replyTo.authorLabel?.trim();
-    return visible || t('unknownMember');
+            rosterLabel,
+            storedLabel,
+          ) ?? ''
+        : fromPerson || rosterLabel || storedLabel;
+    return visible;
   }, [agentMentionLabel, replyPerson, replyTo, rosterReplyLabel, t]);
 
   const senderHasVisibleLabel = useMemo(() => {
@@ -1881,8 +1930,8 @@ export function HumanChatPanelMessageBubble({
       pickUserVisibleMemberLabel(
         message.senderMatrixId,
         senderPerson ? formatPersonDisplayName(senderPerson) : '',
-        rosterSenderLabel,
-        message.senderName,
+        omitPlaceholderLabel(rosterSenderLabel, t('unknownMember')),
+        omitPlaceholderLabel(message.senderName, t('unknownMember')),
       ),
     );
   }, [
@@ -1891,11 +1940,12 @@ export function HumanChatPanelMessageBubble({
     message.senderName,
     rosterSenderLabel,
     senderPerson,
+    t,
   ]);
 
   /**
-   * Show header skeleton while SWR is in flight or labels are still technical after idle.
-   * Never surface bridged Privy locals — fall back to "Unknown member" once resolution finishes.
+   * Keep the conversation-list name mask until a real name exists.
+   * "Unknown" is the same missing label, so it stays on the mask.
    */
   const senderProfileLoading =
     !specialistName &&
@@ -1906,7 +1956,8 @@ export function HumanChatPanelMessageBubble({
       ? isLoadingSenderLink ||
         (Boolean(senderPrivySub ?? senderCanonicalSub) && isLoadingSenderPerson)
       : needsHyphaProfileForMatrixLabel(
-          rosterSenderLabel || message.senderName,
+          omitPlaceholderLabel(rosterSenderLabel, unknownMemberLabel) ||
+            omitPlaceholderLabel(message.senderName, unknownMemberLabel),
           message.senderMatrixId,
         ));
 
@@ -1915,18 +1966,21 @@ export function HumanChatPanelMessageBubble({
     !pickUserVisibleMemberLabel(
       replyTo.sourceUserId,
       replyPerson ? formatPersonDisplayName(replyPerson) : '',
-      rosterReplyLabel,
-      replyTo.authorLabel,
+      omitPlaceholderLabel(rosterReplyLabel, unknownMemberLabel),
+      omitPlaceholderLabel(replyTo.authorLabel, unknownMemberLabel),
     ) &&
     (resolveReplyProfile
       ? isLoadingReplyLink ||
         (Boolean(replyPrivySub ?? replyCanonicalSub) && isLoadingReplyPerson)
       : needsHyphaProfileForMatrixLabel(
-          rosterReplyLabel || replyTo.authorLabel,
+          omitPlaceholderLabel(rosterReplyLabel, unknownMemberLabel) ||
+            omitPlaceholderLabel(replyTo.authorLabel, unknownMemberLabel),
           replyTo.sourceUserId,
         ));
 
   const senderName = specialistName ?? resolvedSenderName;
+  const senderNamePending =
+    !specialistName && message.role === 'member' && !senderName.trim();
   const replyAuthorLabelForUi = replyTo ? resolvedReplyAuthorLabel : '';
   const senderIsAgent =
     message.id !== 'welcome' &&
@@ -1942,6 +1996,8 @@ export function HumanChatPanelMessageBubble({
         label: replyTo.authorLabel,
       }),
   );
+  const replyNamePending =
+    Boolean(replyTo) && !replyAuthorIsAgent && !replyAuthorLabelForUi.trim();
   const mainAvatarSrc =
     message.role === 'user'
       ? currentUserAvatarUrl?.trim() || message.avatarUrl
@@ -2084,11 +2140,15 @@ export function HumanChatPanelMessageBubble({
         )}
       </div>
       <span className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
-        <span className="shrink-0 font-semibold text-muted-foreground">
-          {replyAuthorLabelForUi.startsWith('@')
-            ? replyAuthorLabelForUi
-            : `@${replyAuthorLabelForUi}`}
-        </span>
+        {replyNamePending ? (
+          <MessageNameMask label={t('loading')} className="h-3 w-16" />
+        ) : (
+          <span className="shrink-0 font-semibold text-muted-foreground">
+            {replyAuthorLabelForUi.startsWith('@')
+              ? replyAuthorLabelForUi
+              : `@${replyAuthorLabelForUi}`}
+          </span>
+        )}
         {replyExcerpt}
       </span>
     </>
@@ -2204,16 +2264,13 @@ export function HumanChatPanelMessageBubble({
         <div className="relative z-[1] flex min-w-0 flex-1 flex-col gap-0.5">
           {/* Name + Timestamp — time stays after name for hover bar */}
           <div className="flex min-w-0 items-baseline gap-1.5">
-            <Skeleton
-              className="inline-block min-w-0 rounded"
-              loading={senderProfileLoading}
-              width={120}
-              height={14}
-            >
+            {senderNamePending ? (
+              <MessageNameMask label={t('loading')} />
+            ) : (
               <span className="truncate text-sm font-semibold text-foreground">
                 {senderName}
               </span>
-            </Skeleton>
+            )}
             {timestamp && (
               <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                 {timestamp}

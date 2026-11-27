@@ -26,6 +26,8 @@ import {
   scrollMainColumnTo,
   subscribeMainColumnScroll,
 } from '@hypha-platform/epics';
+import { useSpaceBySlug } from '@hypha-platform/core/client';
+import { spaceScreenShowsBanner } from '@hypha-platform/core/space/screen-layout';
 import { Avatar } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -283,6 +285,8 @@ export type DhoStickySpaceChromeProps = {
   logoUrl: string;
   logoAlt: string;
   defaultLogoSrc: string;
+  /** False hides the collapsed name bar as well as the photo banner. */
+  showBanner?: boolean;
 };
 
 function useMenuTopOffsetPx(): number {
@@ -345,6 +349,7 @@ export function DhoStickySpaceChrome({
   logoUrl,
   logoAlt,
   defaultLogoSrc,
+  showBanner = true,
 }: DhoStickySpaceChromeProps) {
   const params = useParams();
   const pathname = usePathname() ?? '';
@@ -1416,6 +1421,11 @@ export function DhoStickySpaceChrome({
   }, [cancelSettleMotion, readHeaderInView, spaceSlug]);
 
   const logoSrc = logoUrl || defaultLogoSrc;
+  const { space: liveSpace } = useSpaceBySlug(spaceSlug ?? '');
+  const bannerOn =
+    liveSpace?.screenLayout !== undefined
+      ? spaceScreenShowsBanner(liveSpace.screenLayout)
+      : showBanner;
 
   /*
    * Header row owns the gear, date pill, and mode pill while that row is on
@@ -1477,65 +1487,67 @@ export function DhoStickySpaceChrome({
 
   return (
     <>
-      <div
-        ref={stickyBarRef}
-        data-space-sticky-bar=""
-        className={cn(
-          /*
-           * Use live panel inset vars (non-animated) so sticky chrome stays physically attached
-           * to panel edges while users drag-resize left/right sidebars.
-           * Mobile shows this one-line row on non-overview tabs (and when the
-           * cover is scrolled past on overview).
-           */
-          'pointer-events-none fixed left-[var(--panel-left-inset,var(--sidebar-left-width,0px))] z-[25] block',
-          /*
-           * Stop 0.25rem short of the column edge — the same width as
-           * `.narrow-scrollbar` — so this bar does not paint over the thumb.
-           * The header hairline is a 1px rule, not a framed border.
-           */
-          'right-[calc(var(--panel-right-inset,var(--sidebar-right-width,0px))+0.25rem)]',
-          'h-[var(--secondary-chrome-actions-row-height,66px)]',
-          'bg-page-background',
-          'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border',
-          /*
-           * Opacity is written from scroll progress so the row fades with the
-           * cover. A translate would slide it out from under the menu and
-           * read as a gap. `opacity-0` covers the first paint only.
-           */
-          'opacity-0',
-          stuck && 'pointer-events-auto',
-        )}
-        style={{ top: 'var(--menu-top-height, 70px)' }}
-        aria-hidden={!stuck}
-      >
-        <div className="mx-auto flex h-full max-w-container-2xl items-center gap-3 px-3 sm:px-6 md:px-8">
-          <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-            <Avatar className={STICKY_SPACE_CHROME_AVATAR_CLASSNAME}>
-              <OptimizedAvatarImage
-                src={logoSrc}
-                alt={logoAlt}
-                pixelSize={44}
-                className="object-cover"
-              />
-            </Avatar>
-            <p
-              className={cn(
-                STICKY_SPACE_CHROME_TITLE_CLASSNAME,
-                'min-w-0 flex-1 truncate text-foreground',
-              )}
-              title={title}
-              aria-hidden
-            >
-              {title}
-            </p>
+      {bannerOn ? (
+        <div
+          ref={stickyBarRef}
+          data-space-sticky-bar=""
+          className={cn(
+            /*
+             * Use live panel inset vars (non-animated) so sticky chrome stays physically attached
+             * to panel edges while users drag-resize left/right sidebars.
+             * Mobile shows this one-line row on non-overview tabs (and when the
+             * cover is scrolled past on overview).
+             */
+            'pointer-events-none fixed left-[var(--panel-left-inset,var(--sidebar-left-width,0px))] z-[25] block',
+            /*
+             * Stop 0.25rem short of the column edge — the same width as
+             * `.narrow-scrollbar` — so this bar does not paint over the thumb.
+             * The header hairline is a 1px rule, not a framed border.
+             */
+            'right-[calc(var(--panel-right-inset,var(--sidebar-right-width,0px))+0.25rem)]',
+            'h-[var(--secondary-chrome-actions-row-height,66px)]',
+            'bg-page-background',
+            'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border',
+            /*
+             * Opacity is written from scroll progress so the row fades with the
+             * cover. A translate would slide it out from under the menu and
+             * read as a gap. `opacity-0` covers the first paint only.
+             */
+            'opacity-0',
+            stuck && 'pointer-events-auto',
+          )}
+          style={{ top: 'var(--menu-top-height, 70px)' }}
+          aria-hidden={!stuck}
+        >
+          <div className="mx-auto flex h-full max-w-container-2xl items-center gap-3 px-3 sm:px-6 md:px-8">
+            <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+              <Avatar className={STICKY_SPACE_CHROME_AVATAR_CLASSNAME}>
+                <OptimizedAvatarImage
+                  src={logoSrc}
+                  alt={logoAlt}
+                  pixelSize={44}
+                  className="object-cover"
+                />
+              </Avatar>
+              <p
+                className={cn(
+                  STICKY_SPACE_CHROME_TITLE_CLASSNAME,
+                  'min-w-0 flex-1 truncate text-foreground',
+                )}
+                title={title}
+                aria-hidden
+              >
+                {title}
+              </p>
+            </div>
+            {/* Allow shrink + horizontal scroll so Settings/badges stay reachable on iPad when panels narrow the column */}
+            <div
+              ref={setStickyActionsEl}
+              className="flex min-w-0 shrink items-center gap-2 overflow-x-auto overscroll-x-contain touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            />
           </div>
-          {/* Allow shrink + horizontal scroll so Settings/badges stay reachable on iPad when panels narrow the column */}
-          <div
-            ref={setStickyActionsEl}
-            className="flex min-w-0 shrink items-center gap-2 overflow-x-auto overscroll-x-contain touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-          />
         </div>
-      </div>
+      ) : null}
 
       <div ref={bannerColumnRef} className="flex flex-col">
         <div className="relative">

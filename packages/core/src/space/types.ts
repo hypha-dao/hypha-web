@@ -2,6 +2,7 @@ import { Category, SpaceFlags } from '@hypha-platform/core/client';
 import type { SpaceLocationSource } from '../geo/validation';
 import { Document } from '@hypha-platform/core/client';
 import { Person } from '@hypha-platform/core/client';
+import type { SpaceScreenLayoutInput } from './screen-layout';
 
 export interface Space {
   id: number;
@@ -44,6 +45,8 @@ export interface Space {
   chatRoomId?: string | null;
   /** When true, Pipeline is available for this space. */
   pipelineEnabled?: boolean;
+  /** Saved screen order and hidden screens. Empty means the default order. */
+  screenLayout?: SpaceScreenLayoutInput | null;
   flags: SpaceFlags[];
   parent?: Space | null;
   organisationSpaces?: Space[];
@@ -92,6 +95,8 @@ export interface UpdateSpaceInput {
   chatRoomId?: string | null;
   flags?: SpaceFlags[];
   pipelineEnabled?: boolean;
+  /** Screen order and hidden screens. Omitted leaves them unchanged. */
+  screenLayout?: SpaceScreenLayoutInput;
   /** Forms of capital this space seeks and offers. Omitted leaves them unchanged. */
   exchangeCapitals?: {
     seeks: string[];

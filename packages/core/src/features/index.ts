@@ -5,3 +5,5 @@ export * from './list-proposals';
 export * from './get-my-vote';
 export * from './list-signals';
 export * from './list-quests';
+export * from './create-signal';
+export * from './write-guards';

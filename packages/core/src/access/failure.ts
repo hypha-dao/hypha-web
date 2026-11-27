@@ -17,12 +17,29 @@ export type FailureCode =
   /** An access fact could not be read, so access fails closed. */
   | 'access_check_failed'
   /** A chain read for the answer itself failed. */
-  | 'chain_read_failed';
+  | 'chain_read_failed'
+  /** The input of a write was refused; `message` says which rule, never echoing the input. */
+  | 'invalid_input'
+  /** Too many writes in a short time; `retryAfterSeconds` says when to try again. */
+  | 'rate_limited';
 
-export type Failure = { ok: false; code: FailureCode; message?: string };
+export type Failure = {
+  ok: false;
+  code: FailureCode;
+  message?: string;
+  /** Set with `rate_limited` only. */
+  retryAfterSeconds?: number;
+};
 
-export const failure = (code: FailureCode, message?: string): Failure => ({
+export const failure = (
+  code: FailureCode,
+  message?: string,
+  extra: { retryAfterSeconds?: number } = {},
+): Failure => ({
   ok: false,
   code,
   ...(message ? { message } : {}),
+  ...(extra.retryAfterSeconds !== undefined
+    ? { retryAfterSeconds: extra.retryAfterSeconds }
+    : {}),
 });

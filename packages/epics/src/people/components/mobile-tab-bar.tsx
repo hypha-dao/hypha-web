@@ -300,6 +300,7 @@ export function MobileTabBar({
         energyEnabled: Boolean(spaceEnergy?.enabled),
         coherenceEnabled: true,
         memoryEnabled: spaceMemoryEnabled,
+        screenLayout: space?.screenLayout,
       }).map((item) => {
         const Icon = SPACE_SECTION_NAV_ICONS[item.key];
         return {
@@ -371,6 +372,7 @@ export function MobileTabBar({
     networkRoute,
     pathname,
     space?.pipelineEnabled,
+    space?.screenLayout,
     spaceEnergy?.enabled,
     spaceMemoryEnabled,
     spaceSlug,

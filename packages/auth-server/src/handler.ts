@@ -2,10 +2,12 @@ import {
   AUTH_SERVER_API_BASE_PATH,
   AUTH_SERVER_JWKS_PATH,
   SCOPES_REQUIRING_SPACES_READ,
+  scopesForClientKind,
   type AuthServerConfig,
   type AuthServerDisabled,
 } from './config';
 import { blockUnlessAuthServerHost, notFound } from './gate';
+import { classifyClient } from './consent';
 import type { AuthServer } from './auth';
 import { redactingLog } from './redact';
 import { corsPreflight, withCors } from './cors';
@@ -250,6 +252,22 @@ async function handleConsent(
       return refuse(400, 'invalid_request');
     if (!(await verifyOAuthQueryParams(oauthQuery, server.config.secret)))
       return refuse(400, 'invalid_signature');
+    // Each kind of client is held to its own scope list (the page only offers those; this refuses
+    // a forged approval). Fail closed: an unknown client is refused, an unclear row is `dcr`.
+    const { rows } = await server.pool.query(
+      `select "clientDiscoveryId", metadata->>'registration' as registration
+         from as_oauth_client where "clientId" = $1 limit 1`,
+      [clientId],
+    );
+    if (!rows[0]) return refuse(400, 'invalid_request');
+    const kindAllows = scopesForClientKind(
+      classifyClient({
+        clientDiscoveryId: rows[0].clientDiscoveryId,
+        registration: rows[0].registration,
+      }),
+    );
+    if (approved.some((scope) => !kindAllows.includes(scope)))
+      return refuse(400, 'invalid_scope');
     try {
       const value = parseGrantInput(spaceGrants);
       if (value !== 'all') await assertSpacesExist(server.pool, value);

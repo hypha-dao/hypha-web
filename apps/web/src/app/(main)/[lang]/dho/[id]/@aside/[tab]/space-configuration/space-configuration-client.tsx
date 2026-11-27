@@ -7,6 +7,7 @@ import {
   useMe,
   useSpaceBySlug,
   useUpdateSpaceOrchestrator,
+  normalizeSpaceScreenLayout,
 } from '@hypha-platform/core/client';
 import {
   getDhoPathAgreements,
@@ -18,6 +19,7 @@ import {
   isNetworkAddLocationReturn,
   getSignalWorkflowReturnPath,
   isSignalWorkflowConfigurationReturn,
+  useSpaceEnergy,
 } from '@hypha-platform/epics';
 import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import React from 'react';
@@ -31,6 +33,7 @@ import { mutate } from 'swr';
 
 type SpaceConfigurationClientProps = {
   enableNetworkMap: boolean;
+  memoryEnabled: boolean;
 };
 
 function isSpaceRecord(value: unknown): value is Space {
@@ -85,6 +88,7 @@ async function refreshSpaceCaches({
 
 export function SpaceConfigurationClient({
   enableNetworkMap,
+  memoryEnabled,
 }: SpaceConfigurationClientProps) {
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -92,6 +96,8 @@ export function SpaceConfigurationClient({
   const { person } = useMe();
   const { id: spaceSlug, lang } = useParams<{ id: string; lang: Locale }>();
   const { space, isLoading: isLoadingSpace } = useSpaceBySlug(spaceSlug);
+  const { data: spaceEnergy } = useSpaceEnergy(spaceSlug);
+  const isEnergyCommunity = spaceEnergy?.enabled === true;
   const { jwt, isLoadingJwt } = useJwt();
   const router = useRouter();
   const {
@@ -215,6 +221,7 @@ export function SpaceConfigurationClient({
       address: space.address || '',
       flags: space.flags ?? [],
       pipelineEnabled: space.pipelineEnabled ?? false,
+      screenLayout: normalizeSpaceScreenLayout(space.screenLayout),
       latitude: space.latitude ?? null,
       longitude: space.longitude ?? null,
       locationLabel: space.locationLabel ?? null,
@@ -335,6 +342,8 @@ export function SpaceConfigurationClient({
             spaceSlug={spaceSlug}
             capitals={capitals}
             onCapitalsChange={setCapitals}
+            energyEnabled={isEnergyCommunity}
+            memoryEnabled={memoryEnabled}
           />
         ) : (
           <div aria-hidden="true" className="min-h-px" />

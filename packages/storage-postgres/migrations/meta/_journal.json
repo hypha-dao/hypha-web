@@ -750,6 +750,13 @@
       "when": 1784000000037,
       "tag": "0106_origin_contract",
       "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1784000000038,
+      "tag": "0107_space_screen_layout",
+      "breakpoints": true
     }
   ]
 }

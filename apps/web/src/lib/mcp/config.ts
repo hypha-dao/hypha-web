@@ -29,6 +29,11 @@ export type AuthServerView =
        * token for it can carry.
        */
       scopesForResource: (resource: string) => readonly string[];
+      /**
+       * `MCP_WRITES_ENABLED`, read by the authorization server: the one switch for both the
+       * write scope and the write tools, so the two can never disagree.
+       */
+      writesEnabled: boolean;
     }
   | { enabled: false };
 
@@ -42,6 +47,8 @@ export type McpConfig = {
     resourceMetadataUrl: string;
     allowedPersonIds: ReadonlySet<string>;
     scopesSupported: readonly string[];
+    /** Write tools are listed and callable (with the write scope) only while this is true. */
+    writesEnabled: boolean;
   } | null;
   /** Why it is off (operator log only, never shown to a caller). */
   reason?: string;
@@ -86,6 +93,7 @@ export function loadMcpConfig(env: Env, as: AuthServerView): McpConfig {
       resourceMetadataUrl: `${origin}${MCP_METADATA_PATH}`,
       allowedPersonIds: as.allowedPersonIds,
       scopesSupported: [...as.scopesForResource(audience)],
+      writesEnabled: as.writesEnabled,
     },
   };
 }

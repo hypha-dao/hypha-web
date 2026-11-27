@@ -22,13 +22,45 @@ export const AUTH_SERVER_WRITE_SCOPES: readonly AuthServerScope[] = [
 ];
 /**
  * Scopes a dynamically registered client may carry: the vocabulary as it was before
- * `signals:write`. Dynamic registration is unchanged by MCP writes (and off in production).
+ * `signals:write`. Dynamic registration is unchanged by MCP writes (and off in production). The
+ * registration guard drops anything else and narrows the stored row to it (`registration.ts`).
  */
 export const DCR_ALLOWED_SCOPES: readonly AuthServerScope[] = [
   'spaces:read',
   'agreements:vote',
   'offline_access',
 ];
+/**
+ * Scopes a client identified by its metadata document (CIMD, for example Claude Code or ChatGPT)
+ * may carry. Its host is proven, and write scopes are offered unticked, not capped (K73); the
+ * MCP write scope is still accepted only while MCP writes are on (`scopesForChannel`).
+ */
+export const CIMD_ALLOWED_SCOPES: readonly AuthServerScope[] = [
+  'spaces:read',
+  'agreements:vote',
+  'signals:write',
+  'offline_access',
+];
+/**
+ * The one list the library stores on every client it registers itself, DCR and CIMD alike (it
+ * has no per-kind option): the union of both. Each kind is then held to its own list: DCR rows
+ * are narrowed at registration, and consent offers and accepts only `scopesForClientKind`.
+ */
+export const CLIENT_REGISTRATION_CEILING_SCOPES: readonly AuthServerScope[] = [
+  ...new Set([...DCR_ALLOWED_SCOPES, ...CIMD_ALLOWED_SCOPES]),
+];
+
+/**
+ * The scopes a kind of client may be granted. A registered client is limited by its own row
+ * (`registered-clients.ts`), which the library checks at authorization.
+ */
+export function scopesForClientKind(
+  kind: 'registered' | 'cimd' | 'dcr',
+): readonly string[] {
+  if (kind === 'cimd') return CIMD_ALLOWED_SCOPES;
+  if (kind === 'dcr') return DCR_ALLOWED_SCOPES;
+  return AUTH_SERVER_SCOPES;
+}
 /**
  * Write scopes that start unticked for every client, pre-approved ones included: writing in a
  * person's name is a choice they make each time they connect an app.

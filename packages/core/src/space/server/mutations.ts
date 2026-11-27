@@ -12,6 +12,10 @@ import { spaces } from '@hypha-platform/storage-postgres';
 import { parseCapitalKeys } from '../../network/capitals';
 import { writeSpaceCapitals } from '../../network/exchange-capitals';
 import {
+  normalizeSpaceScreenLayout,
+  type SpaceScreenLayout,
+} from '../screen-layout';
+import {
   rejectReplacementSpaceSlug,
   rejectSpaceSlugMatchingSignal,
 } from './assert-space-slug-signal';
@@ -115,12 +119,27 @@ function applyLocationFieldsIfPresent<T extends UpdateSpaceInput>(
   return withLocationTimestamp(input);
 }
 
+function withNormalizedScreenLayout<T extends UpdateSpaceInput>(
+  input: T,
+): Omit<T, 'screenLayout'> & { screenLayout?: SpaceScreenLayout } {
+  const { screenLayout, ...rest } = input;
+  if (screenLayout === undefined) return rest;
+  return {
+    ...rest,
+    screenLayout: normalizeSpaceScreenLayout(screenLayout),
+  };
+}
+
+function prepareSpaceUpdate<T extends UpdateSpaceInput>(input: T) {
+  return applyLocationFieldsIfPresent(withNormalizedScreenLayout(input));
+}
+
 export const updateSpaceBySlug = async (
   { slug, ...rest }: { slug: string } & UpdateSpaceInput,
   { db }: { db: DatabaseInstance },
 ) => {
   const { capitals, rest: spaceFields } = takeExchangeCapitals(rest);
-  const patch = applyLocationFieldsIfPresent(spaceFields);
+  const patch = prepareSpaceUpdate(spaceFields);
   await rejectReplacementSpaceSlug(db, { lookupSlug: slug, patch });
   const [updatedSpace] = await db
     .update(spaces)
@@ -158,7 +177,7 @@ export const updateSpaceById = async (
 
     const [updatedSpace] = await tx
       .update(spaces)
-      .set(applyLocationFieldsIfPresent(spaceFields))
+      .set(prepareSpaceUpdate(spaceFields))
       .where(eq(spaces.id, id))
       .returning();
 
@@ -260,7 +279,7 @@ export const updateSpaceConfigurationById = async (
 
     const [updatedSpace] = await tx
       .update(spaces)
-      .set(applyLocationFieldsIfPresent(normalizedRest))
+      .set(prepareSpaceUpdate(normalizedRest))
       .where(eq(spaces.id, id))
       .returning();
 

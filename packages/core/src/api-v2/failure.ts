@@ -6,7 +6,7 @@ export type V2Caller = Caller;
 
 export type V2Failure = {
   ok: false;
-  status: 401 | 403 | 404 | 500 | 502;
+  status: 400 | 401 | 403 | 404 | 429 | 500 | 502;
   error: string;
   message?: string;
 };
@@ -34,5 +34,9 @@ export function toV2Failure(f: Failure): V2Failure {
       return base(502, 'Chain read failed');
     case 'access_check_failed':
       return base(500, 'Failed to verify access');
+    case 'invalid_input':
+      return base(400, 'Invalid input');
+    case 'rate_limited':
+      return base(429, 'Too many requests');
   }
 }

@@ -32,7 +32,7 @@ describe('network room join guard', () => {
   it('locks timeline paints to the intended room before join awaits (HE → HUMAI)', () => {
     expect(source).toContain('paintedRoomId');
     expect(source).toContain(
-      'openingTimelineRoomIdRef.current = intendedRoomId',
+      'openingTimelineRoomIdRef.current = deferPublicRoom\n        ? null\n        : intendedRoomId',
     );
     expect(source).toContain(
       'activeRoom && messages.length > 0 && (!painted || painted === activeRoom)',
@@ -54,7 +54,7 @@ describe('network room join guard', () => {
     expect(source).toContain('<HumanChatPanelChatBar');
     expect(source).toContain("coherenceChannel === 'network'");
     expect(source).toContain(
-      "isNetworkSpaceChat ||\n          coherenceChannel === 'network'",
+      "isNetworkSpaceChat ||\n        coherenceChannel === 'network'",
     );
   });
 

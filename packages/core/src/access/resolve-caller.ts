@@ -18,6 +18,8 @@ export type VerifiedClaims = {
   scopes: string[];
   /** DB space ids the person granted to this client; null/undefined = no restriction. */
   spaceGrants?: number[] | null;
+  /** The client's self-declared name (`client_name` claim); unverified. */
+  clientName?: string | null;
 };
 
 /**
@@ -62,6 +64,7 @@ export async function resolveCaller(
         clientId: claims.clientId,
         scopes: [...claims.scopes],
         spaceGrants: claims.spaceGrants ?? null,
+        clientName: claims.clientName ?? null,
       },
     },
   };

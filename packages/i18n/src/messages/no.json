@@ -769,6 +769,7 @@
     "archivedEmpty": "Arkiverte grupper vises her.",
     "inbox": {
       "allTitle": "Alle meldinger",
+      "tabAll": "Alle",
       "allBody": "Samlet innboks for alle sammenhenger",
       "directTitle": "Direkte",
       "directBody": "Én-til-én-samtaler og gruppechatter",
@@ -2639,7 +2640,16 @@
     "escrowDepositInsufficientWallet": "Lommeboksaldoen din er lavere enn beløpet som kreves.",
     "mySpacesSupport": "Opprett et rom eller åpne et du allerede er med i.",
     "pipelineEnabled": "Pipeline",
-    "pipelineEnabledDescription": "Aktiver en Kanban-pipeline for dette rommet. Av som standard."
+    "pipelineEnabledDescription": "Aktiver en Kanban-pipeline for dette rommet. Av som standard.",
+    "screensTitle": "Skjermer",
+    "screensDescription": "Velg hvilke skjermer som vises i dette rommet, og rekkefølgen.",
+    "screenMoveUp": "Flytt {screen} opp",
+    "screenMoveDown": "Flytt {screen} ned",
+    "screenShow": "Vis {screen}",
+    "screenHide": "Skjul {screen}",
+    "screenOverviewAlwaysOn": "Oversikt forblir synlig",
+    "screenBannerTitle": "Toppbanner",
+    "screenBannerDescription": "Vis bildet og linjen med navnet på rommet. Av starter hvert skjermbilde ved tittelen."
   },
   "AgreementFlow": {
     "labels": {
@@ -4025,6 +4035,8 @@
     "reactionReactorsTooltip": "{names} reagerte med {emoji}",
     "reactionToggleFailed": "Kunne ikke oppdatere reaksjonen. Prøv igjen.",
     "sendFailed": "Kunne ikke sende meldingen. Prøv igjen.",
+    "chatSessionRefreshed": "Chatteøkten er oppdatert. Send meldingen på nytt.",
+    "chatSessionExpired": "Chatteøkten er utløpt. Last inn siden på nytt og prøv igjen.",
     "sendFailedWithReason": "Kunne ikke sende meldingen: {message}",
     "sendUploadTimedOut": "Opplastingen tidsavbrøt. Prøv en mindre fil eller sjekk tilkoblingen din.",
     "sendRateLimited": "Chatserveren begrenser opplastinger. Vent noen sekunder og prøv igjen, eller send færre filer om gangen.",
@@ -4392,7 +4404,7 @@
     "publish": "Publiser",
     "createdOn": "Opprettet {date}",
     "errorCoherenceTab": "Oi, noe gikk galt. Kunne ikke laste signalfanen.",
-    "spaceMemory": "Romminne",
+    "spaceMemory": "Minne",
     "searchSpaceMemory": "Søk i romminnet...",
     "spaceMemoryLoading": "Laster ressurser…",
     "spaceMemoryEmpty": "Ingen opplastede filer ennå. Vedlegg fra forslag og avtaler vises her.",

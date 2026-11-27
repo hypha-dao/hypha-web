@@ -17,6 +17,8 @@ import {
   isInboxChannelKind,
   resolveInboxPlace,
   rowMatchesInboxFilter,
+  mobileInboxTabCounts,
+  rowMatchesMobileInboxTab,
   type InboxContext,
 } from '../messages-inbox';
 
@@ -70,6 +72,48 @@ describe('messages inbox filters', () => {
     expect(rowMatchesInboxFilter('ecosystem', 'ecosystem')).toBe(true);
     expect(rowMatchesInboxFilter('network', 'network')).toBe(true);
     expect(rowMatchesInboxFilter('space', 'all')).toBe(true);
+  });
+
+  it('splits the phone list into All, Direct, Groups, and Channels', () => {
+    expect(rowMatchesMobileInboxTab('dm', 'direct')).toBe(true);
+    expect(rowMatchesMobileInboxTab('group', 'direct')).toBe(false);
+    expect(rowMatchesMobileInboxTab('group', 'groups')).toBe(true);
+    expect(rowMatchesMobileInboxTab('dm', 'groups')).toBe(false);
+    for (const kind of [
+      'space',
+      'space-public',
+      'signal',
+      'proposal',
+      'quest',
+      'context',
+      'ecosystem',
+      'network',
+    ] as const) {
+      expect(rowMatchesMobileInboxTab(kind, 'channels')).toBe(true);
+      expect(rowMatchesMobileInboxTab(kind, 'all')).toBe(true);
+    }
+    for (const kind of ['dm', 'group'] as const) {
+      expect(rowMatchesMobileInboxTab(kind, 'channels')).toBe(false);
+      expect(rowMatchesMobileInboxTab(kind, 'all')).toBe(true);
+    }
+  });
+
+  it('counts every space thread on the phone Channels tab', () => {
+    expect(
+      mobileInboxTabCounts([
+        { kind: 'dm' },
+        { kind: 'dm' },
+        { kind: 'group' },
+        { kind: 'space' },
+        { kind: 'space-public' },
+        { kind: 'signal' },
+        { kind: 'proposal' },
+        { kind: 'quest' },
+        { kind: 'context' },
+        { kind: 'ecosystem' },
+        { kind: 'network' },
+      ]),
+    ).toEqual({ all: 11, direct: 2, groups: 1, channels: 8 });
   });
 
   it('treats proposal rooms as their own messages channel', () => {
@@ -133,6 +177,65 @@ describe('messages inbox filters', () => {
     expect(rows.map((row) => [row.roomId, row.name, row.inbox.kind])).toEqual([
       ['!quest:hs', 'Onboarding matcher', 'quest'],
     ]);
+  });
+
+  it('lists quest channels the member has not joined, including quiet ones', () => {
+    const quests = [
+      {
+        roomId: '!unjoined:hs',
+        title: 'Garden map',
+        slug: 'garden-map',
+        spaceSlug: 'hypha-platform',
+        spaceTitle: 'Hypha Platform',
+        rootSlug: 'hypha',
+        rootTitle: 'Hypha',
+      },
+      {
+        roomId: 'provisioning:123:abc',
+        title: 'Still opening',
+        slug: 'still-opening',
+        spaceSlug: 'hypha-platform',
+        spaceTitle: 'Hypha Platform',
+        rootSlug: 'hypha',
+        rootTitle: 'Hypha',
+      },
+    ];
+    const rows = channelRowsFromSnapshots(
+      [
+        {
+          roomId: '!quiet-quest:hs',
+          roomType: 'io.hypha.room.quest',
+          name: 'Old quest room',
+          aliases: [],
+          preview: 'accepted in the spring',
+          mine: false,
+          lastTs: quiet,
+          unread: 0,
+        },
+      ],
+      {
+        ...context,
+        quests: [
+          ...quests,
+          {
+            roomId: '!quiet-quest:hs',
+            title: 'Spring matcher',
+            slug: 'spring-matcher',
+            spaceSlug: 'hypha-platform',
+            spaceTitle: 'Hypha Platform',
+            rootSlug: 'hypha',
+            rootTitle: 'Hypha',
+          },
+        ],
+      },
+      'Network',
+      now,
+    );
+    expect(rows.map((row) => [row.roomId, row.name, row.preview])).toEqual([
+      ['!quiet-quest:hs', 'Spring matcher', 'accepted in the spring'],
+      ['!unjoined:hs', 'Garden map', ''],
+    ]);
+    expect(rows.every((row) => row.inbox.kind === 'quest')).toBe(true);
   });
 
   it('counts each conversation once per matching filter', () => {
@@ -777,6 +880,27 @@ describe('messages inbox context', () => {
       now,
     );
     expect(row?.roomId).toBe('!signal:hs');
+  });
+
+  it('keeps the network channel when its last message is old or not loaded yet', () => {
+    const rows = channelRowsFromSnapshots(
+      [
+        {
+          roomId: '!quiet-net:hs',
+          roomType: 'io.hypha.room.network',
+          name: 'Network',
+          aliases: ['#hypha-network:example.org'],
+          preview: '',
+          mine: false,
+          lastTs: null,
+          unread: 0,
+        },
+      ],
+      { spaces: [], signals: [] },
+      'Network',
+      now,
+    );
+    expect(rows.map((row) => row.roomId)).toEqual(['!quiet-net:hs']);
   });
 
   it('shows the network channel for everyone when it has a recent message', () => {

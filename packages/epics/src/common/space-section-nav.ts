@@ -1,4 +1,9 @@
 import { getActiveTabFromPath } from './get-active-tab-from-path';
+import {
+  normalizeSpaceScreenLayout,
+  type SpaceScreenLayoutInput,
+  type SpaceScreenLayoutKey,
+} from '@hypha-platform/core/space/screen-layout';
 
 export type SpaceSectionNavKey =
   | 'overview'
@@ -31,15 +36,14 @@ export const SPACE_SECTION_NAV_GROUP: Record<
   memory: 'primary',
   context: 'primary',
   pipeline: 'primary',
+  calendar: 'primary',
   'ecosystem-navigation': 'more',
-  calendar: 'more',
   energy: 'primary',
   rewards: 'more',
 };
 
 /** These screens live on the space dashboard. The menu keeps Overview selected there. */
 const HOME_DASHBOARD_TABS = new Set<string>([
-  'calendar',
   'rewards',
   'ecosystem-navigation',
 ]);
@@ -64,6 +68,8 @@ export type BuildSpaceSectionNavItemsOptions = {
   /** When false, Signals/Coherence is omitted. Default true for AI rail parity. */
   coherenceEnabled?: boolean;
   memoryEnabled?: boolean;
+  /** Saved order and hidden screens. Pipeline visibility follows `pipelineEnabled`. */
+  screenLayout?: SpaceScreenLayoutInput | null;
 };
 
 function sectionHref(lang: string, spaceSlug: string, section: string): string {
@@ -88,9 +94,10 @@ function navItem(
  * Canonical space section links for main-column tabs and AI left rail.
  * Flag/space gates omit items; destinations stay route-compatible.
  *
- * An energy community keeps Overview first. Energy sits directly under it.
- * Menu: Overview · Energy (when on) · Signals · Deals (when on) · Agreements · Quests · Members · Treasury · Space memory · Context
- * Calendar, rewards, and ecosystem stay on the space dashboard.
+ * An energy community keeps Energy directly under Overview unless the space
+ * saved another order. Default menu:
+ * Overview · Energy (when on) · Context · Signals · Calendar · Quests · Pipeline (when on) · Agreements · Treasury · Members · Memory
+ * Rewards and ecosystem stay on the space dashboard.
  */
 export function buildSpaceSectionNavItems({
   lang,
@@ -100,6 +107,7 @@ export function buildSpaceSectionNavItems({
   energyEnabled = false,
   coherenceEnabled = true,
   memoryEnabled = false,
+  screenLayout = null,
 }: BuildSpaceSectionNavItemsOptions): SpaceSectionNavItem[] {
   const rawActiveTab = getActiveTabFromPath(pathname);
   // Banking lives under Treasury. Space-dashboard sections keep Overview selected.
@@ -110,39 +118,34 @@ export function buildSpaceSectionNavItems({
       ? 'overview'
       : rawActiveTab;
   const isActive = (key: SpaceSectionNavKey) => activeTab === key;
+  const layout = normalizeSpaceScreenLayout(screenLayout);
+  const hidden = new Set(layout.hidden);
+
+  const available = (key: SpaceScreenLayoutKey): boolean => {
+    if (hidden.has(key)) return false;
+    switch (key) {
+      case 'energy':
+        return energyEnabled;
+      case 'coherence':
+        return coherenceEnabled;
+      case 'pipeline':
+        return pipelineEnabled;
+      case 'memory':
+        return memoryEnabled;
+      default:
+        return true;
+    }
+  };
 
   const items: SpaceSectionNavItem[] = [];
-
-  const overview = navItem('overview', lang, spaceSlug, isActive('overview'));
-  if (energyEnabled) {
-    overview.href = `${overview.href}?${SPACE_DASHBOARD_BOARD_PARAM}=${SPACE_DASHBOARD_BOARD_VALUE}`;
+  for (const key of layout.order) {
+    if (!available(key)) continue;
+    const item = navItem(key, lang, spaceSlug, isActive(key));
+    if (key === 'overview' && energyEnabled) {
+      item.href = `${item.href}?${SPACE_DASHBOARD_BOARD_PARAM}=${SPACE_DASHBOARD_BOARD_VALUE}`;
+    }
+    items.push(item);
   }
-  items.push(overview);
-
-  if (energyEnabled) {
-    items.push(navItem('energy', lang, spaceSlug, isActive('energy')));
-  }
-
-  if (coherenceEnabled) {
-    items.push(navItem('coherence', lang, spaceSlug, isActive('coherence')));
-  }
-
-  if (pipelineEnabled) {
-    items.push(navItem('pipeline', lang, spaceSlug, isActive('pipeline')));
-  }
-
-  items.push(
-    navItem('agreements', lang, spaceSlug, isActive('agreements')),
-    navItem('quests', lang, spaceSlug, isActive('quests')),
-    navItem('members', lang, spaceSlug, isActive('members')),
-    navItem('treasury', lang, spaceSlug, isActive('treasury')),
-  );
-
-  if (memoryEnabled) {
-    items.push(navItem('memory', lang, spaceSlug, isActive('memory')));
-  }
-
-  items.push(navItem('context', lang, spaceSlug, isActive('context')));
 
   return items;
 }
@@ -151,7 +154,7 @@ export function buildSpaceSectionNavItems({
  * Partition space section nav for the main tab strip.
  *
  * Primary tabs stay fixed from {@link SPACE_SECTION_NAV_GROUP}:
- * Overview, Energy, Signals, Agreements, Quests, Members, Treasury, Space memory, and Context.
+ * Overview, Energy, Context, Signals, Calendar, Quests, Pipeline, Agreements, Treasury, Members, and Memory.
  */
 export function partitionSpaceSectionNavForTabs(items: SpaceSectionNavItem[]): {
   primary: SpaceSectionNavItem[];
