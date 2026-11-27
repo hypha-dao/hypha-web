@@ -1654,7 +1654,6 @@ export function useSpaceGroupCall(
   const enableLocalCamera = useCallback(
     async (lkRoom: LiveKitRoom): Promise<boolean> => {
       const participant = lkRoom.localParticipant;
-      cameraRequestedOnRef.current = true;
       backgroundRoomRef.current = lkRoom;
       const existing = participant.getTrackPublication(Track.Source.Camera)
         ?.track as LocalVideoTrack | undefined;
@@ -2062,6 +2061,7 @@ export function useSpaceGroupCall(
           setCameraAccessBlocked(false);
         }
       }
+      cameraRequestedOnRef.current = enableCamera;
       if (enableCamera) warmUpBackgroundEffectIfSaved();
 
       setCallState('connecting');
@@ -2439,6 +2439,7 @@ export function useSpaceGroupCall(
       const lkRoom = liveKitRoomRef.current;
       if (!lkRoom) return;
       cameraRequestEpochRef.current += 1;
+      const requestEpoch = cameraRequestEpochRef.current;
       cameraRequestedOnRef.current = !muted;
       if (muted) {
         setCameraAccessBlocked(false);
@@ -2447,6 +2448,8 @@ export function useSpaceGroupCall(
         );
       } else {
         const access = await requestLocalCameraAccess();
+        // A newer camera request (e.g. a mute while the permission prompt was open) wins.
+        if (cameraRequestEpochRef.current !== requestEpoch) return;
         if (!access.ok) {
           try {
             await lkRoom.localParticipant.setCameraEnabled(false);
