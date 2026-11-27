@@ -15,6 +15,7 @@ import {
   useFindCoherences,
   useSignalWorkflow,
   useSpaceBySlug,
+  type Coherence,
   type SignalSort,
   type SignalTimeFrame,
 } from '@hypha-platform/core/client';
@@ -34,6 +35,24 @@ import {
 import { SignalFeedFilters } from './signal-feed-filters';
 import { SignalFeedRow } from './signal-feed-row';
 import { signalBoardLabel } from '../lib/signal-board-label';
+import {
+  DEFAULT_SIGNAL_LANE_COLUMNS,
+  DEFAULT_SIGNAL_TAB_VIEW,
+  SIGNAL_LANE_COLUMNS_QUERY_KEY,
+  SIGNAL_TAB_VIEW_QUERY_KEY,
+  groupSignalsIntoLanes,
+  isSignalBoardMove,
+  parseSignalLaneColumns,
+  parseSignalTabView,
+  readStoredSignalTabView,
+  writeStoredSignalTabView,
+  type SignalLaneColumns,
+  type SignalTabView,
+} from '../lib/signal-swimlanes';
+import { SignalSwimlanes } from './signal-swimlanes';
+import { SignalViewSwitch } from './signal-view-switch';
+import { useMoveSignalToBoard } from '../hooks/use-move-signal-to-board';
+import { useCanUpdateSignalTasks } from '../hooks/use-can-update-signal-tasks';
 import { useDebouncedFeedTitle } from '../lib/use-debounced-feed-title';
 import type { UseMembers } from '../../spaces/hooks/types';
 
@@ -135,6 +154,50 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
       ),
     [replaceQuery],
   );
+  // URL first (shareable), then this browser's last choice for the space.
+  const urlView = parseSignalTabView(
+    searchParams.get(SIGNAL_TAB_VIEW_QUERY_KEY),
+  );
+  const [storedView, setStoredView] = React.useState<SignalTabView | null>(
+    null,
+  );
+  React.useEffect(() => {
+    setStoredView(readStoredSignalTabView(spaceSlug));
+  }, [spaceSlug]);
+  const view = urlView ?? storedView ?? DEFAULT_SIGNAL_TAB_VIEW;
+  const laneColumns = parseSignalLaneColumns(
+    searchParams.get(SIGNAL_LANE_COLUMNS_QUERY_KEY),
+  );
+  const handleViewChange = React.useCallback(
+    (next: SignalTabView) => {
+      writeStoredSignalTabView(spaceSlug, next);
+      setStoredView(next);
+      replaceQuery(SIGNAL_TAB_VIEW_QUERY_KEY, next, DEFAULT_SIGNAL_TAB_VIEW);
+    },
+    [replaceQuery, spaceSlug],
+  );
+  const handleLaneColumnsChange = React.useCallback(
+    (next: SignalLaneColumns) =>
+      replaceQuery(
+        SIGNAL_LANE_COLUMNS_QUERY_KEY,
+        next,
+        DEFAULT_SIGNAL_LANE_COLUMNS,
+      ),
+    [replaceQuery],
+  );
+  const { canUpdateTasks } = useCanUpdateSignalTasks({
+    spaceSlug,
+    web3SpaceId: space?.web3SpaceId ?? undefined,
+  });
+  const moveSignalToBoard = useMoveSignalToBoard(spaceSlug);
+  const handleMoveToBoard = React.useCallback(
+    (signal: Coherence, board: string) => {
+      if (!isSignalBoardMove(signal, board, workflow)) return;
+      void moveSignalToBoard(signal, board);
+    },
+    [moveSignalToBoard, workflow],
+  );
+
   const titleQuery = searchParams.get(SIGNAL_TITLE_QUERY_KEY) ?? '';
   const handleTitleCommit = React.useCallback(
     (next: string) => replaceQuery(SIGNAL_TITLE_QUERY_KEY, next, ''),
@@ -175,6 +238,13 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
     return rankSignals(matched, { sort, timeFrame });
   }, [signals, sort, timeFrame, titleQuery]);
   const activity = useSignalRoomActivity(ranked);
+  const lanes = React.useMemo(
+    () =>
+      view === 'swimlanes'
+        ? groupSignalsIntoLanes(ranked, workflow, laneColumns)
+        : [],
+    [laneColumns, ranked, view, workflow],
+  );
   const upvoteSummaryState = signalListUpvoteSummaryState({
     hasSettledList: Boolean(signals),
     isLoading: isSignalsLoading,
@@ -186,6 +256,27 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   // Same-query refresh errors keep the list; a failed new query must not hide behind the old one.
   const loadFailed =
     signalsError != null && !hasCurrentQuerySignals && !isSignalsLoading;
+
+  const renderSignal = (signal: Coherence) =>
+    signal.slug ? (
+      <SignalFeedRow
+        signal={signal}
+        spaceSlug={spaceSlug}
+        href={getSignalPath(lang, spaceSlug, signal.slug)}
+        votingMode={votingMode}
+        votingModeStatus={votingModeStatus}
+        onRetryVotingMode={retryVotingMode}
+        isNonMember={isNonMember}
+        isMembershipPending={isMembershipPending}
+        activity={signal.roomId ? activity[signal.roomId] : undefined}
+        refresh={refresh}
+        sort={sort}
+        summaryState={upvoteSummaryState}
+        boardLabel={
+          view === 'swimlanes' ? null : signalBoardLabel(signal.board, workflow)
+        }
+      />
+    ) : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -209,6 +300,14 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
         onTimeFrameChange={handleTimeFrameChange}
         titleQuery={titleInput}
         onTitleQueryChange={onTitleChange}
+        trailing={
+          <SignalViewSwitch
+            view={view}
+            onViewChange={handleViewChange}
+            columns={laneColumns}
+            onColumnsChange={handleLaneColumnsChange}
+          />
+        }
         action={
           canMutate ? (
             <div className="shrink-0">
@@ -266,28 +365,21 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
             ? t('signalTitleNoResults')
             : t('listIsEmpty')}
         </p>
+      ) : view === 'swimlanes' ? (
+        <SignalSwimlanes
+          lanes={lanes}
+          columns={laneColumns}
+          spaceSlug={spaceSlug}
+          renderSignal={renderSignal}
+          onMoveToBoard={canUpdateTasks ? handleMoveToBoard : undefined}
+        />
       ) : (
         <div className="flex flex-col gap-2">
-          {ranked.map((signal) =>
-            signal.slug ? (
-              <SignalFeedRow
-                key={signal.id}
-                signal={signal}
-                spaceSlug={spaceSlug}
-                href={getSignalPath(lang, spaceSlug, signal.slug)}
-                votingMode={votingMode}
-                votingModeStatus={votingModeStatus}
-                onRetryVotingMode={retryVotingMode}
-                isNonMember={isNonMember}
-                isMembershipPending={isMembershipPending}
-                activity={signal.roomId ? activity[signal.roomId] : undefined}
-                refresh={refresh}
-                sort={sort}
-                summaryState={upvoteSummaryState}
-                boardLabel={signalBoardLabel(signal.board, workflow)}
-              />
-            ) : null,
-          )}
+          {ranked.map((signal) => (
+            <React.Fragment key={signal.id}>
+              {renderSignal(signal)}
+            </React.Fragment>
+          ))}
         </div>
       )}
     </div>

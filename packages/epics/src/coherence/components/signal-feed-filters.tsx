@@ -61,7 +61,7 @@ type FilterPillProps<T extends string> = {
   testId: string;
 };
 
-function FilterPill<T extends string>({
+export function FilterPill<T extends string>({
   label,
   heading,
   value,
@@ -125,6 +125,8 @@ export type SignalFeedFiltersProps = {
   onTitleQueryChange: (titleQuery: string) => void;
   /** Sits at the end of the search row, the same slot as Agreements. */
   action?: React.ReactNode;
+  /** Sits at the end of the pill row: the view switch (#2765). */
+  trailing?: React.ReactNode;
   className?: string;
 };
 
@@ -139,6 +141,7 @@ export function SignalFeedFilters({
   titleQuery,
   onTitleQueryChange,
   action,
+  trailing,
   className,
 }: SignalFeedFiltersProps) {
   const t = useTranslations('CoherenceTab');
@@ -194,6 +197,11 @@ export function SignalFeedFilters({
             onChange={onTimeFrameChange}
             testId="signal-time-frame-pill"
           />
+        ) : null}
+        {trailing ? (
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            {trailing}
+          </div>
         ) : null}
       </div>
     </div>
