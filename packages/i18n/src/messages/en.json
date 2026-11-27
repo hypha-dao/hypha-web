@@ -6018,7 +6018,8 @@
         "cimd": "Hypha has not approved this app. It is run from <strong>{host}</strong>: Hypha read its details from that address, so the address is real. Nothing else about the app has been checked. It calls itself <strong>{name}</strong>. After you approve, you are sent back to <strong>{redirectHost}</strong>. Only approve apps you started yourself.",
         "dcr": "Hypha has not approved this app. It registered itself and chose its own name, <strong>{name}</strong>, which Hypha has not checked: anyone can register any name, and Hypha cannot tell who is behind this app. After you approve, you are sent back to <strong>{redirectHost}</strong>. Only approve apps you started yourself.",
         "registered": "Hypha has not verified this app. It calls itself <strong>{name}</strong>. After you approve, you are sent back to <strong>{redirectHost}</strong>. Only approve apps you started yourself.",
-        "registeredWithHost": "Hypha has not verified this app. It calls itself <strong>{name}</strong> and identifies itself from <strong>{host}</strong>. After you approve, you are sent back to <strong>{redirectHost}</strong>. Only approve apps you started yourself."
+        "registeredWithHost": "Hypha has not verified this app. It calls itself <strong>{name}</strong> and identifies itself from <strong>{host}</strong>. After you approve, you are sent back to <strong>{redirectHost}</strong>. Only approve apps you started yourself.",
+        "localRedirect": "an app on this computer (a local connection)"
       },
       "scopes": {
         "spacesRead": {
@@ -6060,7 +6061,8 @@
         "selectNone": "Select none",
         "limit": "You are in more than {max} spaces, so only the first {max} are selected. To include every space, choose “All my spaces”.",
         "none": "You are not a member of any space yet. Choose “All my spaces” instead, or join a space first.",
-        "unavailable": "Your spaces could not be loaded right now. You can still choose “All my spaces”."
+        "unavailable": "Your spaces could not be loaded right now. You can still choose “All my spaces”.",
+        "unavailableKept": "Your spaces could not be loaded right now, so the spaces you chose before stay as they are. You can also choose “All my spaces”."
       }
     }
   }

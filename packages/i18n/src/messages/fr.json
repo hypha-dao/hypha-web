@@ -5993,7 +5993,8 @@
         "cimd": "Hypha n’a pas approuvé cette application. Elle est exécutée depuis <strong>{host}</strong> : Hypha a lu ses informations à cette adresse, donc l’adresse est réelle. Rien d’autre n’a été vérifié. Elle se présente sous le nom <strong>{name}</strong>. Après votre approbation, vous serez renvoyé vers <strong>{redirectHost}</strong>. N’approuvez que les applications que vous avez lancées vous-même.",
         "dcr": "Hypha n’a pas approuvé cette application. Elle s’est enregistrée elle-même et a choisi son propre nom, <strong>{name}</strong>, que Hypha n’a pas vérifié : n’importe qui peut enregistrer n’importe quel nom, et Hypha ne peut pas savoir qui se trouve derrière cette application. Après votre approbation, vous serez renvoyé vers <strong>{redirectHost}</strong>. N’approuvez que les applications que vous avez lancées vous-même.",
         "registered": "Hypha n’a pas vérifié cette application. Elle se présente sous le nom <strong>{name}</strong>. Après votre approbation, vous serez renvoyé vers <strong>{redirectHost}</strong>. N’approuvez que les applications que vous avez lancées vous-même.",
-        "registeredWithHost": "Hypha n’a pas vérifié cette application. Elle se présente sous le nom <strong>{name}</strong> et s’identifie depuis <strong>{host}</strong>. Après votre approbation, vous serez renvoyé vers <strong>{redirectHost}</strong>. N’approuvez que les applications que vous avez lancées vous-même."
+        "registeredWithHost": "Hypha n’a pas vérifié cette application. Elle se présente sous le nom <strong>{name}</strong> et s’identifie depuis <strong>{host}</strong>. Après votre approbation, vous serez renvoyé vers <strong>{redirectHost}</strong>. N’approuvez que les applications que vous avez lancées vous-même.",
+        "localRedirect": "une application sur cet ordinateur (une connexion locale)"
       },
       "scopes": {
         "spacesRead": {
@@ -6035,7 +6036,8 @@
         "selectNone": "Tout désélectionner",
         "limit": "Vous êtes dans plus de {max} espaces, donc seuls les {max} premiers sont sélectionnés. Pour inclure tous les espaces, choisissez « Tous mes espaces ».",
         "none": "Vous n'êtes encore membre d'aucun espace. Choisissez plutôt « Tous mes espaces » ou rejoignez d'abord un espace.",
-        "unavailable": "Vos espaces n'ont pas pu être chargés pour le moment. Vous pouvez quand même choisir « Tous mes espaces »."
+        "unavailable": "Vos espaces n'ont pas pu être chargés pour le moment. Vous pouvez quand même choisir « Tous mes espaces ».",
+        "unavailableKept": "Vos espaces n'ont pas pu être chargés pour le moment : les espaces que vous aviez choisis restent inchangés. Vous pouvez aussi choisir « Tous mes espaces »."
       }
     }
   }

@@ -6010,7 +6010,8 @@
         "cimd": "Hypha no ha aprobado esta app. Se ejecuta desde <strong>{host}</strong>: Hypha leyó sus datos en esa dirección, así que la dirección es real. No se ha comprobado nada más de la app. Se hace llamar <strong>{name}</strong>. Tras aprobar, volverás a <strong>{redirectHost}</strong>. Aprueba solo apps que hayas iniciado tú.",
         "dcr": "Hypha no ha aprobado esta app. Se registró sola y eligió su propio nombre, <strong>{name}</strong>, que Hypha no ha comprobado: cualquiera puede registrar cualquier nombre y Hypha no puede saber quién está detrás de esta app. Tras aprobar, volverás a <strong>{redirectHost}</strong>. Aprueba solo apps que hayas iniciado tú.",
         "registered": "Hypha no ha verificado esta app. Se hace llamar <strong>{name}</strong>. Tras aprobar, volverás a <strong>{redirectHost}</strong>. Aprueba solo apps que hayas iniciado tú.",
-        "registeredWithHost": "Hypha no ha verificado esta app. Se hace llamar <strong>{name}</strong> y se identifica desde <strong>{host}</strong>. Tras aprobar, volverás a <strong>{redirectHost}</strong>. Aprueba solo apps que hayas iniciado tú."
+        "registeredWithHost": "Hypha no ha verificado esta app. Se hace llamar <strong>{name}</strong> y se identifica desde <strong>{host}</strong>. Tras aprobar, volverás a <strong>{redirectHost}</strong>. Aprueba solo apps que hayas iniciado tú.",
+        "localRedirect": "una app en este ordenador (una conexión local)"
       },
       "scopes": {
         "spacesRead": {
@@ -6052,7 +6053,8 @@
         "selectNone": "No seleccionar ninguno",
         "limit": "Estás en más de {max} espacios, así que solo están seleccionados los primeros {max}. Para incluir todos los espacios, elige «Todos mis espacios».",
         "none": "Aún no eres miembro de ningún espacio. Elige «Todos mis espacios» o únete primero a un espacio.",
-        "unavailable": "No se pudieron cargar tus espacios en este momento. Aún puedes elegir «Todos mis espacios»."
+        "unavailable": "No se pudieron cargar tus espacios en este momento. Aún puedes elegir «Todos mis espacios».",
+        "unavailableKept": "No se pudieron cargar tus espacios en este momento, así que los espacios que elegiste antes se mantienen. También puedes elegir «Todos mis espacios»."
       }
     }
   }

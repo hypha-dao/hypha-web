@@ -5996,7 +5996,8 @@
         "cimd": "Hypha hat diese App nicht freigegeben. Sie läuft auf <strong>{host}</strong>: Hypha hat ihre Angaben von dieser Adresse gelesen, die Adresse ist also echt. Sonst wurde nichts über die App geprüft. Sie nennt sich <strong>{name}</strong>. Nach deiner Freigabe wirst du zu <strong>{redirectHost}</strong> zurückgeleitet. Gib nur Apps frei, die du selbst gestartet hast.",
         "dcr": "Hypha hat diese App nicht freigegeben. Sie hat sich selbst registriert und ihren Namen selbst gewählt, <strong>{name}</strong>. Hypha hat ihn nicht geprüft: Jeder kann jeden Namen registrieren, und Hypha kann nicht erkennen, wer hinter dieser App steht. Nach deiner Freigabe wirst du zu <strong>{redirectHost}</strong> zurückgeleitet. Gib nur Apps frei, die du selbst gestartet hast.",
         "registered": "Hypha hat diese App nicht verifiziert. Sie nennt sich <strong>{name}</strong>. Nach deiner Freigabe wirst du zu <strong>{redirectHost}</strong> zurückgeleitet. Gib nur Apps frei, die du selbst gestartet hast.",
-        "registeredWithHost": "Hypha hat diese App nicht verifiziert. Sie nennt sich <strong>{name}</strong> und weist sich über <strong>{host}</strong> aus. Nach deiner Freigabe wirst du zu <strong>{redirectHost}</strong> zurückgeleitet. Gib nur Apps frei, die du selbst gestartet hast."
+        "registeredWithHost": "Hypha hat diese App nicht verifiziert. Sie nennt sich <strong>{name}</strong> und weist sich über <strong>{host}</strong> aus. Nach deiner Freigabe wirst du zu <strong>{redirectHost}</strong> zurückgeleitet. Gib nur Apps frei, die du selbst gestartet hast.",
+        "localRedirect": "einer App auf diesem Computer (einer lokalen Verbindung)"
       },
       "scopes": {
         "spacesRead": {
@@ -6038,7 +6039,8 @@
         "selectNone": "Keine auswählen",
         "limit": "Du bist in mehr als {max} Spaces, deshalb sind nur die ersten {max} ausgewählt. Um jeden Space einzuschließen, wähle „Alle meine Spaces“.",
         "none": "Du bist noch in keinem Space Mitglied. Wähle stattdessen „Alle meine Spaces“ oder tritt zuerst einem Space bei.",
-        "unavailable": "Deine Spaces konnten gerade nicht geladen werden. Du kannst trotzdem „Alle meine Spaces“ wählen."
+        "unavailable": "Deine Spaces konnten gerade nicht geladen werden. Du kannst trotzdem „Alle meine Spaces“ wählen.",
+        "unavailableKept": "Deine Spaces konnten gerade nicht geladen werden. Die Spaces, die du vorher gewählt hast, bleiben unverändert. Du kannst auch „Alle meine Spaces“ wählen."
       }
     }
   }

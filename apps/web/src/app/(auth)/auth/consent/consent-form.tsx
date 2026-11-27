@@ -43,6 +43,7 @@ export function ConsentForm({
   client,
   scopes,
   pickerSpaces,
+  initialSpaces,
 }: {
   oauthQuery: string;
   personId: string;
@@ -56,18 +57,29 @@ export function ConsentForm({
   scopes: Scope[];
   /** Spaces the person can pick; null = could not be read (only "all my spaces" is offered). */
   pickerSpaces: PickerSpace[] | null;
+  /**
+   * Where the picker starts (`initialSpaceChoice`): "all" for a new connection, the stored list for
+   * an app that is already connected. `keptUnlisted`: the stored list is kept although the spaces
+   * could not be loaded, so an approval does not widen it to "all".
+   */
+  initialSpaces: {
+    mode: 'all' | 'spaces';
+    chosen: number[];
+    keptUnlisted: boolean;
+  };
 }) {
   const t = useTranslations('AuthServer');
   const [granted, setGranted] = React.useState<Set<string>>(
     () => new Set(scopes.filter((s) => s.defaultGranted).map((s) => s.scope)),
   );
-  // Which spaces the app may read. Explicit by default and preselected up to the limit; "all"
-  // is a separate choice that also covers spaces joined later (it is not "tick everything").
-  const [mode, setMode] = React.useState<'spaces' | 'all'>('all');
+  // Which spaces the app may read. "All" is a separate choice that also covers spaces joined later
+  // (it is not "tick everything"). A connected app starts on what it has now.
+  const [mode, setMode] = React.useState<'spaces' | 'all'>(initialSpaces.mode);
   const [chosen, setChosen] = React.useState<Set<number>>(
-    () =>
-      new Set((pickerSpaces ?? []).slice(0, MAX_SPACE_GRANTS).map((x) => x.id)),
+    () => new Set(initialSpaces.chosen),
   );
+  // The explicit choice stays available without the list when the stored one is being kept.
+  const canChooseSpaces = Boolean(pickerSpaces) || initialSpaces.keptUnlisted;
   const [filter, setFilter] = React.useState('');
   const overLimit = (pickerSpaces?.length ?? 0) > MAX_SPACE_GRANTS;
   const [busy, setBusy] = React.useState(false);
@@ -232,7 +244,7 @@ export function ConsentForm({
           </label>
           <label
             className={`flex items-start gap-3 border p-3 ${
-              pickerSpaces ? '' : 'opacity-60'
+              canChooseSpaces ? '' : 'opacity-60'
             }`}
           >
             <input
@@ -240,7 +252,7 @@ export function ConsentForm({
               name="space-mode"
               className="mt-1"
               checked={mode === 'spaces'}
-              disabled={!pickerSpaces}
+              disabled={!canChooseSpaces}
               onChange={() => setMode('spaces')}
             />
             <span className="flex flex-col">
@@ -330,7 +342,9 @@ export function ConsentForm({
           ) : null}
           {!pickerSpaces ? (
             <p role="note" className="text-1 text-neutral-11">
-              {t('consent.spaces.unavailable')}
+              {initialSpaces.keptUnlisted && mode === 'spaces'
+                ? t('consent.spaces.unavailableKept')
+                : t('consent.spaces.unavailable')}
             </p>
           ) : null}
           <p className="text-1 text-neutral-11">{t('consent.spaces.note')}</p>

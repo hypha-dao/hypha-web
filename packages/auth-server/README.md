@@ -64,6 +64,11 @@ it registers itself (`CLIENT_REGISTRATION_CEILING_SCOPES`, the union); dynamic r
 narrowed to their list when created, and the consent page offers and accepts only the scopes of the
 client's kind.
 
+The consent page names a loopback redirect (`127.0.0.1`, `localhost`, `[::1]`) as an app on the
+person's own computer and never shows its port; an https redirect shows its host and a custom app
+scheme its scheme. When the page is shown again for an app that is already connected (it asks for a
+new scope), the space picker opens on the spaces the app has now, never on "all my spaces" by default.
+
 Access tokens carry `space_grants` (the chosen spaces) and `client_name` (the name the client
 declared for itself, cleaned and capped at 120 characters, unverified). Access tokens last 10 minutes; refresh tokens
 slide over 90 days. The approval link lasts 10 minutes, the authorization code 60 seconds.

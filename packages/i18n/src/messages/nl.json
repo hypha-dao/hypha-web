@@ -6002,7 +6002,8 @@
         "cimd": "Hypha heeft deze app niet goedgekeurd. Hij draait vanaf <strong>{host}</strong>: Hypha las zijn gegevens van dat adres, dus het adres is echt. Verder is niets over de app gecontroleerd. Hij noemt zichzelf <strong>{name}</strong>. Na je goedkeuring word je teruggestuurd naar <strong>{redirectHost}</strong>. Keur alleen apps goed die je zelf hebt gestart.",
         "dcr": "Hypha heeft deze app niet goedgekeurd. Hij heeft zichzelf geregistreerd en zelf zijn naam gekozen, <strong>{name}</strong>, die Hypha niet heeft gecontroleerd: iedereen kan elke naam registreren en Hypha kan niet zien wie achter deze app zit. Na je goedkeuring word je teruggestuurd naar <strong>{redirectHost}</strong>. Keur alleen apps goed die je zelf hebt gestart.",
         "registered": "Hypha heeft deze app niet geverifieerd. Hij noemt zichzelf <strong>{name}</strong>. Na je goedkeuring word je teruggestuurd naar <strong>{redirectHost}</strong>. Keur alleen apps goed die je zelf hebt gestart.",
-        "registeredWithHost": "Hypha heeft deze app niet geverifieerd. Hij noemt zichzelf <strong>{name}</strong> en identificeert zich via <strong>{host}</strong>. Na je goedkeuring word je teruggestuurd naar <strong>{redirectHost}</strong>. Keur alleen apps goed die je zelf hebt gestart."
+        "registeredWithHost": "Hypha heeft deze app niet geverifieerd. Hij noemt zichzelf <strong>{name}</strong> en identificeert zich via <strong>{host}</strong>. Na je goedkeuring word je teruggestuurd naar <strong>{redirectHost}</strong>. Keur alleen apps goed die je zelf hebt gestart.",
+        "localRedirect": "een app op deze computer (een lokale verbinding)"
       },
       "scopes": {
         "spacesRead": {
@@ -6044,7 +6045,8 @@
         "selectNone": "Niets selecteren",
         "limit": "Je zit in meer dan {max} spaces, dus alleen de eerste {max} zijn geselecteerd. Kies „Al mijn spaces” om elke space mee te nemen.",
         "none": "Je bent nog van geen enkele space lid. Kies in plaats daarvan „Al mijn spaces” of word eerst lid van een space.",
-        "unavailable": "Je spaces konden nu niet worden geladen. Je kunt nog steeds „Al mijn spaces” kiezen."
+        "unavailable": "Je spaces konden nu niet worden geladen. Je kunt nog steeds „Al mijn spaces” kiezen.",
+        "unavailableKept": "Je spaces konden nu niet worden geladen, dus de spaces die je eerder koos blijven zoals ze zijn. Je kunt ook „Al mijn spaces” kiezen."
       }
     }
   }

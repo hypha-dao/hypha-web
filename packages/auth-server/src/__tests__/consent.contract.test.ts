@@ -155,6 +155,10 @@ run(
       const id = await register();
       const v = await view(await toConsent(id, CB));
       expect(v.client.kind).toBe('dcr');
+      // A loopback redirect is an app on this computer: no host or port is shown.
+      expect(v.client.redirectKind).toBe('local');
+      expect(v.client.redirectHost).toBe('');
+      expect(v.currentGrant).toBeNull();
       const by = Object.fromEntries(v.scopes.map((x) => [x.scope, x]));
       expect(by['spaces:read']!.defaultGranted).toBe(true);
       expect(by['offline_access']!.defaultGranted).toBe(true);

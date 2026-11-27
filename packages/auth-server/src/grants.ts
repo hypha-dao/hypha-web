@@ -140,6 +140,40 @@ export async function writeGrant(
   }
 }
 
+/**
+ * Where the consent page's space picker starts. A new connection (no stored grant) and a stored
+ * "all" start on "All my spaces", as before. A stored list starts on "Only the spaces I choose"
+ * with that list ticked, so an approval given without touching the picker never widens it:
+ * - spaces the person can no longer pick (not in `pickerSpaceIds`) are left out: narrower only;
+ * - when the person's spaces could not be loaded (`pickerSpaceIds` null), the stored list is kept
+ *   as it is (`keptUnlisted`), because offering only "All my spaces" would widen it.
+ */
+export function initialSpaceChoice(
+  current: GrantValue | null,
+  pickerSpaceIds: readonly number[] | null,
+): { mode: 'all' | 'spaces'; chosen: number[]; keptUnlisted: boolean } {
+  if (current === null || current === 'all') {
+    return {
+      mode: 'all',
+      chosen: (pickerSpaceIds ?? []).slice(0, MAX_SPACE_GRANTS),
+      keptUnlisted: false,
+    };
+  }
+  if (pickerSpaceIds === null) {
+    return {
+      mode: 'spaces',
+      chosen: current.slice(0, MAX_SPACE_GRANTS),
+      keptUnlisted: true,
+    };
+  }
+  const pickable = new Set(pickerSpaceIds);
+  return {
+    mode: 'spaces',
+    chosen: current.filter((id) => pickable.has(id)).slice(0, MAX_SPACE_GRANTS),
+    keptUnlisted: false,
+  };
+}
+
 /** Every listed space must exist; a grant for an unknown id is refused. */
 export async function assertSpacesExist(
   pool: Pick<AuthDbPool, 'query'>,
