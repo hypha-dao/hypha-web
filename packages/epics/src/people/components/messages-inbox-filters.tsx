@@ -255,40 +255,50 @@ function SpaceFilters({
 /** Phone categories. They sit on the conversation list, not on a screen before it. */
 export function MessagesInboxMobileTabs({
   value,
+  counts,
   onChange,
 }: {
   value: MobileInboxTab;
+  counts: Record<MobileInboxTab, number>;
   onChange: (tab: MobileInboxTab) => void;
 }) {
   const t = useTranslations('Connections');
+  const labelFor = (tab: MobileInboxTab) =>
+    tab === 'all'
+      ? t('inbox.tabAll')
+      : tab === 'direct'
+      ? t('inbox.directTitle')
+      : tab === 'groups'
+      ? t('groups')
+      : t('inbox.roomsTitle');
   return (
     <div
       role="tablist"
       aria-label={t('inbox.filterLabel')}
-      className="flex h-11 w-full border border-border bg-neutral-3 lg:hidden"
+      className="flex w-full border border-border bg-neutral-3 lg:hidden"
     >
       {MOBILE_INBOX_TABS.map((tab) => {
         const selected = value === tab;
+        const label = labelFor(tab);
+        const count = counts[tab];
         return (
           <button
             key={tab}
             type="button"
             role="tab"
             aria-selected={selected}
+            aria-label={`${label}, ${count}`}
             data-testid={`inbox-mobile-tab-${tab}`}
             onClick={() => onChange(tab)}
             className={cn(
-              'min-w-0 flex-1 text-2 text-foreground',
+              'flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-2 text-foreground',
               selected ? 'bg-background font-medium' : 'bg-transparent',
             )}
           >
-            {tab === 'all'
-              ? t('inbox.tabAll')
-              : tab === 'direct'
-              ? t('inbox.directTitle')
-              : tab === 'groups'
-              ? t('groups')
-              : t('inbox.roomsTitle')}
+            <span className="max-w-full truncate leading-tight">{label}</span>
+            <span className="text-1 leading-none text-muted-foreground tabular-nums">
+              {count}
+            </span>
           </button>
         );
       })}

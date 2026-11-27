@@ -151,6 +151,7 @@ import {
   inboxContextHref,
   inboxContextLine,
   inboxFilterCounts,
+  mobileInboxTabCounts,
   isInboxDirectConversation,
   inboxListWindow,
   INBOX_LIST_PAGE,
@@ -2783,15 +2784,17 @@ export function MyConnections({
             ),
           )
         : [];
-    const counts = inboxFilterCounts([
+    const countedRows = [
       ...directConversations.map((row) => ({
-        kind: row.inbox?.kind ?? 'dm',
+        kind: row.inbox?.kind ?? peopleInboxKind(row),
         unread: row.unread,
       })),
       ...channelRows.flatMap((row) =>
         row.inbox ? [{ kind: row.inbox.kind, unread: row.unread }] : [],
       ),
-    ]);
+    ];
+    const counts = inboxFilterCounts(countedRows);
+    const tabCounts = mobileInboxTabCounts(countedRows);
     if (section === 'messages' && !picking && !isLargeInbox) {
       if (mobileTab === 'all') {
         return {
@@ -2800,6 +2803,7 @@ export function MyConnections({
             ...channelRows,
           ]),
           counts,
+          tabCounts,
         };
       }
       if (mobileTab === 'channels') {
@@ -2812,6 +2816,7 @@ export function MyConnections({
             ),
           ),
           counts,
+          tabCounts,
         };
       }
       const peopleRows =
@@ -2828,10 +2833,11 @@ export function MyConnections({
           ),
         ),
         counts,
+        tabCounts,
       };
     }
     if (section !== 'messages' || picking || inboxFilter === 'direct') {
-      return { rows: directForList, counts };
+      return { rows: directForList, counts, tabCounts };
     }
     if (inboxFilter === 'all') {
       return {
@@ -2840,6 +2846,7 @@ export function MyConnections({
           ...channelRows,
         ]),
         counts,
+        tabCounts,
       };
     }
     return {
@@ -2851,6 +2858,7 @@ export function MyConnections({
         ),
       ),
       counts,
+      tabCounts,
     };
   }, [
     channels,
@@ -3397,6 +3405,7 @@ export function MyConnections({
                 {section === 'messages' && !picking ? (
                   <MessagesInboxMobileTabs
                     value={mobileTab}
+                    counts={inboxView.tabCounts}
                     onChange={(next) => {
                       setMobileTab(next);
                       setInboxVisibleCount(INBOX_LIST_PAGE);

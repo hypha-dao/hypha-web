@@ -17,6 +17,7 @@ import {
   isInboxChannelKind,
   resolveInboxPlace,
   rowMatchesInboxFilter,
+  mobileInboxTabCounts,
   rowMatchesMobileInboxTab,
   type InboxContext,
 } from '../messages-inbox';
@@ -95,6 +96,24 @@ describe('messages inbox filters', () => {
       expect(rowMatchesMobileInboxTab(kind, 'channels')).toBe(false);
       expect(rowMatchesMobileInboxTab(kind, 'all')).toBe(true);
     }
+  });
+
+  it('counts every space thread on the phone Channels tab', () => {
+    expect(
+      mobileInboxTabCounts([
+        { kind: 'dm' },
+        { kind: 'dm' },
+        { kind: 'group' },
+        { kind: 'space' },
+        { kind: 'space-public' },
+        { kind: 'signal' },
+        { kind: 'proposal' },
+        { kind: 'quest' },
+        { kind: 'context' },
+        { kind: 'ecosystem' },
+        { kind: 'network' },
+      ]),
+    ).toEqual({ all: 11, direct: 2, groups: 1, channels: 8 });
   });
 
   it('treats proposal rooms as their own messages channel', () => {

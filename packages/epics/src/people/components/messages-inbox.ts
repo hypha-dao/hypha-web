@@ -320,6 +320,27 @@ export function rowMatchesMobileInboxTab(
   );
 }
 
+/** Totals for the phone tabs. Channels includes every space thread. */
+export function mobileInboxTabCounts(
+  rows: readonly { kind: InboxChannelKind }[],
+): Record<MobileInboxTab, number> {
+  const counts: Record<MobileInboxTab, number> = {
+    all: 0,
+    direct: 0,
+    groups: 0,
+    channels: 0,
+  };
+  for (const row of rows) {
+    counts.all += 1;
+    if (row.kind === 'dm') counts.direct += 1;
+    else if (row.kind === 'group') counts.groups += 1;
+    else if (rowMatchesMobileInboxTab(row.kind, 'channels')) {
+      counts.channels += 1;
+    }
+  }
+  return counts;
+}
+
 export function rowMatchesInboxFilter(
   kind: InboxChannelKind,
   filter: InboxFilter,
