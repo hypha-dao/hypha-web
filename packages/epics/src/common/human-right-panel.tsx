@@ -449,6 +449,8 @@ const SESSION_ROOM_TO_COHERENCE_SPACE_PREFIX = 'hypha-room-to-coherence-space-';
 const COHERENCE_ROOM_REVERSE_PREFIX = 'hypha-room-id-to-coherence-';
 const CHAT_HISTORY_SESSION_PREFIX = 'hypha-chat-history-v1-';
 const CHAT_HISTORY_MAX_ITEMS = 250;
+/** Messages mounted when a conversation opens. The rest stay behind "load older". */
+const OPEN_THREAD_TAIL = 16;
 const CHAT_COMPOSER_DRAFT_PREFIX = 'hypha-chat-composer-draft-v1-';
 const CHAT_COMPOSER_DRAFT_MAX = 8000;
 const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
@@ -552,11 +554,22 @@ function writePersistedChatHistory(
       );
       if (existing && existing !== '[]') return;
     }
-    const safe = timelineMessagesForPersistence(messages);
+    const incoming = timelineMessagesForPersistence(messages);
     // Echoes alone must not wipe a good transcript from the last visit.
-    if (safe.length === 0) {
+    if (incoming.length === 0) {
       if (messages.length > 0) return;
     }
+    // The open path only keeps a screenful in React state. Merge so that
+    // short list does not erase older messages already stored for this room.
+    const stored = readPersistedChatHistory(roomId);
+    const safe =
+      stored.length > 0
+        ? timelineMessagesForPersistence(
+            sortMessagesChronologically(
+              dedupeTimelineMessages([...stored, ...incoming]),
+            ),
+          )
+        : incoming;
     const payload: PersistedUIMessage[] = safe
       .slice(-CHAT_HISTORY_MAX_ITEMS)
       .map((m) => ({
@@ -1341,7 +1354,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const [input, setInput] = useState('');
   const inputRef = useRef(input);
-  inputRef.current = input;
+  // Keystrokes update this ref without rendering the thread. Do not copy
+  // `input` back over it on each render — that wiped the draft before send.
   /**
    * Bumped only when the draft is replaced from outside the composer
    * (send, room switch, edit). Keystrokes stay in the composer so the
@@ -3304,7 +3318,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
       // The recent tail is enough to show the thread. Mapping a fully paged
       // timeline here is what made a switch sit blank for a few seconds.
-      paint(40);
+      paint(OPEN_THREAD_TAIL);
       if (messageCount() > 0 && !isCancelled()) setIsJoining(false);
       // Signal threads page back to the start so the bubbles and the comment
       // count see the same history. A direct or group chat only needs the tail.
@@ -3351,14 +3365,29 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       }
       if (messageCount() > 0) {
         if (!isCancelled()) setIsJoining(false);
+        // Let the tail paint before scrollback. Replacing it with the whole
+        // in-memory timeline was the multi-second pause on each switch.
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        });
+        if (isCancelled()) return;
         try {
           const historyResult = await matrixRef.current.loadRoomHistory(
             targetRoomId,
             { pageSize: 30, maxBatches: 1 },
           );
           if (isCancelled()) return;
-          setHasMoreOlderMessages(historyResult.hasMoreOlder);
-          paint();
+          const remembered = readPersistedChatHistory(targetRoomId).length;
+          const inMemory =
+            matrixRef.current.getRoomMessages(
+              targetRoomId,
+              OPEN_THREAD_TAIL + 1,
+            )?.length ?? 0;
+          setHasMoreOlderMessages(
+            historyResult.hasMoreOlder ||
+              remembered > OPEN_THREAD_TAIL ||
+              inMemory > OPEN_THREAD_TAIL,
+          );
         } catch (error) {
           if (!isCancelled()) {
             console.warn(
@@ -3379,7 +3408,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             { pageSize: 30, maxBatches: 1 },
           );
           hasMoreOlder = historyResult.hasMoreOlder;
-          paint();
+          paint(OPEN_THREAD_TAIL);
           if (messageCount() > 0 || !hasMoreOlder) break;
         } catch (error) {
           if (messageCount() > 0) break;
@@ -3406,7 +3435,13 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           force: true,
           maxBatches: 5,
         });
-        syncRoomMessages(targetRoomId);
+        syncRoomMessages(
+          targetRoomId,
+          Math.min(
+            CHAT_HISTORY_MAX_ITEMS,
+            Math.max(OPEN_THREAD_TAIL, messages.length) + 40,
+          ),
+        );
         setHasMoreOlderMessages(result.hasMoreOlder);
         if (
           source === 'auto' &&
@@ -3431,7 +3466,13 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         setLoadingOlderMessages(false);
       }
     },
-    [hasMoreOlderMessages, loadingOlderMessages, roomId, syncRoomMessages],
+    [
+      hasMoreOlderMessages,
+      loadingOlderMessages,
+      messages.length,
+      roomId,
+      syncRoomMessages,
+    ],
   );
 
   /** `@` when there is anyone to mention (joined members and/or roster-linked MXIDs). */
@@ -4216,17 +4257,19 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         messagesRoomIdRef.current = intendedRoomId;
         setRoomId(intendedRoomId);
         const cached = readPersistedChatHistory(intendedRoomId);
-        if (cached.length > 0) {
-          setMessages(cached);
+        const tail = cached.slice(-OPEN_THREAD_TAIL);
+        if (tail.length > 0) {
+          setMessages(tail);
           setPaintedRoomId(intendedRoomId);
           setIsJoining(false);
+          if (cached.length > tail.length) setHasMoreOlderMessages(true);
         } else {
           // Drop the previous room, then paint this room's local tail.
           setMessages([]);
           setPaintedRoomId(null);
           setIsJoining(true);
           try {
-            syncRoomMessages(intendedRoomId, 40);
+            syncRoomMessages(intendedRoomId, OPEN_THREAD_TAIL);
             const ready =
               matrixRef.current.getRoomMessages(intendedRoomId, 1)?.length ?? 0;
             if (ready > 0) setIsJoining(false);
@@ -4630,7 +4673,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!roomId) return;
     const cached = readPersistedChatHistory(roomId);
     if (cached.length === 0) return;
-    setMessages((prev) => (prev.length > 0 ? prev : cached));
+    const tail = cached.slice(-OPEN_THREAD_TAIL);
+    setMessages((prev) => (prev.length > 0 ? prev : tail));
+    if (cached.length > tail.length) setHasMoreOlderMessages(true);
   }, [roomId]);
 
   useEffect(() => {
@@ -5931,364 +5976,367 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     [setComposerTyping],
   );
 
-  const handleSend = useCallback(async () => {
-    if (!roomId) return;
-    if (blockSpaceChatForMembership) {
-      setComposerError(tCommon('joinSpaceToUse'));
-      return;
-    }
-    const text = inputRef.current;
-    const trimmed = text.trim();
-    if (!trimmed && draftAttachments.length === 0) return;
-    if (
-      trimmed &&
-      draftAttachments.length === 0 &&
-      !replyDraft &&
-      !editDraft &&
-      helperAcceptRef.current(trimmed)
-    ) {
+  const handleSend = useCallback(
+    async (draft?: string) => {
+      if (!roomId) return;
+      if (blockSpaceChatForMembership) {
+        setComposerError(tCommon('joinSpaceToUse'));
+        return;
+      }
+      const text = draft ?? inputRef.current;
+      const trimmed = text.trim();
+      if (!trimmed && draftAttachments.length === 0) return;
+      if (
+        trimmed &&
+        draftAttachments.length === 0 &&
+        !replyDraft &&
+        !editDraft &&
+        helperAcceptRef.current(trimmed)
+      ) {
+        setComposerTyping(false);
+        replaceComposerText('');
+        clearComposerDraft(roomId);
+        return;
+      }
       setComposerTyping(false);
+      const replyToEventId = replyDraft?.messageId;
+      const editTargetEventId = editDraft?.messageId;
+      const savedDraft = replyDraft;
+      const savedEditDraft = editDraft;
+      const savedAttachments = draftAttachments;
+      sendAbortControllerRef.current?.abort();
+      const abortController = new AbortController();
+      sendAbortControllerRef.current = abortController;
+      const signal = abortController.signal;
+
+      const sendToken = Symbol('send');
+      sendOperationTokenRef.current = sendToken;
+      setComposerError(null);
+      setMentionDeliveryNotice(null);
       replaceComposerText('');
       clearComposerDraft(roomId);
-      return;
-    }
-    setComposerTyping(false);
-    const replyToEventId = replyDraft?.messageId;
-    const editTargetEventId = editDraft?.messageId;
-    const savedDraft = replyDraft;
-    const savedEditDraft = editDraft;
-    const savedAttachments = draftAttachments;
-    sendAbortControllerRef.current?.abort();
-    const abortController = new AbortController();
-    sendAbortControllerRef.current = abortController;
-    const signal = abortController.signal;
-
-    const sendToken = Symbol('send');
-    sendOperationTokenRef.current = sendToken;
-    setComposerError(null);
-    setMentionDeliveryNotice(null);
-    replaceComposerText('');
-    clearComposerDraft(roomId);
-    setDraftAttachments([]);
-    const pendingId =
-      savedAttachments.length > 0 ? `hypha-send-pending-${Date.now()}` : null;
-    const { wirePlain, mentionUserIds } = wireComposerPlainForMatrixSend(
-      text,
-      mentionSanitizedLabelToUserId,
-    );
-    if (pendingId) {
-      setSendingPending({
-        id: pendingId,
-        attachmentCount: savedAttachments.length,
-        captionPreview: text,
-        uploadedCount: 0,
-      });
-    }
-    const optimisticId =
-      !editTargetEventId && !pendingId && wirePlain.trim()
-        ? `~hypha-outgoing-${Date.now()}`
-        : null;
-    if (optimisticId) {
-      const outgoingId = optimisticId;
-      setMessages((prev) =>
-        sortMessagesChronologically([
-          ...prev,
-          {
-            id: outgoingId,
-            role: 'user',
-            parts: [{ type: 'text', text: wirePlain }],
-            timestamp: new Date(),
-            sendAcknowledged: false,
-          },
-        ]),
+      setDraftAttachments([]);
+      const pendingId =
+        savedAttachments.length > 0 ? `hypha-send-pending-${Date.now()}` : null;
+      const { wirePlain, mentionUserIds } = wireComposerPlainForMatrixSend(
+        text,
+        mentionSanitizedLabelToUserId,
       );
-    }
-    let mentionNotice: string | null = null;
-    try {
-      if (editTargetEventId) {
-        if (savedEditDraft?.editMediaMode) {
-          const slots = savedAttachments
-            .map((a) => a.editSlot)
-            .filter((s): s is NonNullable<ChatDraftAttachment['editSlot']> =>
-              Boolean(s),
-            );
-          if (slots.length === 0) {
-            throw new Error(t('editMediaRequiresAttachment'));
-          }
-          const newFiles = savedAttachments
-            .filter((a) => !a.editSlot)
-            .map((a) => ({
-              file: a.file,
-              kind: (a.kind === 'image'
-                ? 'image'
-                : a.kind === 'audio'
-                ? 'audio'
-                : 'file') as 'image' | 'audio' | 'file',
-              spoiler: a.spoiler,
-            }));
-          await matrixRef.current.editRoomMessage({
-            roomId,
-            targetEventId: editTargetEventId,
-            message: wirePlain,
-            mentionUserIds,
-            existingMediaSlots: slots,
-            ...(newFiles.length > 0 ? { newAttachments: newFiles } : {}),
-            ...(newFiles.length > 0 ? { signal } : {}),
-          });
-        } else {
-          if (savedAttachments.length > 0) {
-            throw new Error(t('editAttachmentsNotSupported'));
-          }
-          await matrixRef.current.editRoomMessage({
-            roomId,
-            targetEventId: editTargetEventId,
-            message: wirePlain,
-            mentionUserIds,
-          });
-        }
-        // Timeline replace can land before replacingEventId is final; mark
-        // edited immediately so the label is visible without waiting on sync.
-        const caption = wirePlain.trim();
-        setMessages((prev) =>
-          prev.map((m) => {
-            if (m.id !== editTargetEventId) return m;
-            const isMedia = Boolean(m.media || m.mediaSlots?.length);
-            return {
-              ...m,
-              edited: true,
-              parts: isMedia
-                ? caption
-                  ? [{ type: 'text' as const, text: caption }]
-                  : []
-                : [{ type: 'text' as const, text: wirePlain }],
-              formattedContentHtml: undefined,
-            };
-          }),
-        );
-      } else {
-        if (isSignalThread && mentionUserIds.length > 0) {
-          // Signal discussions are open to the whole space: pull mentioned members
-          // into the thread before sending so the server-fired mention notification
-          // (which only targets joined members) and their Messages inbox see it.
-          const threadRoom = matrixRef.current.client?.getRoom(roomId);
-          const notJoined = mentionUserIds.filter(
-            (id) => threadRoom?.getMember(id)?.membership !== 'join',
-          );
-          if (notJoined.length > 0) {
-            // A failed join only costs that person the notification; the
-            // message itself still goes out.
-            let unnotified: string[];
-            try {
-              const failed = new Set(
-                await matrixRef.current.ensureRoomMembers(roomId, notJoined, {
-                  signal,
-                }),
-              );
-              unnotified = notJoined.filter((id) => failed.has(id));
-            } catch (joinError) {
-              if (joinError instanceof SendMessageCancelledError) {
-                throw joinError;
-              }
-              unnotified = notJoined;
-            }
-            if (unnotified.length > 0) {
-              mentionNotice = t('signalMentionNotNotified', {
-                names: unnotified
-                  .map((id) => resolveMentionMemberLabel(id))
-                  .join(', '),
-              });
-            }
-          }
-        }
-        await matrixRef.current.sendMessage({
-          roomId,
-          message: wirePlain,
-          mentionUserIds,
-          signal,
-          ...(replyToEventId ? { replyToEventId } : {}),
-          ...(savedAttachments.length > 0
-            ? {
-                attachments: savedAttachments.map((a) => ({
-                  file: a.file,
-                  kind: (a.kind === 'image'
-                    ? 'image'
-                    : a.kind === 'audio'
-                    ? 'audio'
-                    : 'file') as 'image' | 'audio' | 'file',
-                  spoiler: a.spoiler,
-                })),
-                onUploadProgress: ({ completed, total }) => {
-                  setSendingPending((cur) =>
-                    cur && cur.id === pendingId
-                      ? {
-                          ...cur,
-                          attachmentCount: total,
-                          uploadedCount: completed,
-                        }
-                      : cur,
-                  );
-                },
-              }
-            : {}),
-        });
-        // Only a delivered message from the still-current send may surface it.
-        if (mentionNotice && sendOperationTokenRef.current === sendToken) {
-          setMentionDeliveryNotice(mentionNotice);
-        }
-        // Mention notifications are server-fired (#2470) from the #2483 AS receiver watching
-        // this same Matrix message — no client trigger needed here anymore.
-        await inviteMatrixAgentIfNeeded(
-          matrixRef.current.client,
-          roomId,
-          mentionUserIds,
-        );
-        requestMatrixAgentReply({
-          authToken: authTokenRef.current,
-          roomId,
-          mentionUserIds,
-          context: isDirectConversation
-            ? { kind: 'dm' }
-            : contextSectionKey
-            ? {
-                kind: 'space_context',
-                spaceSlug,
-                sectionKey: contextSectionKey,
-              }
-            : isNetworkSpaceChat || coherenceChannel === 'network'
-            ? { kind: 'network' }
-            : mode === 'space' && spaceRoom === 'ecosystem'
-            ? { kind: 'ecosystem', spaceSlug }
-            : mode === 'space' && spaceRoom === 'public'
-            ? { kind: 'public', spaceSlug }
-            : coherencePublic
-            ? { kind: 'public', spaceSlug }
-            : coherenceChannel === 'quest'
-            ? {
-                kind: 'quest',
-                spaceSlug,
-                questSlug: coherenceSlug,
-                questTitle: coherenceTitle,
-              }
-            : mode === 'coherence' && coherenceSlug?.trim()
-            ? {
-                kind: 'signal',
-                spaceSlug,
-                signalSlug: coherenceSlug,
-                signalTitle: coherenceTitle,
-              }
-            : { kind: 'space', spaceSlug },
+      if (pendingId) {
+        setSendingPending({
+          id: pendingId,
+          attachmentCount: savedAttachments.length,
+          captionPreview: text,
+          uploadedCount: 0,
         });
       }
-      setSendingPending(null);
-      disposeDraftAttachmentUrls(savedAttachments);
-      setReplyDraft(null);
-      setEditDraft(null);
-      if (sendOperationTokenRef.current === sendToken) {
-        sendOperationTokenRef.current = null;
-      }
-      if (sendAbortControllerRef.current === abortController) {
-        sendAbortControllerRef.current = null;
-      }
-    } catch (err) {
-      console.error('[HumanRightPanel] Failed to send message:', err);
+      const optimisticId =
+        !editTargetEventId && !pendingId && wirePlain.trim()
+          ? `~hypha-outgoing-${Date.now()}`
+          : null;
       if (optimisticId) {
-        setMessages((prev) => prev.filter((row) => row.id !== optimisticId));
-      }
-      if (sendOperationTokenRef.current !== sendToken) {
-        disposeDraftAttachmentUrls(savedAttachments);
-        setSendingPending(null);
-        return;
-      }
-      sendOperationTokenRef.current = null;
-      setSendingPending(null);
-      if (sendAbortControllerRef.current === abortController) {
-        sendAbortControllerRef.current = null;
-      }
-      if (err instanceof SendMessageCancelledError) {
-        disposeDraftAttachmentUrls(savedAttachments);
-        replaceComposerText(text);
-        setDraftAttachments(savedAttachments);
-        setReplyDraft(savedDraft);
-        setEditDraft(savedEditDraft);
-        return;
-      }
-      if (err instanceof SendMessagePartialFailureError) {
-        const { sentAttachmentCount, restoreCaption, message } = err;
-        setComposerError(
-          t('sendPartialFailed', {
-            sent: sentAttachmentCount,
-            detail: message,
-          }),
+        const outgoingId = optimisticId;
+        setMessages((prev) =>
+          sortMessagesChronologically([
+            ...prev,
+            {
+              id: outgoingId,
+              role: 'user',
+              parts: [{ type: 'text', text: wirePlain }],
+              timestamp: new Date(),
+              sendAcknowledged: false,
+            },
+          ]),
         );
-        for (let i = 0; i < sentAttachmentCount; i++) {
-          const a = savedAttachments[i];
-          if (a) URL.revokeObjectURL(a.previewUrl);
+      }
+      let mentionNotice: string | null = null;
+      try {
+        if (editTargetEventId) {
+          if (savedEditDraft?.editMediaMode) {
+            const slots = savedAttachments
+              .map((a) => a.editSlot)
+              .filter((s): s is NonNullable<ChatDraftAttachment['editSlot']> =>
+                Boolean(s),
+              );
+            if (slots.length === 0) {
+              throw new Error(t('editMediaRequiresAttachment'));
+            }
+            const newFiles = savedAttachments
+              .filter((a) => !a.editSlot)
+              .map((a) => ({
+                file: a.file,
+                kind: (a.kind === 'image'
+                  ? 'image'
+                  : a.kind === 'audio'
+                  ? 'audio'
+                  : 'file') as 'image' | 'audio' | 'file',
+                spoiler: a.spoiler,
+              }));
+            await matrixRef.current.editRoomMessage({
+              roomId,
+              targetEventId: editTargetEventId,
+              message: wirePlain,
+              mentionUserIds,
+              existingMediaSlots: slots,
+              ...(newFiles.length > 0 ? { newAttachments: newFiles } : {}),
+              ...(newFiles.length > 0 ? { signal } : {}),
+            });
+          } else {
+            if (savedAttachments.length > 0) {
+              throw new Error(t('editAttachmentsNotSupported'));
+            }
+            await matrixRef.current.editRoomMessage({
+              roomId,
+              targetEventId: editTargetEventId,
+              message: wirePlain,
+              mentionUserIds,
+            });
+          }
+          // Timeline replace can land before replacingEventId is final; mark
+          // edited immediately so the label is visible without waiting on sync.
+          const caption = wirePlain.trim();
+          setMessages((prev) =>
+            prev.map((m) => {
+              if (m.id !== editTargetEventId) return m;
+              const isMedia = Boolean(m.media || m.mediaSlots?.length);
+              return {
+                ...m,
+                edited: true,
+                parts: isMedia
+                  ? caption
+                    ? [{ type: 'text' as const, text: caption }]
+                    : []
+                  : [{ type: 'text' as const, text: wirePlain }],
+                formattedContentHtml: undefined,
+              };
+            }),
+          );
+        } else {
+          if (isSignalThread && mentionUserIds.length > 0) {
+            // Signal discussions are open to the whole space: pull mentioned members
+            // into the thread before sending so the server-fired mention notification
+            // (which only targets joined members) and their Messages inbox see it.
+            const threadRoom = matrixRef.current.client?.getRoom(roomId);
+            const notJoined = mentionUserIds.filter(
+              (id) => threadRoom?.getMember(id)?.membership !== 'join',
+            );
+            if (notJoined.length > 0) {
+              // A failed join only costs that person the notification; the
+              // message itself still goes out.
+              let unnotified: string[];
+              try {
+                const failed = new Set(
+                  await matrixRef.current.ensureRoomMembers(roomId, notJoined, {
+                    signal,
+                  }),
+                );
+                unnotified = notJoined.filter((id) => failed.has(id));
+              } catch (joinError) {
+                if (joinError instanceof SendMessageCancelledError) {
+                  throw joinError;
+                }
+                unnotified = notJoined;
+              }
+              if (unnotified.length > 0) {
+                mentionNotice = t('signalMentionNotNotified', {
+                  names: unnotified
+                    .map((id) => resolveMentionMemberLabel(id))
+                    .join(', '),
+                });
+              }
+            }
+          }
+          await matrixRef.current.sendMessage({
+            roomId,
+            message: wirePlain,
+            mentionUserIds,
+            signal,
+            ...(replyToEventId ? { replyToEventId } : {}),
+            ...(savedAttachments.length > 0
+              ? {
+                  attachments: savedAttachments.map((a) => ({
+                    file: a.file,
+                    kind: (a.kind === 'image'
+                      ? 'image'
+                      : a.kind === 'audio'
+                      ? 'audio'
+                      : 'file') as 'image' | 'audio' | 'file',
+                    spoiler: a.spoiler,
+                  })),
+                  onUploadProgress: ({ completed, total }) => {
+                    setSendingPending((cur) =>
+                      cur && cur.id === pendingId
+                        ? {
+                            ...cur,
+                            attachmentCount: total,
+                            uploadedCount: completed,
+                          }
+                        : cur,
+                    );
+                  },
+                }
+              : {}),
+          });
+          // Only a delivered message from the still-current send may surface it.
+          if (mentionNotice && sendOperationTokenRef.current === sendToken) {
+            setMentionDeliveryNotice(mentionNotice);
+          }
+          // Mention notifications are server-fired (#2470) from the #2483 AS receiver watching
+          // this same Matrix message — no client trigger needed here anymore.
+          await inviteMatrixAgentIfNeeded(
+            matrixRef.current.client,
+            roomId,
+            mentionUserIds,
+          );
+          requestMatrixAgentReply({
+            authToken: authTokenRef.current,
+            roomId,
+            mentionUserIds,
+            context: isDirectConversation
+              ? { kind: 'dm' }
+              : contextSectionKey
+              ? {
+                  kind: 'space_context',
+                  spaceSlug,
+                  sectionKey: contextSectionKey,
+                }
+              : isNetworkSpaceChat || coherenceChannel === 'network'
+              ? { kind: 'network' }
+              : mode === 'space' && spaceRoom === 'ecosystem'
+              ? { kind: 'ecosystem', spaceSlug }
+              : mode === 'space' && spaceRoom === 'public'
+              ? { kind: 'public', spaceSlug }
+              : coherencePublic
+              ? { kind: 'public', spaceSlug }
+              : coherenceChannel === 'quest'
+              ? {
+                  kind: 'quest',
+                  spaceSlug,
+                  questSlug: coherenceSlug,
+                  questTitle: coherenceTitle,
+                }
+              : mode === 'coherence' && coherenceSlug?.trim()
+              ? {
+                  kind: 'signal',
+                  spaceSlug,
+                  signalSlug: coherenceSlug,
+                  signalTitle: coherenceTitle,
+                }
+              : { kind: 'space', spaceSlug },
+          });
         }
-        setDraftAttachments(savedAttachments.slice(sentAttachmentCount));
-        replaceComposerText(restoreCaption ? text : '');
-        setReplyDraft(savedDraft);
-        setEditDraft(savedEditDraft);
-        return;
-      }
-      const isUnknownTokenError =
-        typeof err === 'object' &&
-        err !== null &&
-        ((err as { errcode?: string }).errcode === 'M_UNKNOWN_TOKEN' ||
-          (err as { data?: { errcode?: string } }).data?.errcode ===
-            'M_UNKNOWN_TOKEN' ||
-          `${(err as { message?: string }).message ?? ''}`
-            .toLowerCase()
-            .includes('unknown token'));
-      if (isUnknownTokenError) {
-        const recovered = await matrixRef.current
-          .refreshSession()
-          .catch(() => false);
-        setComposerError(
-          recovered
-            ? 'Chat session refreshed. Please send your message again.'
-            : 'Chat session expired. Please reload the page and try again.',
-        );
+        setSendingPending(null);
+        disposeDraftAttachmentUrls(savedAttachments);
+        setReplyDraft(null);
+        setEditDraft(null);
+        if (sendOperationTokenRef.current === sendToken) {
+          sendOperationTokenRef.current = null;
+        }
+        if (sendAbortControllerRef.current === abortController) {
+          sendAbortControllerRef.current = null;
+        }
+      } catch (err) {
+        console.error('[HumanRightPanel] Failed to send message:', err);
+        if (optimisticId) {
+          setMessages((prev) => prev.filter((row) => row.id !== optimisticId));
+        }
+        if (sendOperationTokenRef.current !== sendToken) {
+          disposeDraftAttachmentUrls(savedAttachments);
+          setSendingPending(null);
+          return;
+        }
+        sendOperationTokenRef.current = null;
+        setSendingPending(null);
+        if (sendAbortControllerRef.current === abortController) {
+          sendAbortControllerRef.current = null;
+        }
+        if (err instanceof SendMessageCancelledError) {
+          disposeDraftAttachmentUrls(savedAttachments);
+          replaceComposerText(text);
+          setDraftAttachments(savedAttachments);
+          setReplyDraft(savedDraft);
+          setEditDraft(savedEditDraft);
+          return;
+        }
+        if (err instanceof SendMessagePartialFailureError) {
+          const { sentAttachmentCount, restoreCaption, message } = err;
+          setComposerError(
+            t('sendPartialFailed', {
+              sent: sentAttachmentCount,
+              detail: message,
+            }),
+          );
+          for (let i = 0; i < sentAttachmentCount; i++) {
+            const a = savedAttachments[i];
+            if (a) URL.revokeObjectURL(a.previewUrl);
+          }
+          setDraftAttachments(savedAttachments.slice(sentAttachmentCount));
+          replaceComposerText(restoreCaption ? text : '');
+          setReplyDraft(savedDraft);
+          setEditDraft(savedEditDraft);
+          return;
+        }
+        const isUnknownTokenError =
+          typeof err === 'object' &&
+          err !== null &&
+          ((err as { errcode?: string }).errcode === 'M_UNKNOWN_TOKEN' ||
+            (err as { data?: { errcode?: string } }).data?.errcode ===
+              'M_UNKNOWN_TOKEN' ||
+            `${(err as { message?: string }).message ?? ''}`
+              .toLowerCase()
+              .includes('unknown token'));
+        if (isUnknownTokenError) {
+          const recovered = await matrixRef.current
+            .refreshSession()
+            .catch(() => false);
+          setComposerError(
+            recovered
+              ? 'Chat session refreshed. Please send your message again.'
+              : 'Chat session expired. Please reload the page and try again.',
+          );
+          replaceComposerText(text);
+          setReplyDraft(savedDraft);
+          setEditDraft(savedEditDraft);
+          setDraftAttachments(savedAttachments);
+          return;
+        }
+        const msg = isMatrixRateLimitedError(err)
+          ? t('sendRateLimited')
+          : err instanceof MatrixUploadTimeoutError
+          ? t('sendUploadTimedOut')
+          : err instanceof Error
+          ? t('sendFailedWithReason', { message: err.message })
+          : t('sendFailed');
+        setComposerError(msg);
         replaceComposerText(text);
         setReplyDraft(savedDraft);
         setEditDraft(savedEditDraft);
         setDraftAttachments(savedAttachments);
-        return;
       }
-      const msg = isMatrixRateLimitedError(err)
-        ? t('sendRateLimited')
-        : err instanceof MatrixUploadTimeoutError
-        ? t('sendUploadTimedOut')
-        : err instanceof Error
-        ? t('sendFailedWithReason', { message: err.message })
-        : t('sendFailed');
-      setComposerError(msg);
-      replaceComposerText(text);
-      setReplyDraft(savedDraft);
-      setEditDraft(savedEditDraft);
-      setDraftAttachments(savedAttachments);
-    }
-  }, [
-    roomId,
-    replyDraft,
-    editDraft,
-    draftAttachments,
-    mentionSanitizedLabelToUserId,
-    blockSpaceChatForMembership,
-    isDirectConversation,
-    isNetworkSpaceChat,
-    isSignalThread,
-    coherenceChannel,
-    contextSectionKey,
-    spaceSlug,
-    mode,
-    spaceRoom,
-    coherenceSlug,
-    coherenceTitle,
-    setComposerTyping,
-    resolveMentionMemberLabel,
-    tCommon,
-    t,
-  ]);
+    },
+    [
+      roomId,
+      replyDraft,
+      editDraft,
+      draftAttachments,
+      mentionSanitizedLabelToUserId,
+      blockSpaceChatForMembership,
+      isDirectConversation,
+      isNetworkSpaceChat,
+      isSignalThread,
+      coherenceChannel,
+      contextSectionKey,
+      spaceSlug,
+      mode,
+      spaceRoom,
+      coherenceSlug,
+      coherenceTitle,
+      setComposerTyping,
+      resolveMentionMemberLabel,
+      tCommon,
+      t,
+    ],
+  );
 
   useEffect(() => {
     setMentionDeliveryNotice(null);

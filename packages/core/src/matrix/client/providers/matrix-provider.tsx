@@ -503,6 +503,8 @@ export interface ToggleReactionInput {
 
 export type MatrixEventListener = (
   event: MatrixSdk.MatrixEvent,
+  room?: MatrixSdk.Room | null,
+  toStartOfTimeline?: boolean,
 ) => Promise<void>;
 export type RoomMessageListener = (message: Message) => Promise<void>;
 export type RoomMessagePinnedListener = (pinned: string[]) => Promise<void>;
@@ -2057,17 +2059,32 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
       const pinned = getPinnedMessageIds(roomId);
       const uid = client.getUserId();
-      let events = room
-        .getLiveTimeline()
-        .getEvents()
-        .filter((event) => event.getType() === EventType.RoomMessage)
-        .filter((event) => !isHiddenHumanChatRoomMessage(event))
-        .filter((event) => !isScreenshareTakeoverEvent(event))
-        .filter((event) => !isRedactedRoomMessageEvent(event))
-        .filter((event) => event.getId() && event.getSender())
-        .filter((event) => getMessageReplaceTargetEventId(event) == null);
-      if (limit != null && limit > 0 && events.length > limit) {
-        events = events.slice(-limit);
+      const isShownMessage = (event: MatrixSdk.MatrixEvent) =>
+        event.getType() === EventType.RoomMessage &&
+        !isHiddenHumanChatRoomMessage(event) &&
+        !isScreenshareTakeoverEvent(event) &&
+        !isRedactedRoomMessageEvent(event) &&
+        Boolean(event.getId()) &&
+        Boolean(event.getSender()) &&
+        getMessageReplaceTargetEventId(event) == null;
+      const timeline = room.getLiveTimeline().getEvents();
+      // A switch only needs the tail. Walking a fully paged timeline here
+      // blocked the click for seconds before the new thread could paint.
+      let events: MatrixSdk.MatrixEvent[];
+      if (limit != null && limit > 0) {
+        const picked: MatrixSdk.MatrixEvent[] = [];
+        for (
+          let index = timeline.length - 1;
+          index >= 0 && picked.length < limit;
+          index -= 1
+        ) {
+          const event = timeline[index];
+          if (!event || !isShownMessage(event)) continue;
+          picked.push(event);
+        }
+        events = picked.reverse();
+      } else {
+        events = timeline.filter(isShownMessage);
       }
       return events.map((event) => {
         const base = messageFromRoomMessageEvent(
@@ -2372,7 +2389,12 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       unregisterRoomListener(roomId);
       const eventListener: MatrixEventListener = async (
         event: MatrixSdk.MatrixEvent,
+        _timelineRoom?: MatrixSdk.Room | null,
+        toStartOfTimeline?: boolean,
       ) => {
+        // Scrollback emits the older timeline with this flag. Painting those
+        // one by one is what made a conversation switch hitch for seconds.
+        if (toStartOfTimeline) return;
         if (event.getRoomId() !== roomId) {
           return;
         }

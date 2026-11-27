@@ -321,7 +321,7 @@ const COMPOSER_INPUT_MAX_PX = 160;
 type HumanChatPanelChatBarProps = {
   value: string;
   onChange: (value: string) => void;
-  onSend: () => void;
+  onSend: (draft: string) => void;
   /** Editing a media message: keep at least one attachment row. */
   editMediaMode?: boolean;
   placeholder?: string;
@@ -1406,7 +1406,7 @@ export function HumanChatPanelChatBar({
 
   const sendMessage = useCallback(() => {
     prepareSendSession();
-    onSend();
+    onSend(valueRef.current);
   }, [prepareSendSession, onSend]);
 
   const startDictation = useCallback(() => {

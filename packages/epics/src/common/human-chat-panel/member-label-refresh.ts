@@ -33,10 +33,9 @@ export function keepVisibleMemberLabel(
     withoutPlaceholder(current),
   );
   if (visible) return visible;
-  const kept = current?.trim();
+  const kept = withoutPlaceholder(current);
   if (kept && !looksLikeTechnicalMatrixDisplayName(kept, matrixUserId)) {
     return kept;
   }
-  const next = resolved?.trim();
-  return next || undefined;
+  return withoutPlaceholder(resolved) || undefined;
 }

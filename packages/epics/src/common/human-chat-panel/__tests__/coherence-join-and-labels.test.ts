@@ -102,4 +102,10 @@ describe('member label refresh', () => {
       ),
     ).toBe('Alex Prate');
   });
+
+  it('drops the unknown placeholder instead of keeping it as a name', () => {
+    expect(
+      keepVisibleMemberLabel('@alex:example', 'Unknown', 'Unknown', 'Unknown'),
+    ).toBeUndefined();
+  });
 });
