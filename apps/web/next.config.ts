@@ -68,6 +68,8 @@ const MIDDLEWARE_SKIPPED_PREFIXES = [
   'geo',
   // Self-hosted third-party assets in public/ (#2563: MediaPipe WASM and model).
   'vendor/',
+  // Built-in call background images in public/ (#2563).
+  'call-backgrounds/',
   '_next/static',
   '_next/image',
   'favicon.ico',

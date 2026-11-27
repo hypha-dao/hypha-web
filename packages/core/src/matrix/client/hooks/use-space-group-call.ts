@@ -1467,7 +1467,16 @@ export function useSpaceGroupCall(
         // Unmuting restarts our processor with the new camera capture (livekit-client
         // `LocalTrack.setMediaStreamTrack`), so the effect continues; sync its mode first.
         if (existing && existingHasProcessor) {
-          await switchCallBackgroundEffect(existing, effect);
+          try {
+            await switchCallBackgroundEffect(existing, effect);
+          } catch (err) {
+            // Privacy first: do not turn the camera on with the wrong (maybe no) effect.
+            logCallDebug('background-effect:switch-failed', {
+              message: err instanceof Error ? err.message : String(err),
+            });
+            setBackgroundEffectStatus('failed');
+            return false;
+          }
         }
         await participant.setCameraEnabled(true);
         setBackgroundEffectStatus(
@@ -1518,6 +1527,10 @@ export function useSpaceGroupCall(
         await participant.publishTrack(track);
       } catch (err) {
         track.stop();
+        if (err instanceof CallBackgroundEffectError) {
+          setBackgroundEffectStatus('failed');
+          return false;
+        }
         setBackgroundEffectStatus('idle');
         throw err;
       }
@@ -2347,8 +2360,21 @@ export function useSpaceGroupCall(
       if (backgroundAttachInFlightRef.current) return;
 
       const active = isCallBackgroundEffectActive(effect);
-      if (await switchCallBackgroundEffect(track, effect)) {
-        setBackgroundEffectStatus(active ? 'active' : 'idle');
+      if (getCallBackgroundProcessor(track)) {
+        // An image may take a moment to load; the previous effect stays meanwhile.
+        if (effect.kind === 'image') setBackgroundEffectStatus('applying');
+        try {
+          await switchCallBackgroundEffect(track, effect);
+          if (backgroundEffectRef.current !== effect) return;
+          setBackgroundEffectStatus(active ? 'active' : 'idle');
+        } catch (err) {
+          logCallDebug('background-effect:switch-failed', {
+            message: err instanceof Error ? err.message : String(err),
+          });
+          if (backgroundEffectRef.current === effect) {
+            setBackgroundEffectStatus('failed');
+          }
+        }
         return;
       }
       if (!active || !backgroundEffectSupportedRef.current) {

@@ -353,6 +353,7 @@ export const config = {
     // `robots.txt`, `sitemap.xml`, `llms.txt` — static files in public/ (#2696): served from the CDN
     // with no function run; without this they are redirected to /<locale>/... and end in a 404.
     // `vendor/` — self-hosted third-party assets in public/ (#2563: MediaPipe WASM and model).
-    '/((?!_matrix|auth/|api/auth/|mcp|placeholder|icon|brand|onesignal|.well-known|geo|vendor/|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt).*)',
+    // `call-backgrounds/` — built-in call background images in public/ (#2563).
+    '/((?!_matrix|auth/|api/auth/|mcp|placeholder|icon|brand|onesignal|.well-known|geo|vendor/|call-backgrounds/|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt).*)',
   ],
 };

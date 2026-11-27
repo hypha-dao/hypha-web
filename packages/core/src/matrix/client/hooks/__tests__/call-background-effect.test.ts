@@ -4,6 +4,8 @@ import {
   CALL_BACKGROUND_ASSET_PATHS,
   CALL_BACKGROUND_BLUR_RADIUS,
   CALL_BACKGROUND_EFFECT_STORAGE_KEY,
+  CALL_BACKGROUND_IMAGES,
+  findCallBackgroundImage,
   callBackgroundEffectsEqual,
   createCallBackgroundFrameDropDetector,
   isCallBackgroundEffectActive,
@@ -36,7 +38,7 @@ describe('parse / serialize', () => {
     }
   });
 
-  it.each([null, undefined, '', 'nonsense', 'BLUR', 'image:'])(
+  it.each([null, undefined, '', 'nonsense', 'BLUR', 'image'])(
     'falls back to none for %p',
     (raw) => {
       expect(parseCallBackgroundEffect(raw)).toEqual({ kind: 'none' });
@@ -227,6 +229,65 @@ describe('self-hosted assets', () => {
     );
     expect(CALL_BACKGROUND_ASSET_PATHS.tasksVisionFileSet).toBe(
       `/vendor/mediapipe/tasks-vision-${MEDIAPIPE_TASKS_VISION_VERSION}/wasm`,
+    );
+  });
+});
+
+describe('built-in images', () => {
+  const first = CALL_BACKGROUND_IMAGES[0]!;
+
+  it('has unique ids and same-origin paths with thumbnails', () => {
+    const ids = CALL_BACKGROUND_IMAGES.map((image) => image.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const image of CALL_BACKGROUND_IMAGES) {
+      expect(image.src).toMatch(/^\/call-backgrounds\/[a-z0-9-]+\.(jpg|webp)$/);
+      expect(image.thumbnailSrc).toMatch(
+        /^\/call-backgrounds\/[a-z0-9-]+-thumb\.(jpg|webp)$/,
+      );
+      expect(findCallBackgroundImage(image.id)).toBe(image);
+    }
+  });
+
+  it('round-trips an image effect', () => {
+    const effect = { kind: 'image', imageId: first.id } as const;
+    expect(serializeCallBackgroundEffect(effect)).toBe(`image:${first.id}`);
+    expect(parseCallBackgroundEffect(`image:${first.id}`)).toEqual(effect);
+  });
+
+  it('falls back to blur for an image that no longer exists', () => {
+    expect(parseCallBackgroundEffect('image:removed-in-a-release')).toEqual({
+      kind: 'blur',
+    });
+    expect(parseCallBackgroundEffect('image:')).toEqual({ kind: 'blur' });
+  });
+
+  it('maps images to the virtual background mode', () => {
+    expect(
+      processorModeForEffect({ kind: 'image', imageId: first.id }),
+    ).toEqual({ mode: 'virtual-background', imagePath: first.src });
+    expect(
+      processorModeForEffect({ kind: 'image', imageId: 'unknown' }),
+    ).toEqual({
+      mode: 'background-blur',
+      blurRadius: CALL_BACKGROUND_BLUR_RADIUS,
+    });
+  });
+
+  it('compares image effects by id', () => {
+    expect(
+      callBackgroundEffectsEqual(
+        { kind: 'image', imageId: 'a' },
+        { kind: 'image', imageId: 'a' },
+      ),
+    ).toBe(true);
+    expect(
+      callBackgroundEffectsEqual(
+        { kind: 'image', imageId: 'a' },
+        { kind: 'image', imageId: 'b' },
+      ),
+    ).toBe(false);
+    expect(isCallBackgroundEffectActive({ kind: 'image', imageId: 'a' })).toBe(
+      true,
     );
   });
 });

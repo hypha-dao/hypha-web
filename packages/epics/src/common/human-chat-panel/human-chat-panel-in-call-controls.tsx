@@ -963,9 +963,17 @@ export function HumanChatPanelInCallControls({
       ) : null}
     </div>
   );
-  const showBackgroundEffectControl = Boolean(
-    showAdvancedCallControls && backgroundEffect?.supported,
-  );
+  /** The browser can run the effect; offered at every width (#2563). */
+  const backgroundEffectAvailable = Boolean(backgroundEffect?.supported);
+  /** Own toolbar button on wide screens; narrow screens use the More menu. */
+  const showBackgroundEffectControl =
+    showAdvancedCallControls && backgroundEffectAvailable;
+  /** Narrow screens outside screenshare: a More menu holding Background (no Leave, it has a button). */
+  const showCompactMoreMenu =
+    !showAdvancedCallControls &&
+    backgroundEffectAvailable &&
+    !screenshareEssentialToolbar &&
+    !leaveOnly;
   const renderEffectsMenuBody = (backButton?: ReactNode) =>
     backgroundEffect ? (
       <CallBackgroundEffectMenuBody
@@ -1029,9 +1037,10 @@ export function HumanChatPanelInCallControls({
   const moreMenuItemClass =
     'flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50';
   /**
-   * Share toolbar only: record, mic setup and leave collapse into one
+   * Share toolbar: record, mic setup, background and leave collapse into one
    * overflow trigger so the narrow share dock / Document PiP stays small
-   * but these actions stay reachable while presenting (#2707).
+   * but these actions stay reachable while presenting (#2707). Narrow screens
+   * outside screenshare reuse it for Background only (#2563).
    */
   const renderMoreMenu = (
     <div className="relative" ref={moreMenuRef}>
@@ -1106,41 +1115,47 @@ export function HumanChatPanelInCallControls({
                       {t('callVoiceProcessingLabel')}
                     </span>
                   </button>
-                  {showBackgroundEffectControl && backgroundEffect ? (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => setMoreMenuView('effects')}
-                      className={moreMenuItemClass}
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        <CallBackgroundEffectTriggerIcon
-                          control={backgroundEffect}
-                          iconClassName="h-4 w-4"
-                          strokeWidth={2}
-                        />
-                        {t('callBackgroundEffectLabel')}
-                      </span>
-                    </button>
-                  ) : null}
-                  <div className="-mx-0 my-1 h-px bg-neutral-6" />
                 </>
               ) : null}
-              <button
-                type="button"
-                role="menuitem"
-                disabled={callState === 'disconnecting'}
-                onClick={() => {
-                  setIsMoreMenuOpen(false);
-                  onLeave();
-                }}
-                className={moreMenuItemClass}
-              >
-                <span className="inline-flex items-center gap-2 text-red-600">
-                  <CallHangUpIcon className="h-4 w-4" strokeWidth={1.75} />
-                  {t('callLeave')}
-                </span>
-              </button>
+              {backgroundEffectAvailable && backgroundEffect ? (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => setMoreMenuView('effects')}
+                  className={moreMenuItemClass}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <CallBackgroundEffectTriggerIcon
+                      control={backgroundEffect}
+                      iconClassName="h-4 w-4"
+                      strokeWidth={2}
+                    />
+                    {t('callBackgroundEffectLabel')}
+                  </span>
+                </button>
+              ) : null}
+              {screenshareEssentialToolbar ? (
+                <>
+                  {showAdvancedCallControls || backgroundEffectAvailable ? (
+                    <div className="-mx-0 my-1 h-px bg-neutral-6" />
+                  ) : null}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={callState === 'disconnecting'}
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      onLeave();
+                    }}
+                    className={moreMenuItemClass}
+                  >
+                    <span className="inline-flex items-center gap-2 text-red-600">
+                      <CallHangUpIcon className="h-4 w-4" strokeWidth={1.75} />
+                      {t('callLeave')}
+                    </span>
+                  </button>
+                </>
+              ) : null}
             </>
           ) : moreMenuView === 'capture' ? (
             captureMenuBody
@@ -1573,6 +1588,7 @@ export function HumanChatPanelInCallControls({
                   {showAdvancedCallControls ? renderCaptureMenu : null}
                   {showAdvancedCallControls ? renderAudioSettingsMenu : null}
                   {renderEffectsMenu}
+                  {showCompactMoreMenu ? renderMoreMenu : null}
                 </>
               ) : null}
               {leaveOnly && callReactionsToolbarVisible ? (

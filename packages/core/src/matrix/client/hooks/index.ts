@@ -11,6 +11,8 @@ export {
 export { shouldMirrorCallFeedVideoForDisplay } from './call-local-video-orientation';
 export {
   CALL_BACKGROUND_EFFECT_NONE,
+  CALL_BACKGROUND_IMAGES,
+  type CallBackgroundImage,
   type CallBackgroundEffect,
   type CallBackgroundEffectStatus,
 } from './call-background-effect';

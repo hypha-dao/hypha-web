@@ -4,7 +4,43 @@
  * processor itself is in `call-background-processor.ts` and loaded on first use.
  */
 
-export type CallBackgroundEffect = { kind: 'none' } | { kind: 'blur' };
+export type CallBackgroundEffect =
+  | { kind: 'none' }
+  | { kind: 'blur' }
+  /** A built-in image from {@link CALL_BACKGROUND_IMAGES}. */
+  | { kind: 'image'; imageId: string };
+
+/** A built-in background image (served from `apps/web/public/call-backgrounds/`). */
+export type CallBackgroundImage = {
+  id: string;
+  src: string;
+  thumbnailSrc: string;
+};
+
+/**
+ * Built-in images (callout 1): the Hypha mycelium field as on the member home, light and dark.
+ * Sources and licences: `apps/web/public/call-backgrounds/CREDITS.md`.
+ * Adding one: the image (1920x1080), a thumbnail (`-thumb`, 320x180), an entry here, a label
+ * key in `call-background-effect-menu` and the 8 locale files.
+ */
+export const CALL_BACKGROUND_IMAGES: readonly CallBackgroundImage[] = [
+  {
+    id: 'light',
+    src: '/call-backgrounds/mycelium-light.jpg',
+    thumbnailSrc: '/call-backgrounds/mycelium-light-thumb.jpg',
+  },
+  {
+    id: 'dark',
+    src: '/call-backgrounds/mycelium-dark.jpg',
+    thumbnailSrc: '/call-backgrounds/mycelium-dark-thumb.jpg',
+  },
+];
+
+export function findCallBackgroundImage(
+  imageId: string,
+): CallBackgroundImage | undefined {
+  return CALL_BACKGROUND_IMAGES.find((image) => image.id === imageId);
+}
 
 /** Where the effect stands on the current camera track. */
 export type CallBackgroundEffectStatus =
@@ -53,21 +89,31 @@ export function callBackgroundEffectsEqual(
   a: CallBackgroundEffect,
   b: CallBackgroundEffect,
 ): boolean {
+  if (a.kind === 'image' && b.kind === 'image') return a.imageId === b.imageId;
   return a.kind === b.kind;
 }
 
 export function serializeCallBackgroundEffect(
   effect: CallBackgroundEffect,
 ): string {
-  return effect.kind;
+  return effect.kind === 'image' ? `image:${effect.imageId}` : effect.kind;
 }
 
-/** Unknown or malformed values fall back to no effect. */
+/**
+ * Unknown or malformed values fall back to no effect. An image that no longer exists (removed in a
+ * later release) falls back to blur: the member chose to hide their room, so keep it hidden.
+ */
 export function parseCallBackgroundEffect(
   raw: string | null | undefined,
 ): CallBackgroundEffect {
   const value = raw?.trim();
   if (value === 'blur') return { kind: 'blur' };
+  if (value?.startsWith('image:')) {
+    const imageId = value.slice('image:'.length);
+    return findCallBackgroundImage(imageId)
+      ? { kind: 'image', imageId }
+      : { kind: 'blur' };
+  }
   return CALL_BACKGROUND_EFFECT_NONE;
 }
 
@@ -113,7 +159,8 @@ export function persistCallBackgroundEffect(
 /** Options for the processor's `switchTo`, without importing the package. */
 export type CallBackgroundProcessorMode =
   | { mode: 'disabled' }
-  | { mode: 'background-blur'; blurRadius: number };
+  | { mode: 'background-blur'; blurRadius: number }
+  | { mode: 'virtual-background'; imagePath: string };
 
 export function processorModeForEffect(
   effect: CallBackgroundEffect,
@@ -124,6 +171,12 @@ export function processorModeForEffect(
         mode: 'background-blur',
         blurRadius: CALL_BACKGROUND_BLUR_RADIUS,
       };
+    case 'image': {
+      const image = findCallBackgroundImage(effect.imageId);
+      return image
+        ? { mode: 'virtual-background', imagePath: image.src }
+        : { mode: 'background-blur', blurRadius: CALL_BACKGROUND_BLUR_RADIUS };
+    }
     case 'none':
     default:
       return { mode: 'disabled' };

@@ -58,6 +58,27 @@ export function getCallBackgroundProcessor(
   return typeof processor.switchTo === 'function' ? processor : null;
 }
 
+/**
+ * Loads and decodes a background image before the processor gets it. The package only logs a
+ * failed image load and would keep rendering without it, which could show the room; a failure here
+ * is an effect failure instead. Loaded as the package loads it (anonymous CORS), so it is cached.
+ */
+async function preloadEffectImage(effect: CallBackgroundEffect): Promise<void> {
+  const mode = processorModeForEffect(effect);
+  if (mode.mode !== 'virtual-background') return;
+  try {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.src = mode.imagePath;
+    await img.decode();
+  } catch (err) {
+    throw new CallBackgroundEffectError(
+      `Background image failed to load: ${mode.imagePath}`,
+      err,
+    );
+  }
+}
+
 async function createProcessor(
   effect: CallBackgroundEffect,
   hooks: CallBackgroundProcessorHooks,
@@ -111,6 +132,7 @@ export async function attachCallBackgroundProcessor(
 ): Promise<void> {
   let processor: BackgroundProcessorWrapper | null = null;
   try {
+    await preloadEffectImage(effect);
     processor = await createProcessor(effect, hooks);
     await withTimeout(
       track.setProcessor(processor),
@@ -128,20 +150,35 @@ export async function attachCallBackgroundProcessor(
   }
 }
 
-/** Changes the effect on a track that already has our processor (no restart, no artifacts). */
+/**
+ * Changes the effect on a track that already has our processor (no restart, no artifacts). Returns
+ * false when the track has no processor of ours. Throws {@link CallBackgroundEffectError} when the
+ * new effect cannot be applied; the previous effect then stays.
+ */
 export async function switchCallBackgroundEffect(
   track: LocalVideoTrack,
   effect: CallBackgroundEffect,
 ): Promise<boolean> {
   const processor = getCallBackgroundProcessor(track);
   if (!processor) return false;
-  await processor.switchTo(processorModeForEffect(effect));
+  await preloadEffectImage(effect);
+  try {
+    await processor.switchTo(processorModeForEffect(effect));
+  } catch (err) {
+    throw new CallBackgroundEffectError(
+      'Background effect failed to switch',
+      err,
+    );
+  }
   return true;
 }
 
 /**
  * Creates the camera track as `setCameraEnabled(true)` would (same room capture defaults), with
- * the effect running before anything is published. On failure the new track is stopped and a
+ * the effect running before anything is published. Waits for the first processed frame too: the
+ * package outputs a copy of the first raw frame at once (`BackgroundTransformer.transform`,
+ * "less jarring initial state") and the first segmentation can take seconds, so publishing earlier
+ * could show that unprocessed frame. On failure the new track is stopped and a
  * {@link CallBackgroundEffectError} is thrown, so the camera stays off.
  */
 export async function createCameraTrackWithBackgroundEffect(
@@ -157,8 +194,18 @@ export async function createCameraTrackWithBackgroundEffect(
   if (!track) {
     throw new CallBackgroundEffectError('No camera track was created');
   }
+  let onFirstFrame: () => void = () => undefined;
+  const firstProcessedFrame = new Promise<void>((resolve) => {
+    onFirstFrame = resolve;
+  });
   try {
-    await attachCallBackgroundProcessor(track, effect, hooks);
+    await attachCallBackgroundProcessor(track, effect, {
+      onFrameProcessed: (stats) => {
+        onFirstFrame();
+        hooks.onFrameProcessed?.(stats);
+      },
+    });
+    await withTimeout(firstProcessedFrame, PROCESSOR_START_TIMEOUT_MS);
   } catch (err) {
     track.stop();
     throw err;

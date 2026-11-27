@@ -4,9 +4,10 @@ import type { ReactNode } from 'react';
 import { AlertTriangle, Ban, Check, Loader2, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
-import type {
-  CallBackgroundEffect,
-  CallBackgroundEffectStatus,
+import {
+  CALL_BACKGROUND_IMAGES,
+  type CallBackgroundEffect,
+  type CallBackgroundEffectStatus,
 } from '@hypha-platform/core/client';
 
 /** Background effect state and setter from `useSpaceGroupCall` (#2563). */
@@ -32,6 +33,15 @@ const OPTIONS: Array<{
     Icon: Sparkles,
   },
 ];
+
+/** Menu labels of the built-in images (`CALL_BACKGROUND_IMAGES` ids). */
+const IMAGE_LABEL_KEYS: Record<
+  string,
+  'callBackgroundImageLight' | 'callBackgroundImageDark'
+> = {
+  light: 'callBackgroundImageLight',
+  dark: 'callBackgroundImageDark',
+};
 
 /**
  * Menu content: heading, effect choices and the status line. Used by the toolbar menu and by the
@@ -110,6 +120,54 @@ export function CallBackgroundEffectMenuBody({
           </button>
         );
       })}
+      <p className={cn('px-2 pb-1 pt-2', hintClass)}>
+        {t('callBackgroundEffectImages')}
+      </p>
+      <div className="grid grid-cols-2 gap-1.5 px-2" role="group">
+        {CALL_BACKGROUND_IMAGES.map((image) => {
+          const selected =
+            control.effect.kind === 'image' &&
+            control.effect.imageId === image.id;
+          const labelKey = IMAGE_LABEL_KEYS[image.id];
+          const label = labelKey ? t(labelKey) : image.id;
+          return (
+            <button
+              key={image.id}
+              type="button"
+              role="menuitemradio"
+              aria-checked={selected}
+              aria-label={label}
+              title={label}
+              onClick={() => {
+                if (!selected)
+                  control.onChange({ kind: 'image', imageId: image.id });
+                onDone();
+              }}
+              className={cn(
+                'relative aspect-video overflow-hidden rounded-md border-2 transition-colors',
+                selected
+                  ? 'border-[color:var(--color-accent-9,#4a65d8)]'
+                  : 'border-transparent hover:border-neutral-7',
+              )}
+            >
+              <img
+                src={image.thumbnailSrc}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+              {selected && applying ? (
+                <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+                  <Loader2
+                    className="h-4 w-4 animate-spin text-white"
+                    aria-hidden
+                  />
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
       {applying ? (
         <p className={cn('px-2 pt-1', hintClass)} role="status">
           {t('callBackgroundEffectApplying')}
