@@ -159,6 +159,19 @@ describe('createFirewallWriteRateLimiter', () => {
     },
   );
 
+  it('writes the firewall admitted count in the fallback budget of the same window', async () => {
+    const limiter = createFirewallWriteRateLimiter(windows(), deps());
+    // The firewall admits the minute limit (2)...
+    expect(await limiter.take(KEY)).toEqual({ ok: true });
+    expect(await limiter.take(KEY)).toEqual({ ok: true });
+    // ...then becomes unavailable: the fallback starts from 2, not from 0.
+    check.mockRejectedValue(new Error('status 500'));
+    expect(await limiter.take(KEY)).toEqual({
+      ok: false,
+      retryAfterSeconds: 60,
+    });
+  });
+
   it('outside production: in memory only, the firewall is never asked', async () => {
     const limiter = createFirewallWriteRateLimiter(
       windows(),

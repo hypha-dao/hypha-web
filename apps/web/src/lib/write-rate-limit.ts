@@ -84,6 +84,7 @@ type FirewallAnswer = 'ok' | 'limited' | 'fallback';
  * A `WriteRateLimiter` over firewall rules, window by window in order:
  *   - limited or `blocked` -> refused, retry after the window length (the firewall gives none);
  *   - `not-found`, an error or the timeout -> that window falls back to memory, one log line;
+ *     writes the firewall admitted are counted in memory too, so the fallback shares the budget;
  *   - a window without a rule id, or outside production -> memory.
  * Without any firewall window it is exactly the in-memory limiter. The firewall counts every
  * check, so a refusal by a later window still spends a slot of an earlier one.
@@ -143,7 +144,12 @@ export function createFirewallWriteRateLimiter(
               ),
             };
           }
-          if (answer === 'ok') continue;
+          if (answer === 'ok') {
+            // The firewall decides; the write is also counted here, so a fallback later in the
+            // same window starts from what this instance already admitted, not from zero.
+            memory[i]!.take(key);
+            continue;
+          }
           log('[rate] fallback', { rule: w.name });
         }
         const slot = memory[i]!.take(key);
