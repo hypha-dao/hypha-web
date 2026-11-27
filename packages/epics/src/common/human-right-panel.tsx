@@ -268,6 +268,7 @@ import {
 } from './human-chat-panel/member-label-refresh';
 import {
   dedupeTimelineMessages,
+  mergeTimelineForPersistence,
   timelineMessagesForPersistence,
 } from './human-chat-panel/timeline-message-dedupe';
 import {
@@ -628,14 +629,14 @@ function writePersistedChatHistory(
     }
     // The open path only keeps a screenful in React state. Merge so that
     // short list does not erase older messages already stored for this room.
-    // Incoming is first so an equal row (a removed reaction, for example)
-    // replaces the stored copy. A richer stored row can still win.
+    // The same event id keeps the Matrix copy, so a removed caption is not
+    // restored from the cache.
     const stored = readPersistedChatHistory(roomId);
     const safe =
       stored.length > 0
         ? timelineMessagesForPersistence(
             sortMessagesChronologically(
-              dedupeTimelineMessages([...incoming, ...stored]),
+              mergeTimelineForPersistence(incoming, stored),
             ),
           )
         : incoming;
@@ -1489,6 +1490,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   /** Coalesce Matrix timeline bursts into one React commit per frame (sync backfills). */
   const timelineFlushRafRef = useRef<number | null>(null);
   const pendingTimelineRedactIdsRef = useRef<Set<string>>(new Set());
+  /** Deletes that have not been confirmed. They hide the row, but are not stored as redactions. */
+  const optimisticDeleteIdsRef = useRef<Set<string>>(new Set());
   const pendingTimelineMessagesRef = useRef<Map<string, Message>>(new Map());
   const [replyDraft, setReplyDraft] = useState<ReplyDraft | null>(null);
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
@@ -3535,6 +3538,21 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         syncRoomMessages(requestRoomId, nextLimit);
         if (!stillThisRoom()) return;
         const cached = readPersistedChatHistory(requestRoomId);
+        let matrixIds: string[] = [];
+        try {
+          matrixIds = (
+            matrixRef.current.getRoomMessages(requestRoomId, nextLimit) ?? []
+          )
+            .map((row) => row.id)
+            .filter((id): id is string => Boolean(id));
+        } catch {
+          matrixIds = [];
+        }
+        const mergedIds = new Set<string>();
+        for (const row of cached) {
+          if (row.id) mergedIds.add(row.id);
+        }
+        for (const id of matrixIds) mergedIds.add(id);
         setMessages((prev) => {
           if (roomIdRef.current?.trim() !== requestRoomId) return prev;
           const byId = new Map<string, UIMessage>();
@@ -3548,18 +3566,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             -nextLimit,
           );
         });
-        let inMemory = 0;
-        try {
-          inMemory =
-            matrixRef.current.getRoomMessages(requestRoomId, nextLimit + 1)
-              ?.length ?? 0;
-        } catch {
-          inMemory = 0;
-        }
         setHasMoreOlderMessages(
-          result.hasMoreOlder ||
-            cached.length > nextLimit ||
-            inMemory > nextLimit,
+          result.hasMoreOlder || mergedIds.size > nextLimit,
         );
         if (
           source === 'auto' &&
@@ -4788,11 +4796,15 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       roomId,
       async (message: Message) => {
         if (
-          message.redacted ||
-          pendingTimelineRedactIdsRef.current.has(message.id) ||
-          readRedactedChatIds(roomId).has(message.id)
+          optimisticDeleteIdsRef.current.has(message.id) &&
+          !message.redacted
         ) {
+          pendingTimelineMessagesRef.current.delete(message.id);
+          return;
+        }
+        if (message.redacted || readRedactedChatIds(roomId).has(message.id)) {
           rememberRedactedChatMessage(roomId, message.id);
+          optimisticDeleteIdsRef.current.delete(message.id);
           pendingTimelineRedactIdsRef.current.add(message.id);
           pendingTimelineMessagesRef.current.delete(message.id);
           scheduleTimelineFlush();
@@ -5911,12 +5923,15 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       : undefined;
   const deepLinkPagingKeyRef = useRef<string | null>(null);
   const deepLinkVisitActiveRef = useRef(false);
+  const activeDeepLinkEventRef = useRef<string | null>(null);
   useEffect(() => {
     if (!deepLinkEventId || !roomId) {
       deepLinkVisitActiveRef.current = false;
       deepLinkPagingKeyRef.current = null;
+      activeDeepLinkEventRef.current = null;
       return;
     }
+    activeDeepLinkEventRef.current = deepLinkEventId;
     if (!deepLinkVisitActiveRef.current) {
       deepLinkPagingKeyRef.current = null;
       deepLinkVisitActiveRef.current = true;
@@ -5981,12 +5996,15 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             return null;
           }
         };
+        const stillThisLink = () =>
+          roomIdRef.current?.trim() === targetRoomId &&
+          activeDeepLinkEventRef.current === deepLinkEventId;
         let located =
           hasEvent(loadedMessages()) ||
           hasEvent(readPersistedChatHistory(targetRoomId));
         if (!located) {
           for (let attempt = 0; attempt < 12; attempt += 1) {
-            if (roomIdRef.current?.trim() !== targetRoomId) return;
+            if (!stillThisLink()) return;
             let result: { hasMoreOlder: boolean };
             try {
               result = await matrixRef.current.loadRoomHistory(targetRoomId, {
@@ -5996,12 +6014,12 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             } catch {
               return;
             }
-            if (roomIdRef.current?.trim() !== targetRoomId) return;
+            if (!stillThisLink()) return;
             located = hasEvent(loadedMessages());
             if (located || !result.hasMoreOlder) break;
           }
         }
-        if (roomIdRef.current?.trim() !== targetRoomId) return;
+        if (!stillThisLink()) return;
         if (hasEvent(loadedMessages())) {
           syncRoomMessages(targetRoomId);
           return;
@@ -6017,6 +6035,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     return () => {
       frameCancelled = true;
       cancelAnimationFrame(id);
+      if (activeDeepLinkEventRef.current === deepLinkEventId) {
+        activeDeepLinkEventRef.current = null;
+      }
     };
   }, [
     deepLinkEventId,
@@ -6154,13 +6175,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       const deletedRoomId = roomId;
       const removed = messages.find((message) => message.id === messageId);
       setDeleteError(null);
-      pendingTimelineRedactIdsRef.current.add(messageId);
+      optimisticDeleteIdsRef.current.add(messageId);
       pendingTimelineMessagesRef.current.delete(messageId);
       setMessages((prev) => prev.filter((message) => message.id !== messageId));
-      if (editDraft?.messageId === messageId) {
-        setEditDraft(null);
-        replaceComposerText('');
-      }
       if (replyDraft?.messageId === messageId) {
         setReplyDraft(null);
       }
@@ -6170,12 +6187,21 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           eventId: messageId,
         });
         rememberRedactedChatMessage(deletedRoomId, messageId);
+        optimisticDeleteIdsRef.current.delete(messageId);
+        pendingTimelineRedactIdsRef.current.add(messageId);
+        if (editDraftRef.current?.messageId === messageId) {
+          disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+          setDraftAttachments([]);
+          replaceComposerText('');
+          setEditDraft(null);
+        }
         commitStoredChatHistory(
           deletedRoomId,
           readPersistedChatHistory(deletedRoomId),
         );
       } catch (err) {
         console.error('[HumanRightPanel] Failed to delete message:', err);
+        optimisticDeleteIdsRef.current.delete(messageId);
         pendingTimelineRedactIdsRef.current.delete(messageId);
         if (roomIdRef.current?.trim() !== deletedRoomId) return;
         if (removed) {
@@ -6188,7 +6214,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         setDeleteError(t('messageDeleteFailed'));
       }
     },
-    [messages, roomId, editDraft?.messageId, replyDraft?.messageId, t],
+    [messages, roomId, replyDraft?.messageId, t],
   );
 
   const cancelSendInFlight = useCallback(() => {

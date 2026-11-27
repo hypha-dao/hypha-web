@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   dedupeTimelineMessages,
+  mergeTimelineForPersistence,
   timelineMessagesForPersistence,
 } from '../timeline-message-dedupe';
 
@@ -156,7 +157,7 @@ describe('dedupeTimelineMessages', () => {
     expect(merged.map((row) => row.id)).toEqual(['$real']);
   });
 
-  it('drops the sending mask once the same caption has arrived', () => {
+  it('keeps an upload in progress when an older message uses the same caption', () => {
     const merged = dedupeTimelineMessages(
       [
         {
@@ -169,7 +170,52 @@ describe('dedupeTimelineMessages', () => {
       ],
       '@me:example',
     );
+    expect(merged.map((row) => row.id)).toEqual([
+      'hypha-send-pending-1',
+      '$real',
+    ]);
+  });
+
+  it('hides the upload once its own echo arrives', () => {
+    const merged = dedupeTimelineMessages(
+      [
+        {
+          id: 'hypha-send-pending-1',
+          role: 'user' as const,
+          sendPending: { captionPreview: 'Photo' },
+          timestamp: new Date(5_000),
+          parts: [],
+        },
+        text('$real', 'Photo', {
+          role: 'user',
+          senderMatrixId: '@me:example',
+          timestamp: new Date(5_100),
+        }),
+      ],
+      '@me:example',
+    );
     expect(merged.map((row) => row.id)).toEqual(['$real']);
+  });
+
+  it('keeps a repeated send beside the earlier identical message', () => {
+    const merged = dedupeTimelineMessages(
+      [
+        text('$earlier', 'Ok', {
+          role: 'user',
+          timestamp: new Date(1_000),
+        }),
+        text('~hypha-outgoing-2', 'Ok', {
+          sendAcknowledged: false,
+          role: 'user',
+          timestamp: new Date(30_000),
+        }),
+      ],
+      '@me:example',
+    );
+    expect(merged.map((row) => row.id)).toEqual([
+      '$earlier',
+      '~hypha-outgoing-2',
+    ]);
   });
 
   it('collapses two rows that share an id and keeps the one with text', () => {
@@ -179,6 +225,21 @@ describe('dedupeTimelineMessages', () => {
     ]);
     expect(merged).toHaveLength(1);
     expect(merged[0]?.parts?.[0]?.text).toBe('Hello');
+  });
+});
+
+describe('mergeTimelineForPersistence', () => {
+  it('keeps a caption removal from the Matrix row', () => {
+    const merged = mergeTimelineForPersistence(
+      [text('$img', '')],
+      [
+        text('$img', 'Photo'),
+        text('$older', 'Earlier', { timestamp: new Date(500) }),
+      ],
+    );
+    const image = merged.find((row) => row.id === '$img');
+    expect(image?.parts?.[0]?.text ?? '').toBe('');
+    expect(merged.map((row) => row.id).sort()).toEqual(['$img', '$older']);
   });
 });
 

@@ -2,6 +2,8 @@ import { asTimelineDate } from './human-chat-timeline-order';
 
 /** Local echo and its homeserver copy can both sit in the timeline for a short while. */
 const ECHO_WINDOW_MS = 2 * 60 * 1000;
+/** How far the server clock may sit ahead of the local send. An older identical message is a different send. */
+const ECHO_SKEW_MS = 2_000;
 
 export type DedupableTimelineMessage = {
   id?: string;
@@ -108,6 +110,18 @@ function withinEchoWindow(
   return Math.abs(leftTs - rightTs) <= ECHO_WINDOW_MS;
 }
 
+/** The homeserver copy arrives with this send, not with an earlier identical one. */
+function realFollowsEcho(
+  echo: DedupableTimelineMessage,
+  real: DedupableTimelineMessage,
+): boolean {
+  const echoTs = timestampMs(echo);
+  const realTs = timestampMs(real);
+  if (echoTs == null || realTs == null) return false;
+  const delta = realTs - echoTs;
+  return delta >= -ECHO_SKEW_MS && delta <= ECHO_WINDOW_MS;
+}
+
 function echoMatchesReal(
   echo: DedupableTimelineMessage,
   real: DedupableTimelineMessage,
@@ -123,8 +137,13 @@ function echoMatchesReal(
   const echoTs = timestampMs(echo);
   const realTs = timestampMs(real);
   if (textMatch) {
+    // A pending upload has no clock of its own. The same caption on an
+    // earlier message must not hide its progress row.
+    if (isPendingSend(echo) || isPendingSend(real)) {
+      return realFollowsEcho(echo, real);
+    }
     if (echoTs == null || realTs == null) return true;
-    return Math.abs(echoTs - realTs) <= ECHO_WINDOW_MS;
+    return realFollowsEcho(echo, real);
   }
   // A captionless upload with no clock must not attach to an older text row.
   if (!echoText && realText && (echoTs == null || realTs == null)) return false;
@@ -184,6 +203,27 @@ export function dedupeTimelineMessages<T extends DedupableTimelineMessage>(
     if (!isUnackedEcho(message) && !isPendingSend(message)) return true;
     return !acknowledged.some((real) => matches(message, real));
   });
+}
+
+/**
+ * Persistence merge. The incoming Matrix row wins when both sides share an
+ * event id, so a removed caption is not put back by an older cached copy.
+ * Cached rows the incoming window does not contain stay.
+ */
+export function mergeTimelineForPersistence<T extends { id?: string }>(
+  incoming: readonly T[],
+  stored: readonly T[],
+): T[] {
+  const byId = new Map<string, T>();
+  for (const row of stored) {
+    const id = row.id?.trim();
+    if (id) byId.set(id, row);
+  }
+  for (const row of incoming) {
+    const id = row.id?.trim();
+    if (id) byId.set(id, row);
+  }
+  return [...byId.values()];
 }
 
 /** Session restore must not bring back an in-flight echo on the next visit. */
