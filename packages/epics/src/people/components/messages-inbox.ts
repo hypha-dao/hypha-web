@@ -288,7 +288,10 @@ export function channelIsRelevantToMember(
   return false;
 }
 
-/** Phone list tabs. Channels are space rooms plus ecosystem and network. */
+/**
+ * Phone list tabs. Channels are every space thread (the room, proposals,
+ * signals, quests, and context) plus ecosystem and network rooms.
+ */
 export const MOBILE_INBOX_TABS = [
   'all',
   'direct',
@@ -308,6 +311,10 @@ export function rowMatchesMobileInboxTab(
   return (
     kind === 'space' ||
     kind === 'space-public' ||
+    kind === 'signal' ||
+    kind === 'quest' ||
+    kind === 'proposal' ||
+    kind === 'context' ||
     kind === 'ecosystem' ||
     kind === 'network'
   );

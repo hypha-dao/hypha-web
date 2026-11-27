@@ -81,20 +81,17 @@ describe('messages inbox filters', () => {
     for (const kind of [
       'space',
       'space-public',
+      'signal',
+      'proposal',
+      'quest',
+      'context',
       'ecosystem',
       'network',
     ] as const) {
       expect(rowMatchesMobileInboxTab(kind, 'channels')).toBe(true);
       expect(rowMatchesMobileInboxTab(kind, 'all')).toBe(true);
     }
-    for (const kind of [
-      'signal',
-      'proposal',
-      'quest',
-      'context',
-      'dm',
-      'group',
-    ] as const) {
+    for (const kind of ['dm', 'group'] as const) {
       expect(rowMatchesMobileInboxTab(kind, 'channels')).toBe(false);
       expect(rowMatchesMobileInboxTab(kind, 'all')).toBe(true);
     }
