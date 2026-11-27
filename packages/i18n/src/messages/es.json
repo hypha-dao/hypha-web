@@ -4137,6 +4137,7 @@
     "signalFormStatusHint": "Etapa del flujo de trabajo de esta señal (columnas en las vistas Board y Swimlane).",
     "signalFormBoard": "Categoría del tablero",
     "signalFormBoardHint": "Carril organizativo: agrupa señales por equipo, iniciativa o área. No es lo mismo que Tipo (Oportunidad/Riesgo/Insight) ni Tags.",
+    "signalBoardsLoadFailed": "No se pudieron cargar los tableros de este espacio.",
     "signalFormDueDate": "Fecha límite",
     "signalFormDueDateHint": "Fecha objetivo opcional para hacer seguimiento de esta tarea de señal.",
     "signalAssignee": "Responsable",

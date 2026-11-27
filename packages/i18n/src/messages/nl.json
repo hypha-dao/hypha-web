@@ -4697,6 +4697,7 @@
     "signalFormStatusHint": "Workflowfase voor dit signaal (weergegeven als kolommen in Kanban Board- en Swimlane-weergaven).",
     "signalFormBoard": "Categorie bord",
     "signalFormBoardHint": "Organisatorische swimlane: groepeert signalen per team, initiatief of werkstroom. Niet hetzelfde als Type (Kans/Risico/Inzicht) of Tags.",
+    "signalBoardsLoadFailed": "De borden van deze ruimte konden niet worden geladen.",
     "signalFormDueDate": "Deadline",
     "signalFormDueDateHint": "Optionele streefdatum voor het volgen van deze signaaltaak.",
     "signalAssignee": "Verantwoordelijke",

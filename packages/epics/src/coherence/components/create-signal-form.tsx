@@ -232,7 +232,11 @@ export const CreateSignalForm = ({
   const spaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
   const t = useTranslations('CoherenceTab');
   const locale = useLocale();
-  const { workflow } = useSignalWorkflow(spaceSlug);
+  const {
+    workflow,
+    error: workflowError,
+    refresh: refreshWorkflow,
+  } = useSignalWorkflow(spaceSlug);
   const tAgreementFlow = useTranslations('AgreementFlow');
   const tSignalCard = useTranslations('SignalCard');
   const translateEditor = React.useCallback(
@@ -1255,7 +1259,12 @@ export const CreateSignalForm = ({
               className="flex flex-col gap-6 border-t border-border pt-8"
             >
               <SignalTagsField disabled={isMutating} />
-              <SignalBoardField workflow={workflow} disabled={isMutating} />
+              <SignalBoardField
+                workflow={workflow}
+                loadError={workflowError}
+                onRetry={() => void refreshWorkflow()}
+                disabled={isMutating}
+              />
             </section>
             {mode === 'create' && votingModeStatus === 'error' ? (
               <section className="flex flex-col gap-3 border-t border-border pt-8">

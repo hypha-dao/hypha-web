@@ -4695,6 +4695,7 @@
     "signalFormStatusHint": "Workflow-Stufe dieses Signals (Spalten in Board- und Swimlane-Ansicht).",
     "signalFormBoard": "Board-Kategorie",
     "signalFormBoardHint": "Organisatorische Swimlane — gruppiert Signale nach Team, Initiative oder Bereich. Nicht dasselbe wie Typ (Chance/Risiko/Erkenntnis) oder Tags.",
+    "signalBoardsLoadFailed": "Die Boards dieses Space konnten nicht geladen werden.",
     "signalFormDueDate": "Fälligkeitsdatum",
     "signalFormDueDateHint": "Optionales Zieldatum zur Nachverfolgung dieser Signal-Aufgabe.",
     "signalAssignee": "Zuständig",
