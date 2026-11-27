@@ -508,6 +508,8 @@ export function useSpaceGroupCall(
   > | null>(null);
   /** Bumped on every camera on/off request and on cleanup; a pending effect start checks it. */
   const cameraRequestEpochRef = useRef(0);
+  /** The camera state the latest request asked for; recovery follows it (#2563). */
+  const cameraRequestedOnRef = useRef(false);
   const backgroundFrameDropDetectorRef = useRef(
     createCallBackgroundFrameDropDetector(),
   );
@@ -1421,6 +1423,7 @@ export function useSpaceGroupCall(
       setIsMicrophoneMuted(false);
       setIsLocalVideoMuted(true);
       cameraRequestEpochRef.current += 1;
+      cameraRequestedOnRef.current = false;
       backgroundRoomRef.current = null;
       backgroundReconcilerRef.current.invalidate();
       lateBackgroundStartsRef.current = 0;
@@ -1651,7 +1654,7 @@ export function useSpaceGroupCall(
   const enableLocalCamera = useCallback(
     async (lkRoom: LiveKitRoom): Promise<boolean> => {
       const participant = lkRoom.localParticipant;
-      const requestEpoch = cameraRequestEpochRef.current;
+      cameraRequestedOnRef.current = true;
       backgroundRoomRef.current = lkRoom;
       const existing = participant.getTrackPublication(Track.Source.Camera)
         ?.track as LocalVideoTrack | undefined;
@@ -1670,12 +1673,13 @@ export function useSpaceGroupCall(
         logCallDebug('background-effect:restart-failed', {
           message: err instanceof Error ? err.message : String(err),
         });
-        // A newer camera request (a mute, leaving) wins over this recovery's camera-on.
+        // The latest camera request decides: a newer mute (or leaving) wins, a newer camera-on
+        // keeps it on.
         const cameraOn = await recoverCameraWithoutProcessor(
           participant,
           track,
           () =>
-            cameraRequestEpochRef.current === requestEpoch &&
+            cameraRequestedOnRef.current &&
             backgroundRoomRef.current === lkRoom,
         );
         setBackgroundEffectStatus('failed');
@@ -2435,6 +2439,7 @@ export function useSpaceGroupCall(
       const lkRoom = liveKitRoomRef.current;
       if (!lkRoom) return;
       cameraRequestEpochRef.current += 1;
+      cameraRequestedOnRef.current = !muted;
       if (muted) {
         setCameraAccessBlocked(false);
         setBackgroundEffectStatus((status) =>

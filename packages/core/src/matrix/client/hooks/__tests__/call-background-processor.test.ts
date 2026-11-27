@@ -1,11 +1,19 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type Mock,
+  vi,
+} from 'vitest';
 import type { LocalVideoTrack } from 'livekit-client';
 
 type FakeProcessor = {
   name: string;
   options: Record<string, unknown>;
-  destroy: ReturnType<typeof vi.fn>;
-  switchTo: ReturnType<typeof vi.fn>;
+  destroy: Mock<[], Promise<void>>;
+  switchTo: Mock<[mode: unknown], Promise<void>>;
 };
 const created: FakeProcessor[] = [];
 let switchToImpl: (mode: unknown) => Promise<void> = async () => undefined;
@@ -16,7 +24,7 @@ vi.mock('@livekit/track-processors', () => ({
     const processor: FakeProcessor = {
       name,
       options,
-      destroy: vi.fn(async () => undefined),
+      destroy: vi.fn(async (): Promise<void> => undefined),
       switchTo: vi.fn((mode: unknown) => switchToImpl(mode)),
     };
     created.push(processor);
@@ -331,6 +339,23 @@ describe('recoverCameraWithoutProcessor', () => {
       ),
     ).resolves.toBe(false);
     expect(state.participant.setCameraEnabled).toHaveBeenLastCalledWith(false);
+  });
+
+  it('keeps the camera on when a newer camera-on came in during recovery', async () => {
+    // Regression: any newer request turned the camera off, also a newer camera-on.
+    const state = failedRestartState();
+    state.participant.setCameraEnabled.mockImplementationOnce(async () => {
+      // A second click on the camera (another camera-on) happens meanwhile; the latest
+      // request still wants the camera on.
+    });
+    await expect(
+      recoverCameraWithoutProcessor(
+        state.participant,
+        state.track as unknown as LocalVideoTrack,
+        () => true,
+      ),
+    ).resolves.toBe(true);
+    expect(state.participant.setCameraEnabled).not.toHaveBeenCalledWith(false);
   });
 
   it('copes with no stream and a failing stopProcessor', async () => {

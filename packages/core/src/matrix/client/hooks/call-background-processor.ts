@@ -370,8 +370,11 @@ export function warmUpCallBackgroundEffect(): Promise<void> {
 export async function recoverCameraWithoutProcessor(
   participant: { setCameraEnabled: (enabled: boolean) => Promise<unknown> },
   track: Pick<LocalVideoTrack, 'stopProcessor' | 'mediaStream'>,
-  /** False once a newer camera request (e.g. a mute) arrived; then the camera stays as it is. */
-  isCurrent: () => boolean = () => true,
+  /**
+   * Whether the latest camera request still wants the camera on. A newer mute makes it false; a
+   * newer camera-on keeps it true, so this recovery never reverts it.
+   */
+  shouldBeOn: () => boolean = () => true,
 ): Promise<boolean> {
   const captures = track.mediaStream?.getVideoTracks() ?? [];
   await track.stopProcessor().catch(() => undefined);
@@ -379,11 +382,10 @@ export async function recoverCameraWithoutProcessor(
   for (const capture of captures) {
     if (capture.readyState === 'live') capture.stop();
   }
-  if (!isCurrent()) return false;
+  if (!shouldBeOn()) return false;
   await participant.setCameraEnabled(true);
-  // A mute that came in during the camera-on wins (livekit-client serialises mute/unmute, so it
-  // already ran after us; this covers one that completed just before).
-  if (!isCurrent()) {
+  // Only a newer mute turns it off again; a newer camera-on must not be reverted.
+  if (!shouldBeOn()) {
     await participant.setCameraEnabled(false);
     return false;
   }
