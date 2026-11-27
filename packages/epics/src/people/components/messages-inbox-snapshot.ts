@@ -37,13 +37,18 @@ function isChannelSnapshot(value: unknown): value is JoinedChannelSnapshot {
   );
 }
 
-export function readInboxListSnapshot(): InboxListSnapshot {
-  if (typeof window === 'undefined') return EMPTY_SNAPSHOT;
+export function readInboxListSnapshot(
+  accountId: string | null | undefined,
+): InboxListSnapshot {
+  if (typeof window === 'undefined' || !accountId) return EMPTY_SNAPSHOT;
   try {
     const raw = window.sessionStorage.getItem(INBOX_SNAPSHOT_KEY);
     if (!raw) return EMPTY_SNAPSHOT;
     const parsed = JSON.parse(raw) as unknown;
     if (!isRecord(parsed)) return EMPTY_SNAPSHOT;
+    const storedAccount =
+      typeof parsed.accountId === 'string' ? parsed.accountId : '';
+    if (!storedAccount || storedAccount !== accountId) return EMPTY_SNAPSHOT;
     const rows = Array.isArray(parsed.rows)
       ? parsed.rows.filter(isConversationRow).slice(0, MAX_SNAPSHOT_ROWS)
       : [];
@@ -56,11 +61,18 @@ export function readInboxListSnapshot(): InboxListSnapshot {
   }
 }
 
-export function writeInboxListSnapshot(snapshot: InboxListSnapshot): void {
-  if (typeof window === 'undefined') return;
-  if (snapshot.rows.length === 0 && snapshot.channels.length === 0) return;
+export function writeInboxListSnapshot(
+  snapshot: InboxListSnapshot,
+  accountId: string | null | undefined,
+): void {
+  if (typeof window === 'undefined' || !accountId) return;
+  if (snapshot.rows.length === 0 && snapshot.channels.length === 0) {
+    clearInboxListSnapshot();
+    return;
+  }
   try {
-    const payload: InboxListSnapshot = {
+    const payload = {
+      accountId,
       rows: snapshot.rows.slice(0, MAX_SNAPSHOT_ROWS),
       channels: snapshot.channels.slice(0, MAX_SNAPSHOT_ROWS),
     };

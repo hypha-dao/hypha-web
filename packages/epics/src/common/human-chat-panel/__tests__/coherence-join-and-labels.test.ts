@@ -29,6 +29,16 @@ describe('coherence join target', () => {
     ).toBe(false);
   });
 
+  it('restarts when a different room is still open', () => {
+    expect(
+      shouldRestartCoherenceJoin({
+        settledKey: key,
+        joinKey: key,
+        openRoomId: '!other:example',
+      }),
+    ).toBe(true);
+  });
+
   it('restarts when the room changes', () => {
     expect(
       shouldRestartCoherenceJoin({
@@ -78,6 +88,17 @@ describe('member label refresh', () => {
         '@prod_privyabc:matrix.hypha.earth',
         '@prod_privyabc:matrix.hypha.earth',
         'Alex Prate',
+      ),
+    ).toBe('Alex Prate');
+  });
+
+  it('keeps a visible name when the lookup is the unknown placeholder', () => {
+    expect(
+      keepVisibleMemberLabel(
+        '@alex:example',
+        'Unknown member',
+        'Alex Prate',
+        'Unknown member',
       ),
     ).toBe('Alex Prate');
   });

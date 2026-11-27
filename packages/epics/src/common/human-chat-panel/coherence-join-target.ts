@@ -26,8 +26,13 @@ export function shouldRestartCoherenceJoin(input: {
   joinKey: string;
   openRoomId: string | null;
 }): boolean {
-  if (input.settledKey === input.joinKey && input.openRoomId?.trim()) {
-    return false;
+  if (input.settledKey === input.joinKey) {
+    const openRoomId = input.openRoomId?.trim() ?? '';
+    if (!openRoomId) return true;
+    const settledRoomId = input.settledKey.split('\n')[0]?.trim() ?? '';
+    // A target that settled before its room id was known stays open.
+    // A known room id must still be the room on screen.
+    if (!settledRoomId || settledRoomId === openRoomId) return false;
   }
   return true;
 }

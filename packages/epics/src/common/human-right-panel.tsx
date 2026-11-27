@@ -3484,6 +3484,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             sid,
             resolveMemberLabelRef.current(sid),
             m.senderName,
+            t('unknownMember'),
           );
           nextMemberAvatar =
             resolveMemberAvatarRef.current(sid) ??
@@ -3502,6 +3503,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                 m.replyTo.sourceUserId,
                 resolveMemberLabelRef.current(m.replyTo.sourceUserId),
                 m.replyTo.authorLabel,
+                t('unknownMember'),
               )
             : m.replyTo?.authorLabel;
 
@@ -4050,7 +4052,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     // discard their successful join when returning from coherence.
 
     if (mode === 'coherence') {
-      // Switching FROM space TO coherence — unregister space listener, clear state
+      // Switching FROM space TO coherence — unregister space listener, clear state.
+      // A settled target from the previous thread must not skip this join.
+      settledCoherenceTargetRef.current = null;
       if (roomId) {
         matrixRef.current.unregisterRoomListener(roomId);
       }
@@ -4071,6 +4075,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
     if (mode === 'space' && prevMode === 'coherence') {
       // Switching FROM coherence TO space — clear state, space init will re-run
+      settledCoherenceTargetRef.current = null;
       setIsJoining(false);
       if (roomId) {
         matrixRef.current.unregisterRoomListener(roomId);
@@ -4093,8 +4098,12 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
   // Join (or create) coherence room when mode switches to 'coherence'
   useEffect(() => {
-    if (mode !== 'coherence' || !isMatrixAvailable || !isMatrixAuthenticated)
+    if (mode !== 'coherence' || !isMatrixAvailable || !isMatrixAuthenticated) {
+      // Space join owns its own mask. A coherence join that lost Matrix
+      // cannot stay on the spinner.
+      if (mode === 'coherence') setIsJoining(false);
       return;
+    }
 
     // DM shell with no room yet — do not join; a prior space/network join
     // must not leave its error on this empty Start-a-conversation view.
@@ -4181,13 +4190,14 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     } else {
       openingTimelineRoomIdRef.current =
         intendedRoomId ?? openingTimelineRoomIdRef.current;
+      setIsJoining(true);
     }
     let cancelled = false;
     const joinEpoch = ++joinEpochRef.current;
 
     const init = async () => {
+      setError(null);
       if (resetTimeline) {
-        setError(null);
         setReplyDraft(null);
         setEditDraft(null);
         setInput('');
@@ -4434,7 +4444,10 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
     return () => {
       cancelled = true;
-      if (resetTimeline) setIsJoining(false);
+      const opening = openingTimelineRoomIdRef.current?.trim() || '';
+      const intended = intendedRoomId?.trim() || '';
+      const sameRoomStillOpening = Boolean(intended) && opening === intended;
+      if (resetTimeline && !sameRoomStillOpening) setIsJoining(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [

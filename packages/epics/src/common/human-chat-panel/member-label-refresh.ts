@@ -19,8 +19,19 @@ export function keepVisibleMemberLabel(
   matrixUserId: string,
   resolved: string | null | undefined,
   current: string | null | undefined,
+  placeholder?: string | null,
 ): string | undefined {
-  const visible = pickUserVisibleMemberLabel(matrixUserId, resolved, current);
+  const placeholderText = placeholder?.trim();
+  const withoutPlaceholder = (value: string | null | undefined) => {
+    const label = value?.trim();
+    if (!label || (placeholderText && label === placeholderText)) return null;
+    return label;
+  };
+  const visible = pickUserVisibleMemberLabel(
+    matrixUserId,
+    withoutPlaceholder(resolved),
+    withoutPlaceholder(current),
+  );
   if (visible) return visible;
   const kept = current?.trim();
   if (kept && !looksLikeTechnicalMatrixDisplayName(kept, matrixUserId)) {

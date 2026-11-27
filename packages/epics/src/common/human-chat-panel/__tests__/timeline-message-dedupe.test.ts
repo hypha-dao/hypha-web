@@ -53,6 +53,70 @@ describe('dedupeTimelineMessages', () => {
     expect(merged.map((row) => row.id)).toEqual(['$a', '$b']);
   });
 
+  it('keeps a captionless pending upload beside an older text message', () => {
+    const merged = dedupeTimelineMessages(
+      [
+        {
+          id: 'hypha-send-pending-1',
+          role: 'user' as const,
+          sendPending: {},
+          parts: [],
+          media: { mxcUrl: '' },
+        },
+        text('$real', 'Hello', {
+          role: 'user',
+          senderMatrixId: '@me:example',
+          timestamp: new Date(1_000),
+        }),
+      ],
+      '@me:example',
+    );
+    expect(merged.map((row) => row.id)).toEqual([
+      'hypha-send-pending-1',
+      '$real',
+    ]);
+  });
+
+  it('keeps two captionless attachments that are different files', () => {
+    const merged = dedupeTimelineMessages(
+      [
+        text('~local', '', {
+          sendAcknowledged: false,
+          role: 'user',
+          senderMatrixId: '@me:example',
+          media: { mxcUrl: 'mxc://example/one' },
+        }),
+        text('$real', '', {
+          role: 'user',
+          senderMatrixId: '@me:example',
+          media: { mxcUrl: 'mxc://example/two' },
+        }),
+      ],
+      '@me:example',
+    );
+    expect(merged.map((row) => row.id)).toEqual(['~local', '$real']);
+  });
+
+  it('drops a captionless echo once the same attachment has arrived', () => {
+    const merged = dedupeTimelineMessages(
+      [
+        text('~local', '', {
+          sendAcknowledged: false,
+          role: 'user',
+          senderMatrixId: '@me:example',
+          media: { mxcUrl: 'mxc://example/one' },
+        }),
+        text('$real', '', {
+          role: 'user',
+          senderMatrixId: '@me:example',
+          media: { mxcUrl: 'mxc://example/one' },
+        }),
+      ],
+      '@me:example',
+    );
+    expect(merged.map((row) => row.id)).toEqual(['$real']);
+  });
+
   it('drops the sending mask once the same caption has arrived', () => {
     const merged = dedupeTimelineMessages(
       [

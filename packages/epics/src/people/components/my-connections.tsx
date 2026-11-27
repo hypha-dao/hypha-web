@@ -1866,9 +1866,14 @@ export function MyConnections({
   const tChat = useTranslations('MemberHome');
   const tCommon = useTranslations('Common');
   const locale = useLocale();
-  const { user } = useAuthentication();
-  const { jwt } = useJwt();
+  const {
+    user,
+    isAuthenticated,
+    isLoading: isAuthLoading,
+  } = useAuthentication();
+  const { jwt, isLoadingJwt } = useJwt();
   const memberId = user?.id ?? null;
+  const inboxAccountId = memberId == null ? null : String(memberId);
   const jwtSubject = jwt ? readJwtSubject(jwt) : null;
   const jwtRef = useRef(jwt);
   const jwtOwnerRef = useRef<string | null>(null);
@@ -1951,11 +1956,21 @@ export function MyConnections({
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<ConversationRow[]>([]);
   const [channels, setChannels] = useState<JoinedChannelSnapshot[]>([]);
-  const restoredInboxSnapshot = useRef(false);
+  const restoredInboxAccount = useRef<string | null>(null);
+  const skipSnapshotWrite = useRef(false);
   useLayoutEffect(() => {
-    if (restoredInboxSnapshot.current) return;
-    restoredInboxSnapshot.current = true;
-    const snapshot = readInboxListSnapshot();
+    if (!inboxAccountId || restoredInboxAccount.current === inboxAccountId) {
+      return;
+    }
+    const switchingAccount = restoredInboxAccount.current != null;
+    restoredInboxAccount.current = inboxAccountId;
+    skipSnapshotWrite.current = true;
+    const snapshot = readInboxListSnapshot(inboxAccountId);
+    if (switchingAccount) {
+      setRows(snapshot.rows);
+      setChannels(snapshot.channels);
+      return;
+    }
     if (snapshot.rows.length > 0) {
       setRows((current) => (current.length > 0 ? current : snapshot.rows));
     }
@@ -1964,7 +1979,7 @@ export function MyConnections({
         current.length > 0 ? current : snapshot.channels,
       );
     }
-  }, []);
+  }, [inboxAccountId]);
   // Direct skips the all-channels merge on open (faster first paint).
   const [inboxFilter, setInboxFilter] = useState<InboxFilter>('direct');
   const [mobileTab, setMobileTab] = useState<MobileInboxTab>('all');
@@ -2288,15 +2303,18 @@ export function MyConnections({
 
   useEffect(() => {
     if (!client) {
-      // Logged out: drop the list. A reconnect or the first Matrix start
-      // keeps the snapshot so the screen does not blink back to a skeleton.
-      if (!isConnecting && !isMatrixAvailable) {
+      // A reconnect, or a token that is still loading, keeps the painted
+      // list. Only a confirmed sign-out drops it.
+      const signedOut =
+        !isAuthLoading && !isLoadingJwt && !isAuthenticated && !isConnecting;
+      if (signedOut) {
         setRows([]);
         setChannels([]);
         setSynced(false);
         setInitialSyncComplete(false);
         setListSettled(false);
         clearInboxListSnapshot();
+        restoredInboxAccount.current = null;
       }
       return;
     }
@@ -2345,7 +2363,14 @@ export function MyConnections({
         setInitialSyncComplete(true);
       }
     });
-  }, [client, isConnecting, isMatrixAvailable]);
+  }, [
+    client,
+    isAuthenticated,
+    isAuthLoading,
+    isConnecting,
+    isLoadingJwt,
+    isMatrixAvailable,
+  ]);
 
   useEffect(() => {
     if (!client) return;
@@ -2480,9 +2505,14 @@ export function MyConnections({
   const listLoading =
     !listSettled && !dataReady && rows.length === 0 && channels.length === 0;
   useEffect(() => {
-    if (!listSettled) return;
-    writeInboxListSnapshot({ rows, channels });
-  }, [channels, listSettled, rows]);
+    if (!listSettled || !inboxAccountId) return;
+    if (restoredInboxAccount.current !== inboxAccountId) return;
+    if (skipSnapshotWrite.current) {
+      skipSnapshotWrite.current = false;
+      return;
+    }
+    writeInboxListSnapshot({ rows, channels }, inboxAccountId);
+  }, [channels, inboxAccountId, listSettled, rows]);
   const resolvedMembers = useMemo(
     () =>
       applyResolvedPeerTitles(

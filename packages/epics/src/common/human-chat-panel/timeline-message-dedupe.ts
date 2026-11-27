@@ -34,6 +34,21 @@ function timestampMs(message: DedupableTimelineMessage): number | null {
   return date ? date.getTime() : null;
 }
 
+function mediaKey(message: DedupableTimelineMessage): string {
+  const slots: unknown[] = [];
+  if (message.media) slots.push(message.media);
+  if (message.mediaSlots) slots.push(...message.mediaSlots);
+  return slots
+    .map((slot) => {
+      if (!slot || typeof slot !== 'object') return '';
+      const url = (slot as { mxcUrl?: unknown }).mxcUrl;
+      return typeof url === 'string' ? url.trim() : '';
+    })
+    .filter(Boolean)
+    .sort()
+    .join('\n');
+}
+
 function isPendingSend(message: DedupableTimelineMessage): boolean {
   const id = message.id ?? '';
   return Boolean(message.sendPending) || id.startsWith('hypha-send-pending');
@@ -84,7 +99,7 @@ function withinEchoWindow(
 ): boolean {
   const leftTs = timestampMs(left);
   const rightTs = timestampMs(right);
-  if (leftTs == null || rightTs == null) return true;
+  if (leftTs == null || rightTs == null) return false;
   return Math.abs(leftTs - rightTs) <= ECHO_WINDOW_MS;
 }
 
@@ -96,7 +111,23 @@ function echoMatchesReal(
     messageText(echo) || echo.sendPending?.captionPreview?.trim() || '';
   const realText = messageText(real);
   if (echoText && realText && echoText !== realText) return false;
-  if (!echoText && !realText && !hasMedia(real)) return false;
+  const echoMedia = mediaKey(echo);
+  const realMedia = mediaKey(real);
+  if (echoMedia && realMedia && echoMedia !== realMedia) return false;
+  const textMatch = Boolean(echoText && realText && echoText === realText);
+  const echoTs = timestampMs(echo);
+  const realTs = timestampMs(real);
+  if (textMatch) {
+    if (echoTs == null || realTs == null) return true;
+    return Math.abs(echoTs - realTs) <= ECHO_WINDOW_MS;
+  }
+  // A captionless upload with no clock must not attach to an older text row.
+  if (!echoText && realText && (echoTs == null || realTs == null)) return false;
+  if (!echoText && !realText && (hasMedia(echo) || hasMedia(real))) {
+    if (!echoMedia || !realMedia || echoMedia !== realMedia) return false;
+  }
+  if (!echoText && !realText && !hasMedia(real) && !hasMedia(echo))
+    return false;
   return withinEchoWindow(echo, real);
 }
 

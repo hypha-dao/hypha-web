@@ -48,24 +48,42 @@ afterEach(() => {
 });
 
 describe('messages inbox snapshot', () => {
-  it('round-trips the last painted list', () => {
-    writeInboxListSnapshot({
-      rows: [row],
-      channels: [
-        {
-          roomId: '!space:example',
-          roomType: 'io.hypha.room.space',
-          name: 'Hypha',
-          aliases: [],
-          preview: 'Update',
-          mine: false,
-          lastTs: 20,
-          unread: 0,
-        },
-      ],
-    });
-    expect(readInboxListSnapshot().rows[0]?.name).toBe('Alex');
-    expect(readInboxListSnapshot().channels[0]?.name).toBe('Hypha');
+  it('round-trips the last painted list for the same account', () => {
+    writeInboxListSnapshot(
+      {
+        rows: [row],
+        channels: [
+          {
+            roomId: '!space:example',
+            roomType: 'io.hypha.room.space',
+            name: 'Hypha',
+            aliases: [],
+            preview: 'Update',
+            mine: false,
+            lastTs: 20,
+            unread: 0,
+          },
+        ],
+      },
+      'person-1',
+    );
+    expect(readInboxListSnapshot('person-1').rows[0]?.name).toBe('Alex');
+    expect(readInboxListSnapshot('person-1').channels[0]?.name).toBe('Hypha');
+    expect(readInboxListSnapshot('person-2').rows).toEqual([]);
+  });
+
+  it('ignores a snapshot saved before accounts were recorded', () => {
+    window.sessionStorage.setItem(
+      'hypha.messages-inbox-snapshot',
+      JSON.stringify({ rows: [row], channels: [] }),
+    );
+    expect(readInboxListSnapshot('person-1').rows).toEqual([]);
+  });
+
+  it('clears the stored list when the settled inbox is empty', () => {
+    writeInboxListSnapshot({ rows: [row], channels: [] }, 'person-1');
+    writeInboxListSnapshot({ rows: [], channels: [] }, 'person-1');
+    expect(readInboxListSnapshot('person-1').rows).toEqual([]);
   });
 
   it('keeps the painted list while live sync is still empty', () => {
