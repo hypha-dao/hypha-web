@@ -12,9 +12,9 @@ const switchSizeClass = {
       'h-5 w-5 data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0',
   },
   sm: {
-    root: 'h-3.5 w-6',
+    root: 'h-4 w-8 px-0.5',
     thumb:
-      'h-2.5 w-2.5 data-[state=checked]:translate-x-3 data-[state=unchecked]:translate-x-0.5',
+      'size-3 data-[state=checked]:translate-x-3.5 data-[state=unchecked]:translate-x-0',
   },
 } as const;
 
@@ -39,7 +39,7 @@ const Switch = React.forwardRef<
   >
     <SwitchPrimitives.Thumb
       className={cn(
-        'pointer-events-none block rounded-full bg-white shadow-lg ring-0 transition-transform',
+        'pointer-events-none block shrink-0 rounded-full bg-white shadow-sm ring-1 ring-black/15 transition-transform data-[state=checked]:bg-accent-contrast',
         switchSizeClass[size].thumb,
       )}
     />

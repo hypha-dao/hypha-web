@@ -95,7 +95,7 @@ export function SpaceScreenLayoutFields({
           return (
             <li
               key={key}
-              className="flex items-center gap-3 border-t border-neutral-6 px-4 py-2"
+              className="flex items-center gap-3 border-t border-neutral-6 px-4 py-3"
             >
               <span className="w-6 shrink-0 text-right text-1 tabular-nums text-neutral-11">
                 {index + 1}
