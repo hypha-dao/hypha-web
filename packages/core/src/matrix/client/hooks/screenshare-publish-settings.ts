@@ -102,8 +102,14 @@ async function startScreenShare(room: Room): Promise<void> {
     Track.Source.ScreenShare,
   );
   if (existing?.track) {
-    if (existing.isMuted) await existing.unmute();
-    return;
+    if (existing.track.mediaStreamTrack.readyState !== 'ended') {
+      if (existing.isMuted) await existing.unmute();
+      return;
+    }
+    // A publication left over with an ended track is not a live share: clear it and capture anew.
+    await room.localParticipant
+      .unpublishTrack(existing.track)
+      .catch(() => undefined);
   }
   const tracks: LocalTrack[] = await room.localParticipant.createScreenTracks(
     buildScreenShareCaptureOptions(),
@@ -120,7 +126,15 @@ async function startScreenShare(room: Room): Promise<void> {
       tracks.map((t) => room.localParticipant.publishTrack(t, publish)),
     );
   } catch (e) {
-    for (const t of tracks) t.stop();
+    // Unpublish whatever went live (e.g. the video before the tab audio failed), so a retry
+    // captures again instead of finding a stopped share.
+    for (const t of tracks) {
+      const published = room.localParticipant.getTrackPublication(t.source);
+      if (published?.track === t) {
+        await room.localParticipant.unpublishTrack(t).catch(() => undefined);
+      }
+      t.stop();
+    }
     throw e;
   }
 }

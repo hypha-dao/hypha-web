@@ -67,7 +67,11 @@ describe('publishScreenShare', () => {
     const createScreenTracks = vi.fn();
     const room = {
       localParticipant: {
-        getTrackPublication: () => ({ track: {}, isMuted: true, unmute }),
+        getTrackPublication: () => ({
+          track: { mediaStreamTrack: { readyState: 'live' } },
+          isMuted: true,
+          unmute,
+        }),
         createScreenTracks,
         publishTrack: vi.fn(),
       },
@@ -75,5 +79,58 @@ describe('publishScreenShare', () => {
     await publishScreenShare(room);
     expect(createScreenTracks).not.toHaveBeenCalled();
     expect(unmute).toHaveBeenCalledOnce();
+  });
+
+  it('unpublishes what went live when a later track fails, then rethrows', async () => {
+    const video = {
+      source: 'screen_share',
+      mediaStreamTrack: { getSettings: () => ({ width: 1920, height: 1080 }) },
+      stop: vi.fn(),
+    };
+    const audio = { source: 'screen_share_audio', stop: vi.fn() };
+    const published = new Map<string, unknown>();
+    const unpublishTrack = vi.fn().mockResolvedValue(undefined);
+    const room = {
+      localParticipant: {
+        getTrackPublication: (source: string) => published.get(source),
+        createScreenTracks: vi.fn().mockResolvedValue([video, audio]),
+        publishTrack: vi.fn((t: { source: string }) => {
+          if (t === audio) return Promise.reject(new Error('audio failed'));
+          published.set(t.source, { track: t });
+          return Promise.resolve();
+        }),
+        unpublishTrack,
+      },
+    } as unknown as Room;
+    await expect(publishScreenShare(room)).rejects.toThrow('audio failed');
+    expect(unpublishTrack).toHaveBeenCalledWith(video);
+    expect(unpublishTrack).not.toHaveBeenCalledWith(audio);
+    expect(video.stop).toHaveBeenCalled();
+    expect(audio.stop).toHaveBeenCalled();
+  });
+
+  it('clears a publication whose track already ended and captures again', async () => {
+    const ended = { mediaStreamTrack: { readyState: 'ended' } };
+    let current: unknown = { track: ended, isMuted: false };
+    const video = {
+      source: 'screen_share',
+      mediaStreamTrack: { getSettings: () => ({ width: 1920, height: 1080 }) },
+      stop: vi.fn(),
+    };
+    const createScreenTracks = vi.fn().mockResolvedValue([video]);
+    const unpublishTrack = vi.fn(async () => {
+      current = undefined;
+    });
+    const room = {
+      localParticipant: {
+        getTrackPublication: () => current,
+        createScreenTracks,
+        publishTrack: vi.fn().mockResolvedValue(undefined),
+        unpublishTrack,
+      },
+    } as unknown as Room;
+    await publishScreenShare(room);
+    expect(unpublishTrack).toHaveBeenCalledWith(ended);
+    expect(createScreenTracks).toHaveBeenCalledOnce();
   });
 });
