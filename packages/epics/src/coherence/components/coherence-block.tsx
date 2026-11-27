@@ -31,8 +31,15 @@ import {
   useSignalVotingMode,
 } from '../hooks/use-signal-voting-mode';
 import { SignalFeedFilters } from './signal-feed-filters';
+import { SignalFeedCard } from './signal-feed-card';
+import { SignalFeedLayoutToggle } from './signal-feed-layout-toggle';
 import { SignalFeedRow } from './signal-feed-row';
 import { useDebouncedFeedTitle } from '../lib/use-debounced-feed-title';
+import {
+  readStoredSignalFeedLayout,
+  writeStoredSignalFeedLayout,
+  type SignalFeedLayout,
+} from '../lib/signal-feed-layout';
 import type { UseMembers } from '../../spaces/hooks/types';
 
 export const SIGNAL_SORT_QUERY_KEY = 'sort';
@@ -79,6 +86,15 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
     retry: retryVotingMode,
   } = useSignalVotingMode(signalVotingSpaceId(space));
   const provisioningNoticeLines = useSignalProvisioningNotice();
+
+  const [layout, setLayout] = React.useState<SignalFeedLayout>('list');
+  React.useLayoutEffect(() => {
+    setLayout(readStoredSignalFeedLayout());
+  }, []);
+  const handleLayoutChange = React.useCallback((next: SignalFeedLayout) => {
+    setLayout(next);
+    writeStoredSignalFeedLayout(next);
+  }, []);
 
   const sort = parseSignalSort(searchParams.get(SIGNAL_SORT_QUERY_KEY));
   const timeFrame = parseSignalTimeFrame(
@@ -195,6 +211,7 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
             </span>
           ) : null}
         </h1>
+        <SignalFeedLayoutToggle layout={layout} onChange={handleLayoutChange} />
       </header>
 
       <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
@@ -229,12 +246,22 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
       />
 
       {isLoading ? (
-        <div className="flex flex-col gap-2">
+        <div
+          className={
+            layout === 'cards'
+              ? 'grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3'
+              : 'flex flex-col gap-2'
+          }
+        >
           {Array.from({ length: 4 }, (_, index) => (
             <Skeleton
               key={index}
               loading
-              className="h-[104px] w-full rounded-none"
+              className={
+                layout === 'cards'
+                  ? 'h-[280px] w-full rounded-none'
+                  : 'h-[104px] w-full rounded-none'
+              }
             />
           ))}
         </div>
@@ -264,26 +291,35 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
             : t('listIsEmpty')}
         </p>
       ) : (
-        <div className="flex flex-col gap-2">
-          {ranked.map((signal) =>
-            signal.slug ? (
-              <SignalFeedRow
-                key={signal.id}
-                signal={signal}
-                spaceSlug={spaceSlug}
-                href={getSignalPath(lang, spaceSlug, signal.slug)}
-                votingMode={votingMode}
-                votingModeStatus={votingModeStatus}
-                onRetryVotingMode={retryVotingMode}
-                isNonMember={isNonMember}
-                isMembershipPending={isMembershipPending}
-                activity={signal.roomId ? activity[signal.roomId] : undefined}
-                refresh={refresh}
-                sort={sort}
-                summaryState={upvoteSummaryState}
-              />
-            ) : null,
-          )}
+        <div
+          className={
+            layout === 'cards'
+              ? 'grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3'
+              : 'flex flex-col gap-2'
+          }
+        >
+          {ranked.map((signal) => {
+            if (!signal.slug) return null;
+            const itemProps = {
+              signal,
+              spaceSlug,
+              href: getSignalPath(lang, spaceSlug, signal.slug),
+              votingMode,
+              votingModeStatus,
+              onRetryVotingMode: retryVotingMode,
+              isNonMember,
+              isMembershipPending,
+              activity: signal.roomId ? activity[signal.roomId] : undefined,
+              refresh,
+              sort,
+              summaryState: upvoteSummaryState,
+            };
+            return layout === 'cards' ? (
+              <SignalFeedCard key={signal.id} {...itemProps} />
+            ) : (
+              <SignalFeedRow key={signal.id} {...itemProps} />
+            );
+          })}
         </div>
       )}
     </div>

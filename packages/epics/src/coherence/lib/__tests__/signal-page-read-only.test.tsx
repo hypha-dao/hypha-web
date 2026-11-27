@@ -104,6 +104,9 @@ vi.mock('../../components/signal-feed-row', () => ({
 vi.mock('../../components/signal-type-badge', () => ({
   SignalTypeBadge: () => null,
 }));
+vi.mock('../../components/signal-tag-badges', () => ({
+  SignalTagBadges: () => null,
+}));
 vi.mock('../../components/signal-video-player', () => ({
   SignalVideoPlayer: () => null,
 }));

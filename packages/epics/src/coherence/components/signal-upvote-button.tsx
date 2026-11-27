@@ -117,6 +117,8 @@ type SignalUpvoteButtonProps = {
    * then zero. `loading` keeps the ellipsis. `error` must not display as zero.
    */
   summaryState?: SignalUpvoteSummaryState;
+  /** List rows stack the arrows. Detail and cards keep the horizontal row. */
+  layout?: 'row' | 'stack';
   className?: string;
 };
 
@@ -141,6 +143,7 @@ export function SignalUpvoteButton({
   variant = 'feed',
   sort = 'top-voters',
   summaryState = 'ready',
+  layout = 'row',
   className,
 }: SignalUpvoteButtonProps) {
   const t = useTranslations('SignalCard');
@@ -369,6 +372,7 @@ export function SignalUpvoteButton({
       onKeyDown={stopPropagation}
     >
       <SignalUpvoteCellChrome
+        layout={layout}
         figure={figureLabel}
         exactLabel={exactLabel}
         pressed={hasVoted}
