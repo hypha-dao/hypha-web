@@ -4209,7 +4209,7 @@
     "callShareQualityHide": "Auflösung ausblenden",
     "callShareQualityPicker": "Empfangsqualität",
     "callShareQualityAuto": "Auto",
-    "callShareQualityNeedsResize": "zum Nutzen vergrößern",
+    "callShareQualityUnavailable": "Begrenzt durch Fenstergröße oder Netzwerk",
     "callShareQualityReasonAuto": "Auto: an deine Kachel angepasst",
     "callShareQualityReasonCapped": "Begrenzt auf {label}",
     "callShareQualityReasonNetwork": "Durch das Netzwerk begrenzt",

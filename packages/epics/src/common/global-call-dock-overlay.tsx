@@ -1474,7 +1474,7 @@ export function GlobalCallDockOverlay({
           className={cn(
             'min-h-0 min-w-0 overflow-hidden flex min-h-0 flex-1 flex-col',
             lockStagePointerEvents
-              ? 'pointer-events-none [&_*]:pointer-events-none'
+              ? 'pointer-events-none [&_*]:pointer-events-none [&_[data-call-badge-control]]:pointer-events-auto'
               : '[&_video]:pointer-events-none [&_canvas]:pointer-events-none [&_[data-call-interactive]]:pointer-events-auto',
           )}
         >
