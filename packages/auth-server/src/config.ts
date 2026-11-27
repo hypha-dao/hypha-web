@@ -51,8 +51,8 @@ export const CLIENT_REGISTRATION_CEILING_SCOPES: readonly AuthServerScope[] = [
 ];
 
 /**
- * The scopes a kind of client may be granted. A registered client is limited by its own row
- * (`registered-clients.ts`), which the library checks at authorization.
+ * The scopes a kind of client may be granted. A registered client is limited by its own row in
+ * `as_oauth_client` (set by hand, not by code), which the library checks at authorization.
  */
 export function scopesForClientKind(
   kind: 'registered' | 'cimd' | 'dcr',
