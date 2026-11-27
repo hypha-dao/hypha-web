@@ -1421,7 +1421,7 @@ export function DhoStickySpaceChrome({
   }, [cancelSettleMotion, readHeaderInView, spaceSlug]);
 
   const logoSrc = logoUrl || defaultLogoSrc;
-  const { space: liveSpace } = useSpaceBySlug(spaceSlug);
+  const { space: liveSpace } = useSpaceBySlug(spaceSlug ?? '');
   const bannerOn =
     liveSpace?.screenLayout !== undefined
       ? spaceScreenShowsBanner(liveSpace.screenLayout)
