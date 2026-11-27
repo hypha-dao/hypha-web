@@ -1342,6 +1342,17 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const [input, setInput] = useState('');
   const inputRef = useRef(input);
   inputRef.current = input;
+  /**
+   * Bumped only when the draft is replaced from outside the composer
+   * (send, room switch, edit). Keystrokes stay in the composer so the
+   * thread does not re-render on every character.
+   */
+  const [composerResetId, setComposerResetId] = useState(0);
+  const replaceComposerText = useCallback((next: string) => {
+    inputRef.current = next;
+    setInput(next);
+    setComposerResetId((id) => id + 1);
+  }, []);
   /** Room whose composer draft is currently loaded into `input`. */
   const draftRoomIdRef = useRef<string | null>(null);
   /** Skip one persist after restore so an empty pre-restore input cannot wipe storage. */
@@ -1389,7 +1400,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     const next = roomId?.trim() || null;
     if (prev && prev !== next && !editDraftRef.current) {
       // Typing already persists; only flush a non-empty box here so a
-      // room-switch `setInput('')` cannot wipe a draft already on disk.
+      // room-switch `replaceComposerText('')` cannot wipe a draft already on disk.
       const text = inputRef.current;
       if (text.trim()) writeComposerDraft(prev, text);
     }
@@ -1397,12 +1408,12 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     if (prev === next) return;
     if (!next) {
       skipDraftPersistRef.current = true;
-      setInput('');
+      replaceComposerText('');
       return;
     }
     if (editDraftRef.current) return;
     skipDraftPersistRef.current = true;
-    setInput(readComposerDraft(next));
+    replaceComposerText(readComposerDraft(next));
   }, [roomId]);
 
   useEffect(() => {
@@ -1529,7 +1540,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     setRoomId(null);
     setMessages([]);
     setPaintedRoomId(null);
-    setInput('');
+    replaceComposerText('');
     disposeDraftAttachmentUrls(draftAttachmentsRef.current);
     setDraftAttachments([]);
     setReplyDraft(null);
@@ -2100,6 +2111,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const signalThreadCallGenerationRef = useRef(0);
   const coherenceSlugRef = useRef(coherenceSlug);
   coherenceSlugRef.current = coherenceSlug;
+  const coherenceChannelRef = useRef(coherenceChannel);
+  coherenceChannelRef.current = coherenceChannel;
   const personPanelCallSelectionRef = useRef(
     personPanelCallSelectionOf({
       personId: peerPersonId,
@@ -3212,49 +3225,59 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   const messagesRoomIdRef = useRef<string | null>(null);
   /** Room the coherence/space join effect is currently opening — drop stale paints. */
   const openingTimelineRoomIdRef = useRef<string | null>(null);
-  const syncRoomMessages = useCallback((targetRoomId: string) => {
-    const wanted = openingTimelineRoomIdRef.current?.trim() || '';
-    const committed = roomIdRef.current?.trim() || '';
-    const target = targetRoomId.trim();
-    if (!target) return;
-    // Never paint another room's timeline (HE → HUMAI, space ↔ network).
-    // Mid-switch both refs may be empty — drop every paint until a target locks.
-    if (wanted) {
-      if (wanted !== target) return;
-    } else if (committed) {
-      if (committed !== target) return;
-    } else {
-      return;
-    }
-    const existing = matrixRef.current.getRoomMessages(target);
-    if (!existing) return;
-    setMessages((prev) => {
-      if (
-        existing.length === 0 &&
-        prev.length > 0 &&
-        messagesRoomIdRef.current === target
-      ) {
-        return prev;
+  const syncRoomMessages = useCallback(
+    (targetRoomId: string, limit?: number) => {
+      const wanted = openingTimelineRoomIdRef.current?.trim() || '';
+      const committed = roomIdRef.current?.trim() || '';
+      const target = targetRoomId.trim();
+      if (!target) return;
+      // Never paint another room's timeline (HE → HUMAI, space ↔ network).
+      // Mid-switch both refs may be empty — drop every paint until a target locks.
+      if (wanted) {
+        if (wanted !== target) return;
+      } else if (committed) {
+        if (committed !== target) return;
+      } else {
+        return;
       }
-      messagesRoomIdRef.current = target;
-      return sortMessagesChronologically(
-        existing.map((m) =>
-          toUIMessage(
-            m,
-            currentUserIdRef.current,
-            resolveMemberLabelRef.current,
-            currentUserAvatarUrlRef.current,
-            resolveMemberAvatarRef.current,
-            target,
-            matrixRef.current.client ?? null,
-            formatSignalTeamNoticeRef.current,
-            systemSenderLabelRef.current,
+      const existing = matrixRef.current.getRoomMessages(target, limit);
+      if (!existing) return;
+      setMessages((prev) => {
+        if (
+          existing.length === 0 &&
+          prev.length > 0 &&
+          messagesRoomIdRef.current === target
+        ) {
+          return prev;
+        }
+        messagesRoomIdRef.current = target;
+        const next = sortMessagesChronologically(
+          existing.map((m) =>
+            toUIMessage(
+              m,
+              currentUserIdRef.current,
+              resolveMemberLabelRef.current,
+              currentUserAvatarUrlRef.current,
+              resolveMemberAvatarRef.current,
+              target,
+              matrixRef.current.client ?? null,
+              formatSignalTeamNoticeRef.current,
+              systemSenderLabelRef.current,
+            ),
           ),
-        ),
-      );
-    });
-    setPaintedRoomId(target);
-  }, []);
+        );
+        const stillSending = prev.filter(
+          (row) =>
+            row.id.startsWith('~hypha-outgoing') &&
+            !next.some((item) => item.id === row.id),
+        );
+        if (stillSending.length === 0) return next;
+        return sortMessagesChronologically([...next, ...stillSending]);
+      });
+      setPaintedRoomId(target);
+    },
+    [],
+  );
 
   /**
    * Paint whatever timeline we already have, then fill history without leaving
@@ -3264,26 +3287,35 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     async (targetRoomId: string, isCancelled: () => boolean) => {
       const messageCount = () => {
         try {
-          return matrixRef.current.getRoomMessages(targetRoomId)?.length ?? 0;
+          return (
+            matrixRef.current.getRoomMessages(targetRoomId, 1)?.length ?? 0
+          );
         } catch {
           return 0;
         }
       };
-      const paint = () => {
+      const paint = (limit?: number) => {
         try {
-          syncRoomMessages(targetRoomId);
+          syncRoomMessages(targetRoomId, limit);
         } catch (error) {
           console.warn('[HumanRightPanel] Timeline not ready to paint:', error);
         }
       };
 
-      paint();
-      if (chatModeRef.current === 'coherence') {
-        // One batch leaves the thread on its recent tail. Keep paging until
-        // the room start (or the deadline) so the bubbles and the comment
-        // count see the same human history. Show messages as soon as any
-        // are painted; the count stays on the stored total until the start.
-        if (messageCount() > 0 && !isCancelled()) setIsJoining(false);
+      // The recent tail is enough to show the thread. Mapping a fully paged
+      // timeline here is what made a switch sit blank for a few seconds.
+      paint(40);
+      if (messageCount() > 0 && !isCancelled()) setIsJoining(false);
+      // Signal threads page back to the start so the bubbles and the comment
+      // count see the same history. A direct or group chat only needs the tail.
+      const openedChannel = coherenceChannelRef.current;
+      const pageWholeHistory =
+        chatModeRef.current === 'coherence' &&
+        Boolean(coherenceSlugRef.current?.trim()) &&
+        (!openedChannel ||
+          openedChannel === 'signal' ||
+          openedChannel === 'quest');
+      if (pageWholeHistory) {
         const deadline = Date.now() + 12000;
         let hasMoreOlder = true;
         while (!isCancelled() && hasMoreOlder && Date.now() < deadline) {
@@ -3741,7 +3773,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       joinedRef.current = null;
       setRoomId(null);
       setMessages([]);
-      setInput('');
+      replaceComposerText('');
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
       setReplyDraft(null);
@@ -3766,7 +3798,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     setMessages([]);
     setReplyDraft(null);
     setEditDraft(null);
-    setInput('');
+    replaceComposerText('');
     setError(null);
   }, [
     mode,
@@ -4065,7 +4097,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       setRoomId(null);
       setReplyDraft(null);
       setEditDraft(null);
-      setInput('');
+      replaceComposerText('');
       setComposerError(null);
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
@@ -4086,7 +4118,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       setRoomId(null);
       setReplyDraft(null);
       setEditDraft(null);
-      setInput('');
+      replaceComposerText('');
       setComposerError(null);
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
@@ -4179,14 +4211,37 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       }
       // Lock paints to the inbox room id immediately (before any await).
       openingTimelineRoomIdRef.current = intendedRoomId;
-      roomIdRef.current = null;
-      messagesRoomIdRef.current = null;
-      setRoomId(null);
-      // Clear the previous room's timeline immediately so a slow join cannot
-      // leave another channel's messages under the new title (HE → HUMAI).
-      setMessages([]);
-      setPaintedRoomId(null);
-      setIsJoining(true);
+      if (intendedRoomId) {
+        roomIdRef.current = intendedRoomId;
+        messagesRoomIdRef.current = intendedRoomId;
+        setRoomId(intendedRoomId);
+        const cached = readPersistedChatHistory(intendedRoomId);
+        if (cached.length > 0) {
+          setMessages(cached);
+          setPaintedRoomId(intendedRoomId);
+          setIsJoining(false);
+        } else {
+          // Drop the previous room, then paint this room's local tail.
+          setMessages([]);
+          setPaintedRoomId(null);
+          setIsJoining(true);
+          try {
+            syncRoomMessages(intendedRoomId, 40);
+            const ready =
+              matrixRef.current.getRoomMessages(intendedRoomId, 1)?.length ?? 0;
+            if (ready > 0) setIsJoining(false);
+          } catch {
+            // The join below still fills the thread if the store has no tail yet.
+          }
+        }
+      } else {
+        roomIdRef.current = null;
+        messagesRoomIdRef.current = null;
+        setRoomId(null);
+        setMessages([]);
+        setPaintedRoomId(null);
+        setIsJoining(true);
+      }
     } else {
       openingTimelineRoomIdRef.current =
         intendedRoomId ?? openingTimelineRoomIdRef.current;
@@ -4200,7 +4255,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       if (resetTimeline) {
         setReplyDraft(null);
         setEditDraft(null);
-        setInput('');
+        replaceComposerText('');
         setComposerError(null);
         disposeDraftAttachmentUrls(draftAttachmentsRef.current);
         setDraftAttachments([]);
@@ -4534,7 +4589,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         if (eId && redacts.has(eId)) {
           disposeDraftAttachmentUrls(draftAttachmentsRef.current);
           setDraftAttachments([]);
-          setInput('');
+          replaceComposerText('');
           setEditDraft(null);
         }
       });
@@ -5797,7 +5852,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           ),
           editMediaMode: true,
         });
-        setInput(
+        replaceComposerText(
           replaceMxidsWithComposerMentionTokens(
             plain,
             mentionComposerTokenLabelByUserId,
@@ -5817,7 +5872,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           ),
         ),
       });
-      setInput(
+      replaceComposerText(
         replaceMxidsWithComposerMentionTokens(
           plain,
           mentionComposerTokenLabelByUserId,
@@ -5843,7 +5898,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         setMessages((prev) => prev.filter((m) => m.id !== messageId));
         if (editDraft?.messageId === messageId) {
           setEditDraft(null);
-          setInput('');
+          replaceComposerText('');
         }
         if (replyDraft?.messageId === messageId) {
           setReplyDraft(null);
@@ -5868,7 +5923,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const handleComposerChange = useCallback(
     (value: string) => {
-      setInput(value);
+      inputRef.current = value;
+      const rid = draftRoomIdRef.current;
+      if (rid && !editDraftRef.current) writeComposerDraft(rid, value);
       setComposerTyping(value.trim().length > 0);
     },
     [setComposerTyping],
@@ -5880,7 +5937,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       setComposerError(tCommon('joinSpaceToUse'));
       return;
     }
-    const trimmed = input.trim();
+    const text = inputRef.current;
+    const trimmed = text.trim();
     if (!trimmed && draftAttachments.length === 0) return;
     if (
       trimmed &&
@@ -5890,12 +5948,11 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       helperAcceptRef.current(trimmed)
     ) {
       setComposerTyping(false);
-      setInput('');
+      replaceComposerText('');
       clearComposerDraft(roomId);
       return;
     }
     setComposerTyping(false);
-    const text = input;
     const replyToEventId = replyDraft?.messageId;
     const editTargetEventId = editDraft?.messageId;
     const savedDraft = replyDraft;
@@ -5910,7 +5967,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     sendOperationTokenRef.current = sendToken;
     setComposerError(null);
     setMentionDeliveryNotice(null);
-    setInput('');
+    replaceComposerText('');
     clearComposerDraft(roomId);
     setDraftAttachments([]);
     const pendingId =
@@ -5926,6 +5983,25 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         captionPreview: text,
         uploadedCount: 0,
       });
+    }
+    const optimisticId =
+      !editTargetEventId && !pendingId && wirePlain.trim()
+        ? `~hypha-outgoing-${Date.now()}`
+        : null;
+    if (optimisticId) {
+      const outgoingId = optimisticId;
+      setMessages((prev) =>
+        sortMessagesChronologically([
+          ...prev,
+          {
+            id: outgoingId,
+            role: 'user',
+            parts: [{ type: 'text', text: wirePlain }],
+            timestamp: new Date(),
+            sendAcknowledged: false,
+          },
+        ]),
+      );
     }
     let mentionNotice: string | null = null;
     try {
@@ -6115,6 +6191,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       }
     } catch (err) {
       console.error('[HumanRightPanel] Failed to send message:', err);
+      if (optimisticId) {
+        setMessages((prev) => prev.filter((row) => row.id !== optimisticId));
+      }
       if (sendOperationTokenRef.current !== sendToken) {
         disposeDraftAttachmentUrls(savedAttachments);
         setSendingPending(null);
@@ -6127,7 +6206,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       }
       if (err instanceof SendMessageCancelledError) {
         disposeDraftAttachmentUrls(savedAttachments);
-        setInput(text);
+        replaceComposerText(text);
         setDraftAttachments(savedAttachments);
         setReplyDraft(savedDraft);
         setEditDraft(savedEditDraft);
@@ -6146,7 +6225,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
           if (a) URL.revokeObjectURL(a.previewUrl);
         }
         setDraftAttachments(savedAttachments.slice(sentAttachmentCount));
-        setInput(restoreCaption ? text : '');
+        replaceComposerText(restoreCaption ? text : '');
         setReplyDraft(savedDraft);
         setEditDraft(savedEditDraft);
         return;
@@ -6169,7 +6248,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             ? 'Chat session refreshed. Please send your message again.'
             : 'Chat session expired. Please reload the page and try again.',
         );
-        setInput(text);
+        replaceComposerText(text);
         setReplyDraft(savedDraft);
         setEditDraft(savedEditDraft);
         setDraftAttachments(savedAttachments);
@@ -6183,13 +6262,12 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         ? t('sendFailedWithReason', { message: err.message })
         : t('sendFailed');
       setComposerError(msg);
-      setInput(text);
+      replaceComposerText(text);
       setReplyDraft(savedDraft);
       setEditDraft(savedEditDraft);
       setDraftAttachments(savedAttachments);
     }
   }, [
-    input,
     roomId,
     replyDraft,
     editDraft,
@@ -7059,6 +7137,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
               <HumanChatPanelErrorBoundary key={roomId ?? 'composer'}>
                 <HumanChatPanelChatBar
                   value={input}
+                  composerResetId={composerResetId}
                   onChange={handleComposerChange}
                   onSend={handleSend}
                   mentionCandidates={composerMentionCandidates}
@@ -7086,7 +7165,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                           excerpt: editDraft.excerpt,
                           onDismiss: () => {
                             setEditDraft(null);
-                            setInput(
+                            replaceComposerText(
                               roomId?.trim()
                                 ? readComposerDraft(roomId.trim())
                                 : '',

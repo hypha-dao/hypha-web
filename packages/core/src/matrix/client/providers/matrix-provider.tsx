@@ -577,7 +577,7 @@ interface MatrixContextType {
   editRoomMessage: (params: EditRoomMessageInput) => Promise<void>;
   redactRoomEvent: (params: RedactRoomEventInput) => Promise<void>;
   toggleReaction: (params: ToggleReactionInput) => Promise<void>;
-  getRoomMessages: (roomId: string) => Message[] | null;
+  getRoomMessages: (roomId: string, limit?: number) => Message[] | null;
   loadRoomHistory: (
     roomId: string,
     options?: { pageSize?: number; maxBatches?: number; force?: boolean },
@@ -2045,7 +2045,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   );
 
   const getRoomMessages = React.useCallback(
-    (roomId: string): Message[] | null => {
+    (roomId: string, limit?: number): Message[] | null => {
       if (!client) {
         throw new Error('Client should be specified');
       }
@@ -2057,27 +2057,27 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
       const pinned = getPinnedMessageIds(roomId);
       const uid = client.getUserId();
-      const messages = room
-        ? room
-            .getLiveTimeline()
-            .getEvents()
-            .filter((event) => event.getType() === EventType.RoomMessage)
-            .filter((event) => !isHiddenHumanChatRoomMessage(event))
-            .filter((event) => !isScreenshareTakeoverEvent(event))
-            .filter((event) => !isRedactedRoomMessageEvent(event))
-            .filter((event) => event.getId() && event.getSender())
-            .filter((event) => getMessageReplaceTargetEventId(event) == null)
-            .map((event) => {
-              const base = messageFromRoomMessageEvent(
-                client,
-                roomId,
-                event,
-                pinned.includes(event.getId()!),
-              );
-              return attachReactionsToMessage(room, base, uid);
-            })
-        : null;
-      return messages;
+      let events = room
+        .getLiveTimeline()
+        .getEvents()
+        .filter((event) => event.getType() === EventType.RoomMessage)
+        .filter((event) => !isHiddenHumanChatRoomMessage(event))
+        .filter((event) => !isScreenshareTakeoverEvent(event))
+        .filter((event) => !isRedactedRoomMessageEvent(event))
+        .filter((event) => event.getId() && event.getSender())
+        .filter((event) => getMessageReplaceTargetEventId(event) == null);
+      if (limit != null && limit > 0 && events.length > limit) {
+        events = events.slice(-limit);
+      }
+      return events.map((event) => {
+        const base = messageFromRoomMessageEvent(
+          client,
+          roomId,
+          event,
+          pinned.includes(event.getId()!),
+        );
+        return attachReactionsToMessage(room, base, uid);
+      });
     },
     [client, getPinnedMessageIds],
   );

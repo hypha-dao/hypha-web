@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ElementType } from 'react';
+import { useState, type ElementType, type ReactNode } from 'react';
 import {
   BookOpen,
   ChevronDown,
@@ -64,14 +64,14 @@ function FilterRow({
   selected,
   counts,
   onSelect,
-  shifted = false,
+  afterTitle,
 }: {
   filter: InboxFilter;
   selected: boolean;
   counts: FilterCounts;
   onSelect: (filter: InboxFilter) => void;
-  /** Room for the Spaces chevron, so the mark lines up beside it. */
-  shifted?: boolean;
+  /** Sits on the title line, after the label. Used for the Spaces chevron. */
+  afterTitle?: ReactNode;
 }) {
   const t = useTranslations('Connections');
   const Icon = FILTER_ICONS[filter];
@@ -81,33 +81,30 @@ function FilterRow({
   const description = t(`inbox.${filter}Body`);
   const unreadLabel =
     unread > 0 ? t('unread', { count: unread > 99 ? 99 : unread }) : null;
-
-  return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      data-testid={`inbox-filter-${filter}`}
-      onClick={() => onSelect(filter)}
-      className={cn(
-        'flex w-full min-w-0 items-start gap-3 border-b border-border py-4 pr-4 text-left hover:bg-accent-2',
-        nested ? 'py-3 pl-12' : shifted ? 'pl-9' : 'px-4',
-        selected && 'bg-accent-2',
-      )}
-    >
+  const className = cn(
+    'flex w-full min-w-0 items-start gap-3 border-b border-border py-4 pr-4 text-left hover:bg-accent-2',
+    nested ? 'py-3 pl-12' : 'px-4',
+    selected && 'bg-accent-2',
+  );
+  const content = (
+    <>
       <Icon
         className="mt-0.5 size-4 shrink-0 text-foreground"
         strokeWidth={1.5}
         aria-hidden
       />
       <span className="min-w-0 flex-1">
-        <span className="flex items-baseline gap-3">
-          <span
-            className={cn(
-              'min-w-0 truncate text-3 text-foreground',
-              selected && 'font-medium',
-            )}
-          >
-            {title}
+        <span className="flex items-center gap-3">
+          <span className="flex min-w-0 flex-1 items-center gap-1">
+            <span
+              className={cn(
+                'truncate text-3 text-foreground',
+                selected && 'font-medium',
+              )}
+            >
+              {title}
+            </span>
+            {afterTitle}
           </span>
           <span className="ml-auto flex shrink-0 items-center gap-2">
             {/* Hide 0 while Matrix is still catching up and for empty filters. */}
@@ -128,6 +125,38 @@ function FilterRow({
           {description}
         </span>
       </span>
+    </>
+  );
+
+  if (afterTitle) {
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        aria-pressed={selected}
+        data-testid={`inbox-filter-${filter}`}
+        onClick={() => onSelect(filter)}
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          onSelect(filter);
+        }}
+        className={className}
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      data-testid={`inbox-filter-${filter}`}
+      onClick={() => onSelect(filter)}
+      className={className}
+    >
+      {content}
     </button>
   );
 }
@@ -145,33 +174,36 @@ function SpaceFilters({
   const [open, setOpen] = useState(false);
   return (
     <div>
-      <div className="relative">
-        <button
-          type="button"
-          className="absolute top-4.5 left-4 z-10 flex size-4 items-center justify-center text-neutral-9 hover:text-foreground"
-          aria-expanded={open}
-          aria-controls="inbox-space-filters"
-          aria-label={t('inbox.spacesTitle')}
-          data-testid="inbox-spaces-toggle"
-          onClick={() => setOpen((current) => !current)}
-        >
-          {open ? (
-            <ChevronDown className="size-4" strokeWidth={1.5} aria-hidden />
-          ) : (
-            <ChevronRight className="size-4" strokeWidth={1.5} aria-hidden />
-          )}
-        </button>
-        <FilterRow
-          filter="spaces"
-          shifted
-          selected={value === 'spaces'}
-          counts={counts}
-          onSelect={(filter) => {
-            setOpen(true);
-            onChange(filter);
-          }}
-        />
-      </div>
+      <FilterRow
+        filter="spaces"
+        selected={value === 'spaces'}
+        counts={counts}
+        onSelect={(filter) => {
+          setOpen(true);
+          onChange(filter);
+        }}
+        afterTitle={
+          <button
+            type="button"
+            className="inline-flex size-4 shrink-0 items-center justify-center text-neutral-9 hover:text-foreground"
+            aria-expanded={open}
+            aria-controls="inbox-space-filters"
+            aria-label={t('inbox.spacesTitle')}
+            data-testid="inbox-spaces-toggle"
+            onClick={(event) => {
+              event.stopPropagation();
+              setOpen((current) => !current);
+            }}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            {open ? (
+              <ChevronDown className="size-4" strokeWidth={1.5} aria-hidden />
+            ) : (
+              <ChevronRight className="size-4" strokeWidth={1.5} aria-hidden />
+            )}
+          </button>
+        }
+      />
       {open ? (
         <div id="inbox-space-filters">
           {SPACE_FILTERS.map((filter) => (

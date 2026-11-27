@@ -352,6 +352,11 @@ type HumanChatPanelChatBarProps = {
     member: ChatMentionCandidate,
     resolvedComposerLabel?: string,
   ) => string;
+  /**
+   * When set, the composer keeps its own draft and only copies `value` in
+   * when this id changes. Typing then does not re-render the thread.
+   */
+  composerResetId?: number;
   /** Lock composer interactions for read-only participants. */
   composerLocked?: boolean;
   /** Placeholder shown while composer is locked. */
@@ -656,7 +661,7 @@ function wrapSelection(
 }
 
 export function HumanChatPanelChatBar({
-  value,
+  value: composerValueFromParent,
   onChange,
   onSend,
   editMediaMode = false,
@@ -670,6 +675,7 @@ export function HumanChatPanelChatBar({
   mentionPickerEnabled,
   onMergeMentionDisplayLabel,
   getMentionComposerLabel,
+  composerResetId,
   composerLocked = false,
   composerLockedMessage,
 }: HumanChatPanelChatBarProps) {
@@ -718,8 +724,23 @@ export function HumanChatPanelChatBar({
   const [composerFocused, setComposerFocused] = useState(false);
   const keyboardInset = useVisualViewportKeyboardInset(composerFocused);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+  const isolatedComposer = composerResetId != null;
+  const [isolatedDraft, setIsolatedDraft] = useState(composerValueFromParent);
+  const value = isolatedComposer ? isolatedDraft : composerValueFromParent;
   const valueRef = useRef(value);
   valueRef.current = value;
+  useLayoutEffect(() => {
+    if (!isolatedComposer) return;
+    setIsolatedDraft(composerValueFromParent);
+  }, [composerResetId, composerValueFromParent, isolatedComposer]);
+  const publishComposer = useCallback(
+    (next: string) => {
+      valueRef.current = next;
+      if (isolatedComposer) setIsolatedDraft(next);
+      onChange(next);
+    },
+    [isolatedComposer, onChange],
+  );
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const composerShellRef = useRef<HTMLDivElement>(null);
@@ -972,7 +993,7 @@ export function HumanChatPanelChatBar({
       const start = tok.start;
       const end = el.selectionStart ?? value.length;
       const { next, caret } = insertAtCaret(value, start, end, entry.native);
-      onChange(next);
+      publishComposer(next);
       setColonOpen(false);
       setColonSuggestions([]);
       colonTokenRef.current = null;
@@ -1017,7 +1038,7 @@ export function HumanChatPanelChatBar({
       const start = tok.start;
       const end = el.selectionStart ?? value.length;
       const { next, caret } = insertAtCaret(value, start, end, insertion);
-      onChange(next);
+      publishComposer(next);
       setAtOpen(false);
       setAtSuggestions([]);
       atTokenRef.current = null;
@@ -1052,7 +1073,7 @@ export function HumanChatPanelChatBar({
       : `${before}@`;
     const next = prefix + after;
     const caret = prefix.length;
-    onChange(next);
+    publishComposer(next);
     requestAnimationFrame(() => {
       el.focus();
       el.setSelectionRange(caret, caret);
@@ -1111,7 +1132,7 @@ export function HumanChatPanelChatBar({
         selEnd = start + quoted.length;
       }
 
-      onChange(next);
+      publishComposer(next);
       requestAnimationFrame(() => {
         el.focus();
         el.setSelectionRange(selStart, selEnd);
@@ -1126,13 +1147,13 @@ export function HumanChatPanelChatBar({
     (native: string) => {
       const el = textareaRef.current;
       if (!el) {
-        onChange(value + native);
+        publishComposer(value + native);
         return;
       }
       const start = el.selectionStart ?? value.length;
       const end = el.selectionEnd ?? value.length;
       const { next, caret } = insertAtCaret(value, start, end, native);
-      onChange(next);
+      publishComposer(next);
       requestAnimationFrame(() => {
         el.focus();
         el.setSelectionRange(caret, caret);
@@ -1434,7 +1455,7 @@ export function HumanChatPanelChatBar({
       const dictated = joinWithSingleSpace(committedStr, interimStr);
       const next = joinWithSingleSpace(dictationPrefixRef.current, dictated);
       valueRef.current = next;
-      onChange(next);
+      publishComposer(next);
       requestAnimationFrame(() => {
         const el = textareaRef.current;
         if (!el || document.activeElement !== el) return;
@@ -1452,7 +1473,7 @@ export function HumanChatPanelChatBar({
       dictationPrefixRef.current = '';
       setIsDictating(false);
       if (opts.syncValue) {
-        onChange(stripTrailingZeroWidthSpaces(valueRef.current));
+        publishComposer(stripTrailingZeroWidthSpaces(valueRef.current));
       }
       if (opts.showError) {
         setVoiceError(t('dictationError'));
@@ -2298,7 +2319,7 @@ export function HumanChatPanelChatBar({
               setSelectionBar(null);
             }}
             onChange={(e) => {
-              onChange(e.target.value);
+              publishComposer(e.target.value);
               autoResize();
               const cursor = e.target.selectionStart ?? e.target.value.length;
               syncColonState(e.target.value, cursor);
