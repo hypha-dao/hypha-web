@@ -580,6 +580,7 @@ export function GlobalCallDockOverlay({
     backgroundEffectSupported,
     spaceBackgroundImage,
     callSpaceLogoUrl,
+    backgroundUploads,
     captureMode,
     capturePreference,
     capturePreferenceSelected,
@@ -1227,6 +1228,7 @@ export function GlobalCallDockOverlay({
     backgroundEffectSupported,
     spaceBackgroundImage,
     callSpaceLogoUrl,
+    backgroundUploads,
   });
   const onCapturePreferenceChange = (
     mode: Exclude<SpaceGroupCallCaptureMode, 'none'>,

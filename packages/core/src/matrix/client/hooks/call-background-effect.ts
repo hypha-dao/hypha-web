@@ -10,12 +10,16 @@ export type CallBackgroundEffect =
   /** A built-in image from {@link CALL_BACKGROUND_IMAGES}. */
   | { kind: 'image'; imageId: string }
   /** The call's space: its accent colours, logo and the Hypha mark, drawn at call time. */
-  | { kind: 'space' };
+  | { kind: 'space' }
+  /** An image the member added, kept in this browser only (IndexedDB). */
+  | { kind: 'upload'; uploadId: string };
 
 /** Images that exist only at runtime, for {@link processorModeForEffect}. */
 export type CallBackgroundEffectContext = {
   /** Drawn background of the call's space (`blob:` URL), when ready. */
   spaceImageSrc?: string | null;
+  /** The member's images on this device by id (`blob:` URLs), once loaded. */
+  uploadImageSrcs?: Readonly<Record<string, string>> | null;
 };
 
 /** A built-in background image (served from `apps/web/public/call-backgrounds/`). */
@@ -98,13 +102,18 @@ export function callBackgroundEffectsEqual(
   b: CallBackgroundEffect,
 ): boolean {
   if (a.kind === 'image' && b.kind === 'image') return a.imageId === b.imageId;
+  if (a.kind === 'upload' && b.kind === 'upload') {
+    return a.uploadId === b.uploadId;
+  }
   return a.kind === b.kind;
 }
 
 export function serializeCallBackgroundEffect(
   effect: CallBackgroundEffect,
 ): string {
-  return effect.kind === 'image' ? `image:${effect.imageId}` : effect.kind;
+  if (effect.kind === 'image') return `image:${effect.imageId}`;
+  if (effect.kind === 'upload') return `upload:${effect.uploadId}`;
+  return effect.kind;
 }
 
 /**
@@ -117,6 +126,11 @@ export function parseCallBackgroundEffect(
   const value = raw?.trim();
   if (value === 'blur') return { kind: 'blur' };
   if (value === 'space') return { kind: 'space' };
+  if (value?.startsWith('upload:')) {
+    const uploadId = value.slice('upload:'.length);
+    // Whether it still exists is known only once this browser's images are loaded.
+    return uploadId ? { kind: 'upload', uploadId } : { kind: 'blur' };
+  }
   if (value?.startsWith('image:')) {
     const imageId = value.slice('image:'.length);
     return findCallBackgroundImage(imageId)
@@ -180,6 +194,12 @@ export function processorModeForEffect(
   context: CallBackgroundEffectContext = {},
 ): CallBackgroundProcessorMode {
   switch (effect.kind) {
+    case 'upload': {
+      const src = context.uploadImageSrcs?.[effect.uploadId];
+      return src
+        ? { mode: 'virtual-background', imagePath: src }
+        : { mode: 'background-blur', blurRadius: CALL_BACKGROUND_BLUR_RADIUS };
+    }
     case 'space':
       return context.spaceImageSrc
         ? { mode: 'virtual-background', imagePath: context.spaceImageSrc }

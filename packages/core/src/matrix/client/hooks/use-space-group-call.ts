@@ -492,6 +492,10 @@ export function useSpaceGroupCall(
     string | null
   >(null);
   const spaceBackgroundImageRef = useRef<string | null>(null);
+  /** The member's images on this device by id (`blob:` URLs), set by the UI layer once loaded. */
+  const uploadedBackgroundImagesRef = useRef<Readonly<
+    Record<string, string>
+  > | null>(null);
   /** Bumped on every camera on/off request and on cleanup; a pending effect start checks it. */
   const cameraRequestEpochRef = useRef(0);
   const backgroundFrameDropDetectorRef = useRef(
@@ -1452,6 +1456,7 @@ export function useSpaceGroupCall(
     (effect: CallBackgroundEffect) =>
       processorModeForEffect(effect, {
         spaceImageSrc: spaceBackgroundImageRef.current,
+        uploadImageSrcs: uploadedBackgroundImagesRef.current,
       }),
     [],
   );
@@ -2401,7 +2406,11 @@ export function useSpaceGroupCall(
       const active = isCallBackgroundEffectActive(effect);
       if (getCallBackgroundProcessor(track)) {
         // An image may take a moment to load; the previous effect stays meanwhile.
-        if (effect.kind === 'image' || effect.kind === 'space') {
+        if (
+          effect.kind === 'image' ||
+          effect.kind === 'space' ||
+          effect.kind === 'upload'
+        ) {
           setBackgroundEffectStatus('applying');
         }
         try {
@@ -2490,6 +2499,39 @@ export function useSpaceGroupCall(
       }
     },
     [backgroundModeFor],
+  );
+
+  /** Re-applies a running image effect after its runtime image changed (space or uploads). */
+  const reapplyRuntimeBackgroundImage = useCallback(async () => {
+    const publication =
+      liveKitRoomRef.current?.localParticipant.getTrackPublication(
+        Track.Source.Camera,
+      );
+    const track = publication?.track as LocalVideoTrack | undefined;
+    if (!track || !getCallBackgroundProcessor(track)) return;
+    try {
+      await switchCallBackgroundEffect(
+        track,
+        backgroundModeFor(backgroundEffectRef.current),
+      );
+    } catch (err) {
+      logCallDebug('background-effect:runtime-image-switch-failed', {
+        message: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }, [backgroundModeFor]);
+
+  /**
+   * #2563: the UI layer hands over the member's images on this device (id -> `blob:` URL), or null
+   * while not loaded. A chosen image that is no longer there runs as blur.
+   */
+  const setUploadedBackgroundImages = useCallback(
+    async (images: Readonly<Record<string, string>> | null) => {
+      uploadedBackgroundImagesRef.current = images;
+      if (backgroundEffectRef.current.kind !== 'upload') return;
+      await reapplyRuntimeBackgroundImage();
+    },
+    [reapplyRuntimeBackgroundImage],
   );
 
   const setScreensharingEnabled = useCallback(
@@ -3488,6 +3530,8 @@ export function useSpaceGroupCall(
     /** Drawn background of the call's space (`blob:` URL) and its setter (UI layer draws it). */
     spaceBackgroundImage,
     setSpaceBackgroundImage,
+    /** The member's images on this device (UI layer loads them from IndexedDB). */
+    setUploadedBackgroundImages,
     /** WCUX-SHARE-VOICE-5: auto voice boost while presenting from Speech preset. */
     isScreensharing,
     /** Another participant is presenting — local share start is blocked (one at a time). */

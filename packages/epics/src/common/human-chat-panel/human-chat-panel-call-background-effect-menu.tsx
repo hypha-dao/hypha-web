@@ -1,9 +1,22 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { AlertTriangle, Ban, Check, Loader2, Sparkles } from 'lucide-react';
+import {
+  AlertTriangle,
+  Ban,
+  Check,
+  ImagePlus,
+  Loader2,
+  Sparkles,
+  X,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
+import { CALL_BACKGROUND_UPLOAD_ACCEPT } from './call-background-uploads';
+import type {
+  CallBackgroundUploads,
+  CallBackgroundUploadView,
+} from './use-call-background-uploads';
 import {
   CALL_BACKGROUND_IMAGES,
   type CallBackgroundEffect,
@@ -23,6 +36,16 @@ export type CallBackgroundEffectControl = {
   spaceImageSrc: string | null;
   /** The call's space logo, for the tile before the background is drawn. */
   spaceLogoSrc: string | null;
+  /** The member's own images on this device; null where not offered. */
+  uploads: {
+    available: boolean;
+    items: CallBackgroundUploadView[] | null;
+    busy: boolean;
+    error: CallBackgroundUploads['error'];
+    /** Stores and selects a picked file. */
+    onAdd: (file: File) => void;
+    onRemove: (id: string) => void;
+  } | null;
 };
 
 const OPTIONS: Array<{
@@ -230,6 +253,107 @@ export function CallBackgroundEffectMenuBody({
           );
         })()}
       </div>
+      {control.uploads?.available ? (
+        <>
+          <p className={cn('px-2 pb-1 pt-2', hintClass)}>
+            {t('callBackgroundUploadsLabel')}
+          </p>
+          <div className="grid grid-cols-2 gap-1.5 px-2" role="group">
+            {(control.uploads.items ?? []).map((upload, index) => {
+              const selected =
+                control.effect.kind === 'upload' &&
+                control.effect.uploadId === upload.id;
+              const label = t('callBackgroundUploadNumber', {
+                number: index + 1,
+              });
+              return (
+                <div key={upload.id} className="relative">
+                  <button
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={selected}
+                    aria-label={label}
+                    title={label}
+                    onClick={() => {
+                      if (!selected) {
+                        control.onChange({
+                          kind: 'upload',
+                          uploadId: upload.id,
+                        });
+                      }
+                      onDone();
+                    }}
+                    className={cn(
+                      'relative block aspect-video w-full overflow-hidden rounded-md border-2 transition-colors',
+                      selected
+                        ? 'border-[color:var(--color-accent-9,#4a65d8)]'
+                        : 'border-transparent hover:border-neutral-7',
+                    )}
+                  >
+                    <img
+                      src={upload.thumbnailSrc}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                    {selected && applying ? (
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <Loader2
+                          className="h-4 w-4 animate-spin text-white"
+                          aria-hidden
+                        />
+                      </span>
+                    ) : null}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={t('callBackgroundUploadRemove')}
+                    title={t('callBackgroundUploadRemove')}
+                    onClick={() => control.uploads?.onRemove(upload.id)}
+                    className="absolute right-0.5 top-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                  >
+                    <X className="h-3 w-3" aria-hidden />
+                  </button>
+                </div>
+              );
+            })}
+            <label
+              className={cn(
+                'relative flex aspect-video cursor-pointer flex-col items-center justify-center gap-0.5 rounded-md border-2 border-dashed border-neutral-7 text-[11px] transition-colors hover:bg-muted/60',
+                control.uploads.busy && 'pointer-events-none opacity-60',
+              )}
+              title={t('callBackgroundUploadAdd')}
+            >
+              {control.uploads.busy ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <ImagePlus className="h-4 w-4" aria-hidden />
+              )}
+              <span>{t('callBackgroundUploadAdd')}</span>
+              <input
+                type="file"
+                accept={CALL_BACKGROUND_UPLOAD_ACCEPT}
+                className="sr-only"
+                disabled={control.uploads.busy}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = '';
+                  if (file) control.uploads?.onAdd(file);
+                }}
+              />
+            </label>
+          </div>
+          <p className={cn('px-2 pt-1', hintClass)}>
+            {control.uploads.error === 'unsupported_type' ||
+            control.uploads.error === 'decode_failed'
+              ? t('callBackgroundUploadErrorType')
+              : control.uploads.error === 'too_large'
+              ? t('callBackgroundUploadErrorSize')
+              : control.uploads.error
+              ? t('callBackgroundUploadErrorFailed')
+              : t('callBackgroundUploadHint')}
+          </p>
+        </>
+      ) : null}
       {applying ? (
         <p className={cn('px-2 pt-1', hintClass)} role="status">
           {t('callBackgroundEffectApplying')}
@@ -311,7 +435,9 @@ export function toCallBackgroundEffectControl(call: {
   setBackgroundEffect: (effect: CallBackgroundEffect) => Promise<void>;
   spaceBackgroundImage?: string | null;
   callSpaceLogoUrl?: string | null;
+  backgroundUploads?: CallBackgroundUploads | null;
 }): CallBackgroundEffectControl {
+  const uploads = call.backgroundUploads ?? null;
   return {
     effect: call.backgroundEffect,
     status: call.backgroundEffectStatus,
@@ -322,5 +448,23 @@ export function toCallBackgroundEffectControl(call: {
     },
     spaceImageSrc: call.spaceBackgroundImage ?? null,
     spaceLogoSrc: call.callSpaceLogoUrl ?? null,
+    uploads: uploads
+      ? {
+          available: uploads.available,
+          items: uploads.uploads,
+          busy: uploads.busy,
+          error: uploads.error,
+          onAdd: (file) => {
+            void uploads.add(file).then((id) => {
+              if (id) {
+                void call.setBackgroundEffect({ kind: 'upload', uploadId: id });
+              }
+            });
+          },
+          onRemove: (id) => {
+            void uploads.remove(id);
+          },
+        }
+      : null,
   };
 }

@@ -315,3 +315,36 @@ describe('space background', () => {
     });
   });
 });
+
+describe('own images (upload)', () => {
+  it('round-trips an upload effect', () => {
+    const effect = { kind: 'upload', uploadId: 'abc' } as const;
+    expect(serializeCallBackgroundEffect(effect)).toBe('upload:abc');
+    expect(parseCallBackgroundEffect('upload:abc')).toEqual(effect);
+    expect(parseCallBackgroundEffect('upload:')).toEqual({ kind: 'blur' });
+    expect(
+      callBackgroundEffectsEqual(effect, { kind: 'upload', uploadId: 'abc' }),
+    ).toBe(true);
+    expect(
+      callBackgroundEffectsEqual(effect, { kind: 'upload', uploadId: 'x' }),
+    ).toBe(false);
+  });
+
+  it('uses the image when it is on this device, blur otherwise', () => {
+    const effect = { kind: 'upload', uploadId: 'abc' } as const;
+    expect(
+      processorModeForEffect(effect, { uploadImageSrcs: { abc: 'blob:a' } }),
+    ).toEqual({ mode: 'virtual-background', imagePath: 'blob:a' });
+    const blur = {
+      mode: 'background-blur',
+      blurRadius: CALL_BACKGROUND_BLUR_RADIUS,
+    };
+    expect(processorModeForEffect(effect, { uploadImageSrcs: {} })).toEqual(
+      blur,
+    );
+    expect(processorModeForEffect(effect, { uploadImageSrcs: null })).toEqual(
+      blur,
+    );
+    expect(processorModeForEffect(effect)).toEqual(blur);
+  });
+});

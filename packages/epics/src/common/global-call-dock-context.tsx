@@ -15,6 +15,7 @@ import {
 import { revalidateSpaceMemoryOrg } from '../coherence/hooks/use-space-memory-org';
 import { useCallReactions } from './human-chat-panel/use-call-reactions';
 import { useSpaceCallBackground } from './human-chat-panel/use-space-call-background';
+import { useCallBackgroundUploads } from './human-chat-panel/use-call-background-uploads';
 import {
   clearCallDismissedByUser,
   clearCallResumeSnapshot,
@@ -211,6 +212,37 @@ function useGlobalCallDockValue() {
   React.useEffect(() => {
     void setSpaceBackgroundImage(spaceBackgroundUrl);
   }, [setSpaceBackgroundImage, spaceBackgroundUrl]);
+  // #2563: the member's own images on this device, read only in a call.
+  const backgroundUploads = useCallBackgroundUploads({
+    enabled:
+      call.backgroundEffectSupported &&
+      call.callState !== 'idle' &&
+      call.callState !== 'error',
+  });
+  const { setUploadedBackgroundImages, setBackgroundEffect } = call;
+  const uploadedImageMap = React.useMemo(
+    () =>
+      backgroundUploads.uploads
+        ? Object.fromEntries(
+            backgroundUploads.uploads.map((upload) => [upload.id, upload.src]),
+          )
+        : null,
+    [backgroundUploads.uploads],
+  );
+  React.useEffect(() => {
+    void setUploadedBackgroundImages(uploadedImageMap);
+  }, [setUploadedBackgroundImages, uploadedImageMap]);
+  // A chosen image that is gone from this browser: switch to blur, no note (rare; re-pick it).
+  const chosenUploadId =
+    call.backgroundEffect.kind === 'upload'
+      ? call.backgroundEffect.uploadId
+      : null;
+  React.useEffect(() => {
+    if (!chosenUploadId || !uploadedImageMap) return;
+    if (!(chosenUploadId in uploadedImageMap)) {
+      void setBackgroundEffect({ kind: 'blur' });
+    }
+  }, [chosenUploadId, setBackgroundEffect, uploadedImageMap]);
   // A reload would drop an active call, or a recording still being kept or
   // uploaded: a stale tab shows the banner instead.
   useBlockAutoReload(
@@ -1000,6 +1032,8 @@ function useGlobalCallDockValue() {
     ...callReactions,
     /** #2563: for the "This space" tile before its background is drawn. */
     callSpaceLogoUrl: callSpace?.logoUrl ?? null,
+    /** #2563: the member's own background images on this device. */
+    backgroundUploads,
     leave: leaveCall,
   };
 }
