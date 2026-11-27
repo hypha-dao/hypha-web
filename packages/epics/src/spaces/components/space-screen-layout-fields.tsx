@@ -51,6 +51,8 @@ export function SpaceScreenLayoutFields({
         return tCommon('context');
       case 'coherence':
         return tCommon('Signals');
+      case 'calendar':
+        return tCommon('Calendar');
       case 'quests':
         return tCommon('quests');
       case 'pipeline':

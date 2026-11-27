@@ -16,6 +16,7 @@ const menuKeys = [
   'overview',
   'context',
   'coherence',
+  'calendar',
   'quests',
   'agreements',
   'treasury',
@@ -23,7 +24,7 @@ const menuKeys = [
 ] as const;
 
 describe('buildSpaceSectionNavItems', () => {
-  it('keeps the menu to overview, context, signals, quests, agreements, treasury, and members', () => {
+  it('keeps the menu to overview, context, signals, calendar, quests, agreements, treasury, and members', () => {
     const items = buildSpaceSectionNavItems(base);
     expect(items.map((item) => item.key)).toEqual([...menuKeys]);
     expect(
@@ -60,6 +61,7 @@ describe('buildSpaceSectionNavItems', () => {
       'overview',
       'context',
       'coherence',
+      'calendar',
       'quests',
       'pipeline',
       'agreements',
@@ -81,6 +83,7 @@ describe('buildSpaceSectionNavItems', () => {
       'energy',
       'context',
       'coherence',
+      'calendar',
       'quests',
       'pipeline',
       'agreements',
@@ -98,7 +101,7 @@ describe('buildSpaceSectionNavItems', () => {
     expect(items.find((item) => item.active)?.key).toBe('overview');
   });
 
-  it('keeps calendar, rewards, and ecosystem off the menu', () => {
+  it('keeps rewards and ecosystem off the menu', () => {
     const items = buildSpaceSectionNavItems({
       ...base,
       pipelineEnabled: true,
@@ -106,7 +109,7 @@ describe('buildSpaceSectionNavItems', () => {
       memoryEnabled: true,
     });
     const keys = items.map((item) => item.key);
-    expect(keys).not.toContain('calendar');
+    expect(keys.indexOf('calendar')).toBe(keys.indexOf('coherence') + 1);
     expect(keys).toContain('members');
     expect(keys).not.toContain('rewards');
     expect(keys).not.toContain('ecosystem-navigation');
@@ -153,7 +156,7 @@ describe('buildSpaceSectionNavItems', () => {
   });
 
   it('keeps Home selected on screens that now live on the dashboard', () => {
-    for (const key of ['calendar', 'rewards', 'ecosystem-navigation']) {
+    for (const key of ['rewards', 'ecosystem-navigation']) {
       const items = buildSpaceSectionNavItems({
         ...base,
         pathname: `/en/dho/hypha/${key}`,
@@ -214,6 +217,7 @@ describe('buildSpaceSectionNavItems', () => {
       'coherence',
       'treasury',
       'energy',
+      'calendar',
       'memory',
     ]);
   });
@@ -257,7 +261,7 @@ describe('partitionSpaceSectionNavForTabs', () => {
       onOverview.primary.map((item) => item.key),
     );
     expect(onCalendar.primary.find((item) => item.active)?.key).toBe(
-      'overview',
+      'calendar',
     );
     expect(onOverview.primary.find((item) => item.active)?.key).toBe(
       'overview',

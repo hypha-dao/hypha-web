@@ -9,6 +9,7 @@ export const SPACE_SCREEN_LAYOUT_KEYS = [
   'energy',
   'context',
   'coherence',
+  'calendar',
   'quests',
   'pipeline',
   'agreements',

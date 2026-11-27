@@ -36,15 +36,14 @@ export const SPACE_SECTION_NAV_GROUP: Record<
   memory: 'primary',
   context: 'primary',
   pipeline: 'primary',
+  calendar: 'primary',
   'ecosystem-navigation': 'more',
-  calendar: 'more',
   energy: 'primary',
   rewards: 'more',
 };
 
 /** These screens live on the space dashboard. The menu keeps Overview selected there. */
 const HOME_DASHBOARD_TABS = new Set<string>([
-  'calendar',
   'rewards',
   'ecosystem-navigation',
 ]);
@@ -97,8 +96,8 @@ function navItem(
  *
  * An energy community keeps Energy directly under Overview unless the space
  * saved another order. Default menu:
- * Overview · Energy (when on) · Context · Signals · Quests · Pipeline (when on) · Agreements · Treasury · Members · Memory
- * Calendar, rewards, and ecosystem stay on the space dashboard.
+ * Overview · Energy (when on) · Context · Signals · Calendar · Quests · Pipeline (when on) · Agreements · Treasury · Members · Memory
+ * Rewards and ecosystem stay on the space dashboard.
  */
 export function buildSpaceSectionNavItems({
   lang,
@@ -155,7 +154,7 @@ export function buildSpaceSectionNavItems({
  * Partition space section nav for the main tab strip.
  *
  * Primary tabs stay fixed from {@link SPACE_SECTION_NAV_GROUP}:
- * Overview, Energy, Context, Signals, Quests, Pipeline, Agreements, Treasury, Members, and Memory.
+ * Overview, Energy, Context, Signals, Calendar, Quests, Pipeline, Agreements, Treasury, Members, and Memory.
  */
 export function partitionSpaceSectionNavForTabs(items: SpaceSectionNavItem[]): {
   primary: SpaceSectionNavItem[];
