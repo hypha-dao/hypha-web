@@ -1506,11 +1506,20 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     const prev = draftRoomIdRef.current;
     const next = roomId?.trim() || null;
-    if (prev && prev !== next && !editDraftRef.current) {
-      // Typing already persists; only flush a non-empty box here so a
-      // room-switch `replaceComposerText('')` cannot wipe a draft already on disk.
-      const text = inputRef.current;
-      if (text.trim()) writeComposerDraft(prev, text);
+    const leftRoom = Boolean(prev && prev !== next);
+    if (leftRoom && prev) {
+      if (!editDraftRef.current) {
+        // Typing already persists; only flush a non-empty box here so a
+        // room-switch `replaceComposerText('')` cannot wipe a draft already on disk.
+        const text = inputRef.current;
+        if (text.trim()) writeComposerDraft(prev, text);
+      }
+      // The image and the edit belong to the room you left. Leaving them
+      // here makes that send look like a message in every channel.
+      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+      setDraftAttachments([]);
+      setEditDraft(null);
+      setReplyDraft(null);
     }
     draftRoomIdRef.current = next;
     if (prev === next) return;
@@ -1519,7 +1528,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       replaceComposerText('');
       return;
     }
-    if (editDraftRef.current) return;
+    if (!leftRoom && editDraftRef.current) return;
     skipDraftPersistRef.current = true;
     replaceComposerText(readComposerDraft(next));
   }, [roomId]);
@@ -1570,6 +1579,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
   /** Shown in timeline after a short delay while large attachment sends run. */
   const [sendingPending, setSendingPending] = useState<null | {
     id: string;
+    roomId: string;
     attachmentCount: number;
     captionPreview: string;
     uploadedCount?: number;
@@ -3358,6 +3368,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         ) {
           return prev;
         }
+        const previousRoom = messagesRoomIdRef.current;
         messagesRoomIdRef.current = target;
         const next = sortMessagesChronologically(
           existing.map((m) =>
@@ -3374,6 +3385,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             ),
           ),
         );
+        if (previousRoom && previousRoom !== target) return next;
         const stillSending = prev.filter(
           (row) =>
             row.id.startsWith('~hypha-outgoing') &&
@@ -4771,7 +4783,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
             message.id &&
             !String(message.id).startsWith('hypha-send-pending')
           ) {
-            setSendingPending(null);
+            setSendingPending((cur) => (cur?.roomId === roomId ? null : cur));
             break;
           }
         }
@@ -4990,7 +5002,9 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
         ? messages
         : [];
     const withPending = (() => {
-      if (!sendingPending) return timelineMessages;
+      if (!sendingPending || sendingPending.roomId !== activeRoom) {
+        return timelineMessages;
+      }
       const pendingRow: UIMessage = {
         id: sendingPending.id,
         role: 'user',
@@ -6296,6 +6310,7 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
       if (pendingId) {
         setSendingPending({
           id: pendingId,
+          roomId: sendRoomId,
           attachmentCount: savedAttachments.length,
           captionPreview: text,
           uploadedCount: 0,
