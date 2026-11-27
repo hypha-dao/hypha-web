@@ -21,10 +21,26 @@ const config = {
   dcrEnabled: false,
 } as unknown as AuthServerConfig;
 
-const approve = async (scope: string | undefined, grants: unknown = 'all') => {
+/** The stored client row the handler reads for the kind of client (a pre-registered one here). */
+const clientRow = (registration = 'registered') => ({
+  clientDiscoveryId: null,
+  registration,
+});
+
+const approve = async (
+  scope: string | undefined,
+  grants: unknown = 'all',
+  registration = 'registered',
+) => {
   const server = {
     config: { secret: 'handler-test-secret-'.padEnd(48, 'x') },
-    pool: { query: async () => ({ rows: [] }) },
+    pool: {
+      query: async (sql: string) => ({
+        rows: sql.includes('from as_oauth_client')
+          ? [clientRow(registration)]
+          : [],
+      }),
+    },
     auth: {
       handler: async () =>
         new Response(JSON.stringify({ url: 'http://app/cb?code=c' }), {
@@ -119,5 +135,14 @@ describe('the stored grant is only replaced by an approval of the read scope', (
       expect((await res.json()).error).toBe('invalid_request');
     }
     expect(writeGrant).not.toHaveBeenCalled();
+  });
+
+  it('a dynamically registered client is refused signals:write; its own scopes still pass', async () => {
+    writeGrant.mockClear();
+    const refused = await approve('spaces:read signals:write', 'all', 'dcr');
+    expect(refused.status).toBe(400);
+    expect((await refused.json()).error).toBe('invalid_scope');
+    expect(writeGrant).not.toHaveBeenCalled();
+    expect((await approve('spaces:read', 'all', 'dcr')).status).toBe(200);
   });
 });

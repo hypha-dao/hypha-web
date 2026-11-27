@@ -19,7 +19,7 @@ import {
   AUTH_SERVER_JWKS_PATH,
   AUTH_SERVER_LOGIN_PATH,
   AUTH_SERVER_SCOPES,
-  DCR_ALLOWED_SCOPES,
+  CLIENT_REGISTRATION_CEILING_SCOPES,
   REFRESH_TOKEN_TTL_SECONDS,
   REFRESH_TOKEN_REUSE_INTERVAL_SECONDS,
   SCOPES_REQUIRING_SPACES_READ,
@@ -165,7 +165,11 @@ export function createAuthServer(
         consentPage: AUTH_SERVER_CONSENT_PATH,
         scopes: [...AUTH_SERVER_SCOPES],
         clientRegistrationDefaultScopes: ['spaces:read'],
-        clientRegistrationAllowedScopes: [...DCR_ALLOWED_SCOPES],
+        // The ceiling for clients the library registers itself; each kind is narrowed to its own
+        // list (DCR at registration, every kind at consent). See `CLIENT_REGISTRATION_CEILING_SCOPES`.
+        clientRegistrationAllowedScopes: [
+          ...CLIENT_REGISTRATION_CEILING_SCOPES,
+        ],
         grantTypes: ['authorization_code', 'refresh_token'],
         // No client management over HTTP for anyone. Anonymous registration (below) never reaches
         // this hook: the handler strips cookies from register requests, so it only ever sees
