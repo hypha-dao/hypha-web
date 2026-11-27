@@ -102,6 +102,7 @@ export function NavigationTabs({
         energyEnabled: Boolean(spaceEnergy?.enabled),
         coherenceEnabled,
         memoryEnabled,
+        screenLayout: space?.screenLayout,
       }),
     [
       coherenceEnabled,
@@ -110,6 +111,7 @@ export function NavigationTabs({
       memoryEnabled,
       pathname,
       space?.pipelineEnabled,
+      space?.screenLayout,
       spaceEnergy?.enabled,
     ],
   );

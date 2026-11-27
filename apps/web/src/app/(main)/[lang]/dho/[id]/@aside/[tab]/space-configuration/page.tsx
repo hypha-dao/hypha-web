@@ -1,7 +1,18 @@
-import { getEnableNetworkMapAsync } from '@hypha-platform/feature-flags';
+import {
+  getEnableNetworkMapAsync,
+  getEnableSpaceMemory,
+} from '@hypha-platform/feature-flags';
 import { SpaceConfigurationClient } from './space-configuration-client';
 
 export default async function SpaceConfiguration() {
-  const enableNetworkMap = await getEnableNetworkMapAsync();
-  return <SpaceConfigurationClient enableNetworkMap={enableNetworkMap} />;
+  const [enableNetworkMap, memoryEnabled] = await Promise.all([
+    getEnableNetworkMapAsync(),
+    getEnableSpaceMemory(),
+  ]);
+  return (
+    <SpaceConfigurationClient
+      enableNetworkMap={enableNetworkMap}
+      memoryEnabled={memoryEnabled}
+    />
+  );
 }

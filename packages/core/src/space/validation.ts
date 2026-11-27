@@ -5,6 +5,7 @@ import {
   UPLOADTHING_STANDARD_MAX_SIZE_LABEL,
 } from '../assets/constant';
 import { z } from 'zod';
+import { SPACE_SCREEN_LAYOUT_KEYS } from './screen-layout';
 import { CATEGORIES, SPACE_FLAGS } from '../categories/types';
 import {
   spaceLatitudeSchema,
@@ -109,6 +110,19 @@ const createSpaceWeb2Props = {
   address: z.string().optional(),
   flags: z.array(z.enum(SPACE_FLAGS)).default([]),
   pipelineEnabled: z.boolean().optional(),
+  screenLayout: z
+    .object({
+      order: z
+        .array(z.enum(SPACE_SCREEN_LAYOUT_KEYS))
+        .max(SPACE_SCREEN_LAYOUT_KEYS.length)
+        .optional(),
+      hidden: z
+        .array(z.enum(SPACE_SCREEN_LAYOUT_KEYS))
+        .max(SPACE_SCREEN_LAYOUT_KEYS.length)
+        .optional(),
+      showBanner: z.boolean().optional(),
+    })
+    .optional(),
   latitude: spaceLatitudeSchema.nullable().optional(),
   longitude: spaceLongitudeSchema.nullable().optional(),
   locationLabel: spaceLocationLabelSchema.nullable().optional(),

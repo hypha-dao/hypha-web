@@ -35,6 +35,7 @@
   "exports": {
     "./client": "./src/client.ts",
     "./server": "./src/server.ts",
+    "./space/screen-layout": "./src/space/screen-layout.ts",
     "./space/server/actions": "./src/space/server/actions.ts",
     "./people/server/actions": "./src/people/server/actions.ts",
     "./governance/server/actions": "./src/governance/server/actions.ts",

@@ -713,6 +713,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       energyEnabled: Boolean(spaceEnergyData?.enabled),
       coherenceEnabled: true,
       memoryEnabled: enableSpaceMemory,
+      screenLayout: space?.screenLayout,
     }).map((item) => ({
       key: item.key === 'coherence' ? 'signals' : item.key,
       label: labelFor(item.key),
@@ -727,6 +728,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     lang,
     pathname,
     space?.pipelineEnabled,
+    space?.screenLayout,
     spaceEnergyData?.enabled,
     spaceSlug,
     tCommon,
