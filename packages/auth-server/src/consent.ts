@@ -7,7 +7,8 @@ import {
   scopesForClientKind,
 } from './config';
 import { describeScope, type ScopeCopyKey } from './scope-copy';
-import { describeRedirect } from './redirect-display';
+import { describeRedirect, type RedirectKind } from './redirect-display';
+import { readGrant, type GrantValue } from './grants';
 
 /**
  * How the app was identified, which decides the defaults on the consent page. The kind comes
@@ -34,6 +35,11 @@ export type ConsentRequest = {
      * address, the scheme and host (or path) for an app on their computer (never empty for a URL).
      */
     redirectHost: string;
+    /**
+     * `local`: an app on the person's own computer (a loopback address); `redirectHost` is then
+     * empty and the page words it, never showing a port.
+     */
+    redirectKind: RedirectKind;
     /** Every app that connects without being registered with Hypha is unverified. */
     verified: false;
     kind: ClientKind;
@@ -50,6 +56,12 @@ export type ConsentRequest = {
     /** Show the stronger warning of that entry: a write scope of a client that is not pre-approved. */
     warn: boolean;
   }[];
+  /**
+   * The spaces this person already lets this app use, when the page is shown again for an app
+   * that is connected (a new scope was asked for). The picker opens on it, so approving without
+   * touching the picker never widens what the app may read. Null for a new connection.
+   */
+  currentGrant: GrantValue | null;
 };
 
 /**
@@ -170,6 +182,7 @@ export async function loadConsentRequest(
   let requested = (params.get('scope') ?? '')
     .split(/\s+/)
     .filter((scope) => scope && kindAllows.includes(scope));
+  const redirect = describeRedirect(redirectUri);
   for (const resource of params.getAll('resource')) {
     const allowed = allowedScopesForResource(resource, config);
     requested = requested.filter((scope) => allowed.includes(scope));
@@ -188,7 +201,8 @@ export async function loadConsentRequest(
           : kind === 'dcr'
           ? ''
           : hostOf(row.uri) || hostOf(clientId),
-      redirectHost: describeRedirect(redirectUri).display,
+      redirectHost: redirect.display,
+      redirectKind: redirect.kind,
       verified: false,
       kind,
     },
@@ -207,5 +221,6 @@ export async function loadConsentRequest(
         warn: write && kind !== 'registered' && copy.hasWarning,
       };
     }),
+    currentGrant: await readGrant(pool, session.user.id, clientId),
   };
 }
