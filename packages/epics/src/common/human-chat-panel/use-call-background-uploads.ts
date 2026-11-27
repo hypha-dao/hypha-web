@@ -47,6 +47,8 @@ export function useCallBackgroundUploads({
   const [error, setError] =
     React.useState<CallBackgroundUploadErrorCode | null>(null);
   const urlsRef = React.useRef<string[]>([]);
+  /** Bumped on disable and unmount; a read that finishes for an older value is dropped. */
+  const lifecycleRef = React.useRef(0);
 
   const revokeAll = React.useCallback(() => {
     for (const url of urlsRef.current) URL.revokeObjectURL(url);
@@ -54,7 +56,9 @@ export function useCallBackgroundUploads({
   }, []);
 
   const reload = React.useCallback(async () => {
+    const lifecycle = lifecycleRef.current;
     const stored = await listCallBackgroundUploads();
+    if (lifecycle !== lifecycleRef.current) return;
     const views = stored.map((upload) => ({
       id: upload.id,
       src: URL.createObjectURL(upload.image),
@@ -72,6 +76,7 @@ export function useCallBackgroundUploads({
 
   React.useEffect(() => {
     if (!enabled) {
+      lifecycleRef.current += 1;
       setUploads(null);
       revokeAll();
       return;
@@ -89,7 +94,13 @@ export function useCallBackgroundUploads({
     };
   }, [enabled, reload, revokeAll]);
 
-  React.useEffect(() => revokeAll, [revokeAll]);
+  React.useEffect(
+    () => () => {
+      lifecycleRef.current += 1;
+      revokeAll();
+    },
+    [revokeAll],
+  );
 
   const add = React.useCallback(
     async (file: File) => {

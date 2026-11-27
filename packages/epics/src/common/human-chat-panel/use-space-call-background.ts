@@ -26,6 +26,8 @@ export function useSpaceCallBackground({
       setUrl(null);
       return;
     }
+    // Until this space is drawn, the effect runs as strong blur (not the previous space).
+    setUrl(null);
     let cancelled = false;
     let created: string | null = null;
     void renderSpaceCallBackground({ leadImage, logoUrl })

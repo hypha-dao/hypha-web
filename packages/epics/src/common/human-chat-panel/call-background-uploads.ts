@@ -238,8 +238,40 @@ export async function addCallBackgroundUpload(
   } finally {
     bitmap.close();
   }
-  await withStore('readwrite', (store) => {
-    store.put(upload);
-  });
+  await putWithinLimit(upload);
   return upload;
+}
+
+/**
+ * Counts and inserts in one `readwrite` transaction, so two tabs adding at once cannot exceed the
+ * limit (the early check above only avoids needless encoding). Throws `limit_reached`.
+ */
+async function putWithinLimit(upload: StoredCallBackgroundUpload) {
+  const db = await openDatabase();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      const store = tx.objectStore(STORE);
+      let limitReached = false;
+      const count = store.count();
+      count.onsuccess = () => {
+        if (!canAddCallBackgroundUpload(count.result)) {
+          limitReached = true;
+          tx.abort();
+          return;
+        }
+        store.put(upload);
+      };
+      tx.oncomplete = () => resolve();
+      tx.onabort = () =>
+        reject(
+          new CallBackgroundUploadError(
+            limitReached ? 'limit_reached' : 'storage_failed',
+          ),
+        );
+      tx.onerror = () => undefined; // onabort follows and reports
+    });
+  } finally {
+    db.close();
+  }
 }

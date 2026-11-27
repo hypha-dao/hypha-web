@@ -8,6 +8,7 @@ import type { LocalVideoTrack, Room as LiveKitRoom } from 'livekit-client';
 import { LocalAudioTrack, Track } from 'livekit-client';
 import {
   CALL_BACKGROUND_EFFECT_NONE,
+  CALL_BACKGROUND_FALLBACK_BLUR,
   type CallBackgroundEffect,
   type CallBackgroundEffectStatus,
   createCallBackgroundFrameDropDetector,
@@ -20,6 +21,7 @@ import {
 } from './call-background-effect';
 import {
   attachCallBackgroundProcessor,
+  CallBackgroundImageError,
   type CallBackgroundProcessorHooks,
   getCallBackgroundProcessor,
   switchCallBackgroundEffect,
@@ -500,6 +502,10 @@ export function useSpaceGroupCall(
   const backgroundFrameDropDetectorRef = useRef(
     createCallBackgroundFrameDropDetector(),
   );
+  /** Room whose camera the effect follows (set on camera-on, before the join completes). */
+  const backgroundRoomRef = useRef<LiveKitRoom | null>(null);
+  /** One reconcile at a time; `generation` bumps on every request so stale work is dropped. */
+  const backgroundReconcileRef = useRef({ running: false, generation: 0 });
   const [
     unsupportedVoiceProcessingConstraints,
     setUnsupportedVoiceProcessingConstraints,
@@ -1396,6 +1402,8 @@ export function useSpaceGroupCall(
       setIsMicrophoneMuted(false);
       setIsLocalVideoMuted(true);
       cameraRequestEpochRef.current += 1;
+      backgroundRoomRef.current = null;
+      backgroundReconcileRef.current.generation += 1;
       setBackgroundEffectStatus('idle');
       backgroundFrameDropDetectorRef.current.reset();
       setBackgroundEffectSlow(false);
@@ -1435,13 +1443,22 @@ export function useSpaceGroupCall(
     setLocalPreviewStream(localPreviewStreamFromRoom(lkRoom));
   }, []);
 
+  /** Set below; lets the processor hooks ask for a reconcile without a dependency cycle. */
+  const reconcileBackgroundEffectRef = useRef<
+    ((trigger: string) => Promise<void>) | null
+  >(null);
   const backgroundProcessorHooks = useMemo<CallBackgroundProcessorHooks>(
     () => ({
       onFrameProcessed: (stats) => {
         const detector = backgroundFrameDropDetectorRef.current;
         const wasSlow = detector.isSlow;
-        const slow = detector.record(stats.processingTimeMs);
+        // `filterTimeMs` already includes the synchronous segmentation; `processingTimeMs`
+        // (0.8.3) adds it a second time.
+        const slow = detector.record(stats.filterTimeMs);
         if (slow !== wasSlow) setBackgroundEffectSlow(slow);
+      },
+      onLateStartRemoved: () => {
+        void reconcileBackgroundEffectRef.current?.('late-start-removed');
       },
     }),
     [],
@@ -1473,117 +1490,183 @@ export function useSpaceGroupCall(
       });
     });
   }, []);
-  /** An effect start on the live camera track is in progress (see `setBackgroundEffect`). */
-  const backgroundAttachInFlightRef = useRef(false);
 
   /**
-   * #2563: starts the effect on a camera track that is already published (Ger, 2026-11-27: the
-   * camera shows at once, the effect follows when ready, instead of waiting before publishing).
-   * Others see the plain camera for that moment. Logs timings (call debug).
+   * #2563: one pass bringing the published camera track to the current choice: attach, switch or
+   * pass through. Image work that was superseded while loading is not applied. A broken image
+   * falls back to strong blur (the choice is kept; status `failed`). Logs timings (call debug).
    */
-  const startBackgroundEffectOnLiveTrack = useCallback(
-    async (track: LocalVideoTrack, trigger: 'camera-on' | 'effect-change') => {
-      if (backgroundAttachInFlightRef.current) return;
-      backgroundAttachInFlightRef.current = true;
-      const requestEpoch = cameraRequestEpochRef.current;
-      const startedAt = performance.now();
-      logCallDebug('background-effect:start', {
-        trigger,
-        effect: serializeCallBackgroundEffect(backgroundEffectRef.current),
-      });
-      resetBackgroundFrameDrops();
-      setBackgroundEffectStatus('applying');
-      try {
-        await attachCallBackgroundProcessor(
-          track,
-          backgroundModeFor(backgroundEffectRef.current),
-          backgroundProcessorHooks,
-        );
-        // The choice may have changed while the processor was starting.
-        await switchCallBackgroundEffect(
-          track,
-          backgroundModeFor(backgroundEffectRef.current),
-        );
-        logCallDebug('background-effect:active', {
-          trigger,
-          elapsedMs: Math.round(performance.now() - startedAt),
-        });
-        if (requestEpoch === cameraRequestEpochRef.current) {
-          setBackgroundEffectStatus(
-            isCallBackgroundEffectActive(backgroundEffectRef.current)
-              ? 'active'
-              : 'idle',
+  const reconcileBackgroundEffectOnce = useCallback(
+    async (
+      trigger: string,
+      isSuperseded: () => boolean,
+    ): Promise<'done' | 'superseded' | 'retry'> => {
+      const lkRoom = backgroundRoomRef.current ?? liveKitRoomRef.current;
+      const publication = lkRoom?.localParticipant.getTrackPublication(
+        Track.Source.Camera,
+      );
+      const track = publication?.track as LocalVideoTrack | undefined;
+      const effect = backgroundEffectRef.current;
+      const wanted =
+        backgroundEffectSupportedRef.current &&
+        isCallBackgroundEffectActive(effect);
+      if (!track) {
+        setBackgroundEffectStatus('idle');
+        return 'done';
+      }
+      const hasProcessor = Boolean(getCallBackgroundProcessor(track));
+      if (!wanted) {
+        // Pass-through keeps toggling artifact-free; camera-on detaches it (`enableLocalCamera`).
+        if (hasProcessor) {
+          await switchCallBackgroundEffect(track, { mode: 'disabled' }).catch(
+            () => false,
           );
         }
+        setBackgroundEffectStatus('idle');
+        return 'done';
+      }
+      // A muted camera gets the effect when it turns on (`enableLocalCamera`).
+      if (publication?.isMuted) return 'done';
+
+      const startedAt = performance.now();
+      const commit = () => !isSuperseded();
+      const apply = (mode: ReturnType<typeof backgroundModeFor>) =>
+        getCallBackgroundProcessor(track)
+          ? switchCallBackgroundEffect(track, mode, commit)
+          : attachCallBackgroundProcessor(
+              track,
+              mode,
+              backgroundProcessorHooks,
+              commit,
+            );
+      logCallDebug('background-effect:start', {
+        trigger,
+        effect: serializeCallBackgroundEffect(effect),
+        attach: !hasProcessor,
+      });
+      setBackgroundEffectStatus('applying');
+      let applied: boolean;
+      let imageFailed = false;
+      try {
+        applied = await apply(backgroundModeFor(effect));
       } catch (err) {
         logCallDebug('background-effect:start-failed', {
           trigger,
           elapsedMs: Math.round(performance.now() - startedAt),
           message: err instanceof Error ? err.message : String(err),
         });
-        if (requestEpoch === cameraRequestEpochRef.current) {
-          setBackgroundEffectStatus('failed');
+        if (!(err instanceof CallBackgroundImageError)) {
+          if (!isSuperseded()) setBackgroundEffectStatus('failed');
+          return isSuperseded() ? 'superseded' : 'done';
         }
-      } finally {
-        backgroundAttachInFlightRef.current = false;
+        // The image is broken: hide the room with strong blur; the choice stays for a retry.
+        imageFailed = true;
+        try {
+          applied = await apply(
+            processorModeForEffect(CALL_BACKGROUND_FALLBACK_BLUR),
+          );
+        } catch (fallbackErr) {
+          logCallDebug('background-effect:fallback-failed', {
+            trigger,
+            message:
+              fallbackErr instanceof Error
+                ? fallbackErr.message
+                : String(fallbackErr),
+          });
+          if (!isSuperseded()) setBackgroundEffectStatus('failed');
+          return isSuperseded() ? 'superseded' : 'done';
+        }
       }
+      if (isSuperseded()) return 'superseded';
+      // Not applied without being superseded: the processor went away meanwhile; go again.
+      if (!applied) return 'retry';
+      logCallDebug('background-effect:active', {
+        trigger,
+        elapsedMs: Math.round(performance.now() - startedAt),
+        imageFailed,
+      });
+      setBackgroundEffectStatus(imageFailed ? 'failed' : 'active');
       refreshLocalPreview();
       scheduleFeedBatched();
+      return 'done';
     },
     [
       backgroundModeFor,
       backgroundProcessorHooks,
       refreshLocalPreview,
-      resetBackgroundFrameDrops,
       scheduleFeedBatched,
     ],
   );
 
   /**
-   * #2563: turns the camera on. Without an effect this is exactly `setCameraEnabled(true)`. With
-   * an effect, the camera is published at once and the effect is started on it without waiting
-   * (see `startBackgroundEffectOnLiveTrack`); a track that already has our processor keeps it
-   * (unmuting restarts it with the new capture). Returns whether the camera is on.
+   * #2563: the single, ordered path for every effect change on the camera (camera-on, choice,
+   * space or own images, rejoin). Requests made while a pass runs make it run again with the
+   * latest state, so an older image can never override a newer choice and a new camera track
+   * (rejoin) always gets its own pass.
+   */
+  const reconcileBackgroundEffect = useCallback(
+    async (trigger: string) => {
+      const state = backgroundReconcileRef.current;
+      state.generation += 1;
+      if (state.running) return;
+      state.running = true;
+      try {
+        for (let pass = 0; pass < 5; pass += 1) {
+          const generation = state.generation;
+          const epoch = cameraRequestEpochRef.current;
+          const outcome = await reconcileBackgroundEffectOnce(
+            trigger,
+            () =>
+              state.generation !== generation ||
+              cameraRequestEpochRef.current !== epoch,
+          );
+          if (state.generation === generation && outcome !== 'retry') break;
+        }
+      } finally {
+        state.running = false;
+      }
+    },
+    [reconcileBackgroundEffectOnce],
+  );
+  reconcileBackgroundEffectRef.current = reconcileBackgroundEffect;
+
+  /**
+   * #2563: turns the camera on. Without an effect this is exactly `setCameraEnabled(true)` (a
+   * leftover pass-through processor is detached first, so the camera never depends on MediaPipe).
+   * With an effect, the camera is published at once and the effect follows when ready (Ger,
+   * 2026-11-27). If our processor fails to restart with the new capture, the camera comes back
+   * without it and the effect reports `failed`. Returns whether the camera is on.
    */
   const enableLocalCamera = useCallback(
     async (lkRoom: LiveKitRoom): Promise<boolean> => {
       const participant = lkRoom.localParticipant;
-      const effect = backgroundEffectRef.current;
+      backgroundRoomRef.current = lkRoom;
       const existing = participant.getTrackPublication(Track.Source.Camera)
         ?.track as LocalVideoTrack | undefined;
-      const existingHasProcessor = Boolean(
-        getCallBackgroundProcessor(existing),
-      );
-      let switchFailed = false;
-      if (existing && existingHasProcessor) {
-        try {
-          await switchCallBackgroundEffect(existing, backgroundModeFor(effect));
-        } catch (err) {
-          switchFailed = true;
-          logCallDebug('background-effect:switch-failed', {
-            trigger: 'camera-on',
-            message: err instanceof Error ? err.message : String(err),
-          });
-        }
+      const wanted =
+        backgroundEffectSupportedRef.current &&
+        isCallBackgroundEffectActive(backgroundEffectRef.current);
+      if (existing && getCallBackgroundProcessor(existing) && !wanted) {
+        await existing.stopProcessor().catch(() => undefined);
       }
-      await participant.setCameraEnabled(true);
-      if (
-        !backgroundEffectSupportedRef.current ||
-        !isCallBackgroundEffectActive(effect)
-      ) {
-        setBackgroundEffectStatus('idle');
+      try {
+        await participant.setCameraEnabled(true);
+      } catch (err) {
+        const track = participant.getTrackPublication(Track.Source.Camera)
+          ?.track as LocalVideoTrack | undefined;
+        if (!track || !getCallBackgroundProcessor(track)) throw err;
+        logCallDebug('background-effect:restart-failed', {
+          message: err instanceof Error ? err.message : String(err),
+        });
+        await track.stopProcessor().catch(() => undefined);
+        await participant.setCameraEnabled(true);
+        setBackgroundEffectStatus('failed');
         return true;
       }
-      if (existingHasProcessor) {
-        setBackgroundEffectStatus(switchFailed ? 'failed' : 'active');
-        return true;
-      }
-      const track = participant.getTrackPublication(Track.Source.Camera)
-        ?.track as LocalVideoTrack | undefined;
-      if (track) void startBackgroundEffectOnLiveTrack(track, 'camera-on');
+      void reconcileBackgroundEffect('camera-on');
       return true;
     },
-    [backgroundModeFor, startBackgroundEffectOnLiveTrack],
+    [reconcileBackgroundEffect],
   );
 
   const applyScreenshareContentHints = useCallback(
@@ -2379,8 +2462,7 @@ export function useSpaceGroupCall(
 
   /**
    * #2563: chooses the background effect. Stored on this device and used for the next camera
-   * track too. With the camera on, switches the running processor live, or starts one on the
-   * live track (already visible to others, so no privacy change while it starts).
+   * track too. With the camera on, the reconcile applies it live (attach or switch).
    */
   const setBackgroundEffect = useCallback(
     async (effect: CallBackgroundEffect) => {
@@ -2388,72 +2470,27 @@ export function useSpaceGroupCall(
       setBackgroundEffectState(effect);
       persistCallBackgroundEffect(effect);
       resetBackgroundFrameDrops();
-
-      const lkRoom = liveKitRoomRef.current;
+      const lkRoom = backgroundRoomRef.current ?? liveKitRoomRef.current;
       const publication = lkRoom?.localParticipant.getTrackPublication(
         Track.Source.Camera,
       );
       const track = publication?.track as LocalVideoTrack | undefined;
-      if (!lkRoom || !track || publication?.isMuted) {
-        // Applied when the camera turns on; a start in progress picks the new choice up. In a call,
-        // warm up now so the camera turns on quickly.
-        if (lkRoom) warmUpBackgroundEffectIfSaved();
-        setBackgroundEffectStatus((status) =>
-          status === 'applying' ? status : 'idle',
-        );
-        return;
+      // Camera off in a call: warm up now so turning it on is quick.
+      if (lkRoom && (!track || publication?.isMuted)) {
+        warmUpBackgroundEffectIfSaved();
       }
-      if (backgroundAttachInFlightRef.current) return;
-
-      const active = isCallBackgroundEffectActive(effect);
-      if (getCallBackgroundProcessor(track)) {
-        // An image may take a moment to load; the previous effect stays meanwhile.
-        if (
-          effect.kind === 'image' ||
-          effect.kind === 'space' ||
-          effect.kind === 'upload'
-        ) {
-          setBackgroundEffectStatus('applying');
-        }
-        const startedAt = performance.now();
-        try {
-          await switchCallBackgroundEffect(track, backgroundModeFor(effect));
-          logCallDebug('background-effect:switched', {
-            effect: serializeCallBackgroundEffect(effect),
-            elapsedMs: Math.round(performance.now() - startedAt),
-          });
-          if (backgroundEffectRef.current !== effect) return;
-          setBackgroundEffectStatus(active ? 'active' : 'idle');
-        } catch (err) {
-          logCallDebug('background-effect:switch-failed', {
-            effect: serializeCallBackgroundEffect(effect),
-            elapsedMs: Math.round(performance.now() - startedAt),
-            message: err instanceof Error ? err.message : String(err),
-          });
-          if (backgroundEffectRef.current === effect) {
-            setBackgroundEffectStatus('failed');
-          }
-        }
-        return;
-      }
-      if (!active || !backgroundEffectSupportedRef.current) {
-        setBackgroundEffectStatus('idle');
-        return;
-      }
-
-      await startBackgroundEffectOnLiveTrack(track, 'effect-change');
+      await reconcileBackgroundEffect('effect-change');
     },
     [
-      backgroundModeFor,
+      reconcileBackgroundEffect,
       resetBackgroundFrameDrops,
-      startBackgroundEffectOnLiveTrack,
       warmUpBackgroundEffectIfSaved,
     ],
   );
 
   /**
    * #2563: the UI layer hands over the drawn background of the call's space (or null). Until it
-   * arrives the "space" effect runs as blur; when it changes, a running effect switches to it.
+   * arrives the "space" effect runs as strong blur; then the reconcile switches to it.
    */
   const setSpaceBackgroundImage = useCallback(
     async (src: string | null) => {
@@ -2461,58 +2498,22 @@ export function useSpaceGroupCall(
       spaceBackgroundImageRef.current = src;
       setSpaceBackgroundImageState(src);
       if (backgroundEffectRef.current.kind !== 'space') return;
-      const publication =
-        liveKitRoomRef.current?.localParticipant.getTrackPublication(
-          Track.Source.Camera,
-        );
-      const track = publication?.track as LocalVideoTrack | undefined;
-      if (!track || !getCallBackgroundProcessor(track)) return;
-      try {
-        await switchCallBackgroundEffect(
-          track,
-          backgroundModeFor(backgroundEffectRef.current),
-        );
-      } catch (err) {
-        // The previous mode (blur) stays on.
-        logCallDebug('background-effect:space-image-switch-failed', {
-          message: err instanceof Error ? err.message : String(err),
-        });
-      }
+      await reconcileBackgroundEffect('space-image');
     },
-    [backgroundModeFor],
+    [reconcileBackgroundEffect],
   );
-
-  /** Re-applies a running image effect after its runtime image changed (space or uploads). */
-  const reapplyRuntimeBackgroundImage = useCallback(async () => {
-    const publication =
-      liveKitRoomRef.current?.localParticipant.getTrackPublication(
-        Track.Source.Camera,
-      );
-    const track = publication?.track as LocalVideoTrack | undefined;
-    if (!track || !getCallBackgroundProcessor(track)) return;
-    try {
-      await switchCallBackgroundEffect(
-        track,
-        backgroundModeFor(backgroundEffectRef.current),
-      );
-    } catch (err) {
-      logCallDebug('background-effect:runtime-image-switch-failed', {
-        message: err instanceof Error ? err.message : String(err),
-      });
-    }
-  }, [backgroundModeFor]);
 
   /**
    * #2563: the UI layer hands over the member's images on this device (id -> `blob:` URL), or null
-   * while not loaded. A chosen image that is no longer there runs as blur.
+   * while not loaded. A chosen image that is no longer there runs as strong blur.
    */
   const setUploadedBackgroundImages = useCallback(
     async (images: Readonly<Record<string, string>> | null) => {
       uploadedBackgroundImagesRef.current = images;
       if (backgroundEffectRef.current.kind !== 'upload') return;
-      await reapplyRuntimeBackgroundImage();
+      await reconcileBackgroundEffect('uploads');
     },
-    [reapplyRuntimeBackgroundImage],
+    [reconcileBackgroundEffect],
   );
 
   const setScreensharingEnabled = useCallback(
