@@ -169,6 +169,7 @@
     "archivedEmpty": "Archived groups show up here.",
     "inbox": {
       "allTitle": "All messages",
+      "tabAll": "All",
       "allBody": "Unified inbox across all contexts",
       "directTitle": "Direct",
       "directBody": "One-to-one conversations and group chats",
@@ -4054,6 +4055,8 @@
     "reactionReactorsTooltip": "{names} reacted with {emoji}",
     "reactionToggleFailed": "Could not update reaction. Try again.",
     "sendFailed": "Could not send message. Try again.",
+    "chatSessionRefreshed": "Chat session refreshed. Please send your message again.",
+    "chatSessionExpired": "Chat session expired. Please reload the page and try again.",
     "sendFailedWithReason": "Could not send message: {message}",
     "sendUploadTimedOut": "Upload timed out. Try a smaller file or check your connection.",
     "sendRateLimited": "The chat server is limiting uploads. Wait a few seconds and try again, or send fewer files at once.",

@@ -1550,6 +1550,7 @@
     "archivedEmpty": "Os grupos arquivados aparecem aqui.",
     "inbox": {
       "allTitle": "Todas as mensagens",
+      "tabAll": "Todos",
       "allBody": "Caixa unificada de todos os contextos",
       "directTitle": "Direto",
       "directBody": "Conversas individuais e chats de grupo",
@@ -3450,6 +3451,8 @@
     "reactionReactorsTooltip": "{names} reagiram com {emoji}",
     "reactionToggleFailed": "Não foi possível atualizar a reação. Tente novamente.",
     "sendFailed": "Não foi possível enviar a mensagem. Tente novamente.",
+    "chatSessionRefreshed": "Sessão do chat atualizada. Envia a tua mensagem outra vez.",
+    "chatSessionExpired": "Sessão do chat expirou. Recarrega a página e tenta de novo.",
     "sendFailedWithReason": "Não foi possível enviar a mensagem: {message}",
     "sendUploadTimedOut": "Tempo de envio esgotado. Tente um ficheiro menor ou verifique a ligação.",
     "sendRateLimited": "O servidor de chat está a limitar os envios. Aguarde alguns segundos e tente novamente, ou envie menos ficheiros de uma vez.",

@@ -61,7 +61,6 @@ import { cn } from '@hypha-platform/ui-utils';
 import {
   ArrowUpRight,
   BookOpen,
-  ChevronLeft,
   Circle,
   FileText,
   Globe,
@@ -141,7 +140,10 @@ import {
   type MemberRow,
   type NewcomerCandidate,
 } from './member-connections';
-import { MessagesInboxFilters } from './messages-inbox-filters';
+import {
+  MessagesInboxFilters,
+  MessagesInboxMobileTabs,
+} from './messages-inbox-filters';
 import {
   channelRowsFromSnapshots,
   directInboxPlace,
@@ -149,17 +151,26 @@ import {
   inboxContextHref,
   inboxContextLine,
   inboxFilterCounts,
+  mobileInboxTabCounts,
   isInboxDirectConversation,
   inboxListWindow,
   INBOX_LIST_PAGE,
   isInboxFilter,
   peopleInboxKind,
   rowMatchesInboxFilter,
+  rowMatchesMobileInboxTab,
   type InboxChannelKind,
   type InboxContext,
   type InboxFilter,
   type JoinedChannelSnapshot,
+  type MobileInboxTab,
 } from './messages-inbox';
+import {
+  clearInboxListSnapshot,
+  keepPaintedInboxRows,
+  readInboxListSnapshot,
+  writeInboxListSnapshot,
+} from './messages-inbox-snapshot';
 import { GroupFaces } from './group-faces';
 import { MemberHomeMark } from './member-home-mark';
 import { PersonAvatar } from './person-avatar';
@@ -1677,6 +1688,21 @@ function latestChannelMessage(
       sender: null,
     };
   }
+  // A busy room can fill the loaded timeline with joins. The latest message
+  // is then older than what is in memory, and a null time would hide it.
+  const timeline = room.getLiveTimeline();
+  const hasOlder =
+    typeof timeline?.getPaginationToken === 'function' &&
+    Boolean(timeline.getPaginationToken(Direction.Backward));
+  if (hasOlder) {
+    const active =
+      typeof room.getLastActiveTimestamp === 'function'
+        ? room.getLastActiveTimestamp()
+        : 0;
+    if (active > 0) {
+      return { preview: '', mine: false, ts: active, sender: null };
+    }
+  }
   return { preview: '', mine: false, ts: null, sender: null };
 }
 
@@ -1856,9 +1882,14 @@ export function MyConnections({
   const tChat = useTranslations('MemberHome');
   const tCommon = useTranslations('Common');
   const locale = useLocale();
-  const { user } = useAuthentication();
-  const { jwt } = useJwt();
+  const {
+    user,
+    isAuthenticated,
+    isLoading: isAuthLoading,
+  } = useAuthentication();
+  const { jwt, isLoadingJwt } = useJwt();
   const memberId = user?.id ?? null;
+  const inboxAccountId = memberId == null ? null : String(memberId);
   const jwtSubject = jwt ? readJwtSubject(jwt) : null;
   const jwtRef = useRef(jwt);
   const jwtOwnerRef = useRef<string | null>(null);
@@ -1941,13 +1972,56 @@ export function MyConnections({
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<ConversationRow[]>([]);
   const [channels, setChannels] = useState<JoinedChannelSnapshot[]>([]);
+  const restoredInboxAccount = useRef<string | null>(null);
+  const skipSnapshotWrite = useRef(false);
+  const inboxAccountIdRef = useRef(inboxAccountId);
+  inboxAccountIdRef.current = inboxAccountId;
+  const rowsOwnerRef = useRef<{
+    accountId: string;
+    matrixUserId: string;
+  } | null>(null);
+  /** Matrix user id of the account just left. Its client must not save rows for the new account. */
+  const retiredMatrixUserIdRef = useRef<string | null>(null);
+  const activeListClientRef = useRef<MatrixClient | null>(null);
+  useLayoutEffect(() => {
+    if (!inboxAccountId || restoredInboxAccount.current === inboxAccountId) {
+      return;
+    }
+    const switchingAccount = restoredInboxAccount.current != null;
+    restoredInboxAccount.current = inboxAccountId;
+    skipSnapshotWrite.current = switchingAccount;
+    const snapshot = readInboxListSnapshot(inboxAccountId);
+    if (switchingAccount) {
+      setRows(snapshot.rows);
+      setChannels(snapshot.channels);
+      return;
+    }
+    if (snapshot.rows.length > 0) {
+      setRows((current) => (current.length > 0 ? current : snapshot.rows));
+    }
+    if (snapshot.channels.length > 0) {
+      setChannels((current) =>
+        current.length > 0 ? current : snapshot.channels,
+      );
+    }
+  }, [inboxAccountId]);
   // Direct skips the all-channels merge on open (faster first paint).
   const [inboxFilter, setInboxFilter] = useState<InboxFilter>('direct');
+  const [mobileTab, setMobileTab] = useState<MobileInboxTab>('all');
+  const [isLargeInbox, setIsLargeInbox] = useState(false);
+  useLayoutEffect(() => {
+    const media = window.matchMedia('(min-width: 64rem)');
+    const apply = () => setIsLargeInbox(media.matches);
+    apply();
+    media.addEventListener('change', apply);
+    return () => media.removeEventListener('change', apply);
+  }, []);
   const [inboxVisibleCount, setInboxVisibleCount] = useState(INBOX_LIST_PAGE);
   /** Below the side-by-side layout, a channel tap replaces the menu with its messages. */
   const [inboxChannelOpen, setInboxChannelOpen] = useState(false);
   const [synced, setSynced] = useState(false);
   const [initialSyncComplete, setInitialSyncComplete] = useState(false);
+  const syncedClientRef = useRef<typeof client>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedById, setSelectedById] = useState<
     Map<number, ConnectionMemberRow>
@@ -1985,8 +2059,19 @@ export function MyConnections({
       compare: sameMemberHome,
     },
   );
+  const [deferFullHome, setDeferFullHome] = useState(
+    () => section === 'messages',
+  );
+  useEffect(() => {
+    if (section !== 'messages') {
+      setDeferFullHome(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setDeferFullHome(false), 2000);
+    return () => window.clearTimeout(timer);
+  }, [section]);
   const fullKey = useEnergyGatedSWRKey(
-    homeKeyReady
+    homeKeyReady && !deferFullHome
       ? (['/api/v1/people/me/intelligence', memberId, 'full'] as const)
       : null,
   );
@@ -2243,22 +2328,67 @@ export function MyConnections({
   ]);
 
   useEffect(() => {
-    if (!client) {
-      setRows([]);
-      setChannels([]);
-      setSynced(false);
+    if (syncedClientRef.current !== client) {
+      syncedClientRef.current = client;
       setInitialSyncComplete(false);
-      setListSettled(false);
+    }
+    if (!client) {
+      // A reconnect, or a token that is still loading, keeps the painted
+      // list. Only a confirmed sign-out drops it.
+      const signedOut =
+        !isAuthLoading && !isLoadingJwt && !isAuthenticated && !isConnecting;
+      if (signedOut) {
+        setRows([]);
+        setChannels([]);
+        setSynced(false);
+        setInitialSyncComplete(false);
+        setListSettled(false);
+        clearInboxListSnapshot();
+        restoredInboxAccount.current = null;
+        rowsOwnerRef.current = null;
+        retiredMatrixUserIdRef.current = null;
+      }
       return;
     }
-    return attachConversationList(client, () => {
+    activeListClientRef.current = client;
+    const liveSyncReady = () => {
+      const state = client.getSyncState();
+      return (
+        state === SyncState.Prepared ||
+        (typeof client.isInitialSyncComplete === 'function' &&
+          client.isInitialSyncComplete())
+      );
+    };
+    const unsubscribe = attachConversationList(client, () => {
+      if (activeListClientRef.current !== client) return;
+      const accountId = inboxAccountIdRef.current;
+      const matrixUserId = client.getUserId() ?? '';
+      if (!accountId || !matrixUserId) return;
+      const owner = rowsOwnerRef.current;
+      if (owner && owner.accountId !== accountId) {
+        retiredMatrixUserIdRef.current = owner.matrixUserId;
+        rowsOwnerRef.current = null;
+        return;
+      }
+      if (matrixUserId === retiredMatrixUserIdRef.current) return;
+      if (owner && owner.matrixUserId !== matrixUserId) return;
+      rowsOwnerRef.current = { accountId, matrixUserId };
+      const ready = liveSyncReady();
       setRows((current) => {
-        const next = conversationRowsSnapshot(client);
-        return sameConversationRows(current, next) ? current : next;
+        const next = keepPaintedInboxRows(
+          current,
+          conversationRowsSnapshot(client),
+          ready,
+        );
+        return sameConversationRows(current, next) ? current : [...next];
       });
       setChannels((current) => {
-        const next = joinedChannelSnapshots(client);
-        return sameChannelSnapshots(current, next) ? current : next;
+        const next = keepPaintedInboxRows(
+          current,
+          joinedChannelSnapshots(client),
+          ready,
+        );
+        return sameChannelSnapshots(current, next) ? current : [...next];
       });
       const state = client.getSyncState();
       // Catchup is the IndexedDB restore path — treat it like Syncing so an
@@ -2279,7 +2409,20 @@ export function MyConnections({
         setInitialSyncComplete(true);
       }
     });
-  }, [client]);
+    return () => {
+      if (activeListClientRef.current === client) {
+        activeListClientRef.current = null;
+      }
+      unsubscribe();
+    };
+  }, [
+    client,
+    isAuthenticated,
+    isAuthLoading,
+    isConnecting,
+    isLoadingJwt,
+    isMatrixAvailable,
+  ]);
 
   useEffect(() => {
     if (!client) return;
@@ -2411,7 +2554,34 @@ export function MyConnections({
   useEffect(() => {
     if (dataReady && isMatrixAvailable) setListSettled(true);
   }, [dataReady, isMatrixAvailable]);
-  const listLoading = !listSettled && !dataReady;
+  const listLoading =
+    !listSettled && !dataReady && rows.length === 0 && channels.length === 0;
+  useEffect(() => {
+    if (!listSettled || !inboxAccountId || !client) return;
+    if (restoredInboxAccount.current !== inboxAccountId) return;
+    const owner = rowsOwnerRef.current;
+    const matrixUserId = client.getUserId() ?? '';
+    if (
+      !owner ||
+      owner.accountId !== inboxAccountId ||
+      owner.matrixUserId !== matrixUserId
+    ) {
+      return;
+    }
+    if (skipSnapshotWrite.current) {
+      skipSnapshotWrite.current = false;
+      return;
+    }
+    writeInboxListSnapshot(
+      {
+        rows,
+        channels: [...channels].sort(
+          (left, right) => (right.lastTs ?? 0) - (left.lastTs ?? 0),
+        ),
+      },
+      inboxAccountId,
+    );
+  }, [channels, client, inboxAccountId, listSettled, rows]);
   const resolvedMembers = useMemo(
     () =>
       applyResolvedPeerTitles(
@@ -2655,17 +2825,60 @@ export function MyConnections({
             ),
           )
         : [];
-    const counts = inboxFilterCounts([
+    const countedRows = [
       ...directConversations.map((row) => ({
-        kind: row.inbox?.kind ?? 'dm',
+        kind: row.inbox?.kind ?? peopleInboxKind(row),
         unread: row.unread,
       })),
       ...channelRows.flatMap((row) =>
         row.inbox ? [{ kind: row.inbox.kind, unread: row.unread }] : [],
       ),
-    ]);
+    ];
+    const counts = inboxFilterCounts(countedRows);
+    const tabCounts = mobileInboxTabCounts(countedRows);
+    if (section === 'messages' && !picking && !isLargeInbox) {
+      if (mobileTab === 'all') {
+        return {
+          rows: sortConversationsByLastMessage([
+            ...directForList,
+            ...channelRows,
+          ]),
+          counts,
+          tabCounts,
+        };
+      }
+      if (mobileTab === 'channels') {
+        return {
+          rows: sortConversationsByLastMessage(
+            channelRows.filter(
+              (row) =>
+                row.inbox != null &&
+                rowMatchesMobileInboxTab(row.inbox.kind, 'channels'),
+            ),
+          ),
+          counts,
+          tabCounts,
+        };
+      }
+      const peopleRows =
+        mobileTab === 'direct' && needle.length > 0
+          ? directForList
+          : directConversations;
+      return {
+        rows: sortConversationsByLastMessage(
+          peopleRows.filter((row) =>
+            rowMatchesMobileInboxTab(
+              row.inbox?.kind ?? peopleInboxKind(row),
+              mobileTab,
+            ),
+          ),
+        ),
+        counts,
+        tabCounts,
+      };
+    }
     if (section !== 'messages' || picking || inboxFilter === 'direct') {
-      return { rows: directForList, counts };
+      return { rows: directForList, counts, tabCounts };
     }
     if (inboxFilter === 'all') {
       return {
@@ -2674,6 +2887,7 @@ export function MyConnections({
           ...channelRows,
         ]),
         counts,
+        tabCounts,
       };
     }
     return {
@@ -2685,12 +2899,15 @@ export function MyConnections({
         ),
       ),
       counts,
+      tabCounts,
     };
   }, [
     channels,
     client,
     inboxContext,
     inboxFilter,
+    isLargeInbox,
+    mobileTab,
     inboxMentionNames,
     needle,
     people,
@@ -2775,7 +2992,12 @@ export function MyConnections({
   }, [picking, section, shownRows]);
   const [channelPreviewsPending, setChannelPreviewsPending] = useState(false);
   useEffect(() => {
-    if (!client || listLoading || missingChannelPreviewIds.length === 0) {
+    if (
+      !client ||
+      listLoading ||
+      !initialSyncComplete ||
+      missingChannelPreviewIds.length === 0
+    ) {
       setChannelPreviewsPending(false);
       return;
     }
@@ -2793,7 +3015,7 @@ export function MyConnections({
     return () => {
       cancelled = true;
     };
-  }, [client, listLoading, missingChannelPreviewIds]);
+  }, [client, initialSyncComplete, listLoading, missingChannelPreviewIds]);
   const hasMoreInboxRows = inboxWindow?.hasMore ?? false;
   const canLoadMoreInbox =
     !moreFailed &&
@@ -2801,7 +3023,10 @@ export function MyConnections({
       (hasMorePeople &&
         !needle &&
         section !== 'archived' &&
-        (picking || inboxFilter === 'all' || inboxFilter === 'direct')));
+        (picking ||
+          (isLargeInbox
+            ? inboxFilter === 'all' || inboxFilter === 'direct'
+            : mobileTab === 'all' || mobileTab === 'direct'))));
   useEffect(() => {
     const root = inboxListRef.current;
     if (!root || section !== 'messages' || picking) return;
@@ -2829,7 +3054,15 @@ export function MyConnections({
     section === 'archived'
       ? t('tabs.archived')
       : section === 'messages' && !picking
-      ? t(`inbox.${inboxFilter}Title`)
+      ? isLargeInbox
+        ? t(`inbox.${inboxFilter}Title`)
+        : mobileTab === 'groups'
+        ? t('groups')
+        : mobileTab === 'channels'
+        ? t('inbox.roomsTitle')
+        : mobileTab === 'direct'
+        ? t('inbox.directTitle')
+        : t('inbox.allTitle')
       : t('people');
   const showChannelTags = section === 'messages' && !picking;
   const selectedPeople = useMemo(
@@ -3189,10 +3422,7 @@ export function MyConnections({
                 // Same sticky edge as the conversation list. Page scroll and
                 // the list's own scroll are unchanged. The unread counts stay
                 // in view instead of leaving with the page.
-                'narrow-scrollbar w-full shrink-0 lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:w-80 lg:self-start lg:min-h-0 lg:bg-page-background',
-                picking || inboxChannelOpen
-                  ? 'hidden lg:block'
-                  : 'lg:flex-none',
+                'narrow-scrollbar hidden w-full shrink-0 lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)] lg:z-10 lg:block lg:w-80 lg:flex-none lg:self-start lg:min-h-0 lg:bg-page-background',
               )}
             >
               <MessagesInboxFilters
@@ -3205,32 +3435,24 @@ export function MyConnections({
           <div
             data-messages-list-frame=""
             className={cn(
-              'min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-visible lg:overflow-hidden',
+              'flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-visible lg:overflow-hidden',
               // Sticky + viewport height from MessagesViewportLock so the
               // list scrolls inside while the page still moves.
               'lg:sticky lg:top-[calc(var(--menu-top-height,4.5rem)+0.75rem)]',
-              section === 'messages' && !picking && !inboxChannelOpen
-                ? 'hidden lg:flex'
-                : 'flex',
             )}
           >
-            {section === 'messages' && !picking ? (
-              <button
-                type="button"
-                aria-label={tCommon('back')}
-                className="flex shrink-0 items-center gap-1 self-start text-3 text-foreground lg:hidden"
-                onClick={() => setInboxChannelOpen(false)}
-              >
-                <ChevronLeft
-                  className="size-4 shrink-0"
-                  strokeWidth={1.5}
-                  aria-hidden
-                />
-                {t(`inbox.${inboxFilter}Title`)}
-              </button>
-            ) : null}
             <div className="flex min-h-0 flex-1 flex-col gap-3">
               <div className="flex shrink-0 flex-col gap-3">
+                {section === 'messages' && !picking ? (
+                  <MessagesInboxMobileTabs
+                    value={mobileTab}
+                    counts={inboxView.tabCounts}
+                    onChange={(next) => {
+                      setMobileTab(next);
+                      setInboxVisibleCount(INBOX_LIST_PAGE);
+                    }}
+                  />
+                ) : null}
                 <div className="flex items-center gap-2">
                   <label className="relative min-w-0 flex-1">
                     <span className="sr-only">{t('search')}</span>
@@ -3265,7 +3487,7 @@ export function MyConnections({
                       type="button"
                       variant="outline"
                       colorVariant="neutral"
-                      className="shrink-0 gap-1.5"
+                      className="shrink-0 gap-1.5 max-lg:tracking-[0.06em] max-lg:uppercase"
                       disabled={!isMatrixAvailable || people.length < 2}
                       onClick={() => setPicking(true)}
                     >
@@ -3436,7 +3658,10 @@ export function MyConnections({
                       ? picking || section === 'messages'
                         ? t('noMembersMatchSearch')
                         : t('noMatches')
-                      : showChannelTags && inboxFilter !== 'direct'
+                      : showChannelTags &&
+                        (isLargeInbox
+                          ? inboxFilter !== 'direct'
+                          : mobileTab !== 'direct')
                       ? t('inbox.empty')
                       : t('empty')}
                   </p>
