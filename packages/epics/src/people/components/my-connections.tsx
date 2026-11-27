@@ -1980,6 +1980,9 @@ export function MyConnections({
     accountId: string;
     matrixUserId: string;
   } | null>(null);
+  /** Matrix user id of the account just left. Its client must not save rows for the new account. */
+  const retiredMatrixUserIdRef = useRef<string | null>(null);
+  const activeListClientRef = useRef<MatrixClient | null>(null);
   useLayoutEffect(() => {
     if (!inboxAccountId || restoredInboxAccount.current === inboxAccountId) {
       return;
@@ -2343,9 +2346,11 @@ export function MyConnections({
         clearInboxListSnapshot();
         restoredInboxAccount.current = null;
         rowsOwnerRef.current = null;
+        retiredMatrixUserIdRef.current = null;
       }
       return;
     }
+    activeListClientRef.current = client;
     const liveSyncReady = () => {
       const state = client.getSyncState();
       return (
@@ -2354,18 +2359,20 @@ export function MyConnections({
           client.isInitialSyncComplete())
       );
     };
-    return attachConversationList(client, () => {
+    const unsubscribe = attachConversationList(client, () => {
+      if (activeListClientRef.current !== client) return;
       const accountId = inboxAccountIdRef.current;
       const matrixUserId = client.getUserId() ?? '';
-      if (!accountId) return;
+      if (!accountId || !matrixUserId) return;
       const owner = rowsOwnerRef.current;
-      if (owner && matrixUserId && owner.matrixUserId !== matrixUserId) {
-        rowsOwnerRef.current = { accountId, matrixUserId };
-      } else if (owner && owner.accountId !== accountId) {
+      if (owner && owner.accountId !== accountId) {
+        retiredMatrixUserIdRef.current = owner.matrixUserId;
+        rowsOwnerRef.current = null;
         return;
-      } else if (matrixUserId) {
-        rowsOwnerRef.current = { accountId, matrixUserId };
       }
+      if (matrixUserId === retiredMatrixUserIdRef.current) return;
+      if (owner && owner.matrixUserId !== matrixUserId) return;
+      rowsOwnerRef.current = { accountId, matrixUserId };
       const ready = liveSyncReady();
       setRows((current) => {
         const next = keepPaintedInboxRows(
@@ -2402,6 +2409,12 @@ export function MyConnections({
         setInitialSyncComplete(true);
       }
     });
+    return () => {
+      if (activeListClientRef.current === client) {
+        activeListClientRef.current = null;
+      }
+      unsubscribe();
+    };
   }, [
     client,
     isAuthenticated,
