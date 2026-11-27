@@ -121,22 +121,18 @@ export function SpaceScreenLayoutFields({
               <div className="flex shrink-0 border border-border">
                 <button
                   type="button"
-                  className="flex size-8 items-center justify-center border-r border-border text-neutral-11 hover:bg-neutral-3 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30"
+                  className="flex size-5 items-center justify-center border-r border-border text-neutral-11 hover:bg-neutral-3 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30"
                   aria-label={tSpaces('screenMoveUp', { screen: label })}
                   disabled={disabled || index === 0}
                   onClick={() =>
                     commitOrder(moveVisibleSpaceScreen(order, rows, key, -1))
                   }
                 >
-                  <ChevronUp
-                    className="size-3.5"
-                    strokeWidth={1.5}
-                    aria-hidden
-                  />
+                  <ChevronUp className="size-3" strokeWidth={1.5} aria-hidden />
                 </button>
                 <button
                   type="button"
-                  className="flex size-8 items-center justify-center text-neutral-11 hover:bg-neutral-3 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30"
+                  className="flex size-5 items-center justify-center text-neutral-11 hover:bg-neutral-3 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30"
                   aria-label={tSpaces('screenMoveDown', { screen: label })}
                   disabled={disabled || index === rows.length - 1}
                   onClick={() =>
@@ -144,13 +140,14 @@ export function SpaceScreenLayoutFields({
                   }
                 >
                   <ChevronDown
-                    className="size-3.5"
+                    className="size-3"
                     strokeWidth={1.5}
                     aria-hidden
                   />
                 </button>
               </div>
               <Switch
+                size="sm"
                 checked={checked}
                 disabled={disabled || isOverview}
                 aria-label={
