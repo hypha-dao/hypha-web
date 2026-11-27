@@ -308,6 +308,7 @@ export function assembleQuestRecord(
     successCriteria: row.successCriteria ?? '',
     rewards: Array.isArray(row.rewards) ? row.rewards : [],
     status,
+    domain: row.domain ?? null,
     targetDate: row.targetDate ?? null,
     leadPersonId: row.leadPersonId ?? null,
     leadName,

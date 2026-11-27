@@ -126,11 +126,12 @@ export function signalListUpvoteSummaryState({
 }
 
 /**
- * Feed cell figure. A token space shows the all-time weighted net (up minus
- * down) on every sort, including the signal page. One member, one vote shows
- * the integer net headcount. With no resolved mode, only Top by voting power
- * shows the weighted net. The selected time window ranks the list and does
- * not change this number. Never the viewer's own vote. One summary, one token.
+ * Feed cell figure. Top by voters shows the all-time net voter count, even in
+ * a token space. Top by voting power shows voice (the all-time weighted net).
+ * New follows the space: a token space shows voice, one member one vote shows
+ * the headcount. With no resolved mode, only Top by voting power shows voice.
+ * The time window ranks the list and does not change this number. Never the
+ * viewer's own vote. One summary, one token.
  */
 export function signalUpvoteCellMeasure({
   sort,
@@ -143,9 +144,11 @@ export function signalUpvoteCellMeasure({
   summaryState?: SignalUpvoteSummaryState;
   votingMode?: SignalVotingMode | null;
 }): SignalUpvoteCellMeasure {
-  const weightedNet =
-    votingMode === 'token' || (votingMode == null && sort === 'top-power');
-  if (votingMode === 'one-member-one-vote' || !weightedNet) {
+  const showVoice =
+    sort !== 'top-voters' &&
+    votingMode !== 'one-member-one-vote' &&
+    (votingMode === 'token' || (votingMode == null && sort === 'top-power'));
+  if (!showVoice) {
     return {
       kind: 'count',
       count: upvotes?.netVoteCount ?? upvotes?.upvoteCount ?? 0,

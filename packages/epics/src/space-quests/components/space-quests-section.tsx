@@ -2,13 +2,12 @@
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
-  QUEST_LIST_FILTERS,
   formatQuestCalendarDate,
   isRejectedProposedQuest,
   questHealthDisplay,
   questListBucket,
+  useSignalWorkflow,
   type QuestHealthState,
-  type QuestListFilter,
   type QuestRecord,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
@@ -18,24 +17,22 @@ import {
   DialogContent,
   DialogDescription,
   DialogTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
   Input,
   Skeleton,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { ChevronDown, SearchIcon } from 'lucide-react';
+import { SearchIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { QuestStatusBadge } from './quest-status-badge';
-import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
+import { QuestBoard, type QuestBoardLayout } from './quest-board';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
+import {
+  questDomainDotClass,
+  type QuestDomainChoice,
+} from '../utils/quest-board-groups';
 import {
   deleteQuestDraftRequest,
   findQuestSpaceMember,
@@ -221,11 +218,13 @@ export function QuestCard({
   href,
   locale = 'en',
   spaceMembers = [],
+  domain = null,
 }: {
   quest: QuestRecord;
   href: string;
   locale?: string;
   spaceMembers?: readonly QuestSpaceMember[];
+  domain?: QuestDomainChoice | null;
 }) {
   const t = useTranslations('SpaceQuests');
   const health = cardHealth(quest);
@@ -261,6 +260,21 @@ export function QuestCard({
       >
         {quest.name}
       </h2>
+      {domain ? (
+        <span
+          className="inline-flex h-5 shrink-0 items-center gap-1.5 text-xs text-neutral-11"
+          data-testid={`quest-card-domain-${quest.slug}`}
+        >
+          <span
+            className={cn(
+              'size-2 shrink-0 rounded-full',
+              questDomainDotClass(domain.color),
+            )}
+            aria-hidden
+          />
+          {domain.name}
+        </span>
+      ) : null}
       <p
         data-testid={`quest-card-goal-${quest.slug}`}
         className="line-clamp-2 h-[2lh] shrink-0 break-words text-[13px] leading-relaxed text-neutral-11 [overflow-wrap:anywhere]"
@@ -329,75 +343,17 @@ export function QuestCard({
   );
 }
 
-type QuestListView = QuestListFilter | 'drafts';
+const QUEST_BOARD_LAYOUT_KEY = 'hypha.questBoardLayout';
 
-const STATUS_MENU_CLASS =
-  'min-w-44 rounded-none border border-border bg-background p-1 text-foreground shadow-none';
-
-const STATUS_ITEM_CLASS =
-  'rounded-none text-1 uppercase tracking-[0.12em] data-[state=checked]:bg-foreground/5';
-
-function QuestStatusFilter({
-  value,
-  options,
-  onChange,
-}: {
-  value: QuestListView;
-  options: ReadonlyArray<{ value: QuestListView; label: string }>;
-  onChange: (value: QuestListView) => void;
-}) {
-  const t = useTranslations('SpaceQuests');
-  const portalStyle = useSpaceAccentPortalStyles();
-  const label =
-    options.find((option) => option.value === value)?.label ??
-    t('filters.active');
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          data-testid="quest-status-filter"
-          className="data-[state=open]:border-foreground/40 data-[state=open]:bg-foreground/5"
-        >
-          {label}
-          <ChevronDown
-            className="size-3.5 shrink-0"
-            strokeWidth={1.25}
-            aria-hidden
-          />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        sideOffset={6}
-        className={STATUS_MENU_CLASS}
-        style={portalStyle}
-        data-space-accent-scope
-        data-testid="quest-status-filter-menu"
-      >
-        <DropdownMenuLabel className="px-3 pb-1.5 pt-2 text-1 font-medium text-muted-foreground">
-          {t('filters.status')}
-        </DropdownMenuLabel>
-        <DropdownMenuRadioGroup
-          value={value}
-          onValueChange={(next) => onChange(next as QuestListView)}
-        >
-          {options.map((option) => (
-            <DropdownMenuRadioItem
-              key={option.value}
-              value={option.value}
-              className={STATUS_ITEM_CLASS}
-              data-testid={`quest-filter-${option.value}`}
-            >
-              {option.label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
+function readQuestBoardLayout(): QuestBoardLayout {
+  if (typeof window === 'undefined') return 'kanban';
+  try {
+    return window.localStorage.getItem(QUEST_BOARD_LAYOUT_KEY) === 'swimlane'
+      ? 'swimlane'
+      : 'kanban';
+  } catch {
+    return 'kanban';
+  }
 }
 
 export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
@@ -407,12 +363,26 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
   const { space } = useSpaceBySlug(spaceSlug);
   const { canMutate } = useCanMutateInSpace({ spaceSlug, space });
   const { overview, isLoading, error, refresh } = useSpaceQuests(spaceSlug);
+  const { workflow } = useSignalWorkflow(spaceSlug);
   const { drafts, visible: draftsVisible } = useMyQuestDrafts(spaceSlug);
   const spaceMembers = useQuestSpaceMembers(spaceSlug);
-  const [filter, setFilter] = useState<QuestListView>('active');
+  const [layout, setLayout] = useState<QuestBoardLayout>('kanban');
   const [search, setSearch] = useState('');
   const [draftToDelete, setDraftToDelete] = useState<number | null>(null);
   const [draftDeleteError, setDraftDeleteError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLayout(readQuestBoardLayout());
+  }, []);
+
+  const chooseLayout = (next: QuestBoardLayout) => {
+    setLayout(next);
+    try {
+      window.localStorage.setItem(QUEST_BOARD_LAYOUT_KEY, next);
+    } catch {
+      // Private browsing can reject storage. The choice still applies now.
+    }
+  };
 
   useEffect(() => {
     if (!draftDeleteError) return;
@@ -434,9 +404,7 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return quests
-      .filter(
-        (quest) => filter !== 'drafts' && questListBucket(quest) === filter,
-      )
+      .filter((quest) => questListBucket(quest) !== 'archived')
       .filter((quest) => {
         if (!q) return true;
         return (
@@ -450,7 +418,7 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
           new Date(b.latestUpdateAt).getTime() -
           new Date(a.latestUpdateAt).getTime(),
       );
-  }, [filter, quests, search]);
+  }, [quests, search]);
 
   const visibleDrafts = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -459,7 +427,6 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
       return draft.name.toLowerCase().includes(q);
     });
   }, [drafts, search]);
-  const showingDrafts = filter === 'drafts' && draftsVisible;
 
   const newQuestHref = `/${locale}/dho/${spaceSlug}/quests/new?fresh=1`;
 
@@ -509,14 +476,6 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
     );
   }
 
-  const filterLabels: Record<QuestListFilter, string> = {
-    active: t('filters.active'),
-    proposed: t('filters.proposed'),
-    paused: t('filters.paused'),
-    completed: t('filters.completed'),
-    rejected: t('filters.rejected'),
-  };
-
   return (
     <div className="space-y-4">
       {draftDeleteError ? (
@@ -564,101 +523,82 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
 
       <div
         className="flex flex-wrap items-center gap-2"
-        data-testid="quest-status-filter-row"
+        data-testid="quest-board-layout"
+        role="group"
+        aria-label={t('board.layout')}
       >
-        <QuestStatusFilter
-          value={filter}
-          options={[
-            ...QUEST_LIST_FILTERS.map((key) => ({
-              value: key,
-              label: filterLabels[key],
-            })),
-            ...(draftsVisible
-              ? [{ value: 'drafts' as const, label: t('filters.drafts') }]
-              : []),
-          ]}
-          onChange={setFilter}
-        />
+        {(['kanban', 'swimlane'] as const).map((value) => (
+          <Button
+            key={value}
+            type="button"
+            variant="outline"
+            aria-pressed={layout === value}
+            data-testid={`quest-layout-${value}`}
+            className={cn(
+              'rounded-none uppercase tracking-[0.12em]',
+              layout === value && 'border-foreground bg-foreground/5',
+            )}
+            onClick={() => chooseLayout(value)}
+          >
+            {t(`board.${value}`)}
+          </Button>
+        ))}
       </div>
 
-      {/* Grid of Quest cards (no Kanban board) */}
-      {showingDrafts ? (
-        visibleDrafts.length === 0 ? (
-          <div
-            className="border border-dashed border-border bg-background-2 px-6 py-10 text-center"
-            data-testid="quest-drafts-empty"
-          >
-            <p className="text-sm text-neutral-11">{t('drafts.empty')}</p>
-          </div>
-        ) : (
-          <div className="space-y-2" data-testid="quest-drafts-list">
-            {visibleDrafts.map((draft) => (
-              <div
-                key={draft.id}
-                data-testid={`quest-draft-${draft.id}`}
-                className="flex flex-wrap items-center justify-between gap-3 border border-border bg-background px-4 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-foreground">
-                    {draft.name.trim() || t('drafts.untitled')}
-                  </p>
-                  <p className="text-xs text-neutral-11">
-                    {t('drafts.edited', {
-                      when: formatRelativeTimeShort(draft.updatedAt),
-                    })}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button asChild variant="outline" className="rounded-none">
-                    <Link
-                      href={`/${locale}/dho/${spaceSlug}/quests/new?draft=${draft.id}`}
-                      data-testid={`continue-quest-draft-${draft.id}`}
-                    >
-                      {t('drafts.continue')}
-                    </Link>
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    colorVariant="neutral"
-                    className="rounded-none"
-                    onClick={() => setDraftToDelete(draft.id)}
-                    data-testid={`delete-quest-draft-${draft.id}`}
-                  >
-                    {t('drafts.delete')}
-                  </Button>
-                </div>
+      {draftsVisible && visibleDrafts.length > 0 ? (
+        <div className="space-y-2" data-testid="quest-drafts-list">
+          <h2 className="text-1 font-medium uppercase tracking-[0.12em] text-neutral-11">
+            {t('filters.drafts')}
+          </h2>
+          {visibleDrafts.map((draft) => (
+            <div
+              key={draft.id}
+              data-testid={`quest-draft-${draft.id}`}
+              className="flex flex-wrap items-center justify-between gap-3 border border-border bg-background px-4 py-3"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground">
+                  {draft.name.trim() || t('drafts.untitled')}
+                </p>
+                <p className="text-xs text-neutral-11">
+                  {t('drafts.edited', {
+                    when: formatRelativeTimeShort(draft.updatedAt),
+                  })}
+                </p>
               </div>
-            ))}
-          </div>
-        )
-      ) : filtered.length === 0 ? (
-        <div
-          className="border border-dashed border-border bg-background-2 px-6 py-10 text-center"
-          data-testid="quest-list-empty"
-        >
-          <p className="text-sm text-neutral-11">{t('subtitle')}</p>
-          {canMutate ? (
-            <Button asChild variant="outline" className="mt-3 rounded-none">
-              <Link href={newQuestHref}>{t('newQuest')}</Link>
-            </Button>
-          ) : null}
-        </div>
-      ) : (
-        <div className={QUEST_LIST_GRID_CLASS}>
-          {filtered.map((quest) => (
-            <QuestCard
-              key={quest.slug}
-              quest={quest}
-              locale={locale}
-              spaceMembers={spaceMembers}
-              href={`/${locale}/dho/${spaceSlug}/quests/${encodeURIComponent(
-                quest.slug,
-              )}`}
-            />
+              <div className="flex items-center gap-2">
+                <Button asChild variant="outline" className="rounded-none">
+                  <Link
+                    href={`/${locale}/dho/${spaceSlug}/quests/new?draft=${draft.id}`}
+                    data-testid={`continue-quest-draft-${draft.id}`}
+                  >
+                    {t('drafts.continue')}
+                  </Link>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  colorVariant="neutral"
+                  className="rounded-none"
+                  onClick={() => setDraftToDelete(draft.id)}
+                  data-testid={`delete-quest-draft-${draft.id}`}
+                >
+                  {t('drafts.delete')}
+                </Button>
+              </div>
+            </div>
           ))}
         </div>
-      )}
+      ) : null}
+
+      <QuestBoard
+        layout={layout}
+        quests={filtered}
+        workflow={workflow}
+        spaceSlug={spaceSlug}
+        spaceMembers={spaceMembers}
+        columnLabel={(column) => t(`filters.${column}`)}
+      />
 
       <Dialog
         open={draftToDelete != null}

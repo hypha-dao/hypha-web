@@ -237,6 +237,18 @@ describe('SignalUpvoteButton', () => {
     expect(ranked.getByTestId('signal-upvote-figure').textContent).toBe('-0.5');
     ranked.unmount();
 
+    const voters = render(
+      <SignalUpvoteButton
+        slug="signal"
+        spaceSlug="myspace"
+        votingMode="token"
+        sort="top-voters"
+        upvotes={fractional}
+      />,
+    );
+    expect(voters.getByTestId('signal-upvote-figure').textContent).toBe('1');
+    voters.unmount();
+
     const headcount = render(
       <SignalUpvoteButton
         slug="signal"

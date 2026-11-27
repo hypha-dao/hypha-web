@@ -61,6 +61,27 @@ describe('signalListImage', () => {
     ).toBe('https://cdn.example.com/roof.jpg');
   });
 
+  it('uses the space banner when the signal has no safe image', () => {
+    expect(
+      signalListImage(
+        { leadImage: null, attachments: [] },
+        'https://cdn.example.com/banner.jpg',
+      ),
+    ).toBe('https://cdn.example.com/banner.jpg');
+    expect(
+      signalListImage(
+        { leadImage: 'https://cdn.example.com/lead.jpg' },
+        'https://cdn.example.com/banner.jpg',
+      ),
+    ).toBe('https://cdn.example.com/lead.jpg');
+    expect(
+      signalListImage(
+        { leadImage: null },
+        '/placeholder/space-lead-image.webp',
+      ),
+    ).toBeNull();
+  });
+
   it('returns nothing when the signal has no safe image', () => {
     expect(
       signalListImage({

@@ -25,6 +25,11 @@ import { SignalTagBadges } from './signal-tag-badges';
 import { SignalOwnerSeen } from './signal-owner-seen';
 import { SignalIndicativeAmounts } from './signal-indicative-amounts';
 import { SignalCategoryTag } from './signal-category-tag';
+import {
+  domainBoardChoices,
+  SignalDomainMark,
+  SignalDomainSelect,
+} from './signal-domain';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import {
   isSignalDueOverdue,
@@ -358,33 +363,28 @@ export function SignalListView({
                       {t('signalListBoard')}
                     </span>
                     {readOnly ? (
-                      <span className="truncate text-sm text-muted-foreground">
-                        {boardName}
-                      </span>
+                      <SignalDomainMark
+                        name={boardName}
+                        color={
+                          workflow.boards.find(
+                            (board) =>
+                              board.slug ===
+                              resolveEffectiveBoard(signal.board, workflow),
+                          )?.color
+                        }
+                      />
                     ) : (
-                      <Select
+                      <SignalDomainSelect
                         value={resolveEffectiveBoard(signal.board, workflow)}
-                        onValueChange={(value) =>
+                        boards={domainBoardChoices(workflow, signal.board)}
+                        onChange={(value) =>
                           onPatch(signal, {
                             board: value,
                           })
                         }
-                      >
-                        <SelectTrigger
-                          className={SIGNAL_LIST_SELECT_TRIGGER_CLASS}
-                        >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {workflow.boards
-                            .filter((board) => !board.archived)
-                            .map((board) => (
-                              <SelectItem key={board.slug} value={board.slug}>
-                                {board.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
+                        ariaLabel={t('signalFormBoard')}
+                        className={SIGNAL_LIST_SELECT_TRIGGER_CLASS}
+                      />
                     )}
                   </div>
 

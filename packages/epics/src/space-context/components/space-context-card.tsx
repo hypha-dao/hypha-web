@@ -66,7 +66,8 @@ export function SpaceContextCard({
   const empty = !body.trim();
   const { lead, rest } = splitLeadParagraph(body);
   const proposalHref =
-    section.status === 'proposed' && section.proposalSlug
+    (section.status === 'proposed' || section.status === 'rejected') &&
+    section.proposalSlug
       ? getProposalPath(locale, spaceSlug, section.proposalSlug)
       : null;
   const notice = sectionNotice(section, t);

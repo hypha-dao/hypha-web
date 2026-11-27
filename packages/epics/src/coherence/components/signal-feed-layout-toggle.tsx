@@ -49,11 +49,15 @@ export function SignalFeedLayoutToggle({
             key={option.value}
             type="button"
             variant={active ? 'default' : 'outline'}
-            colorVariant={active ? 'accent' : 'neutral'}
+            colorVariant="neutral"
             size="sm"
             aria-pressed={active}
             data-testid={option.testId}
-            className={cn('gap-1.5')}
+            className={cn(
+              'h-7 min-h-0 gap-1.5 px-2.5 py-0',
+              active &&
+                '!bg-foreground !text-background hover:!bg-foreground/90',
+            )}
             onClick={() => onChange(option.value)}
           >
             <Icon className="size-3.5" aria-hidden />

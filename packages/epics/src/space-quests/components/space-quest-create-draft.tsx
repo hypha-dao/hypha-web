@@ -13,9 +13,11 @@ import {
   readableQuestErrorMessage,
   stripViewerYouMarker,
   withoutPlaceholderLeadDuplicates,
+  resolveDefaultBoard,
   useCreateAgreementOrchestrator,
   useJwt,
   useMe,
+  useSignalWorkflow,
   useSpaceBySlug,
   type QuestDraftInput,
   type QuestReward,
@@ -27,6 +29,11 @@ import {
   DialogContent,
   DialogDescription,
   DialogTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
@@ -101,6 +108,10 @@ import {
   type QuestCreateCheckpoint,
   type QuestCreateSession,
 } from '../utils/quest-create-session';
+import {
+  questDomainChoices,
+  questDomainDotClass,
+} from '../utils/quest-board-groups';
 
 const LABEL_CLASS =
   'text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-11';
@@ -250,6 +261,17 @@ export function SpaceQuestCreateDraft({
   const [members, setMembers] = useState<EditableQuestMember[]>([]);
   const [helperInlineOpen, setHelperInlineOpen] = useState(true);
   const [targetDate, setTargetDate] = useState<string | null>(null);
+  const [domain, setDomain] = useState<string | null>(null);
+  const { workflow } = useSignalWorkflow(spaceSlug);
+  const domainChoices = useMemo(
+    () => (workflow?.boards?.length ? questDomainChoices(workflow) : []),
+    [workflow],
+  );
+
+  useEffect(() => {
+    if (domain || !workflow?.boards?.length) return;
+    setDomain(resolveDefaultBoard(workflow));
+  }, [domain, workflow]);
 
   const spaceMemberPersons = useMemo(
     () =>
@@ -339,6 +361,7 @@ export function SpaceQuestCreateDraft({
     selectedLeadPersonId: null,
     members: [],
     targetDate: null,
+    domain: null,
     deliverables: [],
   });
 
@@ -370,6 +393,7 @@ export function SpaceQuestCreateDraft({
     selectedLeadPersonId,
     members,
     targetDate,
+    domain,
     deliverables,
   };
   stewardStepIndexRef.current = stewardStepIndex;
@@ -394,6 +418,7 @@ export function SpaceQuestCreateDraft({
       setSelectedLeadPersonId(next.selectedLeadPersonId);
       setMembers(next.members);
       setTargetDate(next.targetDate);
+      setDomain(next.domain ?? null);
       setDeliverables(keptDeliverables);
     },
     [leadName],
@@ -619,6 +644,7 @@ export function SpaceQuestCreateDraft({
     stewardStepIndex,
     draftHydrating,
     submitting,
+    domain,
     successCriteria,
     targetDate,
   ]);
@@ -998,6 +1024,7 @@ export function SpaceQuestCreateDraft({
           (r) => r.amount.trim().length > 0 && r.token.trim().length > 0,
         ),
         targetDate,
+        domain,
         leadPersonId,
         leadName: cleanLeadName,
         milestones: milestones.map((m) => ({
@@ -1063,6 +1090,7 @@ export function SpaceQuestCreateDraft({
           successCriteria: draftPayload.successCriteria,
           rewards: draftPayload.rewards,
           targetDate: draftPayload.targetDate,
+          domain: draftPayload.domain,
           leadPersonId: draftPayload.leadPersonId,
           leadName: draftPayload.leadName,
           status: 'proposed',
@@ -1522,6 +1550,57 @@ export function SpaceQuestCreateDraft({
               </div>
             ) : null}
 
+            {!draftHydrating && domainChoices.length > 0 ? (
+              <div
+                className="max-w-sm space-y-1.5"
+                data-testid="quest-domain-field"
+              >
+                <span className={LABEL_CLASS}>{tDrafts('domain')}</span>
+                <Select
+                  value={domain ?? domainChoices[0]?.slug}
+                  onValueChange={setDomain}
+                >
+                  <SelectTrigger
+                    data-testid="quest-domain-select"
+                    aria-label={tDrafts('domain')}
+                    className="h-10 rounded-none bg-background"
+                  >
+                    <span className="inline-flex min-w-0 items-center gap-2">
+                      <span
+                        className={cn(
+                          'size-2 shrink-0 rounded-full',
+                          questDomainDotClass(
+                            domainChoices.find(
+                              (choice) =>
+                                choice.slug ===
+                                (domain ?? domainChoices[0]?.slug),
+                            )?.color,
+                          ),
+                        )}
+                        aria-hidden
+                      />
+                      <SelectValue />
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {domainChoices.map((choice) => (
+                      <SelectItem key={choice.slug} value={choice.slug}>
+                        <span className="inline-flex items-center gap-2">
+                          <span
+                            className={cn(
+                              'size-2 shrink-0 rounded-full',
+                              questDomainDotClass(choice.color),
+                            )}
+                            aria-hidden
+                          />
+                          {choice.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
             {/* Two-column draft grid (Figma node 6:2) — NO Priority anywhere */}
             {draftHydrating ? (
               <DraftResumeSkeleton />

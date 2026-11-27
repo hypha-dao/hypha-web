@@ -54,6 +54,8 @@ export type QuestDraftStateSnapshot = {
   selectedLeadPersonId: number | null;
   members: EditableQuestMember[];
   targetDate: string | null;
+  /** Signal-workflow board slug. Missing on drafts saved before domains. */
+  domain?: string | null;
   deliverables?: EditableQuestDeliverable[];
 };
 

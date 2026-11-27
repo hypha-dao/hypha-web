@@ -27,6 +27,8 @@ import {
   signalVotingSpaceId,
   useSignalVotingMode,
 } from '../hooks/use-signal-voting-mode';
+import { useCanUpdateSignalTasks } from '../hooks/use-can-update-signal-tasks';
+import { SignalDomainControl } from './signal-domain';
 import { prepareSignalDescriptionMarkdown } from '../utils/signal-description-markdown';
 import { splitSignalMedia } from '../utils/signal-media';
 import { signalDiscussionCount } from '../utils/signal-room-replies';
@@ -200,6 +202,10 @@ export function SignalPage({
     retry: retryVotingMode,
   } = useSignalVotingMode(signalVotingSpaceId(space));
   const { isNonMember, isMembershipPending } = useSignalSpaceMembership(space);
+  const { canUpdateTasks } = useCanUpdateSignalTasks({
+    spaceSlug,
+    web3SpaceId: space?.web3SpaceId ?? undefined,
+  });
   const {
     coherences,
     isLoading: isSignalsLoading,
@@ -439,6 +445,13 @@ export function SignalPage({
             <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <SignalTypeBadge type={signal.type} variant="pill" />
+                <SignalDomainControl
+                  spaceSlug={spaceSlug}
+                  signalSlug={signal.slug}
+                  board={signal.board}
+                  editable={!readOnly && canUpdateTasks}
+                  refresh={refresh}
+                />
                 {priority && priorityLabel ? (
                   <span className="inline-flex items-center gap-1.5 text-1 text-muted-foreground">
                     <span

@@ -120,6 +120,8 @@ export type QuestRecord = {
   successCriteria: string;
   rewards: QuestReward[];
   status: QuestStatus;
+  /** Signal-workflow board slug. Null uses the space default domain. */
+  domain?: string | null;
   targetDate: string | null;
   leadPersonId: number | null;
   leadName: string;
@@ -174,6 +176,8 @@ export type QuestDraftInput = {
   successCriteria: string;
   rewards: QuestReward[];
   targetDate: string | null;
+  /** Signal-workflow board slug. Omitted drafts keep the space default. */
+  domain?: string | null;
   leadPersonId?: number | null;
   leadName: string;
   milestones: Array<{

@@ -19,8 +19,9 @@ export function sectionMatchesFilter(
   filter: SpaceContextFilter,
 ): boolean {
   if (filter === 'all') return true;
-  if (filter === 'ratified') return section.status === 'ratified';
+  if (filter === 'accepted') return section.status === 'ratified';
   if (filter === 'proposed') return section.status === 'proposed';
+  if (filter === 'rejected') return section.status === 'rejected';
   return hasPendingSectionWork(section);
 }
 

@@ -150,6 +150,14 @@ export const schemaCreateSpaceQuest = z.object({
   successCriteria: z.string().max(QUEST_SUCCESS_CRITERIA_LIMIT).default(''),
   rewards: z.array(schemaQuestReward).max(12).default([]),
   targetDate: z.string().trim().max(64).nullable().optional(),
+  domain: z
+    .string()
+    .trim()
+    .min(1)
+    .max(64)
+    .regex(/^[a-z0-9_]+$/)
+    .nullable()
+    .optional(),
   leadPersonId: z.number().int().positive().nullable().optional(),
   leadName: z.string().trim().max(120).default(''),
   // Quests only become active when their Agreements proposal passes.
@@ -175,6 +183,14 @@ export const schemaPatchSpaceQuest = z.object({
   successCriteria: z.string().max(QUEST_SUCCESS_CRITERIA_LIMIT).optional(),
   rewards: z.array(schemaQuestReward).max(12).optional(),
   targetDate: z.string().trim().max(64).nullable().optional(),
+  domain: z
+    .string()
+    .trim()
+    .min(1)
+    .max(64)
+    .regex(/^[a-z0-9_]+$/)
+    .nullable()
+    .optional(),
   leadPersonId: z.number().int().positive().nullable().optional(),
   leadName: z.string().trim().max(120).optional(),
   status: z.enum(QUEST_PATCH_STATUSES).optional(),
@@ -249,6 +265,13 @@ export const schemaQuestCreateDraftPayload = z.object({
     selectedLeadPersonId: z.number().int().positive().nullable(),
     members: z.array(questDraftMember).max(50),
     targetDate: z.string().max(64).nullable(),
+    domain: z
+      .string()
+      .trim()
+      .max(64)
+      .regex(/^[a-z0-9_]*$/)
+      .nullable()
+      .optional(),
     deliverables: z
       .array(
         z.object({

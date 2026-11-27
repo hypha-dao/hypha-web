@@ -8,6 +8,7 @@ import {
   COHERENCE_TYPES,
   COHERENCE_TYPE_OPTIONS,
 } from '@hypha-platform/core/client';
+import { SignalDomainControl } from './signal-domain';
 import { signalOneLiner, type SignalFeedItemProps } from './signal-feed-row';
 import { SignalUpvoteButton } from './signal-upvote-button';
 import { ActionGate } from '../../common/action-capabilities';
@@ -42,13 +43,15 @@ export function SignalFeedCard({
   refresh,
   sort,
   summaryState,
+  canEditDomain = false,
+  spaceBanner,
 }: SignalFeedItemProps) {
   const t = useTranslations('CoherenceTab');
   const about = React.useMemo(
     () => signalOneLiner(signal.description),
     [signal.description],
   );
-  const image = signalListImage(signal);
+  const image = signalListImage(signal, spaceBanner);
 
   return (
     <article
@@ -69,7 +72,16 @@ export function SignalFeedCard({
         ) : null}
       </div>
       <div className="flex flex-1 flex-col gap-2 px-4 pt-4">
-        <SignalCardTypeLabel type={signal.type} />
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <SignalCardTypeLabel type={signal.type} />
+          <SignalDomainControl
+            spaceSlug={spaceSlug}
+            signalSlug={signal.slug}
+            board={signal.board}
+            editable={canEditDomain}
+            refresh={refresh}
+          />
+        </div>
         <h3 className="m-0 text-[18px] font-medium leading-snug tracking-[-0.01em] text-foreground">
           <Link
             href={href}

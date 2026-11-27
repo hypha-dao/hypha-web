@@ -11,6 +11,7 @@ import type {
   SignalVotingMode,
 } from '@hypha-platform/core/client';
 import { cn, stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
+import { SignalDomainControl } from './signal-domain';
 import { SignalTypeBadge } from './signal-type-badge';
 import { SignalUpvoteButton } from './signal-upvote-button';
 import { ActionGate } from '../../common/action-capabilities';
@@ -64,6 +65,9 @@ export type SignalFeedItemProps = {
   refresh?: () => Promise<unknown>;
   sort: SignalSort;
   summaryState?: SignalUpvoteSummaryState;
+  canEditDomain?: boolean;
+  /** Space banner. Shown when the signal has no safe photo of its own. */
+  spaceBanner?: string | null;
 };
 
 export function SignalFeedRow({
@@ -79,6 +83,8 @@ export function SignalFeedRow({
   refresh,
   sort,
   summaryState,
+  canEditDomain = false,
+  spaceBanner,
 }: SignalFeedItemProps) {
   const t = useTranslations('CoherenceTab');
   const format = useFormatter();
@@ -92,7 +98,7 @@ export function SignalFeedRow({
   const media = React.useMemo(() => countSignalMedia(signal), [signal]);
   const created = shortDate(signal.createdAt);
   const comments = signalDiscussionCount(signal.messages, activity);
-  const image = signalListImage(signal);
+  const image = signalListImage(signal, spaceBanner);
   const { creatorDisplayName } = useSignalCreatorMeta({
     creatorId: signal.creatorId,
     createdAt: signal.createdAt,
@@ -141,6 +147,13 @@ export function SignalFeedRow({
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="mb-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <SignalTypeBadge type={signal.type} />
+            <SignalDomainControl
+              spaceSlug={spaceSlug}
+              signalSlug={signal.slug}
+              board={signal.board}
+              editable={canEditDomain}
+              refresh={refresh}
+            />
             {creatorDisplayName || created ? (
               <span className="inline-flex min-w-0 flex-wrap items-center gap-x-1.5 text-[12px] text-muted-foreground">
                 {creatorDisplayName ? (

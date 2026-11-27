@@ -37,6 +37,14 @@ vi.mock('@hypha-platform/core/client', () => ({
   usePeopleBySubs: () => ({ peopleBySub: new Map() }),
   usePersonById: () => ({ person: undefined }),
   useSpaceBySlug: () => ({ space: undefined }),
+  useSignalWorkflow: () => ({ workflow: undefined, isLoading: false }),
+  usePatchCoherenceTask: () => ({ patchTask: vi.fn(), isPatching: false }),
+  applyPendingCoherenceTaskPatch: vi.fn(),
+  resolveEffectiveBoard: (board: string | null | undefined) =>
+    board ?? 'general',
+}));
+vi.mock('../../hooks/use-can-update-signal-tasks', () => ({
+  useCanUpdateSignalTasks: () => ({ canUpdateTasks: false, isLoading: false }),
 }));
 vi.mock('next/link', () => ({
   default: ({

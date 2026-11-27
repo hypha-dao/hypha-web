@@ -556,6 +556,29 @@ describe('saved quest helper entry', () => {
     }
   });
 
+  it('opens the discussion side panel when the quest detail opens', async () => {
+    render(
+      <SpaceQuestDetail
+        spaceSlug="sandbox"
+        questSlug="onboarding"
+        tab="overview"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(harness.openCoherenceChat).toHaveBeenCalledWith(
+        'room-1',
+        'Onboarding',
+        'onboarding',
+        'Keep the saved goal',
+        'sandbox',
+        { channel: 'quest' },
+      );
+    });
+    expect(harness.requestQuestChat).not.toHaveBeenCalled();
+    expect(harness.openHumanChatPanel).not.toHaveBeenCalled();
+  });
+
   it('opens the quest discussion from Open discussion and has no chat icon', async () => {
     for (const status of [
       'active',

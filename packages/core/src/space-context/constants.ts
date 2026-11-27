@@ -49,6 +49,7 @@ export const SPACE_CONTEXT_STATUSES = [
   'not_started',
   'draft',
   'proposed',
+  'rejected',
   'ratified',
 ] as const;
 
@@ -56,8 +57,9 @@ export type SpaceContextStatus = (typeof SPACE_CONTEXT_STATUSES)[number];
 
 export const SPACE_CONTEXT_FILTERS = [
   'all',
-  'ratified',
   'proposed',
+  'accepted',
+  'rejected',
   'drafts',
 ] as const;
 
@@ -222,7 +224,8 @@ export function statusMatchesFilter(
   filter: SpaceContextFilter,
 ): boolean {
   if (filter === 'all') return true;
-  if (filter === 'ratified') return status === 'ratified';
+  if (filter === 'accepted') return status === 'ratified';
   if (filter === 'proposed') return status === 'proposed';
+  if (filter === 'rejected') return status === 'rejected';
   return status === 'draft' || status === 'not_started';
 }

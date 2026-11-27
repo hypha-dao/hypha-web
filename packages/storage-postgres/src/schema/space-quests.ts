@@ -67,6 +67,8 @@ export const spaceQuests = pgTable(
     successCriteria: text('success_criteria').notNull().default(''),
     rewards: jsonb('rewards').$type<QuestRewardItem[]>().notNull().default([]),
     status: text('status').notNull().default('proposed'),
+    /** Signal-workflow board slug. Null uses the space default domain. */
+    domain: text('domain'),
     targetDate: text('target_date'),
     leadPersonId: integer('lead_person_id').references(() => people.id, {
       onDelete: 'set null',

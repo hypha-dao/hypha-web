@@ -132,9 +132,13 @@ describe('upvote cell shared by the list and the detail', () => {
 });
 
 describe('feed title search', () => {
-  it('filters the full fetched list by title and keeps sort and time frame', () => {
+  it('filters the full fetched list by title, people, and type, then ranks across all time', () => {
     expect(feedSource).toContain('filterSignalsByTitle');
-    expect(feedSource).toContain('rankSignals(matched, { sort, timeFrame })');
+    expect(feedSource).toContain(
+      "rankSignals(matched, { sort, timeFrame: 'all' })",
+    );
+    expect(feedSource).toContain('SIGNAL_PERSON_QUERY_KEY');
+    expect(feedSource).toContain('canonicalSignalType');
     expect(feedSource).toContain("SIGNAL_TITLE_QUERY_KEY = 'q'");
     expect(feedSource).not.toContain('search:');
     expect(feedSource).toContain('signalTitleNoResults');
@@ -150,6 +154,10 @@ describe('feed title search', () => {
     expect(filtersSource).toContain('rootClassName="min-w-0 flex-1"');
     expect(filtersSource).not.toContain('sm:max-w-sm');
     expect(filtersSource).toContain('flex flex-col gap-3');
+    expect(filtersSource).toContain('signal-people-pill');
+    expect(filtersSource).toContain('signal-type-pill');
+    expect(filtersSource).toContain('COHERENCE_OVERVIEW_TYPES');
+    expect(filtersSource).not.toContain('signal-time-frame-pill');
     expect(feedSource).toContain('SignalFeedLayoutToggle');
     expect(feedSource).toContain('writeStoredSignalFeedLayout');
     const layoutToggleSource = readFileSync(

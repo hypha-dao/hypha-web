@@ -338,7 +338,7 @@ describe('signalUpvoteCellMeasure', () => {
     ).toEqual(['crowd', 'down']);
   });
 
-  it('shows the weighted net on every sort in a token space', () => {
+  it('shows the voter count for Top by voters, and voice for the other sorts in a token space', () => {
     const half = (10n ** 18n / 2n).toString();
     const token = {
       ...crowd.upvotes,
@@ -347,7 +347,14 @@ describe('signalUpvoteCellMeasure', () => {
       upvoteCount: 1,
       tokenDecimals: 18,
     };
-    for (const sort of ['new', 'top-voters', 'top-power'] as const) {
+    expect(
+      signalUpvoteCellMeasure({
+        sort: 'top-voters',
+        votingMode: 'token',
+        upvotes: token,
+      }),
+    ).toEqual({ kind: 'count', count: 1 });
+    for (const sort of ['new', 'top-power'] as const) {
       expect(
         signalUpvoteCellMeasure({
           sort,

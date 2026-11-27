@@ -26,6 +26,7 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { Archive, ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
+import { SignalDomainDot } from './signal-domain';
 
 const WORKFLOW_COLORS = [
   'neutral',
@@ -358,15 +359,21 @@ export const SignalWorkflowSettings = React.forwardRef<
                 </Button>
               }
             >
-              <Input
-                value={board.name}
-                onChange={(event) =>
-                  updateBoard(index, { name: event.target.value })
-                }
-                placeholder={t('signalWorkflowNamePlaceholder')}
-                aria-label={t('signalFormBoard')}
-                className={cn(board.archived && 'opacity-60')}
-              />
+              <div className="flex items-center gap-2">
+                <SignalDomainDot color={board.color} />
+                <Input
+                  value={board.name}
+                  onChange={(event) =>
+                    updateBoard(index, { name: event.target.value })
+                  }
+                  placeholder={t('signalWorkflowNamePlaceholder')}
+                  aria-label={t('signalFormBoard')}
+                  className={cn(
+                    'min-w-0 flex-1',
+                    board.archived && 'opacity-60',
+                  )}
+                />
+              </div>
               <Select
                 value={board.color}
                 onValueChange={(value) => updateBoard(index, { color: value })}

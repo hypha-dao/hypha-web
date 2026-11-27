@@ -64,16 +64,26 @@ function safeMediaUrl(url: string | null | undefined): string | null {
   return null;
 }
 
-/** First safe image, lead first. A rejected lead falls through to an attachment. */
-export function signalListImage(input?: {
-  leadImage?: string | null;
-  attachments?: SignalMediaItem[] | null;
-}): string | null {
+/**
+ * First safe signal image, lead first. A rejected lead falls through to an
+ * attachment. With none, the space banner is used. The Hypha placeholder is
+ * not a banner, so callers pass only `space.leadImage`.
+ */
+export function signalListImage(
+  input?: {
+    leadImage?: string | null;
+    attachments?: SignalMediaItem[] | null;
+  },
+  spaceBanner?: string | null,
+): string | null {
   for (const image of splitSignalMedia(input).images) {
     const safe = safeMediaUrl(image.url);
     if (safe) return safe;
   }
-  return null;
+  const banner = safeMediaUrl(spaceBanner);
+  // The shared placeholder is the Hypha mark, not this space's banner.
+  if (!banner || banner === '/placeholder/space-lead-image.webp') return null;
+  return banner;
 }
 
 export function countSignalMedia(input?: {

@@ -28,6 +28,7 @@ import type { Control } from 'react-hook-form';
 import { z } from 'zod';
 import {
   HYPHA_ROOM_TYPES,
+  COHERENCE_OVERVIEW_TYPES,
   COHERENCE_SIGNAL_TYPES,
   COHERENCE_TYPE_OPTIONS,
   CoherenceTag,
@@ -76,6 +77,7 @@ import { mutate } from 'swr';
 import { useParams, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { PersonAvatar } from '../../people/components/person-avatar';
+import { domainBoardChoices, SignalDomainSelect } from './signal-domain';
 import { SignalTypePickerGrid, SignalTypeSection } from './signal-type-section';
 import { ButtonClose } from '../../common/button-close';
 import { ButtonBack } from '../../common/button-back';
@@ -490,6 +492,12 @@ export const CreateSignalForm = ({
     form.reset(formDefaults);
   }, [form, formDefaults, mode, signalSlug]);
   React.useEffect(() => {
+    if (!workflow || form.getValues('board')) return;
+    form.setValue('board', resolveDefaultBoard(workflow), {
+      shouldDirty: false,
+    });
+  }, [form, workflow]);
+  React.useEffect(() => {
     if (mode === 'edit' || !person?.id) return;
     const nextCreatorId = resolveSignalFormCreatorId({
       mode: 'create',
@@ -557,10 +565,16 @@ export const CreateSignalForm = ({
 
   useScrollToErrors(form, formRef);
 
+  const storedType = form.watch('type');
   const typeOptions = React.useMemo(() => {
-    return COHERENCE_TYPE_OPTIONS.filter((option) =>
-      (COHERENCE_SIGNAL_TYPES as readonly string[]).includes(option.type),
-    ).map(({ icon, type }) => ({
+    return COHERENCE_TYPE_OPTIONS.filter((option) => {
+      if (
+        (COHERENCE_OVERVIEW_TYPES as readonly string[]).includes(option.type)
+      ) {
+        return true;
+      }
+      return option.type === storedType;
+    }).map(({ icon, type }) => ({
       icon: icon as LucideReactIcon,
       title: t(`types.${type}` as never),
       description: t(`typeDescriptions.${type}` as never),
@@ -568,7 +582,7 @@ export const CreateSignalForm = ({
       colorVariant: 'subtle' as CardButtonColorVariant,
       titleColor: 'var(--foreground)',
     }));
-  }, [t]);
+  }, [storedType, t]);
 
   // `person` can resolve after mount, so the creator default has to be applied
   // once it lands rather than only through `defaultValues`. Never copy the
@@ -1249,6 +1263,36 @@ export const CreateSignalForm = ({
                 )}
               />
             </SignalTypeSection>
+            {workflow ? (
+              <FormField
+                control={form.control}
+                name="board"
+                render={({ field }) => {
+                  const choices = domainBoardChoices(workflow, field.value);
+                  if (choices.length === 0) return <></>;
+                  const value =
+                    field.value &&
+                    choices.some((board) => board.slug === field.value)
+                      ? field.value
+                      : resolveDefaultBoard(workflow);
+                  return (
+                    <FormItem className="max-w-sm" data-signal-field="domain">
+                      <FormLabel className="text-foreground">
+                        {t('signalFormBoard')}
+                      </FormLabel>
+                      <SignalDomainSelect
+                        value={value}
+                        boards={choices}
+                        onChange={field.onChange}
+                        disabled={isMutating}
+                        ariaLabel={t('signalFormBoard')}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+            ) : null}
             {mode === 'create' && votingModeStatus === 'error' ? (
               <section className="flex flex-col gap-3 border-t border-border pt-8">
                 <Label className="text-foreground">

@@ -107,8 +107,9 @@ type SignalUpvoteButtonProps = {
   archived?: boolean;
   /**
    * Kept so list and detail share one control. Layout does not change with it.
-   * Token spaces show the all-time weighted net. One member, one vote shows
-   * the integer net count. The list time window does not change the figure.
+   * Top by voters shows the net voter count. Top by voting power shows voice.
+   * With no sort, a token space shows voice and one member, one vote shows
+   * the headcount. The list time window does not change the figure.
    */
   variant?: 'feed' | 'page';
   sort?: SignalSort;
@@ -141,7 +142,7 @@ export function SignalUpvoteButton({
   disabled = false,
   archived = false,
   variant = 'feed',
-  sort = 'top-voters',
+  sort = 'new',
   summaryState = 'ready',
   layout = 'row',
   className,
