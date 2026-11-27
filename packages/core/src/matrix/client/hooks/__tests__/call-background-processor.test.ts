@@ -51,37 +51,72 @@ describe('attachCallBackgroundProcessor', () => {
 });
 
 describe('recoverCameraWithoutProcessor', () => {
-  function capture(live = true) {
-    return { readyState: live ? 'live' : 'ended', stop: vi.fn() };
+  type FakeCapture = { readyState: 'live' | 'ended'; stop: () => void };
+  function capture(live = true): FakeCapture {
+    const c: FakeCapture = {
+      readyState: live ? 'live' : 'ended',
+      stop: () => {
+        c.readyState = 'ended';
+      },
+    };
+    return c;
   }
+  const stream = (...tracks: FakeCapture[]) => ({
+    getVideoTracks: () => tracks,
+  });
 
-  it('stops the capture left by the failed restart, then turns the camera on', async () => {
-    // Regression: livekit-client does not stop the new capture when the processor restart throws,
-    // so it would keep running after a later mute.
+  /**
+   * Models livekit-client 2.20.0 after a failed processor restart on unmute: `restart()` stopped
+   * the previous capture and left the new one orphaned in `mediaStream`; `stopProcessor()`
+   * replaces `mediaStream` with the previous track; `setCameraEnabled(true)` acquires a fresh
+   * capture; a later mute stops the track's own capture.
+   */
+  function failedRestartState() {
     const previous = capture(false);
     const orphan = capture(true);
-    const order: string[] = [];
-    orphan.stop.mockImplementation(() => order.push('stop-orphan'));
+    const captures: FakeCapture[] = [previous, orphan];
+    let own = previous;
     const track = {
+      mediaStream: stream(orphan) as { getVideoTracks: () => FakeCapture[] },
       stopProcessor: vi.fn(async () => {
-        order.push('stop-processor');
+        track.mediaStream = stream(own);
       }),
-      mediaStreamTrack: previous,
-      mediaStream: { getVideoTracks: () => [previous, orphan] },
     };
     const participant = {
-      setCameraEnabled: vi.fn(async () => {
-        order.push('camera-on');
+      setCameraEnabled: vi.fn(async (enabled: boolean) => {
+        if (enabled) {
+          own = capture(true);
+          captures.push(own);
+          track.mediaStream = stream(own);
+        } else {
+          own.stop();
+        }
       }),
     };
+    return { track, participant, captures, orphan };
+  }
+
+  it('stops the orphaned capture although stopProcessor replaces the stream', async () => {
+    // Regressions: livekit-client never stops the capture of a failed restart, and reading
+    // `mediaStream` after `stopProcessor()` would only see the previous track.
+    const { track, participant, orphan } = failedRestartState();
     await recoverCameraWithoutProcessor(
       participant,
       track as unknown as LocalVideoTrack,
     );
-    expect(orphan.stop).toHaveBeenCalledTimes(1);
-    expect(previous.stop).not.toHaveBeenCalled();
-    expect(order).toEqual(['stop-processor', 'stop-orphan', 'camera-on']);
+    expect(track.stopProcessor).toHaveBeenCalledTimes(1);
+    expect(orphan.readyState).toBe('ended');
     expect(participant.setCameraEnabled).toHaveBeenCalledWith(true);
+  });
+
+  it('leaves no capture running after a later mute', async () => {
+    const { track, participant, captures } = failedRestartState();
+    await recoverCameraWithoutProcessor(
+      participant,
+      track as unknown as LocalVideoTrack,
+    );
+    await participant.setCameraEnabled(false);
+    expect(captures.every((c) => c.readyState === 'ended')).toBe(true);
   });
 
   it('copes with no stream and a failing stopProcessor', async () => {
@@ -91,7 +126,6 @@ describe('recoverCameraWithoutProcessor', () => {
         throw new Error('already stopped');
       }),
       mediaStream: undefined,
-      mediaStreamTrack: capture(true),
     } as unknown as LocalVideoTrack);
     expect(participant.setCameraEnabled).toHaveBeenCalledWith(true);
   });

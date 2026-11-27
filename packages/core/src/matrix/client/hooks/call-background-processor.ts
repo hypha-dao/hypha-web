@@ -294,20 +294,19 @@ export function warmUpCallBackgroundEffect(): Promise<void> {
  * Turns the camera on without our processor after the processor failed to restart on unmute.
  * livekit-client acquires the new capture before restarting the processor and does not stop it
  * when that restart throws (`LocalTrack.setMediaStreamTrack`), so that orphaned capture is stopped
- * here; otherwise it would keep the camera running after a later mute.
+ * here; otherwise it would keep the camera running after a later mute. The stream is read before
+ * `stopProcessor()`, which replaces `track.mediaStream` with the previous track (2.20.0
+ * `internalStopProcessor`). The previous track was already stopped by `restart()`, so every capture
+ * still live in that snapshot is the orphan.
  */
 export async function recoverCameraWithoutProcessor(
   participant: { setCameraEnabled: (enabled: boolean) => Promise<unknown> },
-  track: Pick<
-    LocalVideoTrack,
-    'stopProcessor' | 'mediaStream' | 'mediaStreamTrack'
-  >,
+  track: Pick<LocalVideoTrack, 'stopProcessor' | 'mediaStream'>,
 ): Promise<void> {
+  const captures = track.mediaStream?.getVideoTracks() ?? [];
   await track.stopProcessor().catch(() => undefined);
-  for (const capture of track.mediaStream?.getVideoTracks() ?? []) {
-    if (capture !== track.mediaStreamTrack && capture.readyState === 'live') {
-      capture.stop();
-    }
+  for (const capture of captures) {
+    if (capture.readyState === 'live') capture.stop();
   }
   await participant.setCameraEnabled(true);
 }
