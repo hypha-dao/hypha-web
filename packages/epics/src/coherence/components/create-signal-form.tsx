@@ -463,9 +463,10 @@ export const CreateSignalForm = ({
       dueAt: initialValues?.dueAt ?? null,
       progressStatus:
         initialValues?.progressStatus ?? DEFAULT_SIGNAL_PROGRESS_STATUS,
-      board:
-        initialValues?.board ??
-        (workflow ? resolveDefaultBoard(workflow) : null),
+      // Stored board only. The default board is resolved on save (edit) or by
+      // the server (create), so the space workflow loading late or after a
+      // retry never rebuilds the defaults and resets unsaved edits.
+      board: initialValues?.board ?? null,
       assigneeIds: initialValues?.assigneeIds ?? [],
       indicativePayouts:
         initialValues?.indicativePayouts &&
@@ -477,7 +478,7 @@ export const CreateSignalForm = ({
       attachments: initialValues?.attachments ?? [],
       sharedWithNetwork: initialValues?.sharedWithNetwork ?? false,
     }),
-    [initialValues, mode, person?.id, spaceId, workflow],
+    [initialValues, mode, person?.id, spaceId],
   );
 
   const formRef = React.useRef<HTMLFormElement>(null);
