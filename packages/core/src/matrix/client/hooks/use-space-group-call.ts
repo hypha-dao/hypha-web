@@ -24,9 +24,15 @@ import {
   CallBackgroundImageError,
   type CallBackgroundProcessorHooks,
   getCallBackgroundProcessor,
+  recoverCameraWithoutProcessor,
   switchCallBackgroundEffect,
   warmUpCallBackgroundEffect,
 } from './call-background-processor';
+import {
+  type BackgroundReconcileOutcome,
+  type BackgroundReconcilePass,
+  createBackgroundReconciler,
+} from './call-background-reconciler';
 import { publishScreenShare } from './screenshare-publish-settings';
 import {
   MATRIX_RTC_SESSION_EVENT,
@@ -504,8 +510,18 @@ export function useSpaceGroupCall(
   );
   /** Room whose camera the effect follows (set on camera-on, before the join completes). */
   const backgroundRoomRef = useRef<LiveKitRoom | null>(null);
-  /** One reconcile at a time; `generation` bumps on every request so stale work is dropped. */
-  const backgroundReconcileRef = useRef({ running: false, generation: 0 });
+  /** The pass, set below; the reconciler calls it through this ref. */
+  const reconcileBackgroundEffectOnceRef =
+    useRef<BackgroundReconcilePass | null>(null);
+  /** One ordered path for every effect change (see `call-background-reconciler.ts`). */
+  const backgroundReconcilerRef = useRef(
+    createBackgroundReconciler(
+      (trigger, isSuperseded) =>
+        reconcileBackgroundEffectOnceRef.current?.(trigger, isSuperseded) ??
+        Promise.resolve('done'),
+      { epoch: () => cameraRequestEpochRef.current },
+    ),
+  );
   const [
     unsupportedVoiceProcessingConstraints,
     setUnsupportedVoiceProcessingConstraints,
@@ -1403,7 +1419,7 @@ export function useSpaceGroupCall(
       setIsLocalVideoMuted(true);
       cameraRequestEpochRef.current += 1;
       backgroundRoomRef.current = null;
-      backgroundReconcileRef.current.generation += 1;
+      backgroundReconcilerRef.current.invalidate();
       setBackgroundEffectStatus('idle');
       backgroundFrameDropDetectorRef.current.reset();
       setBackgroundEffectSlow(false);
@@ -1500,7 +1516,7 @@ export function useSpaceGroupCall(
     async (
       trigger: string,
       isSuperseded: () => boolean,
-    ): Promise<'done' | 'superseded' | 'retry'> => {
+    ): Promise<BackgroundReconcileOutcome> => {
       const lkRoom = backgroundRoomRef.current ?? liveKitRoomRef.current;
       const publication = lkRoom?.localParticipant.getTrackPublication(
         Track.Source.Camera,
@@ -1598,35 +1614,16 @@ export function useSpaceGroupCall(
     ],
   );
 
+  reconcileBackgroundEffectOnceRef.current = reconcileBackgroundEffectOnce;
   /**
    * #2563: the single, ordered path for every effect change on the camera (camera-on, choice,
-   * space or own images, rejoin). Requests made while a pass runs make it run again with the
-   * latest state, so an older image can never override a newer choice and a new camera track
+   * space or own images, rejoin). Requests made while a pass runs each get a pass afterwards with
+   * the latest state, so an older image can never override a newer choice and a new camera track
    * (rejoin) always gets its own pass.
    */
   const reconcileBackgroundEffect = useCallback(
-    async (trigger: string) => {
-      const state = backgroundReconcileRef.current;
-      state.generation += 1;
-      if (state.running) return;
-      state.running = true;
-      try {
-        for (let pass = 0; pass < 5; pass += 1) {
-          const generation = state.generation;
-          const epoch = cameraRequestEpochRef.current;
-          const outcome = await reconcileBackgroundEffectOnce(
-            trigger,
-            () =>
-              state.generation !== generation ||
-              cameraRequestEpochRef.current !== epoch,
-          );
-          if (state.generation === generation && outcome !== 'retry') break;
-        }
-      } finally {
-        state.running = false;
-      }
-    },
-    [reconcileBackgroundEffectOnce],
+    (trigger: string) => backgroundReconcilerRef.current.request(trigger),
+    [],
   );
   reconcileBackgroundEffectRef.current = reconcileBackgroundEffect;
 
@@ -1658,8 +1655,7 @@ export function useSpaceGroupCall(
         logCallDebug('background-effect:restart-failed', {
           message: err instanceof Error ? err.message : String(err),
         });
-        await track.stopProcessor().catch(() => undefined);
-        await participant.setCameraEnabled(true);
+        await recoverCameraWithoutProcessor(participant, track);
         setBackgroundEffectStatus('failed');
         return true;
       }

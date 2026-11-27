@@ -171,6 +171,11 @@ async function attachProcessor(
   let processor: BackgroundProcessorWrapper | null = null;
   try {
     processor = await createProcessor(mode, hooks);
+    // Loading the package can take a while on first use: check again right before attaching.
+    if (!shouldCommit()) {
+      await processor.destroy().catch(() => undefined);
+      return false;
+    }
     const pending = track.setProcessor(processor);
     try {
       await withTimeout(pending, PROCESSOR_START_TIMEOUT_MS);
@@ -283,4 +288,26 @@ export function warmUpCallBackgroundEffect(): Promise<void> {
     throw err;
   });
   return warmUpPromise;
+}
+
+/**
+ * Turns the camera on without our processor after the processor failed to restart on unmute.
+ * livekit-client acquires the new capture before restarting the processor and does not stop it
+ * when that restart throws (`LocalTrack.setMediaStreamTrack`), so that orphaned capture is stopped
+ * here; otherwise it would keep the camera running after a later mute.
+ */
+export async function recoverCameraWithoutProcessor(
+  participant: { setCameraEnabled: (enabled: boolean) => Promise<unknown> },
+  track: Pick<
+    LocalVideoTrack,
+    'stopProcessor' | 'mediaStream' | 'mediaStreamTrack'
+  >,
+): Promise<void> {
+  await track.stopProcessor().catch(() => undefined);
+  for (const capture of track.mediaStream?.getVideoTracks() ?? []) {
+    if (capture !== track.mediaStreamTrack && capture.readyState === 'live') {
+      capture.stop();
+    }
+  }
+  await participant.setCameraEnabled(true);
 }
