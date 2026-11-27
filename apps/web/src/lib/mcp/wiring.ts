@@ -1,5 +1,7 @@
 import 'server-only';
+import { headers } from 'next/headers';
 import { after } from 'next/server';
+import { checkRateLimit } from '@vercel/firewall';
 import {
   loadAuthServerConfig,
   allowedScopesForResource,
@@ -7,9 +9,6 @@ import {
   type AuthServerDisabled,
 } from '@hypha-platform/auth-server/server';
 import {
-  SIGNAL_CREATE_LIMITS,
-  asWriteRateLimiter,
-  createMemoryWriteRateLimiter,
   createSignal,
   failure,
   getAbsoluteAppUrl,
@@ -26,6 +25,10 @@ import {
   type WriteRateLimiter,
 } from '@hypha-platform/core/server';
 import { createRateSlot } from '../authorize-request';
+import {
+  createFirewallWriteRateLimiter,
+  signalCreateWindows,
+} from '../write-rate-limit';
 import { loadMcpConfig, type AuthServerView } from './config';
 import { createMcpRequestHandlers } from './request-handler';
 
@@ -55,12 +58,19 @@ function getMcpConfig() {
 // A coarse per-instance safety net; the platform firewall rule is the real flood control.
 const slot = createRateSlot({ limit: 120, windowMs: 60_000 });
 
-// Writes have their own, much tighter budget per person (in memory, per instance, #2744).
-const signalCreateLimiter = asWriteRateLimiter(
-  createMemoryWriteRateLimiter(SIGNAL_CREATE_LIMITS),
-);
+// Writes have their own, much tighter budget per person (#2744): firewall rules where configured
+// in production, else in memory per instance. Built on first use, so the environment is read at
+// run time.
+let signalCreateLimiter: WriteRateLimiter | undefined;
 function getSignalCreateLimiter(): WriteRateLimiter {
-  return signalCreateLimiter;
+  return (signalCreateLimiter ??= createFirewallWriteRateLimiter(
+    signalCreateWindows(process.env),
+    {
+      check: checkRateLimit,
+      requestHeaders: headers,
+      production: process.env.NODE_ENV === 'production',
+    },
+  ));
 }
 
 export const mcpHandlers = createMcpRequestHandlers({
