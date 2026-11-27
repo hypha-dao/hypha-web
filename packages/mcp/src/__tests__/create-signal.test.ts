@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, type Mock } from 'vitest';
 import type { CreatedSignal } from '@hypha-platform/core/server';
 import { buildToolLogLine } from '../log';
 import { ERRORS } from '../descriptions';
@@ -50,8 +50,12 @@ async function call(
   }
 }
 
+/** Loosely typed on purpose: tests swap in failures, which the success type would reject. */
 const enabled = (
-  createSignal = vi.fn(async () => ({ ok: true as const, data: created() })),
+  createSignal: Mock = vi.fn(async () => ({
+    ok: true as const,
+    data: created(),
+  })),
 ) => {
   const made = makeDeps({ writesEnabled: true }, { createSignal });
   return { ...made, createSignal };
