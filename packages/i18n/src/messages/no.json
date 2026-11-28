@@ -4734,7 +4734,7 @@
     "boardAll": "Alle signaler",
     "boardDelete": "Slett tavlen {boardName}",
     "signalViewBoard": "Kanban",
-    "signalWorkflowSettings": "Konfigurer statuser og tavler",
+    "signalWorkflowSettings": "Konfigurer domener",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "Liste",
     "signalViewGrid": "Upvote",
@@ -4787,7 +4787,7 @@
     "signalFormUploadFailed": "Kunne ikke laste opp filen. Prøv igjen.",
     "scheduleOnCalendar": "Planlegg i kalenderen",
     "signalWorkflowSettingsTitle": "Signalarbeidsflyt",
-    "signalWorkflowSettingsDescription": "Tilpass Kanban-kolonner (statuser) og domener for signaler i dette rommet.",
+    "signalWorkflowSettingsDescription": "Velg domenene signaler i dette rommet kan tilhøre.",
     "signalWorkflowStatuses": "Kanban-statuser",
     "signalWorkflowBoards": "Domene",
     "signalWorkflowAddStatus": "Legg til status",
@@ -4817,7 +4817,13 @@
       "accent": "Blå",
       "warn": "Rav",
       "success": "Grønn",
-      "error": "Rød"
+      "error": "Rød",
+      "sky": "Himmelblå",
+      "teal": "Blågrønn",
+      "indigo": "Indigo",
+      "purple": "Lilla",
+      "pink": "Rosa",
+      "orange": "Oransje"
     },
     "spaceMemoryTimelineLabel": "Romminnehistorikk",
     "usedOnThisBoard": "Brukt på dette brettet",
@@ -4918,6 +4924,8 @@
     "signalFilterAllPeople": "Alle personer",
     "signalFilterType": "Signaltype",
     "signalFilterAllTypes": "Alle typer",
+    "signalFilterDomain": "Etter domene",
+    "signalFilterAllDomains": "Alle domener",
     "signalTimeFrame": "Tidsrom",
     "signalTimeFrameToday": "I dag",
     "signalTimeFrameWeek": "Denne uken",
@@ -5958,7 +5966,7 @@
     "empty": {
       "title": "Ingen oppdrag ennå",
       "description": "Oppdrag er fokusert arbeid med et mål, medlemmer og milepæler. Foreslå ett når dette området er klart til å forplikte seg.",
-      "filtered": "Ingen oppdrag samsvarer med dette søket."
+      "filtered": "Ingen oppdrag samsvarer med disse filtrene."
     },
     "searchPlaceholder": "Søk i oppdrag",
     "domain": "Domene",
@@ -5974,7 +5982,12 @@
       "completed": "Fullført",
       "rejected": "Avvist",
       "drafts": "Mine utkast",
-      "status": "Status"
+      "status": "Status",
+      "label": "Filter",
+      "people": "Etter personer",
+      "allPeople": "Alle personer",
+      "domain": "Etter domene",
+      "allDomains": "Alle domener"
     },
     "overview": {
       "goal": "Mål",

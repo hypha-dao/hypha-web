@@ -8,11 +8,14 @@ import {
   canonicalSignalType,
   COHERENCE_OVERVIEW_TYPES,
   DEFAULT_SIGNAL_SORT,
+  DEFAULT_SIGNAL_WORKFLOW,
   filterSignalsByTitle,
   parseSignalSort,
   rankSignals,
+  resolveEffectiveBoard,
   signalListUpvoteSummaryState,
   useFindCoherences,
+  useSignalWorkflow,
   useSpaceBySlug,
   type CoherenceOverviewType,
   type SignalSort,
@@ -31,6 +34,7 @@ import {
   signalVotingSpaceId,
   useSignalVotingMode,
 } from '../hooks/use-signal-voting-mode';
+import { domainBoardChoices } from './signal-domain';
 import {
   SignalFeedFilters,
   type SignalFeedPerson,
@@ -53,6 +57,7 @@ export const SIGNAL_SORT_QUERY_KEY = 'sort';
 export const SIGNAL_TITLE_QUERY_KEY = 'q';
 export const SIGNAL_PERSON_QUERY_KEY = 'person';
 export const SIGNAL_TYPE_QUERY_KEY = 'type';
+export const SIGNAL_DOMAIN_QUERY_KEY = 'domain';
 const ARCHIVED_QUERY_KEY = 'archived';
 
 function parsePersonId(raw: string | null): number | null {
@@ -156,6 +161,17 @@ export function CoherenceBlock({
   const sort = parseSignalSort(searchParams.get(SIGNAL_SORT_QUERY_KEY));
   const personId = parsePersonId(searchParams.get(SIGNAL_PERSON_QUERY_KEY));
   const signalType = parseOverviewType(searchParams.get(SIGNAL_TYPE_QUERY_KEY));
+  const domainSlug = searchParams.get(SIGNAL_DOMAIN_QUERY_KEY)?.trim() || null;
+  const { workflow } = useSignalWorkflow(spaceSlug);
+  const workflowConfig = workflow ?? DEFAULT_SIGNAL_WORKFLOW;
+  const domains = React.useMemo(
+    () =>
+      domainBoardChoices(workflowConfig, domainSlug).map((board) => ({
+        slug: board.slug,
+        name: board.name,
+      })),
+    [domainSlug, workflowConfig],
+  );
   const [people, setPeople] = React.useState<SignalFeedPerson[]>([]);
   React.useEffect(() => {
     if (!searchParams.has(ARCHIVED_QUERY_KEY)) return;
@@ -196,6 +212,11 @@ export function CoherenceBlock({
   const handleTypeChange = React.useCallback(
     (next: CoherenceOverviewType | null) =>
       replaceQuery(SIGNAL_TYPE_QUERY_KEY, next ?? '', ''),
+    [replaceQuery],
+  );
+  const handleDomainChange = React.useCallback(
+    (next: string | null) =>
+      replaceQuery(SIGNAL_DOMAIN_QUERY_KEY, next ?? '', ''),
     [replaceQuery],
   );
   const titleQuery = searchParams.get(SIGNAL_TITLE_QUERY_KEY) ?? '';
@@ -244,11 +265,25 @@ export function CoherenceBlock({
         if (signalType && canonicalSignalType(signal.type) !== signalType) {
           return false;
         }
+        if (
+          domainSlug &&
+          resolveEffectiveBoard(signal.board, workflowConfig) !== domainSlug
+        ) {
+          return false;
+        }
         return true;
       },
     );
     return rankSignals(matched, { sort, timeFrame: 'all' });
-  }, [personId, signalType, signals, sort, titleQuery]);
+  }, [
+    domainSlug,
+    personId,
+    signalType,
+    signals,
+    sort,
+    titleQuery,
+    workflowConfig,
+  ]);
   const activity = useSignalRoomActivity(ranked);
   const upvoteSummaryState = signalListUpvoteSummaryState({
     hasSettledList: Boolean(signals),
@@ -298,6 +333,9 @@ export function CoherenceBlock({
         onPersonChange={handlePersonChange}
         signalType={signalType}
         onTypeChange={handleTypeChange}
+        domainSlug={domainSlug}
+        domains={domains}
+        onDomainChange={handleDomainChange}
         titleQuery={titleInput}
         onTitleQueryChange={onTitleChange}
         action={

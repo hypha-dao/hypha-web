@@ -155,7 +155,10 @@ describe('feed title search', () => {
     expect(filtersSource).not.toContain('sm:max-w-sm');
     expect(filtersSource).toContain('flex flex-col gap-3');
     expect(filtersSource).toContain('signal-people-pill');
+    expect(filtersSource).toContain('signal-domain-pill');
     expect(filtersSource).toContain('signal-type-pill');
+    expect(feedSource).toContain('SIGNAL_DOMAIN_QUERY_KEY');
+    expect(feedSource).toContain('resolveEffectiveBoard');
     expect(filtersSource).toContain('COHERENCE_OVERVIEW_TYPES');
     expect(filtersSource).not.toContain('signal-time-frame-pill');
     expect(feedSource).toContain('SignalFeedLayoutToggle');

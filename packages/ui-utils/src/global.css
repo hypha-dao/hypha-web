@@ -16,6 +16,7 @@
 @import './theme/colors/neutral.css';
 @import './theme/colors/success.css';
 @import './theme/colors/warning.css';
+@import './theme/colors/domain.css';
 
 @import './theme/tokens/color.css';
 @import './theme/tokens/space.css';
@@ -170,6 +171,14 @@
   --color-neutral-10: var(--neutral-10);
   --color-neutral-11: var(--neutral-11);
   --color-neutral-12: var(--neutral-12);
+
+  /* Domain dots beyond the five semantic colors */
+  --color-domain-sky: var(--domain-sky);
+  --color-domain-teal: var(--domain-teal);
+  --color-domain-indigo: var(--domain-indigo);
+  --color-domain-purple: var(--domain-purple);
+  --color-domain-pink: var(--domain-pink);
+  --color-domain-orange: var(--domain-orange);
 
   /* Warning Colors */
   --color-warning: var(--warning);

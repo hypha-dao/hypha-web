@@ -45,6 +45,7 @@ const ITEM_CLASS =
 
 const ALL_PEOPLE = 'all';
 const ALL_TYPES = 'all';
+const ALL_DOMAINS = 'all';
 
 type FilterPillProps<T extends string> = {
   label: string;
@@ -55,7 +56,7 @@ type FilterPillProps<T extends string> = {
   testId: string;
 };
 
-function FilterPill<T extends string>({
+export function FilterPill<T extends string>({
   label,
   heading,
   value,
@@ -123,6 +124,9 @@ export type SignalFeedFiltersProps = {
   onPersonChange: (personId: number | null) => void;
   signalType: CoherenceOverviewType | null;
   onTypeChange: (signalType: CoherenceOverviewType | null) => void;
+  domainSlug: string | null;
+  domains: readonly { slug: string; name: string }[];
+  onDomainChange: (domainSlug: string | null) => void;
   titleQuery: string;
   onTitleQueryChange: (titleQuery: string) => void;
   /** Sits at the end of the search row, the same slot as Agreements. */
@@ -133,7 +137,7 @@ export type SignalFeedFiltersProps = {
 };
 
 /**
- * Sort is one control. People and signal type are filters, separate from sort.
+ * Sort is one control. People, domain, and signal type are filters.
  */
 export function SignalFeedFilters({
   sort,
@@ -143,6 +147,9 @@ export function SignalFeedFilters({
   onPersonChange,
   signalType,
   onTypeChange,
+  domainSlug,
+  domains,
+  onDomainChange,
   titleQuery,
   onTitleQueryChange,
   action,
@@ -179,7 +186,18 @@ export function SignalFeedFilters({
     ],
     [t],
   );
+  const domainOptions = React.useMemo(
+    () => [
+      { value: ALL_DOMAINS, label: t('signalFilterAllDomains') },
+      ...domains.map((domain) => ({
+        value: domain.slug,
+        label: domain.name,
+      })),
+    ],
+    [domains, t],
+  );
   const selectedPerson = people.find((person) => person.id === personId);
+  const selectedDomain = domains.find((domain) => domain.slug === domainSlug);
 
   return (
     <div className={cn('flex flex-col gap-3', className)}>
@@ -238,6 +256,16 @@ export function SignalFeedFilters({
               onPersonChange(next === ALL_PEOPLE ? null : Number(next))
             }
             testId="signal-people-pill"
+          />
+          <FilterPill
+            label={selectedDomain?.name ?? t('signalFilterDomain')}
+            heading={t('signalFilterDomain')}
+            value={domainSlug ?? ALL_DOMAINS}
+            options={domainOptions}
+            onChange={(next) =>
+              onDomainChange(next === ALL_DOMAINS ? null : next)
+            }
+            testId="signal-domain-pill"
           />
           <FilterPill
             label={

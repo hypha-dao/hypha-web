@@ -2,10 +2,12 @@
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
+  DEFAULT_SIGNAL_WORKFLOW,
   formatQuestCalendarDate,
   isRejectedProposedQuest,
   questHealthDisplay,
   questListBucket,
+  resolveEffectiveBoard,
   useSignalWorkflow,
   useSpaceProposalsWeb3Rpc,
   useWithdrawnProposalsWeb3Rpc,
@@ -27,12 +29,14 @@ import { Flag, SearchIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { FilterPill } from '../../coherence/components/signal-feed-filters';
 import { SpaceEmptyCard } from '../../common/space-empty-card';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { QuestStatusBadge } from './quest-status-badge';
 import { QuestBoard, type QuestBoardLayout } from './quest-board';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import {
+  questDomainChoices,
   questDomainDotClass,
   withChainRejectedProposals,
   type QuestDomainChoice,
@@ -385,6 +389,8 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
   const spaceMembers = useQuestSpaceMembers(spaceSlug);
   const [layout, setLayout] = useState<QuestBoardLayout>('kanban');
   const [search, setSearch] = useState('');
+  const [personId, setPersonId] = useState<number | null>(null);
+  const [domainSlug, setDomainSlug] = useState<string | null>(null);
   const [draftToDelete, setDraftToDelete] = useState<number | null>(null);
   const [draftDeleteError, setDraftDeleteError] = useState<string | null>(null);
 
@@ -426,24 +432,50 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
     total: 0,
   };
 
+  const domains = useMemo(() => questDomainChoices(workflow), [workflow]);
+  const people = useMemo(
+    () =>
+      [...spaceMembers].sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+      ),
+    [spaceMembers],
+  );
+  const workflowConfig = workflow ?? DEFAULT_SIGNAL_WORKFLOW;
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return quests
       .filter((quest) => questListBucket(quest) !== 'archived')
       .filter((quest) => {
-        if (!q) return true;
-        return (
-          quest.name.toLowerCase().includes(q) ||
-          quest.goal.toLowerCase().includes(q) ||
-          quest.leadName.toLowerCase().includes(q)
-        );
+        if (
+          q &&
+          !quest.name.toLowerCase().includes(q) &&
+          !quest.goal.toLowerCase().includes(q) &&
+          !quest.leadName.toLowerCase().includes(q)
+        ) {
+          return false;
+        }
+        if (personId != null) {
+          const onQuest =
+            quest.leadPersonId === personId ||
+            quest.creatorPersonId === personId ||
+            quest.members.some((member) => member.personId === personId);
+          if (!onQuest) return false;
+        }
+        if (
+          domainSlug &&
+          resolveEffectiveBoard(quest.domain, workflowConfig) !== domainSlug
+        ) {
+          return false;
+        }
+        return true;
       })
       .sort(
         (a, b) =>
           new Date(b.latestUpdateAt).getTime() -
           new Date(a.latestUpdateAt).getTime(),
       );
-  }, [quests, search]);
+  }, [domainSlug, personId, quests, search, workflowConfig]);
 
   const visibleDrafts = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -548,6 +580,49 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
 
       <div
         className="flex flex-wrap items-center gap-2"
+        data-testid="quest-feed-filters"
+      >
+        <span className="text-1 font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          {t('filters.label')}
+        </span>
+        <FilterPill
+          label={
+            people.find((person) => person.personId === personId)?.name ??
+            t('filters.people')
+          }
+          heading={t('filters.people')}
+          value={personId == null ? 'all' : String(personId)}
+          options={[
+            { value: 'all', label: t('filters.allPeople') },
+            ...people.map((person) => ({
+              value: String(person.personId),
+              label: person.name,
+            })),
+          ]}
+          onChange={(next) => setPersonId(next === 'all' ? null : Number(next))}
+          testId="quest-people-pill"
+        />
+        <FilterPill
+          label={
+            domains.find((domain) => domain.slug === domainSlug)?.name ??
+            t('filters.domain')
+          }
+          heading={t('filters.domain')}
+          value={domainSlug ?? 'all'}
+          options={[
+            { value: 'all', label: t('filters.allDomains') },
+            ...domains.map((domain) => ({
+              value: domain.slug,
+              label: domain.name,
+            })),
+          ]}
+          onChange={(next) => setDomainSlug(next === 'all' ? null : next)}
+          testId="quest-domain-pill"
+        />
+      </div>
+
+      <div
+        className="flex flex-wrap items-center gap-2"
         data-testid="quest-board-layout"
         role="group"
         aria-label={t('board.layout')}
@@ -616,7 +691,10 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
         </div>
       ) : null}
 
-      {quests.length === 0 && !search.trim() ? (
+      {quests.length === 0 &&
+      !search.trim() &&
+      personId == null &&
+      !domainSlug ? (
         <SpaceEmptyCard
           icon={Flag}
           title={t('empty.title')}

@@ -173,6 +173,12 @@ describe('quest board groups', () => {
     expect(questDomainDotClass('success')).toBe('bg-success-9');
     expect(questDomainDotClass('error')).toBe('bg-error-9');
     expect(questDomainDotClass('neutral')).toBe('bg-neutral-9');
+    expect(questDomainDotClass('sky')).toBe('bg-domain-sky');
+    expect(questDomainDotClass('teal')).toBe('bg-domain-teal');
+    expect(questDomainDotClass('indigo')).toBe('bg-domain-indigo');
+    expect(questDomainDotClass('purple')).toBe('bg-domain-purple');
+    expect(questDomainDotClass('pink')).toBe('bg-domain-pink');
+    expect(questDomainDotClass('orange')).toBe('bg-domain-orange');
     expect(questDomainDotClass(null)).toBe('bg-neutral-9');
   });
 });

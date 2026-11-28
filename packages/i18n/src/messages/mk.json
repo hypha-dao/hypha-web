@@ -4716,7 +4716,7 @@
     "boardAll": "Сите сигнали",
     "boardDelete": "Избриши табла {boardName}",
     "signalViewBoard": "Канбан-табла",
-    "signalWorkflowSettings": "Конфигурирај статуси и табли",
+    "signalWorkflowSettings": "Конфигурирај домени",
     "signalViewSwimlane": "Ленти",
     "signalViewList": "Листа",
     "signalViewGrid": "Мрежа",
@@ -4769,7 +4769,7 @@
     "signalFormUploadFailed": "Датотеката не можеше да се прикачи. Обидете се повторно.",
     "scheduleOnCalendar": "Закажи на календар",
     "signalWorkflowSettingsTitle": "Работен тек на сигналите",
-    "signalWorkflowSettingsDescription": "Приспособете ги колоните на Канбан-таблата (статуси) и домените за сигналите во овој простор.",
+    "signalWorkflowSettingsDescription": "Изберете ги домените на кои можат да припаѓаат сигналите во овој простор.",
     "signalWorkflowStatuses": "Канбан статуси",
     "signalWorkflowBoards": "Домен",
     "signalWorkflowAddStatus": "Додај статус",
@@ -4799,7 +4799,13 @@
       "accent": "Сина",
       "warn": "Килибарна",
       "success": "Зелена",
-      "error": "Црвена"
+      "error": "Црвена",
+      "sky": "Небесносина",
+      "teal": "Тиркизна",
+      "indigo": "Индиго",
+      "purple": "Виолетова",
+      "pink": "Розова",
+      "orange": "Портокалова"
     },
     "spaceMemoryTimelineLabel": "Историја на меморијата на просторот",
     "usedOnThisBoard": "Користени на оваа табла",
@@ -4900,6 +4906,8 @@
     "signalFilterAllPeople": "Сите луѓе",
     "signalFilterType": "Тип на сигнал",
     "signalFilterAllTypes": "Сите типови",
+    "signalFilterDomain": "По домен",
+    "signalFilterAllDomains": "Сите домени",
     "signalTimeFrame": "Период",
     "signalTimeFrameToday": "Денес",
     "signalTimeFrameWeek": "Оваа недела",
@@ -5940,7 +5948,7 @@
     "empty": {
       "title": "Сè уште нема мисии",
       "description": "Мисиите се фокусирана работа со цел, членови и пресвртници. Предложи една кога овој простор е подготвен да се обврзе.",
-      "filtered": "Ниту една мисија не одговара на ова пребарување."
+      "filtered": "Ниту една мисија не одговара на овие филтри."
     },
     "searchPlaceholder": "Пребарај мисии",
     "domain": "Домен",
@@ -5956,7 +5964,12 @@
       "completed": "Завршени",
       "rejected": "Одбиени",
       "drafts": "Мои нацрти",
-      "status": "Статус"
+      "status": "Статус",
+      "label": "Филтер",
+      "people": "По луѓе",
+      "allPeople": "Сите луѓе",
+      "domain": "По домен",
+      "allDomains": "Сите домени"
     },
     "overview": {
       "goal": "Цел",

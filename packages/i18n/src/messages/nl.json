@@ -4735,7 +4735,7 @@
     "boardAll": "Alle signalen",
     "boardDelete": "Bord verwijderen {boardName}",
     "signalViewBoard": "Kanban",
-    "signalWorkflowSettings": "Configureer statussen en borden",
+    "signalWorkflowSettings": "Domeinen configureren",
     "signalViewSwimlane": "Swimlane-weergave",
     "signalViewList": "Lijst",
     "signalViewGrid": "Stem omhoog",
@@ -4788,7 +4788,7 @@
     "signalFormUploadFailed": "Het bestand kon niet worden geüpload. Probeer het opnieuw.",
     "scheduleOnCalendar": "Plannen in kalender",
     "signalWorkflowSettingsTitle": "Signaalworkflow",
-    "signalWorkflowSettingsDescription": "Pas Kanban-kolommen (statussen) en domeinen aan voor signalen in deze ruimte.",
+    "signalWorkflowSettingsDescription": "Kies de domeinen waartoe signalen in deze ruimte kunnen behoren.",
     "signalWorkflowStatuses": "Kanban-statussen",
     "signalWorkflowBoards": "Domein",
     "signalWorkflowAddStatus": "Status toevoegen",
@@ -4818,7 +4818,13 @@
       "accent": "Blauw",
       "warn": "Amber",
       "success": "Groente",
-      "error": "Rood"
+      "error": "Rood",
+      "sky": "Hemelblauw",
+      "teal": "Groenblauw",
+      "indigo": "Indigo",
+      "purple": "Paars",
+      "pink": "Roze",
+      "orange": "Oranje"
     },
     "spaceMemoryTimelineLabel": "Geschiedenis van ruimtegeheugen",
     "usedOnThisBoard": "Gebruikt op dit bord",
@@ -4919,6 +4925,8 @@
     "signalFilterAllPeople": "Alle mensen",
     "signalFilterType": "Signaaltype",
     "signalFilterAllTypes": "Alle typen",
+    "signalFilterDomain": "Op domein",
+    "signalFilterAllDomains": "Alle domeinen",
     "signalTimeFrame": "Periode",
     "signalTimeFrameToday": "Vandaag",
     "signalTimeFrameWeek": "Deze week",
@@ -5959,7 +5967,7 @@
     "empty": {
       "title": "Nog geen quests",
       "description": "Quests zijn gericht werk met een doel, leden en mijlpalen. Stel er een voor wanneer deze space klaar is om zich vast te leggen.",
-      "filtered": "Geen quests komen overeen met deze zoekopdracht."
+      "filtered": "Geen quests komen overeen met deze filters."
     },
     "searchPlaceholder": "Quests zoeken",
     "domain": "Domein",
@@ -5975,7 +5983,12 @@
       "completed": "Voltooid",
       "rejected": "Afgewezen",
       "drafts": "Mijn concepten",
-      "status": "Status"
+      "status": "Status",
+      "label": "Filter",
+      "people": "Op mensen",
+      "allPeople": "Alle mensen",
+      "domain": "Op domein",
+      "allDomains": "Alle domeinen"
     },
     "overview": {
       "goal": "Doel",

@@ -28,6 +28,12 @@ describe('signal domain', () => {
     expect(domainDotClass('success')).toBe('bg-success-9');
     expect(domainDotClass('error')).toBe('bg-error-9');
     expect(domainDotClass('neutral')).toBe('bg-neutral-9');
+    expect(domainDotClass('sky')).toBe('bg-domain-sky');
+    expect(domainDotClass('teal')).toBe('bg-domain-teal');
+    expect(domainDotClass('indigo')).toBe('bg-domain-indigo');
+    expect(domainDotClass('purple')).toBe('bg-domain-purple');
+    expect(domainDotClass('pink')).toBe('bg-domain-pink');
+    expect(domainDotClass('orange')).toBe('bg-domain-orange');
     expect(domainDotClass(null)).toBe('bg-neutral-9');
   });
 

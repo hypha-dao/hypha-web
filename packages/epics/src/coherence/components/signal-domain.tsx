@@ -26,6 +26,12 @@ const DOMAIN_DOT: Record<string, string> = {
   warning: 'bg-warning-9',
   success: 'bg-success-9',
   error: 'bg-error-9',
+  sky: 'bg-domain-sky',
+  teal: 'bg-domain-teal',
+  indigo: 'bg-domain-indigo',
+  purple: 'bg-domain-purple',
+  pink: 'bg-domain-pink',
+  orange: 'bg-domain-orange',
 };
 
 /** Solid epic-style dot for a configured domain color. */

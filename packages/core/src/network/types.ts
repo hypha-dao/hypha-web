@@ -23,9 +23,9 @@ export const RECIPROCAL_EXCHANGE_TYPES = [
   'Need',
   'Resource',
   'Opportunity',
-  'Insight',
-  'Tension',
   'Risk',
+  'Tension',
+  'Insight',
 ] as const satisfies readonly NetworkFieldSignalKind[];
 
 export type NetworkFieldSignalKind = (typeof NETWORK_FIELD_KINDS)[number];

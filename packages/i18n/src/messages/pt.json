@@ -4160,7 +4160,7 @@
     "boardAll": "Todos os sinais",
     "boardDelete": "Excluir quadro {boardName}",
     "signalViewBoard": "Kanban",
-    "signalWorkflowSettings": "Configurar estados e quadros",
+    "signalWorkflowSettings": "Configurar domínios",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "Lista",
     "signalViewGrid": "UpVote",
@@ -4213,7 +4213,7 @@
     "signalFormUploadFailed": "Não foi possível enviar o ficheiro. Tente novamente.",
     "scheduleOnCalendar": "Agendar no calendário",
     "signalWorkflowSettingsTitle": "Fluxo de trabalho de sinais",
-    "signalWorkflowSettingsDescription": "Personalize as colunas Kanban (estados) e os domínios dos sinais neste espaço.",
+    "signalWorkflowSettingsDescription": "Escolhe os domínios a que os sinais deste espaço podem pertencer.",
     "signalWorkflowStatuses": "Status Kanban",
     "signalWorkflowBoards": "Domínio",
     "signalWorkflowAddStatus": "Adicionar status",
@@ -4243,7 +4243,13 @@
       "accent": "Azul",
       "warn": "Âmbar",
       "success": "Verde",
-      "error": "Vermelho"
+      "error": "Vermelho",
+      "sky": "Azul-celeste",
+      "teal": "Verde-azulado",
+      "indigo": "Índigo",
+      "purple": "Roxo",
+      "pink": "Rosa",
+      "orange": "Laranja"
     },
     "spaceMemoryTimelineLabel": "Histórico da memória do espaço",
     "usedOnThisBoard": "Usadas neste quadro",
@@ -4344,6 +4350,8 @@
     "signalFilterAllPeople": "Todas as pessoas",
     "signalFilterType": "Tipo de sinal",
     "signalFilterAllTypes": "Todos os tipos",
+    "signalFilterDomain": "Por domínio",
+    "signalFilterAllDomains": "Todos os domínios",
     "signalTimeFrame": "Período",
     "signalTimeFrameToday": "Hoje",
     "signalTimeFrameWeek": "Esta semana",
@@ -5952,7 +5960,7 @@
     "empty": {
       "title": "Ainda não há missões",
       "description": "As missões são trabalho focado, com um objetivo, membros e marcos. Proponha uma quando este espaço estiver pronto para se comprometer.",
-      "filtered": "Nenhuma missão corresponde a esta pesquisa."
+      "filtered": "Nenhuma missão corresponde a estes filtros."
     },
     "searchPlaceholder": "Pesquisar missões",
     "domain": "Domínio",
@@ -5968,7 +5976,12 @@
       "completed": "Concluídas",
       "rejected": "Rejeitadas",
       "drafts": "Meus rascunhos",
-      "status": "Estado"
+      "status": "Estado",
+      "label": "Filtro",
+      "people": "Por pessoas",
+      "allPeople": "Todas as pessoas",
+      "domain": "Por domínio",
+      "allDomains": "Todos os domínios"
     },
     "overview": {
       "goal": "Objetivo",

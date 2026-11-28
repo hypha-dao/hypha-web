@@ -4733,7 +4733,7 @@
     "boardAll": "Alle Signale",
     "boardDelete": "Board {boardName} löschen",
     "signalViewBoard": "Kanban",
-    "signalWorkflowSettings": "Status und Boards konfigurieren",
+    "signalWorkflowSettings": "Domänen konfigurieren",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "Liste",
     "signalViewGrid": "UpVote",
@@ -4786,7 +4786,7 @@
     "signalFormUploadFailed": "Die Datei konnte nicht hochgeladen werden. Versuche es erneut.",
     "scheduleOnCalendar": "Im Kalender planen",
     "signalWorkflowSettingsTitle": "Signal-Workflow",
-    "signalWorkflowSettingsDescription": "Kanban-Spalten (Status) und Domänen für Signale in diesem Space anpassen.",
+    "signalWorkflowSettingsDescription": "Wähle die Domänen, denen Signale in diesem Space angehören können.",
     "signalWorkflowStatuses": "Kanban-Status",
     "signalWorkflowBoards": "Domäne",
     "signalWorkflowAddStatus": "Status hinzufügen",
@@ -4816,7 +4816,13 @@
       "accent": "Blau",
       "warn": "Bernstein",
       "success": "Grün",
-      "error": "Rot"
+      "error": "Rot",
+      "sky": "Himmelblau",
+      "teal": "Petrol",
+      "indigo": "Indigo",
+      "purple": "Violett",
+      "pink": "Rosa",
+      "orange": "Orange"
     },
     "spaceMemoryTimelineLabel": "Space-Memory-Verlauf",
     "usedOnThisBoard": "Auf diesem Board verwendet",
@@ -4917,6 +4923,8 @@
     "signalFilterAllPeople": "Alle Personen",
     "signalFilterType": "Signaltyp",
     "signalFilterAllTypes": "Alle Typen",
+    "signalFilterDomain": "Nach Domäne",
+    "signalFilterAllDomains": "Alle Domänen",
     "signalTimeFrame": "Zeitraum",
     "signalTimeFrameToday": "Heute",
     "signalTimeFrameWeek": "Diese Woche",
@@ -5953,7 +5961,7 @@
     "empty": {
       "title": "Noch keine Quests",
       "description": "Quests sind fokussierte Arbeit mit einem Ziel, Mitgliedern und Meilensteinen. Schlage eine vor, wenn dieser Space bereit ist, sich festzulegen.",
-      "filtered": "Keine Quests passen zu dieser Suche."
+      "filtered": "Keine Quests passen zu diesen Filtern."
     },
     "searchPlaceholder": "Quests suchen",
     "domain": "Domäne",
@@ -5969,7 +5977,12 @@
       "completed": "Abgeschlossen",
       "rejected": "Abgelehnt",
       "drafts": "Meine Entwürfe",
-      "status": "Status"
+      "status": "Status",
+      "label": "Filter",
+      "people": "Nach Personen",
+      "allPeople": "Alle Personen",
+      "domain": "Nach Domäne",
+      "allDomains": "Alle Domänen"
     },
     "overview": {
       "goal": "Ziel",

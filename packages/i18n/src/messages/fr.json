@@ -4158,7 +4158,7 @@
     "boardAll": "Tous les signaux",
     "boardDelete": "Supprimer le tableau {boardName}",
     "signalViewBoard": "Kanban",
-    "signalWorkflowSettings": "Configurer les statuts et les tableaux",
+    "signalWorkflowSettings": "Configurer les domaines",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "Liste",
     "signalViewGrid": "UpVote",
@@ -4211,7 +4211,7 @@
     "signalFormUploadFailed": "Impossible d'envoyer le fichier. Réessayez.",
     "scheduleOnCalendar": "Planifier au calendrier",
     "signalWorkflowSettingsTitle": "Workflow des signaux",
-    "signalWorkflowSettingsDescription": "Personnalisez les colonnes Kanban (statuts) et les domaines des signaux de cet espace.",
+    "signalWorkflowSettingsDescription": "Choisis les domaines auxquels les signaux de cet espace peuvent appartenir.",
     "signalWorkflowStatuses": "Statuts Kanban",
     "signalWorkflowBoards": "Domaine",
     "signalWorkflowAddStatus": "Ajouter un statut",
@@ -4241,7 +4241,13 @@
       "accent": "Bleu",
       "warn": "Ambre",
       "success": "Vert",
-      "error": "Rouge"
+      "error": "Rouge",
+      "sky": "Bleu ciel",
+      "teal": "Sarcelle",
+      "indigo": "Indigo",
+      "purple": "Violet",
+      "pink": "Rose",
+      "orange": "Orange"
     },
     "spaceMemoryTimelineLabel": "Historique de la mémoire de l'espace",
     "usedOnThisBoard": "Utilisées sur ce tableau",
@@ -4342,6 +4348,8 @@
     "signalFilterAllPeople": "Toutes les personnes",
     "signalFilterType": "Type de signal",
     "signalFilterAllTypes": "Tous les types",
+    "signalFilterDomain": "Par domaine",
+    "signalFilterAllDomains": "Tous les domaines",
     "signalTimeFrame": "Période",
     "signalTimeFrameToday": "Aujourd'hui",
     "signalTimeFrameWeek": "Cette semaine",
@@ -5950,7 +5958,7 @@
     "empty": {
       "title": "Aucune quête pour le moment",
       "description": "Les quêtes sont un travail ciblé, avec un objectif, des membres et des jalons. Propose-en une quand cet espace est prêt à s’engager.",
-      "filtered": "Aucune quête ne correspond à cette recherche."
+      "filtered": "Aucune quête ne correspond à ces filtres."
     },
     "searchPlaceholder": "Rechercher des quêtes",
     "domain": "Domaine",
@@ -5966,7 +5974,12 @@
       "completed": "Terminées",
       "rejected": "Rejetées",
       "drafts": "Mes brouillons",
-      "status": "Statut"
+      "status": "Statut",
+      "label": "Filtre",
+      "people": "Par personnes",
+      "allPeople": "Toutes les personnes",
+      "domain": "Par domaine",
+      "allDomains": "Tous les domaines"
     },
     "overview": {
       "goal": "Objectif",

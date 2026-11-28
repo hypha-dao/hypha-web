@@ -4765,7 +4765,7 @@
     "boardAll": "All signals",
     "boardDelete": "Delete board {boardName}",
     "signalViewBoard": "Kanban",
-    "signalWorkflowSettings": "Configure statuses and boards",
+    "signalWorkflowSettings": "Configure domains",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "List",
     "signalViewGrid": "UpVote",
@@ -4818,7 +4818,7 @@
     "signalFormUploadFailed": "Could not upload the file. Try again.",
     "scheduleOnCalendar": "Schedule on calendar",
     "signalWorkflowSettingsTitle": "Signal workflow",
-    "signalWorkflowSettingsDescription": "Customize Kanban columns (statuses) and domains for signals in this space.",
+    "signalWorkflowSettingsDescription": "Choose the domains signals in this space can belong to.",
     "signalWorkflowStatuses": "Kanban statuses",
     "signalWorkflowBoards": "Domain",
     "signalWorkflowAddStatus": "Add status",
@@ -4848,7 +4848,13 @@
       "accent": "Blue",
       "warn": "Amber",
       "success": "Green",
-      "error": "Red"
+      "error": "Red",
+      "sky": "Sky",
+      "teal": "Teal",
+      "indigo": "Indigo",
+      "purple": "Purple",
+      "pink": "Pink",
+      "orange": "Orange"
     },
     "spaceMemoryTimelineLabel": "Space memory history",
     "usedOnThisBoard": "Used on this board",
@@ -4949,6 +4955,8 @@
     "signalFilterAllPeople": "All people",
     "signalFilterType": "Signal type",
     "signalFilterAllTypes": "All types",
+    "signalFilterDomain": "By domain",
+    "signalFilterAllDomains": "All domains",
     "signalTimeFrame": "Time frame",
     "signalTimeFrameToday": "Today",
     "signalTimeFrameWeek": "This Week",
@@ -5975,7 +5983,7 @@
     "empty": {
       "title": "No quests yet",
       "description": "Quests are focused pieces of work with a goal, members, and milestones. Propose one when this space is ready to commit.",
-      "filtered": "No quests match this search."
+      "filtered": "No quests match these filters."
     },
     "searchPlaceholder": "Search quests",
     "domain": "Domain",
@@ -5991,7 +5999,12 @@
       "completed": "Completed",
       "rejected": "Rejected",
       "drafts": "My drafts",
-      "status": "Status"
+      "status": "Status",
+      "label": "Filter",
+      "people": "By people",
+      "allPeople": "All people",
+      "domain": "By domain",
+      "allDomains": "All domains"
     },
     "overview": {
       "goal": "Goal",

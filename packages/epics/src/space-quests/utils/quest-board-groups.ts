@@ -38,6 +38,18 @@ export function questDomainDotClass(color: string | null | undefined): string {
       return 'bg-success-9';
     case 'error':
       return 'bg-error-9';
+    case 'sky':
+      return 'bg-domain-sky';
+    case 'teal':
+      return 'bg-domain-teal';
+    case 'indigo':
+      return 'bg-domain-indigo';
+    case 'purple':
+      return 'bg-domain-purple';
+    case 'pink':
+      return 'bg-domain-pink';
+    case 'orange':
+      return 'bg-domain-orange';
     default:
       return 'bg-neutral-9';
   }
