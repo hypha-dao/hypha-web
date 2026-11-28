@@ -1405,7 +1405,9 @@ export function HumanChatPanelInCallControls({
               ? 'flex w-full items-center justify-center'
               : useSymmetricalDockToolbar
               ? cn(
-                  'grid w-full min-w-0 grid-cols-[1fr_auto_1fr] items-center',
+                  // Side groups never shrink below their buttons: a wider side takes the room the
+                  // other side leaves instead of overflowing (#2789 toolbar polish).
+                  'grid w-full min-w-0 grid-cols-[minmax(max-content,1fr)_auto_minmax(max-content,1fr)] items-center',
                   'gap-x-3 px-3 sm:gap-x-5 sm:px-5',
                 )
               : useMobileCenteredToolbar
