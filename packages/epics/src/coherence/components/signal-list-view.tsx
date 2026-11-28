@@ -7,7 +7,6 @@ import {
   COHERENCE_PRIORITIES,
   Coherence,
   SignalWorkflowConfig,
-  resolveEffectiveBoard,
 } from '@hypha-platform/core/client';
 import {
   Select,
@@ -25,6 +24,12 @@ import { SignalTagBadges } from './signal-tag-badges';
 import { SignalOwnerSeen } from './signal-owner-seen';
 import { SignalIndicativeAmounts } from './signal-indicative-amounts';
 import { SignalCategoryTag } from './signal-category-tag';
+import {
+  domainBoardChoices,
+  selectedDomainSlug,
+  SignalDomainMark,
+  SignalDomainSelect,
+} from './signal-domain';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import {
   isSignalDueOverdue,
@@ -163,11 +168,10 @@ export function SignalListView({
             )?.name ??
             signal.progressStatus ??
             '—';
+          const boardSlug = selectedDomainSlug(signal.board, workflow);
           const boardName =
-            workflow.boards.find(
-              (board) =>
-                board.slug === resolveEffectiveBoard(signal.board, workflow),
-            )?.name ?? resolveEffectiveBoard(signal.board, workflow);
+            workflow.boards.find((board) => board.slug === boardSlug)?.name ??
+            boardSlug;
           const isActive = isSignalSlugActive(signal.slug, activeSignalSlug);
           const priorityLabel = t(
             `priorities.${signal.priority}` as
@@ -358,33 +362,26 @@ export function SignalListView({
                       {t('signalListBoard')}
                     </span>
                     {readOnly ? (
-                      <span className="truncate text-sm text-muted-foreground">
-                        {boardName}
-                      </span>
+                      <SignalDomainMark
+                        name={boardName}
+                        color={
+                          workflow.boards.find(
+                            (board) => board.slug === boardSlug,
+                          )?.color
+                        }
+                      />
                     ) : (
-                      <Select
-                        value={resolveEffectiveBoard(signal.board, workflow)}
-                        onValueChange={(value) =>
+                      <SignalDomainSelect
+                        value={boardSlug}
+                        boards={domainBoardChoices(workflow, signal.board)}
+                        onChange={(value) =>
                           onPatch(signal, {
                             board: value,
                           })
                         }
-                      >
-                        <SelectTrigger
-                          className={SIGNAL_LIST_SELECT_TRIGGER_CLASS}
-                        >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {workflow.boards
-                            .filter((board) => !board.archived)
-                            .map((board) => (
-                              <SelectItem key={board.slug} value={board.slug}>
-                                {board.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
+                        ariaLabel={t('signalFormBoard')}
+                        className={SIGNAL_LIST_SELECT_TRIGGER_CLASS}
+                      />
                     )}
                   </div>
 

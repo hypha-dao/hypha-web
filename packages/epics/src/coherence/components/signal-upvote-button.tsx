@@ -107,8 +107,9 @@ type SignalUpvoteButtonProps = {
   archived?: boolean;
   /**
    * Kept so list and detail share one control. Layout does not change with it.
-   * Token spaces show the all-time weighted net. One member, one vote shows
-   * the integer net count. The list time window does not change the figure.
+   * Top by voters shows the net voter count. Top by voting power shows voice.
+   * With no sort, a token space shows voice and one member, one vote shows
+   * the headcount. The list time window does not change the figure.
    */
   variant?: 'feed' | 'page';
   sort?: SignalSort;
@@ -117,6 +118,8 @@ type SignalUpvoteButtonProps = {
    * then zero. `loading` keeps the ellipsis. `error` must not display as zero.
    */
   summaryState?: SignalUpvoteSummaryState;
+  /** List rows stack the arrows. Detail and cards keep the horizontal row. */
+  layout?: 'row' | 'stack';
   className?: string;
 };
 
@@ -139,8 +142,9 @@ export function SignalUpvoteButton({
   disabled = false,
   archived = false,
   variant = 'feed',
-  sort = 'top-voters',
+  sort = 'new',
   summaryState = 'ready',
+  layout = 'row',
   className,
 }: SignalUpvoteButtonProps) {
   const t = useTranslations('SignalCard');
@@ -369,6 +373,7 @@ export function SignalUpvoteButton({
       onKeyDown={stopPropagation}
     >
       <SignalUpvoteCellChrome
+        layout={layout}
         figure={figureLabel}
         exactLabel={exactLabel}
         pressed={hasVoted}

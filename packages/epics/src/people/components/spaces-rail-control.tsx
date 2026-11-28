@@ -9,11 +9,29 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Circle } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { ChevronsUpDown, Circle } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
+import { useSpaceBySlug } from '@hypha-platform/core/client';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { APP_CHROME_ICON_TRIGGER } from '../../common/chrome-radius';
+import { getDhoSpaceSlugFromPathname } from '../../common/get-dho-space-slug-from-pathname';
+import {
+  isConnectionsPath,
+  isMemberHomePath,
+  isMyWalletPath,
+  isNetworkPath,
+} from '../../common/use-is-space-context';
+import { MySpacesSwitcherMenu } from '../../spaces/components/my-spaces-switcher-menu';
+import { SpaceSwitcherMark } from '../../spaces/components/space-switcher-option';
+import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 
 export const SPACES_RAIL_ID = 'member-spaces-rail';
 
@@ -81,25 +99,91 @@ export function SpacesRailProvider({ children }: { children: ReactNode }) {
   );
 }
 
+function showsMobileSpaceSwitcher(pathname: string) {
+  return (
+    isMemberHomePath(pathname) ||
+    isConnectionsPath(pathname) ||
+    isMyWalletPath(pathname) ||
+    isNetworkPath(pathname) ||
+    Boolean(getDhoSpaceSlugFromPathname(pathname))
+  );
+}
+
+/** Phone and iPad: the current space opens the spaces list. */
+function MemberMobileSpaceSwitcher() {
+  const pathname = usePathname() ?? '';
+  const slug = getDhoSpaceSlugFromPathname(pathname);
+  const { resolvedTheme } = useTheme();
+  const { space } = useSpaceBySlug(slug ?? '');
+  const tNavigation = useTranslations('Navigation');
+  const [open, setOpen] = useState(false);
+  const title = space?.title?.trim() || '';
+  const iconUrl = resolveSpaceDisplayLogoUrl(
+    space,
+    resolvedTheme === 'dark' ? 'dark' : 'light',
+  );
+  const label = title || tNavigation('mySpaces');
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="flex min-w-0 max-w-[min(12rem,46vw)] items-center gap-1.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase"
+          aria-label={tNavigation('mySpaces')}
+          data-testid="member-spaces-switcher"
+        >
+          <SpaceSwitcherMark iconUrl={iconUrl} alt="" />
+          <span className="min-w-0 truncate">{label}</span>
+          <ChevronsUpDown className="h-3 w-3 shrink-0" aria-hidden />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        sideOffset={6}
+        className="z-[70] w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-none p-0"
+      >
+        <div className="h-72">
+          <MySpacesSwitcherMenu open={open} onSelect={() => setOpen(false)} />
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 /**
- * Circle in the top bar, to the left of Hypha.
- * Mobile only, on every screen that mounts a spaces list, including Home.
+ * Top bar, below the wide layout.
+ * Phone and iPad get the space dropdown. The circle is only for a mounted
+ * rail on a page that does not use that dropdown, and it leaves at xl.
  */
 export function SpacesRailTopToggle() {
+  const pathname = usePathname() ?? '';
   const { active, open, toggle } = useSpacesRailControl();
   const t = useTranslations('MemberHome');
-  if (!active) return null;
+  const dropdown = showsMobileSpaceSwitcher(pathname);
+
+  if (!dropdown && !active) return null;
+
   return (
-    <button
-      type="button"
-      className={cn(APP_CHROME_ICON_TRIGGER, 'xl:hidden')}
-      aria-label={t('spacesRail')}
-      aria-expanded={open}
-      aria-controls={SPACES_RAIL_ID}
-      title={t('spacesRail')}
-      onClick={toggle}
-    >
-      <Circle aria-hidden />
-    </button>
+    <>
+      {dropdown ? (
+        <div className="xl:hidden">
+          <MemberMobileSpaceSwitcher />
+        </div>
+      ) : null}
+      {active && !dropdown ? (
+        <button
+          type="button"
+          className={cn(APP_CHROME_ICON_TRIGGER, 'xl:hidden')}
+          aria-label={t('spacesRail')}
+          aria-expanded={open}
+          aria-controls={SPACES_RAIL_ID}
+          title={t('spacesRail')}
+          onClick={toggle}
+        >
+          <Circle aria-hidden />
+        </button>
+      ) : null}
+    </>
   );
 }

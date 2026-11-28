@@ -111,6 +111,13 @@ export function questTargetDateChange(
   return shortChange('targetDate', before, after);
 }
 
+export function questDomainChange(
+  before: string | null | undefined,
+  after: string | null | undefined,
+): QuestUpdateChange {
+  return shortChange('domain', before, after);
+}
+
 export function questLeadChange(
   before: string,
   after: string,

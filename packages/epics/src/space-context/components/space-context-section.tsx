@@ -16,7 +16,7 @@ import {
   TabsContent,
   TabsTrigger,
 } from '@hypha-platform/ui';
-import { useLocale, useTranslations } from 'next-intl';
+import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -26,14 +26,17 @@ import { useSpaceContext } from '../hooks/use-space-context';
 import { SpaceContextAddSectionDialog } from './space-context-add-section-dialog';
 import { SpaceContextCard } from './space-context-card';
 import { SpaceContextChatPanel } from './space-context-chat-panel';
-import {
-  SpaceContextDraftDialog,
-  SpaceContextReadDialog,
-} from './space-context-dialogs';
+import { SpaceContextDraftDialog } from './space-context-dialogs';
 import { SpaceContextEmpty } from './space-context-empty';
 import { spaceContextProposeHref } from './propose-href';
 
-const FILTERS: SpaceContextFilter[] = ['all', 'ratified', 'proposed', 'drafts'];
+const FILTERS: SpaceContextFilter[] = [
+  'all',
+  'proposed',
+  'accepted',
+  'rejected',
+  'drafts',
+];
 const SECTION_PARAM = 'section';
 
 /** Mirrors the open section into `?section=` so the panel can be linked. */
@@ -50,6 +53,7 @@ function writeSectionParam(sectionKey: SpaceContextSectionKey | null) {
 
 export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
   const t = useTranslations('SpaceContext');
+  const format = useFormatter();
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -70,9 +74,6 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
       ? spaceContextSection.sectionKey
       : null
     : inlineSection;
-  const [readingKey, setReadingKey] = useState<SpaceContextSectionKey | null>(
-    null,
-  );
   const [draftKey, setDraftKey] = useState<SpaceContextSectionKey | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -139,8 +140,6 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
         !(featured && section.sectionKey === 'mission' && item === 'all'),
     );
 
-  const readingSection =
-    sections.find((section) => section.sectionKey === readingKey) ?? null;
   const draftSection =
     sections.find((section) => section.sectionKey === draftKey) ?? null;
 
@@ -250,7 +249,18 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
           <ScrollableTabsList triggerVariant="switch" aria-label={t('title')}>
             {FILTERS.map((item) => (
               <TabsTrigger key={item} value={item} variant="switch">
-                {t(`filters.${item}`)}
+                <span className="inline-flex items-center gap-1">
+                  <span>{t(`filters.${item}`)}</span>
+                  <span className="text-xs text-muted-foreground">
+                    (
+                    {format.number(
+                      sections.filter((section) =>
+                        sectionMatchesFilter(section, item),
+                      ).length,
+                    )}
+                    )
+                  </span>
+                </span>
               </TabsTrigger>
             ))}
           </ScrollableTabsList>
@@ -271,8 +281,8 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
                     spaceSlug={spaceSlug}
                     featured
                     selected={openSection === featured.sectionKey}
+                    canMutate={canMutate}
                     onOpen={showSection}
-                    onRead={setReadingKey}
                     onShowDraft={setDraftKey}
                   />
                 ) : null}
@@ -287,8 +297,8 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
                         section={section}
                         spaceSlug={spaceSlug}
                         selected={openSection === section.sectionKey}
+                        canMutate={canMutate}
                         onOpen={showSection}
-                        onRead={setReadingKey}
                         onShowDraft={setDraftKey}
                       />
                     ))}
@@ -300,12 +310,6 @@ export function SpaceContextSection({ spaceSlug }: { spaceSlug: string }) {
         </Tabs>
       </div>
 
-      <SpaceContextReadDialog
-        section={readingSection}
-        spaceSlug={spaceSlug}
-        canMutate={canMutate}
-        onClose={() => setReadingKey(null)}
-      />
       {draftSection ? (
         <SpaceContextDraftDialog
           open

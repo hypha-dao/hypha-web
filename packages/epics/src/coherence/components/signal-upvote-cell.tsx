@@ -70,6 +70,53 @@ const VoteArrow = React.forwardRef<
   );
 });
 
+type VoteArrowProps = {
+  direction: 'up' | 'down';
+  selected: 'up' | 'down' | null;
+  label: string;
+  disabled: boolean;
+  allocates: boolean;
+  expanded: boolean;
+  onClick: () => void;
+};
+
+/**
+ * Stacked arrows for the list. One outlined column, quiet ink.
+ * The active state is colour only, so the column stays the same size.
+ */
+const StackVoteArrow = React.forwardRef<HTMLButtonElement, VoteArrowProps>(
+  function StackVoteArrow(
+    { direction, selected, label, disabled, allocates, expanded, onClick },
+    ref,
+  ) {
+    const active = selected === direction;
+    const Icon = direction === 'up' ? ArrowUp : ArrowDown;
+    return (
+      <button
+        ref={ref}
+        type="button"
+        data-testid={direction === 'up' ? 'signal-vote-up' : 'signal-vote-down'}
+        aria-pressed={active}
+        aria-label={label}
+        aria-haspopup={allocates ? 'dialog' : undefined}
+        aria-expanded={allocates ? expanded : undefined}
+        disabled={disabled}
+        className={cn(
+          'grid h-[22px] w-full place-items-center rounded-none border-0 bg-transparent p-0 text-foreground opacity-70 transition-opacity hover:opacity-100',
+          active && 'opacity-100',
+          'disabled:opacity-40',
+        )}
+        onClick={(event) => {
+          event.stopPropagation();
+          onClick();
+        }}
+      >
+        <Icon className="size-4" strokeWidth={1.5} aria-hidden />
+      </button>
+    );
+  },
+);
+
 /**
  * Shared face of the list and detail vote control. A square outlined row:
  * up arrow, net figure, down arrow. Each arrow keeps a stable popover
@@ -93,6 +140,7 @@ export function SignalUpvoteCellChrome({
   detailsOpen = false,
   onDetailsOpenChange,
   detailsPanel,
+  layout = 'row',
   className,
   ...groupProps
 }: React.HTMLAttributes<HTMLDivElement> & {
@@ -116,11 +164,14 @@ export function SignalUpvoteCellChrome({
   detailsOpen?: boolean;
   onDetailsOpenChange?: (open: boolean) => void;
   detailsPanel?: React.ReactNode;
+  /** List rows stack the arrows. Detail and cards stay horizontal. */
+  layout?: 'row' | 'stack';
 }) {
   const selected = direction ?? (pressed ? 'up' : null);
   const allocates = allocationPanel != null;
+  const Arrow = layout === 'stack' ? StackVoteArrow : VoteArrow;
   const up = (
-    <VoteArrow
+    <Arrow
       direction="up"
       selected={selected}
       label={upLabel}
@@ -131,7 +182,7 @@ export function SignalUpvoteCellChrome({
     />
   );
   const down = (
-    <VoteArrow
+    <Arrow
       direction="down"
       selected={selected}
       label={downLabel}
@@ -145,8 +196,15 @@ export function SignalUpvoteCellChrome({
     <button
       type="button"
       className={cn(
-        'min-w-4 rounded-none bg-transparent px-1.5 text-1 font-medium tabular-nums leading-none',
-        selected ? 'text-accent-11' : 'text-foreground',
+        'rounded-none bg-transparent tabular-nums leading-none',
+        layout === 'stack'
+          ? 'grid h-[22px] w-full place-items-center px-1 text-center text-[13px] font-bold leading-none text-foreground'
+          : 'min-w-4 px-1.5 text-1 font-medium',
+        layout === 'stack'
+          ? null
+          : selected
+          ? 'text-accent-11'
+          : 'text-foreground',
       )}
       data-testid="signal-upvote-figure"
       aria-label={figureLabel ?? exactLabel}
@@ -186,8 +244,15 @@ export function SignalUpvoteCellChrome({
       data-vote-direction={selected ?? 'none'}
       {...groupProps}
       className={cn(
-        'inline-flex h-7 items-center rounded-none border bg-transparent px-0.5',
-        selected ? 'border-accent-8' : 'border-border',
+        'inline-flex rounded-none border bg-transparent',
+        layout === 'stack'
+          ? 'w-[56px] min-w-[56px] flex-col items-stretch overflow-hidden border-border py-0.5'
+          : 'h-7 items-center px-0.5',
+        layout === 'stack'
+          ? null
+          : selected
+          ? 'border-accent-8'
+          : 'border-border',
         className,
       )}
     >

@@ -69,12 +69,24 @@ vi.mock('@hypha-platform/core/client', () => ({
     proposalStatus?: string | null;
   }) => quest.status === 'proposed' && quest.proposalStatus === 'rejected',
   useSpaceBySlug: () => ({ space: { slug: 'sandbox' } }),
+  useSpaceProposalsWeb3Rpc: () => ({ spaceProposalsIds: undefined }),
+  useWithdrawnProposalsWeb3Rpc: () => ({
+    withdrawnProposalsIds: undefined,
+  }),
   formatQuestCalendarDate: () => '',
   questHealthDisplay: () => ({
     dotClass: '',
     textClass: '',
     label: '',
   }),
+  useSignalWorkflow: () => ({ workflow: undefined }),
+  DEFAULT_SIGNAL_WORKFLOW: {
+    statuses: [],
+    boards: [
+      { slug: 'general', name: 'General', color: 'neutral', position: 0 },
+    ],
+  },
+  resolveEffectiveBoard: (board?: string | null) => board || 'general',
 }));
 
 vi.mock('../../../spaces/hooks/use-can-mutate-in-space.web3.rpc', () => ({
@@ -145,26 +157,22 @@ describe('quest list drafts', () => {
       '/en/dho/sandbox/quests/new?fresh=1',
     );
     expect(create.textContent).toBe('newQuest');
-    const filters = screen.getByTestId('quest-status-filter-row');
-    expect(toolbar.compareDocumentPosition(filters)).toBe(
+    const layout = screen.getByTestId('quest-board-layout');
+    expect(toolbar.compareDocumentPosition(layout)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
-    expect(filters.contains(screen.getByTestId('quest-status-filter'))).toBe(
+    expect(layout.contains(screen.getByTestId('quest-layout-kanban'))).toBe(
       true,
     );
-    expect(screen.getByTestId('quest-status-filter').textContent).toContain(
-      'filters.active',
+    expect(screen.getByTestId('quest-layout-kanban').textContent).toContain(
+      'board.kanban',
     );
     expect(
       screen
-        .getByRole('heading', { name: /title/ })
+        .getByRole('heading', { level: 1 })
         .closest('header')
         ?.contains(create),
     ).toBe(false);
-    fireEvent.keyDown(screen.getByTestId('quest-status-filter'), {
-      key: 'ArrowDown',
-    });
-    fireEvent.click(screen.getByTestId('quest-filter-drafts'));
 
     expect(screen.getByTestId('quest-draft-4')).toBeTruthy();
     expect(screen.getByText('Alpha draft')).toBeTruthy();
@@ -196,10 +204,6 @@ describe('quest list drafts', () => {
   it('closes the confirm at once and shows an error when delete fails', async () => {
     harness.deleteQuestDraftRequest.mockRejectedValue(new Error('no'));
     render(<SpaceQuestsSection spaceSlug="sandbox" />);
-    fireEvent.keyDown(screen.getByTestId('quest-status-filter'), {
-      key: 'ArrowDown',
-    });
-    fireEvent.click(screen.getByTestId('quest-filter-drafts'));
     fireEvent.click(screen.getByTestId('delete-quest-draft-4'));
     fireEvent.click(screen.getByTestId('confirm-delete-quest-draft'));
 
@@ -216,10 +220,10 @@ describe('quest list drafts', () => {
   it('hides My drafts when nobody is signed in', () => {
     harness.visible = false;
     render(<SpaceQuestsSection spaceSlug="sandbox" />);
-    fireEvent.keyDown(screen.getByTestId('quest-status-filter'), {
-      key: 'ArrowDown',
-    });
-    expect(screen.queryByTestId('quest-filter-drafts')).toBeNull();
-    expect(screen.getByTestId('quest-filter-paused')).toBeTruthy();
+    expect(screen.queryByTestId('quest-drafts-list')).toBeNull();
+    expect(screen.queryByTestId('quest-column-paused')).toBeNull();
+    expect(screen.getByRole('heading', { level: 2 }).textContent).toBe(
+      'empty.title',
+    );
   });
 });

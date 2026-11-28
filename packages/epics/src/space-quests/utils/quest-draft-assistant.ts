@@ -54,6 +54,8 @@ export type QuestDraftStateSnapshot = {
   selectedLeadPersonId: number | null;
   members: EditableQuestMember[];
   targetDate: string | null;
+  /** Signal-workflow board slug. Missing on drafts saved before domains. */
+  domain?: string | null;
   deliverables?: EditableQuestDeliverable[];
 };
 
@@ -1654,8 +1656,26 @@ export function nextQuestStepAfterUpdate({
   return { step: next, complete: false };
 }
 
-export const QUEST_DRAFT_READY_REPLY =
-  "Your quest draft is ready. Click CREATE PROPOSAL whenever you're ready to submit it as a proposal for voting.";
+/**
+ * Stored in the chat instead of an English sentence. The visible line is
+ * translated where the message is shown.
+ */
+export const QUEST_DRAFT_READY_REPLY = '[[quest-draft-ready]]';
+
+/** Older sessions stored this English sentence. Still recognized, not written. */
+export const LEGACY_QUEST_DRAFT_READY_REPLY =
+  "Your quest draft is ready. Click SUBMIT FOR VOTING whenever you're ready to submit it as a proposal for voting.";
+
+export function presentQuestDraftReadyReply(
+  text: string,
+  readyLabel: string,
+): string {
+  return text
+    .split(QUEST_DRAFT_READY_REPLY)
+    .join(readyLabel)
+    .split(LEGACY_QUEST_DRAFT_READY_REPLY)
+    .join(readyLabel);
+}
 
 export type QuestDraftTurnHistoryItem = {
   role: 'user' | 'agent';

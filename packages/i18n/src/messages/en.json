@@ -1474,7 +1474,11 @@
     "newProposal": "New Proposal",
     "searchDocuments": "Search documents",
     "listIsEmpty": "List is empty",
-    "listFailedToLoad": "Could not load documents. Try refreshing the page."
+    "listFailedToLoad": "Could not load documents. Try refreshing the page.",
+    "emptyCard": {
+      "title": "No agreements yet",
+      "description": "Discussions, proposals, and accepted agreements for this space show up here."
+    }
   },
   "MembersTab": {
     "member": "Member",
@@ -1514,6 +1518,11 @@
     },
     "aiAgents": "AI Agents",
     "aiAgentsEmptyState": "No AI agents mobilized yet. Ask strategic questions to activate them.",
+    "emptyCard": {
+      "title": "No members yet",
+      "description": "People and spaces that join show up here. Invite someone to get started.",
+      "aiTitle": "No AI agents yet"
+    },
     "aiAgentsMobilizedCount": "Mobilized {count, plural, one {# time} other {# times}}",
     "aiAgentsLastActive": "Last active {date}",
     "inviteMember": "Invite",
@@ -2114,6 +2123,11 @@
     "emptyAssetsTreasury": "Your treasury has no assets yet. Deposit funds or create a space token to get started.",
     "emptyAssetsWallet": "Your wallet has no assets yet. Buy space tokens or HYPHA to start building your balance.",
     "emptyAssetsSearch": "No assets match your search.",
+    "emptyCard": {
+      "assetsTitle": "No assets yet",
+      "vaultsTitle": "No vaults yet",
+      "vaultsDescription": "Backing vaults hold the collateral behind this space's tokens. They appear here once a vault exists."
+    },
     "loadMoreAssets": "Load more assets",
     "transactions": "Transactions",
     "vaults": "Vaults",
@@ -4398,11 +4412,20 @@
     "loadingSignals": "Loading signals...",
     "signInToSee": "Please, sign in to see signals, space memory, and conversations",
     "searchSignals": "Search signals...",
+    "signalLayout": "Signal layout",
+    "signalLayoutList": "List",
+    "signalLayoutCards": "Cards",
+    "signalOpen": "Open",
     "signalTitleNoResults": "No signals match that title.",
     "newSignal": "New Signal",
     "backToCoherence": "Back to Signals",
     "all": "All",
     "listIsEmpty": "List is empty",
+    "empty": {
+      "title": "No signals yet",
+      "description": "Share a need, a resource, or something this space should pay attention to. Members can discuss it and turn it into a proposal when it is ready.",
+      "filtered": "No signals match this view."
+    },
     "loadMore": "Load more",
     "noMore": "No more",
     "mostViews": "Most Views",
@@ -4439,6 +4462,10 @@
     "searchSpaceMemory": "Search space memory...",
     "spaceMemoryLoading": "Loading assets…",
     "spaceMemoryEmpty": "No uploaded files yet. Attachments on proposals and agreements appear here.",
+    "spaceMemoryFilesTitle": "No files yet",
+    "spaceMemoryConversationsTitle": "No conversations yet",
+    "spaceMemoryCallsTitle": "No calls yet",
+    "spaceMemoryAiTitle": "No AI memories yet",
     "spaceMemoryEmptySearch": "No assets match your search.",
     "spaceMemoryError": "Could not load space memory.",
     "spaceMemoryLoadMoreError": "Could not load more items. Try again.",
@@ -4738,7 +4765,7 @@
     "boardAll": "All signals",
     "boardDelete": "Delete board {boardName}",
     "signalViewBoard": "Kanban",
-    "signalWorkflowSettings": "Configure statuses and boards",
+    "signalWorkflowSettings": "Configure domains",
     "signalViewSwimlane": "Swimlane",
     "signalViewList": "List",
     "signalViewGrid": "UpVote",
@@ -4747,7 +4774,7 @@
     "signalListStatus": "Status",
     "signalListDue": "Due",
     "signalListPriority": "Priority",
-    "signalListBoard": "Board",
+    "signalListBoard": "Domain",
     "signalListUpvote": "Upvote",
     "signalColumnEmpty": "Drop signals here",
     "signalLaneCollapse": "Collapse category",
@@ -4756,8 +4783,8 @@
     "signalListActions": "Actions",
     "signalFormStatus": "Status",
     "signalFormStatusHint": "Workflow stage for this signal (shown as columns in Kanban Board and Swimlane views).",
-    "signalFormBoard": "Board category",
-    "signalFormBoardHint": "Organizational swimlane — groups signals by team, initiative, or workstream. Not the same as Type (Opportunity/Risk/Insight) or Tags.",
+    "signalFormBoard": "Domain",
+    "signalFormBoardHint": "Areas a signal can belong to, such as a team, initiative, or workstream. Each domain keeps its color, shown as a dot on the signal.",
     "signalFormDueDate": "Due date",
     "signalFormDueDateHint": "Optional target date for tracking this signal task.",
     "signalAssignee": "Assignee",
@@ -4770,7 +4797,7 @@
     "signalFormAssigneeSearch": "Search members…",
     "signalFormAssigneeEmpty": "No members found.",
     "signalFormVotingPower": "Your voting power",
-    "signalFormVotingPowerHint": "Choose how much of your voting power to back this signal. Defaults to 100%, but you can adjust or remove it anytime.",
+    "signalFormVotingPowerHint": "Choose how much of your voting power to use in support of this signal. The default is 100%, but you can adjust or withdraw your support at any time.",
     "indicativeTokens": "Indicative amount",
     "indicativeTokensHint": "These amounts define the request or resource. No funds move until a proposal is created and approved.",
     "shareWithNetwork": "Share with the network",
@@ -4791,17 +4818,17 @@
     "signalFormUploadFailed": "Could not upload the file. Try again.",
     "scheduleOnCalendar": "Schedule on calendar",
     "signalWorkflowSettingsTitle": "Signal workflow",
-    "signalWorkflowSettingsDescription": "Customize Kanban columns (statuses) and swimlane rows (board categories) for signals in this space.",
+    "signalWorkflowSettingsDescription": "Choose the domains signals in this space can belong to.",
     "signalWorkflowStatuses": "Kanban statuses",
-    "signalWorkflowBoards": "Board categories",
+    "signalWorkflowBoards": "Domain",
     "signalWorkflowAddStatus": "Add status",
-    "signalWorkflowAddBoard": "Add category",
+    "signalWorkflowAddBoard": "Add domain",
     "signalWorkflowNewStatus": "New status",
-    "signalWorkflowNewBoard": "New category",
+    "signalWorkflowNewBoard": "New domain",
     "signalWorkflowNamePlaceholder": "Display name",
     "signalWorkflowColor": "Color",
     "signalWorkflowCategory": "Category",
-    "signalWorkflowArchiveBoard": "Archive board",
+    "signalWorkflowArchiveBoard": "Archive domain",
     "signalWorkflowMoveUp": "Move up",
     "signalWorkflowMoveDown": "Move down",
     "signalWorkflowRemove": "Remove",
@@ -4821,7 +4848,13 @@
       "accent": "Blue",
       "warn": "Amber",
       "success": "Green",
-      "error": "Red"
+      "error": "Red",
+      "sky": "Sky",
+      "teal": "Teal",
+      "indigo": "Indigo",
+      "purple": "Purple",
+      "pink": "Pink",
+      "orange": "Orange"
     },
     "spaceMemoryTimelineLabel": "Space memory history",
     "usedOnThisBoard": "Used on this board",
@@ -4892,10 +4925,18 @@
     "signalCreatedLabel": "Created",
     "signalLastReplyLabel": "Last reply",
     "signalDiscussion": "Discussion",
+    "signalCreatorYou": "You",
+    "signalCreatorMember": "Member",
+    "signalCreatorAgent": "AI Agent",
+    "signalCreatorRelay": "Relay space",
     "openDiscussion": "Open discussion",
+    "signalConvert": "Convert",
+    "signalConvertQuest": "Quest",
+    "signalConvertProposal": "Proposal",
+    "signalConvertStorageError": "The conversion could not be saved in this browser. Free some space and try again.",
     "signalAttachmentsLabel": "Attachments",
     "signalNotFound": "This signal could not be found.",
-    "signalFormVoteWithPercent": "Vote with % of your voting power",
+    "signalFormVoteWithPercent": "Decide how much voting power to give this signal",
     "signalFormVotingPowerReadout": "{percent}% · ♦ {amount} of {max}",
     "unknownMember": "Unknown",
     "signalFormTagPeople": "Tag people",
@@ -4909,6 +4950,13 @@
     "signalSortNew": "New",
     "signalSortTopVoters": "Top by voters",
     "signalSortTopPower": "Top by voting power",
+    "signalFilters": "Filter",
+    "signalFilterPeople": "By people",
+    "signalFilterAllPeople": "All people",
+    "signalFilterType": "Signal type",
+    "signalFilterAllTypes": "All types",
+    "signalFilterDomain": "By domain",
+    "signalFilterAllDomains": "All domains",
     "signalTimeFrame": "Time frame",
     "signalTimeFrameToday": "Today",
     "signalTimeFrameWeek": "This Week",
@@ -5481,6 +5529,11 @@
     "dealDetails": "{item} details",
     "loading": "Loading {items}…",
     "configLoadFailed": "Could not load pipeline configuration.",
+    "empty": {
+      "title": "No {items} yet",
+      "description": "Track work from first contact through to a decision. Add a card when there is something to follow.",
+      "filtered": "Nothing matches this view."
+    },
     "retry": "Retry",
     "unassignedLane": "Unassigned",
     "notFound": "{item} not found",
@@ -5794,17 +5847,19 @@
   },
   "SpaceContext": {
     "title": "Context",
-    "progress": "{ratified} of {total} ratified",
-    "propose": "Propose to ratify",
+    "progress": "{ratified} of {total} approved",
+    "propose": "Submit for voting",
     "filters": {
       "all": "All",
-      "ratified": "Ratified",
-      "proposed": "On voting",
+      "proposed": "On Voting",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
       "drafts": "Drafts"
     },
     "status": {
       "ratified": "Ratified",
       "onVoting": "On voting",
+      "rejected": "Rejected",
       "draft": "Draft",
       "notStarted": "Not started"
     },
@@ -5843,7 +5898,7 @@
       "loadLatest": "Load latest",
       "saveDraft": "Save draft",
       "saving": "Saving…",
-      "propose": "Propose to ratify",
+      "propose": "Submit for voting",
       "skills": {
         "review": "Is this a good {section}? What is missing or vague?",
         "refine": "Refine the shared draft using what we discussed above.",
@@ -5925,7 +5980,18 @@
     "title": "Quests",
     "subtitle": "Focused, time-bound work with a clear goal, members and milestones",
     "newQuest": "New Quest",
+    "empty": {
+      "title": "No quests yet",
+      "description": "Quests are focused pieces of work with a goal, members, and milestones. Propose one when this space is ready to commit.",
+      "filtered": "No quests match these filters."
+    },
     "searchPlaceholder": "Search quests",
+    "domain": "Domain",
+    "board": {
+      "kanban": "Kanban",
+      "swimlane": "Swimlane",
+      "layout": "Board layout"
+    },
     "filters": {
       "active": "Active",
       "proposed": "Proposed",
@@ -5933,7 +5999,12 @@
       "completed": "Completed",
       "rejected": "Rejected",
       "drafts": "My drafts",
-      "status": "Status"
+      "status": "Status",
+      "label": "Filter",
+      "people": "By people",
+      "allPeople": "All people",
+      "domain": "By domain",
+      "allDomains": "All domains"
     },
     "overview": {
       "goal": "Goal",
@@ -5951,6 +6022,7 @@
     },
     "deliverableUrl": "Enter a link starting with http:// or https://",
     "deliverableSaveError": "Could not save deliverables. Try again.",
+    "draftReady": "Your quest draft is ready. Click {action} whenever you're ready to submit it as a proposal for voting.",
     "activity": {
       "proposalRejected": "proposal rejected"
     },
@@ -5958,7 +6030,7 @@
       "title": "Submit this quest?",
       "body": "This submits the quest as a proposal for {space} to vote on. The quest stays proposed until the vote passes.",
       "cancel": "Cancel",
-      "submit": "Submit for a vote"
+      "submit": "Submit for voting"
     },
     "drafts": {
       "empty": "You have no saved quest drafts in this space.",

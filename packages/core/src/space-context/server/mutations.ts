@@ -597,10 +597,12 @@ export async function revertSpaceContextSectionsByDocumentId(
       end`,
       status: sql`case
         when ${spaceContextSections.ratifiedDocumentId} is not null then 'ratified'
-        when trim(coalesce(${spaceContextSections.markdown}, '')) = '' then 'not_started'
-        else 'draft'
+        else 'rejected'
       end`,
-      proposalDocumentId: null,
+      proposalDocumentId: sql`case
+        when ${spaceContextSections.ratifiedDocumentId} is not null then null
+        else ${spaceContextSections.proposalDocumentId}
+      end`,
       updatedAt: new Date(),
     })
     .where(eq(spaceContextSections.proposalDocumentId, documentId))

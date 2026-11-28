@@ -1325,6 +1325,20 @@ export function SpaceQuestDetail({
   const listHref = `/${locale}/dho/${spaceSlug}/quests`;
 
   const openingDiscussionRef = useRef(false);
+  const openDiscussionRef = useRef<() => void>(() => {});
+  const autoOpenedDiscussionRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    // A failed refresh can keep the previous quest while `error` is set.
+    // Recording the slug then blocks the open once the error clears.
+    if (error) return;
+    // Proposed and rejected quests have no discussion room.
+    if (!quest || quest.status === 'proposed') return;
+    if (!quest.chatRoomId?.trim()) return;
+    if (autoOpenedDiscussionRef.current === quest.slug) return;
+    autoOpenedDiscussionRef.current = quest.slug;
+    openDiscussionRef.current();
+  }, [error, quest]);
   const sendDetailRef = useRef<(overridePrompt?: string) => void>(() => {});
   const triggerDetailSend = useCallback(() => {
     sendDetailRef.current();
@@ -1507,6 +1521,7 @@ export function SpaceQuestDetail({
       );
     })();
   };
+  openDiscussionRef.current = openDiscussion;
 
   const handleSendDetailChatMessage = async (overridePrompt?: string) => {
     const rawTrimmed = (overridePrompt ?? detailChatInput).trim();

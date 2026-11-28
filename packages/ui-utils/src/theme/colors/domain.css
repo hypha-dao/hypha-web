@@ -1,0 +1,12 @@
+/*
+ * Extra domain dots. Solid in both themes so a chosen hue stays recognizable.
+ * The five semantic colors stay on their own tokens.
+ */
+:root {
+  --domain-sky: oklch(62% 0.12 230);
+  --domain-teal: oklch(58% 0.1 180);
+  --domain-indigo: oklch(52% 0.16 275);
+  --domain-purple: oklch(55% 0.16 310);
+  --domain-pink: oklch(62% 0.15 5);
+  --domain-orange: oklch(68% 0.15 50);
+}

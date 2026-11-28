@@ -27,6 +27,7 @@ import {
   useCollapsedPipelineLanes,
 } from './pipeline-lane-section';
 import { NewDealDialog } from './new-deal-dialog';
+import { PipelineEmpty } from './pipeline-empty';
 import { exportDealsToXlsx } from '../utils/export-deals';
 import type { UseMembers } from '../../spaces';
 
@@ -79,6 +80,10 @@ export function TrackPage({
   const filtered = React.useMemo(
     () => filterDeals(deals, filters),
     [deals, filters],
+  );
+  const trackDeals = React.useMemo(
+    () => deals.filter((deal) => deal.pipelineSwimlane === swimlane),
+    [deals, swimlane],
   );
 
   const onMoveStatus = React.useCallback(
@@ -163,6 +168,15 @@ export function TrackPage({
         <div className="text-2 text-neutral-11">
           {t('loading', { items: itemPlural })}
         </div>
+      ) : trackDeals.length === 0 ? (
+        <PipelineEmpty
+          items={itemPlural}
+          onCreate={readOnly ? undefined : () => setNewOpen(true)}
+        />
+      ) : filtered.length === 0 ? (
+        <p className="px-1 py-6 text-center text-2 text-muted-foreground">
+          {t('empty.filtered')}
+        </p>
       ) : (
         <PipelineLaneSection
           laneSlug={swimlane}

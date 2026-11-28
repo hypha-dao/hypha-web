@@ -7,9 +7,10 @@ import { Document } from '@hypha-platform/core/client';
 import { DocumentGridContainer } from './document-grid.container';
 import { DirectionType } from '@hypha-platform/core/client';
 import { Empty } from '../../common';
+import { SpaceEmptyCard } from '../../common/space-empty-card';
 import { useTranslations } from 'next-intl';
 import { Input } from '@hypha-platform/ui';
-import { SearchIcon } from 'lucide-react';
+import { Scale, SearchIcon } from 'lucide-react';
 
 type DocumentSectionProps = {
   basePath: string;
@@ -52,6 +53,8 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
     firstPageSize,
     pageSize,
   });
+  const showRecordEmpty =
+    !isLoading && !error && pagination?.totalPages === 0 && !searchTerm?.trim();
 
   return (
     <div className="flex flex-col justify-around items-center gap-4">
@@ -68,7 +71,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
         ) : (
           <div className="min-w-0 flex-1" />
         )}
-        {headSectionButton}
+        {showRecordEmpty ? null : headSectionButton}
       </div>
 
       {isLoading && pagination?.totalPages === 0 ? (
@@ -94,13 +97,22 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
           />
         </div>
       ) : pagination?.totalPages === 0 ? (
-        <Empty>
-          <p>
-            {error
-              ? tAgreements('listFailedToLoad')
-              : tAgreements('listIsEmpty')}
-          </p>
-        </Empty>
+        error ? (
+          <Empty>
+            <p>{tAgreements('listFailedToLoad')}</p>
+          </Empty>
+        ) : searchTerm?.trim() ? (
+          <Empty>
+            <p>{tAgreements('listIsEmpty')}</p>
+          </Empty>
+        ) : (
+          <SpaceEmptyCard
+            icon={Scale}
+            title={tAgreements('emptyCard.title')}
+            description={tAgreements('emptyCard.description')}
+            action={headSectionButton}
+          />
+        )
       ) : (
         <div className="w-full space-y-2">
           {Array.from({ length: pages }).map((_, index) => (

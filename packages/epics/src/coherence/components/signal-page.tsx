@@ -3,16 +3,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Download } from 'lucide-react';
-import { useFormatter, useNow, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import {
   signalListUpvoteSummaryState,
-  type Coherence,
   useCoherenceMutationsWeb2Rsc,
   useFindCoherences,
   useJwt,
-  useMatrix,
   useMe,
-  usePeopleBySubs,
   usePersonById,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
@@ -21,7 +18,6 @@ import { Button, MarkdownSuspense, Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 import { shouldCloseSignalDetailChat } from '../lib/signal-detail-chat';
-import { matrixUserIdToCanonicalPrivySub } from '../../common/human-chat-panel/matrix-room-member-display';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useSignalCreatorMeta } from '../hooks/use-signal-creator-meta';
 import { signalOriginLabel } from '../lib/signal-origin-label';
@@ -31,23 +27,26 @@ import {
   signalVotingSpaceId,
   useSignalVotingMode,
 } from '../hooks/use-signal-voting-mode';
-import { countSignalMedia, splitSignalMedia } from '../utils/signal-media';
-import {
-  signalDiscussionCount,
-  signalLastReplierLabel,
-} from '../utils/signal-room-replies';
+import { useCanUpdateSignalTasks } from '../hooks/use-can-update-signal-tasks';
+import { SignalDomainControl } from './signal-domain';
+import { prepareSignalDescriptionMarkdown } from '../utils/signal-description-markdown';
+import { splitSignalMedia } from '../utils/signal-media';
+import { signalDiscussionCount } from '../utils/signal-room-replies';
 import { resolveSignalVideo } from '../utils/signal-video';
+import { SignalConvertMenu } from './signal-convert-menu';
 import { SignalCreatorActions } from './signal-creator-actions';
-import { useSignalMediaSummary } from './signal-media-chips';
 import { useSignalShortDate } from './signal-feed-row';
+import { SignalTagBadges } from './signal-tag-badges';
 import { SignalTypeBadge } from './signal-type-badge';
+import { legacySignalFieldsToShow } from './legacy-signal-fields/legacy-signal-fields';
+import {
+  PRIORITY_DOT_MARK_CLASS,
+  priorityDotClass,
+} from '../utils/signal-priority-styles';
 import { SignalUpvoteButton } from './signal-upvote-button';
 import { useVoteEnabled } from '../../common/action-capabilities';
 import { SignalVideoPlayer } from './signal-video-player';
 import { LegacySignalFieldsDetail } from './legacy-signal-fields/legacy-signal-fields-detail';
-
-const SECTION_LABEL_CLASS =
-  'text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground';
 
 /**
  * Column gap for Created by / Created / Last reply / Discussion.
@@ -79,81 +78,85 @@ function fileExtension(name: string, url: string): string {
   return ext && ext.length <= 5 ? ext.toUpperCase() : 'DOC';
 }
 
-function MetaItem({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={SIGNAL_PAGE_META_ITEM_CLASS}>
-      <dt className={SECTION_LABEL_CLASS}>{label}</dt>
-      <dd className="m-0 flex max-w-full flex-wrap items-center gap-2 break-words text-1 text-foreground">
-        {children}
-      </dd>
-    </div>
-  );
-}
-
 type MarkdownComponents = NonNullable<
   React.ComponentProps<typeof MarkdownSuspense>['components']
 >;
 type MarkdownChildren = { children?: React.ReactNode };
 
+/** Section titles sit on a hairline so a long write-up reads as sections, not one block. */
+const SIGNAL_SECTION_TITLE_CLASS =
+  'mb-2 mt-7 border-t border-border/60 pt-5 font-medium leading-snug tracking-tight text-foreground first:mt-0 first:border-t-0 first:pt-0';
+
+const SIGNAL_LIST_CLASS =
+  'my-3 ml-0 list-outside space-y-2.5 pl-6 text-2 leading-[1.65] text-foreground marker:text-muted-foreground';
+
+function SignalDescriptionFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="max-w-[72ch] text-2 leading-[1.7] text-foreground/90 [overflow-wrap:anywhere]">
+      {children}
+    </div>
+  );
+}
+
+function SignalDescriptionLink({
+  children,
+  href,
+}: MarkdownChildren & { href?: string }) {
+  const external = !!href && /^https?:/i.test(href);
+  return (
+    <a
+      href={href}
+      className="text-foreground underline decoration-foreground/30 underline-offset-[3px] hover:decoration-foreground"
+      target={external ? '_blank' : undefined}
+      rel={external ? 'noreferrer' : undefined}
+    >
+      {children}
+    </a>
+  );
+}
+
 /** Body sized to sit with the page meta: 14px text, headings a step or two up. */
 const SIGNAL_DESCRIPTION_COMPONENTS: MarkdownComponents = {
   h1: ({ children }: MarkdownChildren) => (
-    <h1 className="mb-1.5 mt-4 text-4 font-semibold text-foreground first:mt-0">
-      {children}
-    </h1>
+    <h1 className={cn(SIGNAL_SECTION_TITLE_CLASS, 'text-4')}>{children}</h1>
   ),
   h2: ({ children }: MarkdownChildren) => (
-    <h2 className="mb-1.5 mt-4 text-3 font-semibold text-foreground first:mt-0">
-      {children}
-    </h2>
+    <h2 className={cn(SIGNAL_SECTION_TITLE_CLASS, 'text-3')}>{children}</h2>
   ),
   h3: ({ children }: MarkdownChildren) => (
-    <h3 className="mb-1 mt-3 text-2 font-semibold text-foreground first:mt-0">
-      {children}
-    </h3>
+    <h3 className={cn(SIGNAL_SECTION_TITLE_CLASS, 'text-2')}>{children}</h3>
   ),
   h4: ({ children }: MarkdownChildren) => (
-    <h4 className="mb-1 mt-3 text-2 font-semibold text-foreground first:mt-0">
-      {children}
-    </h4>
+    <h4 className={cn(SIGNAL_SECTION_TITLE_CLASS, 'text-2')}>{children}</h4>
   ),
   p: ({ children }: MarkdownChildren) => (
-    <p className="my-2 text-2 leading-relaxed text-foreground first:mt-0 last:mb-0">
+    <p className="my-3 text-2 leading-[1.7] text-foreground/90 first:mt-0 last:mb-0">
       {children}
     </p>
   ),
   ul: ({ children }: MarkdownChildren) => (
-    <ul className="my-2 ml-0 list-outside list-disc pl-4 text-2 leading-relaxed text-foreground">
-      {children}
-    </ul>
+    <ul className={cn(SIGNAL_LIST_CLASS, 'list-disc')}>{children}</ul>
   ),
   ol: ({ children }: MarkdownChildren) => (
-    <ol className="my-2 ml-0 list-outside list-decimal pl-4 text-2 leading-relaxed text-foreground">
-      {children}
-    </ol>
+    <ol className={cn(SIGNAL_LIST_CLASS, 'list-decimal')}>{children}</ol>
   ),
   li: ({ children }: MarkdownChildren) => (
-    <li className="my-0.5">{children}</li>
+    <li className="pl-1.5 [&>p]:my-0">{children}</li>
   ),
+  a: SignalDescriptionLink,
   blockquote: ({ children }: MarkdownChildren) => (
-    <blockquote className="my-2 border-l-2 border-border pl-3 text-2 italic text-muted-foreground">
+    <blockquote className="my-4 border-l-2 border-border pl-4 text-2 leading-[1.7] text-muted-foreground">
       {children}
     </blockquote>
   ),
   strong: ({ children }: MarkdownChildren) => (
-    <strong className="font-semibold">{children}</strong>
+    <strong className="font-semibold text-foreground">{children}</strong>
   ),
   em: ({ children }: MarkdownChildren) => (
     <em className="italic">{children}</em>
   ),
   u: ({ children }: MarkdownChildren) => (
-    <u className="underline">{children}</u>
+    <u className="underline underline-offset-2">{children}</u>
   ),
 };
 
@@ -177,94 +180,20 @@ const SignalDescriptionBody = React.memo(function SignalDescriptionBody({
 }: {
   source: string;
 }) {
+  const markdown = React.useMemo(
+    () => prepareSignalDescriptionMarkdown(source),
+    [source],
+  );
   return (
     <MarkdownSuspense
       components={SIGNAL_DESCRIPTION_COMPONENTS}
+      ProseWrapper={SignalDescriptionFrame}
       FallBack={<SignalDescriptionFallback />}
     >
-      {source}
+      {markdown}
     </MarkdownSuspense>
   );
 });
-
-function SignalMediaSection({ signal }: { signal: Coherence }) {
-  const t = useTranslations('CoherenceTab');
-  const { images, documents } = React.useMemo(
-    () => splitSignalMedia(signal),
-    [signal],
-  );
-  const video = React.useMemo(
-    () => resolveSignalVideo(signal.videoUrl),
-    [signal.videoUrl],
-  );
-  const galleryCount = images.length + (video ? 1 : 0);
-  if (galleryCount === 0 && documents.length === 0) return null;
-
-  return (
-    <section className="craft-card flex flex-col gap-4 p-5">
-      <h2 className={cn(SECTION_LABEL_CLASS, 'm-0')}>
-        {t('signalMedia')} · {galleryCount + documents.length}
-      </h2>
-      {galleryCount > 0 ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {video ? (
-            <figure className="m-0 flex flex-col gap-1.5 sm:col-span-2">
-              <div className="relative aspect-video w-full overflow-hidden bg-black">
-                <SignalVideoPlayer video={video} title={signal.title} />
-              </div>
-            </figure>
-          ) : null}
-          {images.map((image) => (
-            <figure key={image.url} className="m-0 flex flex-col gap-1.5">
-              <a
-                href={image.url}
-                target="_blank"
-                rel="noreferrer"
-                className="block overflow-hidden border border-border/70 bg-background-3"
-              >
-                <img
-                  src={image.url}
-                  alt={image.name}
-                  className="aspect-[4/3] w-full object-cover"
-                />
-              </a>
-              <figcaption className="truncate text-1 text-muted-foreground">
-                {image.name}
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-      ) : null}
-      {documents.length > 0 ? (
-        <ul className="m-0 flex list-none flex-col gap-2 p-0">
-          {documents.map((doc) => (
-            <li
-              key={doc.url}
-              className="flex items-center gap-3 border border-border/70 px-3 py-2.5"
-            >
-              <span className="grid h-8 min-w-10 place-items-center bg-foreground/5 px-1.5 text-[10px] font-semibold tracking-[0.06em] text-muted-foreground">
-                {fileExtension(doc.name, doc.url)}
-              </span>
-              <span className="min-w-0 flex-1 truncate text-1 text-foreground">
-                {doc.name}
-              </span>
-              <a
-                href={doc.url}
-                target="_blank"
-                rel="noreferrer"
-                download
-                className="inline-flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground hover:text-accent-11"
-              >
-                {t('signalDownload')}
-                <Download className="craft-icon-sm" aria-hidden />
-              </a>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </section>
-  );
-}
 
 export type SignalPageProps = {
   lang: Locale;
@@ -287,8 +216,6 @@ export function SignalPage({
   readOnly = false,
 }: SignalPageProps) {
   const t = useTranslations('CoherenceTab');
-  const format = useFormatter();
-  const now = useNow({ updateInterval: 60_000 });
   const shortDate = useSignalShortDate();
 
   const { space } = useSpaceBySlug(spaceSlug);
@@ -298,6 +225,10 @@ export function SignalPage({
     retry: retryVotingMode,
   } = useSignalVotingMode(signalVotingSpaceId(space));
   const { isNonMember, isMembershipPending } = useSignalSpaceMembership(space);
+  const { canUpdateTasks } = useCanUpdateSignalTasks({
+    spaceSlug,
+    web3SpaceId: space?.web3SpaceId ?? undefined,
+  });
   const {
     coherences,
     isLoading: isSignalsLoading,
@@ -315,20 +246,6 @@ export function SignalPage({
 
   const activityRooms = React.useMemo(() => (signal ? [signal] : []), [signal]);
   const activity = useSignalRoomActivity(activityRooms)[signal?.roomId ?? ''];
-  const { client: matrixClient } = useMatrix();
-  const lastReplySub = activity?.lastReplySenderId
-    ? matrixUserIdToCanonicalPrivySub(activity.lastReplySenderId)
-    : null;
-  const lastReplySubs = React.useMemo(
-    () => (lastReplySub ? [lastReplySub] : []),
-    [lastReplySub],
-  );
-  const { peopleBySub: lastReplyPeople } = usePeopleBySubs({
-    subs: lastReplySubs,
-  });
-  const lastReplyPerson = lastReplySub
-    ? lastReplyPeople.get(lastReplySub)
-    : undefined;
   const { creatorDisplayName, relaySourceLabel } = useSignalCreatorMeta({
     creatorId: signal?.creatorId ?? null,
     createdAt: signal?.createdAt ?? new Date(0),
@@ -341,9 +258,6 @@ export function SignalPage({
     relaySourceLabel,
   });
   const { person: creator } = usePersonById({ id: signal?.creatorId });
-  const mediaSummary = useSignalMediaSummary(
-    React.useMemo(() => countSignalMedia(signal ?? undefined), [signal]),
-  );
 
   const {
     mode: chatMode,
@@ -362,6 +276,14 @@ export function SignalPage({
       spaceSlug,
     );
   }, [openCoherenceChat, signal, spaceSlug]);
+
+  const openedDiscussionSlug = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!humanChatEnabled || !signal?.slug) return;
+    if (openedDiscussionSlug.current === signal.slug) return;
+    openedDiscussionSlug.current = signal.slug;
+    openChat();
+  }, [humanChatEnabled, openChat, signal?.slug]);
 
   const signalChatRef = React.useRef({
     mode: chatMode,
@@ -475,52 +397,44 @@ export function SignalPage({
 
   const created = shortDate(signal.createdAt);
   const comments = signalDiscussionCount(signal.messages, activity);
-  const fullName = (p?: { name?: string | null; surname?: string | null }) =>
-    [p?.name, p?.surname].filter(Boolean).join(' ').trim();
-  const lastReplierName = signalLastReplierLabel({
-    senderId: activity?.lastReplySenderId,
-    viewerMatrixId: matrixClient?.getUserId(),
-    viewerName: fullName(person ?? undefined),
-    personName:
-      fullName(lastReplyPerson) || lastReplyPerson?.nickname?.trim() || null,
-    matrixName: activity?.lastReplySenderName,
-  });
-  const lastReply =
-    activity?.lastReplyAt != null
-      ? [
-          format.relativeTime(new Date(activity.lastReplyAt), now),
-          lastReplierName,
-        ]
-          .filter(Boolean)
-          .join(' · ')
-      : activity?.reachesRoomStart
-      ? t('signalNoReplies')
-      : null;
-  const discussion = [
-    t('signalCommentsCount', { count: comments }),
-    activity?.reachesRoomStart
-      ? t('signalPeopleCount', { count: activity.people })
-      : null,
-  ]
+  const discussion = t('signalCommentsCount', { count: comments });
+  const description = signal.description?.trim() ?? '';
+  const byline = [creatorDisplayName, created, discussion]
     .filter(Boolean)
     .join(' · ');
-  const description = signal.description?.trim() ?? '';
+  const { images, documents } = splitSignalMedia(signal);
+  const video = resolveSignalVideo(signal.videoUrl);
+  const leadImage = images[0] ?? null;
+  const moreImages = images.slice(1);
+  const hasRightMedia = Boolean(leadImage || video || moreImages.length);
+  const legacy = legacySignalFieldsToShow(signal);
+  const priority = legacy?.priority ?? null;
+  const priorityLabel = priority
+    ? t.has(`priorities.${priority}` as never)
+      ? t(`priorities.${priority}` as never)
+      : priority
+    : null;
+  const tags = legacy?.tags ?? [];
+  const upvoteSummary = signalListUpvoteSummaryState({
+    hasSettledList: Boolean(coherences),
+    isLoading: isSignalsLoading,
+    hasError: signalsError != null,
+  });
 
   return (
-    <div className="flex min-w-0 flex-col gap-4" data-testid="signal-page">
-      <nav
-        aria-label={t('signals')}
-        className="flex min-w-0 items-center gap-2 text-1 text-muted-foreground"
-      >
+    <div
+      className="flex w-full min-w-0 flex-col gap-6 py-2"
+      data-testid="signal-page"
+      data-member-signal-detail=""
+    >
+      <nav aria-label={t('signals')}>
         <Link
           href={feedHref}
-          className="inline-flex shrink-0 items-center gap-1.5 hover:text-foreground"
+          className="inline-flex items-center gap-1.5 text-1 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="craft-icon" aria-hidden />
           {t('signals')}
         </Link>
-        <span aria-hidden>/</span>
-        <span className="truncate text-foreground">{signal.title}</span>
       </nav>
 
       {signalsError ? (
@@ -542,38 +456,40 @@ export function SignalPage({
         </div>
       ) : null}
 
-      <section className={SIGNAL_PAGE_CARD_CLASS}>
-        <div className={SIGNAL_PAGE_CARD_BODY_CLASS}>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-            <div className="flex min-w-0 flex-1 flex-col gap-3">
-              <SignalTypeBadge type={signal.type} variant="box" />
-              <h1 className="m-0 min-w-0 text-4 leading-tight text-foreground">
-                {signal.title}
-              </h1>
-              {!canUpvote ? null : (
-                <SignalUpvoteButton
-                  slug={signal.slug}
+      <article
+        className={cn(
+          'grid min-w-0 gap-8',
+          hasRightMedia &&
+            'lg:grid-cols-[minmax(0,1fr)_minmax(14rem,22rem)] lg:items-start',
+        )}
+      >
+        <div className="flex min-w-0 flex-col gap-5">
+          <header className="flex min-w-0 flex-col gap-3">
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <SignalTypeBadge type={signal.type} variant="pill" />
+                <SignalDomainControl
                   spaceSlug={spaceSlug}
-                  upvotes={signal.upvotes}
-                  votingMode={votingMode}
-                  votingModeStatus={votingModeStatus}
-                  onRetryVotingMode={retryVotingMode}
-                  isNonMember={isNonMember}
-                  isMembershipPending={isMembershipPending}
+                  signalSlug={signal.slug}
+                  board={signal.board}
+                  editable={!readOnly && canUpdateTasks}
                   refresh={refresh}
-                  archived={signal.archived}
-                  variant="page"
-                  summaryState={signalListUpvoteSummaryState({
-                    hasSettledList: Boolean(coherences),
-                    isLoading: isSignalsLoading,
-                    hasError: signalsError != null,
-                  })}
-                  className="self-start"
                 />
-              )}
-            </div>
-            {readOnly ? null : (
-              <div className="flex shrink-0 flex-wrap items-center gap-2 self-start">
+                {priority && priorityLabel ? (
+                  <span className="inline-flex items-center gap-1.5 text-1 text-muted-foreground">
+                    <span
+                      className={cn(
+                        PRIORITY_DOT_MARK_CLASS,
+                        priorityDotClass(priority),
+                      )}
+                      aria-hidden
+                    />
+                    <span className="sr-only">{t('priority')}: </span>
+                    {priorityLabel}
+                  </span>
+                ) : null}
+              </div>
+              {readOnly ? null : (
                 <SignalCreatorActions
                   lang={lang}
                   spaceSlug={spaceSlug}
@@ -581,15 +497,12 @@ export function SignalPage({
                   creatorId={signal.creatorId}
                   className="flex items-center gap-2"
                 />
-              </div>
-            )}
-          </div>
-
-          <dl
-            data-testid="signal-page-meta"
-            className={SIGNAL_PAGE_META_ROW_CLASS}
-          >
-            <MetaItem label={t('signalCreatedBy')}>
+              )}
+            </div>
+            <h1 className="m-0 text-balance text-[22px] font-medium leading-[1.2] tracking-[-0.02em] text-foreground [font-family:var(--font-family-heading)] sm:text-[24px]">
+              {signal.title}
+            </h1>
+            <div className="flex min-w-0 flex-wrap items-center gap-2 text-1 text-muted-foreground">
               <PersonAvatar
                 size="sm"
                 shape="circle"
@@ -597,64 +510,140 @@ export function SignalPage({
                 userName={creatorDisplayName ?? undefined}
                 personId={signal.creatorId ?? undefined}
               />
-              <span className="break-words">{creatorDisplayName}</span>
-            </MetaItem>
+              <p className="m-0 min-w-0 break-words">{byline}</p>
+            </div>
             {originLabel ? (
-              <MetaItem label={t('signalOrigin')}>
-                <span className="break-words" data-testid="signal-page-origin">
-                  {originLabel}
-                </span>
-              </MetaItem>
+              <p
+                className="m-0 text-1 text-muted-foreground"
+                data-testid="signal-page-origin"
+              >
+                {originLabel}
+              </p>
             ) : null}
-            {created ? (
-              <MetaItem label={t('signalCreatedLabel')}>{created}</MetaItem>
+            {tags.length > 0 ? (
+              <SignalTagBadges
+                tags={tags}
+                maxVisible={tags.length}
+                showHashPrefix={false}
+              />
             ) : null}
-            {lastReply ? (
-              <MetaItem label={t('signalLastReplyLabel')}>
-                <span className="break-words">{lastReply}</span>
-              </MetaItem>
-            ) : null}
-            <MetaItem label={t('signalDiscussion')}>
-              <span className="break-words">{discussion}</span>
-            </MetaItem>
-            {mediaSummary ? (
-              <MetaItem label={t('signalAttachmentsLabel')}>
-                <span className="break-words">{mediaSummary}</span>
-              </MetaItem>
-            ) : null}
+          </header>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {!canUpvote ? null : (
+              <SignalUpvoteButton
+                slug={signal.slug}
+                spaceSlug={spaceSlug}
+                upvotes={signal.upvotes}
+                votingMode={votingMode}
+                votingModeStatus={votingModeStatus}
+                onRetryVotingMode={retryVotingMode}
+                isNonMember={isNonMember}
+                isMembershipPending={isMembershipPending}
+                refresh={refresh}
+                archived={signal.archived}
+                variant="page"
+                summaryState={upvoteSummary}
+                layout="row"
+                className="shrink-0"
+              />
+            )}
             {humanChatEnabled ? (
-              <div className="ml-auto flex max-w-full shrink-0 flex-col gap-1">
-                <span
-                  className={cn(SECTION_LABEL_CLASS, 'invisible')}
-                  aria-hidden
+              <button
+                type="button"
+                data-testid="signal-open-discussion"
+                onClick={openChat}
+                className="box-border inline-flex h-[36px] min-h-[36px] shrink-0 items-center gap-1.5 border border-border bg-transparent px-3 text-1 font-medium leading-none text-foreground hover:bg-foreground/5"
+              >
+                {t('openDiscussion')}
+                <span aria-hidden>→</span>
+              </button>
+            ) : null}
+            {readOnly ? null : (
+              <SignalConvertMenu
+                lang={lang}
+                spaceSlug={spaceSlug}
+                source={{
+                  title: signal.title,
+                  description: signal.description,
+                  board: signal.board,
+                }}
+              />
+            )}
+          </div>
+
+          {description ? <SignalDescriptionBody source={description} /> : null}
+
+          {documents.length > 0 ? (
+            <ul className="m-0 flex list-none flex-col gap-2 border-t border-border/70 p-0 pt-5">
+              {documents.map((doc) => (
+                <li
+                  key={doc.url}
+                  className="flex items-center gap-3 border border-border/70 px-3 py-2"
                 >
-                  {'\u00a0'}
-                </span>
-                <button
-                  type="button"
-                  data-testid="signal-open-discussion"
-                  onClick={openChat}
-                  className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline"
-                >
-                  {t('openDiscussion')}
-                  <span aria-hidden>→</span>
-                </button>
+                  <span className="text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+                    {fileExtension(doc.name, doc.url)}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-1 text-foreground">
+                    {doc.name}
+                  </span>
+                  <a
+                    href={doc.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    download
+                    className="inline-flex shrink-0 items-center gap-1 text-1 text-muted-foreground hover:text-foreground"
+                  >
+                    {t('signalDownload')}
+                    <Download className="craft-icon-sm" aria-hidden />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+
+        {hasRightMedia ? (
+          <aside className="flex min-w-0 flex-col gap-3">
+            {leadImage ? (
+              <a
+                href={leadImage.url}
+                target="_blank"
+                rel="noreferrer"
+                className="block w-full overflow-hidden border border-border/70"
+              >
+                <img
+                  src={leadImage.url}
+                  alt={leadImage.name}
+                  className="aspect-[4/3] w-full object-cover"
+                />
+              </a>
+            ) : null}
+            {video ? (
+              <div className="w-full overflow-hidden border border-border/70 bg-black">
+                <div className="relative aspect-video w-full">
+                  <SignalVideoPlayer video={video} title={signal.title} />
+                </div>
               </div>
             ) : null}
-          </dl>
-        </div>
-      </section>
-
-      {description ? (
-        <section className="craft-card flex flex-col gap-3 p-5">
-          <h2 className={cn(SECTION_LABEL_CLASS, 'm-0')}>{t('description')}</h2>
-          <div className="text-2 leading-relaxed text-foreground">
-            <SignalDescriptionBody source={description} />
-          </div>
-        </section>
-      ) : null}
-
-      <SignalMediaSection signal={signal} />
+            {moreImages.map((image) => (
+              <a
+                key={image.url}
+                href={image.url}
+                target="_blank"
+                rel="noreferrer"
+                className="block w-full overflow-hidden border border-border/70"
+              >
+                <img
+                  src={image.url}
+                  alt={image.name}
+                  className="aspect-[4/3] w-full object-cover"
+                />
+              </a>
+            ))}
+          </aside>
+        ) : null}
+      </article>
 
       {/* TODO: Temporary for Reciprocal Exchange. Delete with legacy-signal-fields/. */}
       <LegacySignalFieldsDetail signal={signal} />

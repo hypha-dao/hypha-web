@@ -28,6 +28,7 @@ import {
   useCollapsedPipelineLanes,
 } from './pipeline-lane-section';
 import { NewDealDialog } from './new-deal-dialog';
+import { PipelineEmpty } from './pipeline-empty';
 import { exportDealsToXlsx } from '../utils/export-deals';
 import type { UseMembers } from '../../spaces';
 
@@ -190,12 +191,29 @@ export function IntegratedBoard({
         <div className="text-2 text-neutral-11">
           {t('loading', { items: itemPlural })}
         </div>
+      ) : deals.length === 0 ? (
+        <PipelineEmpty
+          items={itemPlural}
+          onCreate={
+            readOnly
+              ? undefined
+              : () => {
+                  setNewSwimlane(defaultTrack);
+                  setNewOpen(true);
+                }
+          }
+        />
+      ) : filtered.length === 0 ? (
+        <p className="px-1 py-6 text-center text-2 text-muted-foreground">
+          {t('empty.filtered')}
+        </p>
       ) : (
         <div className="flex min-w-0 flex-col">
           {visibleTracks.map((track) => {
             const laneDeals = filtered.filter(
               (d) => d.pipelineSwimlane === track.slug,
             );
+            if (laneDeals.length === 0) return null;
             return (
               <PipelineLaneSection
                 key={track.slug}

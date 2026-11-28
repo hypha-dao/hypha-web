@@ -2,7 +2,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { getTranslations } from 'next-intl/server';
 import {
   listNetworkFieldSignals,
-  NETWORK_FIELD_KINDS,
+  RECIPROCAL_EXCHANGE_TYPES,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { NetworkReciprocalExchange } from '@hypha-platform/epics';
@@ -16,7 +16,7 @@ export default async function ReciprocalExchangePage(props: {
   const { type } = await props.searchParams;
   const t = await getTranslations('NetworkExchange');
   const signals = await listNetworkFieldSignals(
-    { kinds: NETWORK_FIELD_KINDS },
+    { kinds: RECIPROCAL_EXCHANGE_TYPES },
     { db },
   ).catch(() => []);
   return (

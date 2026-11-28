@@ -10,6 +10,7 @@ import { useTranslations } from 'next-intl';
 const TONE = {
   ratified: 'success',
   proposed: 'warn',
+  rejected: 'error',
   quiet: 'neutral',
 } as const;
 
@@ -24,11 +25,15 @@ export function SpaceContextStatusChip({
       ? t('status.ratified')
       : status === 'proposed'
       ? t('status.onVoting')
+      : status === 'rejected'
+      ? t('status.rejected')
       : status === 'draft'
       ? t('status.draft')
       : t('status.notStarted');
   const colorVariant =
-    status === 'ratified' || status === 'proposed' ? TONE[status] : TONE.quiet;
+    status === 'ratified' || status === 'proposed' || status === 'rejected'
+      ? TONE[status]
+      : TONE.quiet;
 
   return (
     <Badge

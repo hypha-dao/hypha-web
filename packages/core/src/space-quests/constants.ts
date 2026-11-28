@@ -18,7 +18,7 @@ export const QUEST_PATCH_STATUSES = [
 
 export type QuestPatchStatus = (typeof QUEST_PATCH_STATUSES)[number];
 
-/** List view status filter (no Board, no Priority, no All/Health/Lead/Mine). */
+/** Status buckets. Rejected is derived from a rejected proposal, not stored. */
 export const QUEST_LIST_FILTERS = [
   'active',
   'proposed',

@@ -97,11 +97,14 @@ export const Markdown = ({
 export const MarkdownSuspense = ({
   children = '',
   components = ComponentMap,
+  ProseWrapper,
   FallBack = <div>Loading...</div>,
 }: MarkdownProps & { FallBack?: React.ReactNode }) => {
   return (
     <Suspense fallback={FallBack}>
-      <Markdown components={components}>{children}</Markdown>
+      <Markdown components={components} ProseWrapper={ProseWrapper}>
+        {children}
+      </Markdown>
     </Suspense>
   );
 };

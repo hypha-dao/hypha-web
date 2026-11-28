@@ -37,8 +37,8 @@ export function KanbanBoard({
       className={cn(
         'flex w-full min-w-0',
         wide
-          ? 'items-start overflow-x-auto pb-3 pt-0.5'
-          : cn('min-h-0 overflow-x-auto', PIPELINE_SWIMLANE_STATUS_ROW_CLASS),
+          ? 'flex-col pb-3 pt-0.5 md:flex-row md:items-start md:overflow-x-auto'
+          : PIPELINE_SWIMLANE_STATUS_ROW_CLASS,
       )}
     >
       {stages.map((stage) => (

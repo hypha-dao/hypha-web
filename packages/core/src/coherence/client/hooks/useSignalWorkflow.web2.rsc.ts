@@ -6,8 +6,9 @@ import { useJwt } from '../../../people/client/hooks/useJwt';
 
 export function useSignalWorkflow(spaceSlug?: string) {
   const { jwt } = useJwt();
-  const key =
-    spaceSlug && jwt ? ([spaceSlug, jwt, 'signal-workflow'] as const) : null;
+  const key = spaceSlug
+    ? ([spaceSlug, jwt ?? null, 'signal-workflow'] as const)
+    : null;
 
   const { data, error, isLoading, mutate } = useSWR(
     key,
@@ -15,7 +16,7 @@ export function useSignalWorkflow(spaceSlug?: string) {
       const response = await fetch(
         `/api/v1/spaces/${encodeURIComponent(slug)}/signal-workflow`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         },
       );
       if (!response.ok) {

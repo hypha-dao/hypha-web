@@ -83,62 +83,32 @@ describe('upvote cell shared by the list and the detail', () => {
     expect(upvoteSource).toContain('<Slider');
     expect(upvoteSource).toContain('<SignalVoteTotals');
     expect(upvoteSource).toContain('<SignalVoteRoster');
-    const metaAt = feedRowSource.indexOf('data-testid="signal-card-meta"');
     const buttonAt = feedRowSource.indexOf('<SignalUpvoteButton');
-    const createdAt = feedRowSource.indexOf("t('signalCreated'");
-    expect(metaAt).toBeGreaterThan(-1);
-    expect(buttonAt).toBeGreaterThan(metaAt);
-    expect(createdAt).toBeGreaterThan(buttonAt);
+    const metaAt = feedRowSource.indexOf('data-testid="signal-card-meta"');
+    const imageAt = feedRowSource.indexOf('data-testid="signal-card-image"');
+    expect(buttonAt).toBeGreaterThan(-1);
+    expect(metaAt).toBeGreaterThan(buttonAt);
+    expect(imageAt).toBeGreaterThan(metaAt);
+    expect(feedRowSource).toContain('layout="stack"');
+    expect(feedRowSource).toContain('signalListImage');
     expect(feedRowSource).not.toContain('flex items-start gap-4');
-    const pageTitleAt = pageSource.indexOf(
-      '<h1 className="m-0 min-w-0 text-4 leading-tight text-foreground">',
-    );
+    expect(feedRowSource).toContain('@container');
+    const pageTitleAt = pageSource.indexOf('{signal.title}');
     const pageButtonAt = pageSource.indexOf('<SignalUpvoteButton');
-    const pageMetaAt = pageSource.indexOf('data-testid="signal-page-meta"');
+    const openAt = pageSource.indexOf('data-testid="signal-open-discussion"');
     expect(pageTitleAt).toBeGreaterThan(-1);
     expect(pageButtonAt).toBeGreaterThan(pageTitleAt);
-    expect(pageMetaAt).toBeGreaterThan(pageButtonAt);
+    expect(openAt).toBeGreaterThan(pageButtonAt);
     expect(pageSource).toContain("t('openDiscussion')");
-    expect(pageSource).toContain('data-testid="signal-open-discussion"');
-    expect(pageSource).toContain(
-      'inline-flex shrink-0 items-center gap-1 text-xs font-bold text-foreground underline-offset-2 hover:underline',
-    );
     expect(pageSource).toContain('onClick={openChat}');
-    const metaSlice = pageSource.slice(
-      pageMetaAt,
-      pageSource.indexOf('</dl>', pageMetaAt),
-    );
-    expect(pageSource).toContain('data-testid="signal-page-meta"');
-    expect(pageSource).toContain('SIGNAL_PAGE_META_ROW_CLASS');
-    expect(pageSource).toContain(
-      'flex w-full min-w-0 flex-wrap items-start gap-y-4',
-    );
-    expect(pageSource).toContain('gap-x-[clamp(64px,8vw,112px)]');
+    expect(pageSource).toContain('openedDiscussionSlug');
+    expect(pageSource).toContain('data-member-signal-detail');
+    expect(pageSource).toContain('prepareSignalDescriptionMarkdown');
+    expect(pageSource).toContain('data-testid="signal-page-origin"');
+    expect(pageSource).toContain('layout="row"');
     expect(pageSource).not.toContain('gap-x-[clamp(1.5rem,6cqi,5rem)]');
-    expect(feedRowSource).toContain('gap-x-[clamp(1.5rem,6cqi,5rem)]');
-    expect(feedRowSource).toContain(
-      '@min-[720px]:gap-x-[clamp(1.5rem,6vw,5rem)]',
-    );
-    expect(feedRowSource).toContain('@container');
     expect(pageSource).not.toContain('flex-nowrap');
-    expect(pageSource).toContain('flex max-w-full shrink-0 flex-col gap-1');
-    expect(metaSlice).not.toContain('truncate');
-    expect(pageSource).not.toContain('min-w-[5.5rem]');
-    expect(pageSource).not.toContain('max-[420px]:flex-wrap');
     expect(pageSource).toContain('signalDiscussionCount');
-    expect(metaSlice).not.toContain('col-span-full');
-    expect(metaSlice).not.toContain('grid-cols-2');
-    const createdByAt = metaSlice.indexOf("t('signalCreatedBy')");
-    const createdLabelAt = metaSlice.indexOf("t('signalCreatedLabel')");
-    const discussionAt = metaSlice.indexOf("t('signalDiscussion')");
-    const openAt = metaSlice.indexOf('data-testid="signal-open-discussion"');
-    expect(createdByAt).toBeGreaterThan(-1);
-    expect(createdLabelAt).toBeGreaterThan(createdByAt);
-    expect(discussionAt).toBeGreaterThan(createdLabelAt);
-    expect(openAt).toBeGreaterThan(discussionAt);
-    expect(metaSlice).toContain(
-      'ml-auto flex max-w-full shrink-0 flex-col gap-1',
-    );
     expect(upvoteSource).not.toContain("t('totalUpvotes')");
     expect(upvoteSource).not.toContain("t('supportersCount')");
     const voteSummarySource = readFileSync(
@@ -162,9 +132,13 @@ describe('upvote cell shared by the list and the detail', () => {
 });
 
 describe('feed title search', () => {
-  it('filters the full fetched list by title and keeps sort and time frame', () => {
+  it('filters the full fetched list by title, people, and type, then ranks across all time', () => {
     expect(feedSource).toContain('filterSignalsByTitle');
-    expect(feedSource).toContain('rankSignals(matched, { sort, timeFrame })');
+    expect(feedSource).toContain(
+      "rankSignals(matched, { sort, timeFrame: 'all' })",
+    );
+    expect(feedSource).toContain('SIGNAL_PERSON_QUERY_KEY');
+    expect(feedSource).toContain('canonicalSignalType');
     expect(feedSource).toContain("SIGNAL_TITLE_QUERY_KEY = 'q'");
     expect(feedSource).not.toContain('search:');
     expect(feedSource).toContain('signalTitleNoResults');
@@ -180,6 +154,21 @@ describe('feed title search', () => {
     expect(filtersSource).toContain('rootClassName="min-w-0 flex-1"');
     expect(filtersSource).not.toContain('sm:max-w-sm');
     expect(filtersSource).toContain('flex flex-col gap-3');
+    expect(filtersSource).toContain('signal-people-pill');
+    expect(filtersSource).toContain('signal-domain-pill');
+    expect(filtersSource).toContain('signal-type-pill');
+    expect(feedSource).toContain('SIGNAL_DOMAIN_QUERY_KEY');
+    expect(feedSource).toContain('resolveEffectiveBoard');
+    expect(filtersSource).toContain('COHERENCE_OVERVIEW_TYPES');
+    expect(filtersSource).not.toContain('signal-time-frame-pill');
+    expect(feedSource).toContain('SignalFeedLayoutToggle');
+    expect(feedSource).toContain('writeStoredSignalFeedLayout');
+    const layoutToggleSource = readFileSync(
+      resolve(__dirname, '../../components/signal-feed-layout-toggle.tsx'),
+      'utf8',
+    );
+    expect(layoutToggleSource).toContain('signal-layout-list');
+    expect(layoutToggleSource).toContain('signal-layout-cards');
     expect(feedSource).toContain("t('newSignal')");
     expect(feedSource).toContain('coherence/new-signal');
     expect(feedSource).not.toContain("t('createSignal')");

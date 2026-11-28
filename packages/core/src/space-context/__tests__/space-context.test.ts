@@ -273,7 +273,10 @@ describe('space context filters', () => {
     expect(statusMatchesFilter('draft', 'drafts')).toBe(true);
     expect(statusMatchesFilter('not_started', 'drafts')).toBe(true);
     expect(statusMatchesFilter('proposed', 'drafts')).toBe(false);
-    expect(statusMatchesFilter('ratified', 'ratified')).toBe(true);
+    expect(statusMatchesFilter('ratified', 'accepted')).toBe(true);
+    expect(statusMatchesFilter('rejected', 'rejected')).toBe(true);
+    expect(statusMatchesFilter('rejected', 'drafts')).toBe(false);
+    expect(statusMatchesFilter('proposed', 'proposed')).toBe(true);
   });
 });
 

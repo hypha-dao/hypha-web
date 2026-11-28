@@ -55,6 +55,7 @@ export type QuestListingRecord = {
   slug: string;
   name: string;
   status: QuestStatus;
+  domain?: string | null;
   goal: string;
   scopeInMarkdown: string;
   scopeOutMarkdown: string;
@@ -319,6 +320,7 @@ export async function readQuestsListing(
       slug: row.slug,
       name: row.name,
       status,
+      domain: row.domain ?? null,
       goal: row.goal ?? '',
       scopeInMarkdown:
         row.scopeInMarkdown?.trim() || bulletsToMarkdownList(scopeIn),

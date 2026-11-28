@@ -8,12 +8,13 @@ import { readSpaceCapitals } from '../../network/exchange-capitals';
 import { readCoherenceCapitalsBySlugs } from '../../network/capital-columns';
 import {
   NETWORK_FIELD_KINDS,
+  RECIPROCAL_EXCHANGE_TYPES,
   type NetworkFieldPayout,
   type NetworkFieldSignal,
   type NetworkFieldSignalKind,
 } from '../../network/types';
 
-export { NETWORK_FIELD_KINDS };
+export { NETWORK_FIELD_KINDS, RECIPROCAL_EXCHANGE_TYPES };
 
 function rowsOf(result: unknown): unknown[] {
   if (Array.isArray(result)) return result;

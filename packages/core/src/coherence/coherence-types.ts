@@ -12,6 +12,21 @@ export const COHERENCE_SIGNAL_TYPES = [
 
 export type CoherenceSignalType = (typeof COHERENCE_SIGNAL_TYPES)[number];
 
+/**
+ * Types offered when creating a signal and when filtering the overview.
+ * Proof of Action, Impact Evidence, and Issue stay valid on existing signals.
+ */
+export const COHERENCE_OVERVIEW_TYPES = [
+  'Need',
+  'Resource',
+  'Opportunity',
+  'Insight',
+  'Tension',
+  'Risk',
+] as const satisfies readonly CoherenceSignalType[];
+
+export type CoherenceOverviewType = (typeof COHERENCE_OVERVIEW_TYPES)[number];
+
 export const COHERENCE_TYPES = [
   ...COHERENCE_SIGNAL_TYPES,
   'Trend',

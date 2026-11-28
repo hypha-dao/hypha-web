@@ -64,6 +64,30 @@ describe('quest create draft payload', () => {
     expect(schemaSaveQuestDraft.parse({ id: 4, payload }).id).toBe(4);
   });
 
+  it('keeps a domain and still reads drafts saved before domains existed', () => {
+    expect(
+      schemaQuestCreateDraftPayload.parse(payload).draft.domain,
+    ).toBeUndefined();
+    expect(
+      schemaQuestCreateDraftPayload.parse({
+        ...payload,
+        draft: { ...payload.draft, domain: 'product' },
+      }).draft.domain,
+    ).toBe('product');
+    expect(
+      schemaCreateSpaceQuest.parse({
+        name: 'Named',
+        domain: 'outreach',
+      }).domain,
+    ).toBe('outreach');
+    expect(
+      schemaCreateSpaceQuest.safeParse({
+        name: 'Named',
+        domain: 'Not a slug',
+      }).success,
+    ).toBe(false);
+  });
+
   it('rejects a draft that is not a private create-quest snapshot', () => {
     expect(
       schemaQuestCreateDraftPayload.safeParse({

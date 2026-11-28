@@ -37,6 +37,17 @@ vi.mock('@hypha-platform/core/client', () => ({
   usePeopleBySubs: () => ({ peopleBySub: new Map() }),
   usePersonById: () => ({ person: undefined }),
   useSpaceBySlug: () => ({ space: undefined }),
+  useSignalWorkflow: () => ({ workflow: undefined, isLoading: false }),
+  usePatchCoherenceTask: () => ({ patchTask: vi.fn(), isPatching: false }),
+  applyPendingCoherenceTaskPatch: vi.fn(),
+  resolveEffectiveBoard: (board: string | null | undefined) =>
+    board ?? 'general',
+}));
+vi.mock('../../hooks/use-can-update-signal-tasks', () => ({
+  useCanUpdateSignalTasks: () => ({ canUpdateTasks: false, isLoading: false }),
+}));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
 }));
 vi.mock('next/link', () => ({
   default: ({
@@ -55,6 +66,18 @@ vi.mock('next-intl', () => ({
 vi.mock('@hypha-platform/ui', () => ({
   Button: ({ children }: { children: React.ReactNode }) => (
     <button>{children}</button>
+  ),
+  DropdownMenu: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuItem: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
   ),
   MarkdownSuspense: () => null,
   Skeleton: () => null,
@@ -104,6 +127,9 @@ vi.mock('../../components/signal-feed-row', () => ({
 vi.mock('../../components/signal-type-badge', () => ({
   SignalTypeBadge: () => null,
 }));
+vi.mock('../../components/signal-tag-badges', () => ({
+  SignalTagBadges: () => null,
+}));
 vi.mock('../../components/signal-video-player', () => ({
   SignalVideoPlayer: () => null,
 }));
@@ -124,6 +150,7 @@ describe('SignalPage readOnly', () => {
     const { queryByTestId } = render(<SignalPage {...props} />);
     expect(queryByTestId('upvote')).not.toBeNull();
     expect(queryByTestId('creator-actions')).not.toBeNull();
+    expect(queryByTestId('signal-convert')).not.toBeNull();
     expect(h.acknowledge).toHaveBeenCalledTimes(1);
   });
 
@@ -131,6 +158,7 @@ describe('SignalPage readOnly', () => {
     const { queryByTestId } = render(<SignalPage {...props} readOnly />);
     expect(queryByTestId('upvote')).toBeNull();
     expect(queryByTestId('creator-actions')).toBeNull();
+    expect(queryByTestId('signal-convert')).toBeNull();
     expect(h.acknowledge).not.toHaveBeenCalled();
   });
 

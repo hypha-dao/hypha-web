@@ -8,7 +8,7 @@ import { AddAttachment, Button } from '@hypha-platform/ui';
 import type { Locale } from '@hypha-platform/i18n';
 import {
   CAPITALS,
-  NETWORK_FIELD_KINDS,
+  RECIPROCAL_EXCHANGE_TYPES,
   revalidateCoherences,
   useAttachmentUpload,
   useCoherenceMutationsWeb2Rsc,
@@ -141,7 +141,7 @@ export function NetworkExchangeShareCard({
   );
   const [note, setNote] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const lockedType = (NETWORK_FIELD_KINDS as readonly string[]).includes(
+  const lockedType = (RECIPROCAL_EXCHANGE_TYPES as readonly string[]).includes(
     type ?? '',
   )
     ? type
@@ -281,7 +281,7 @@ export function NetworkExchangeShareCard({
               role="group"
               aria-label={t('chooseSignalType')}
             >
-              {NETWORK_FIELD_KINDS.map((option) => {
+              {RECIPROCAL_EXCHANGE_TYPES.map((option) => {
                 const selected = kind === option;
                 return (
                   <button

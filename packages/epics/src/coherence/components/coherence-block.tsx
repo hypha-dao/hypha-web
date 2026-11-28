@@ -5,22 +5,26 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
 import {
+  canonicalSignalType,
+  COHERENCE_OVERVIEW_TYPES,
   DEFAULT_SIGNAL_SORT,
-  DEFAULT_SIGNAL_TIME_FRAME,
+  DEFAULT_SIGNAL_WORKFLOW,
   filterSignalsByTitle,
   parseSignalSort,
-  parseSignalTimeFrame,
   rankSignals,
+  resolveEffectiveBoard,
   signalListUpvoteSummaryState,
   useFindCoherences,
+  useSignalWorkflow,
   useSpaceBySlug,
+  type CoherenceOverviewType,
   type SignalSort,
-  type SignalTimeFrame,
 } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import { Button, ErrorAlert, Skeleton } from '@hypha-platform/ui';
 import { CoherenceOrder } from '../types';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
+import { useCanUpdateSignalTasks } from '../hooks/use-can-update-signal-tasks';
 import { getSignalPath } from '../../common/get-path-function';
 import { ActionGate } from '../../common/action-capabilities';
 import { signalSpaceMembership } from '../hooks/use-is-signal-space-non-member';
@@ -30,18 +34,75 @@ import {
   signalVotingSpaceId,
   useSignalVotingMode,
 } from '../hooks/use-signal-voting-mode';
-import { SignalFeedFilters } from './signal-feed-filters';
+import { domainBoardChoices } from './signal-domain';
+import {
+  SignalFeedFilters,
+  type SignalFeedPerson,
+} from './signal-feed-filters';
+import { SignalEmpty, SignalEmptyCreateButton } from './signal-empty';
+import { SignalFeedCard } from './signal-feed-card';
+import { SignalFeedLayoutToggle } from './signal-feed-layout-toggle';
 import { SignalFeedRow } from './signal-feed-row';
 import { useDebouncedFeedTitle } from '../lib/use-debounced-feed-title';
+import {
+  readStoredSignalFeedLayout,
+  writeStoredSignalFeedLayout,
+  type SignalFeedLayout,
+} from '../lib/signal-feed-layout';
+import { personRosterDisplayLabel } from '../../common/human-chat-panel/build-space-roster-mention-candidates';
 import type { UseMembers } from '../../spaces/hooks/types';
 
 export const SIGNAL_SORT_QUERY_KEY = 'sort';
-export const SIGNAL_TIME_FRAME_QUERY_KEY = 't';
 /** Title-only feed search. Distinct from the board's `title` query. */
 export const SIGNAL_TITLE_QUERY_KEY = 'q';
-/** Earlier `?top=7d|30d|all` links still open on the matching time frame. */
-const LEGACY_TOP_WINDOW_QUERY_KEY = 'top';
+export const SIGNAL_PERSON_QUERY_KEY = 'person';
+export const SIGNAL_TYPE_QUERY_KEY = 'type';
+export const SIGNAL_DOMAIN_QUERY_KEY = 'domain';
 const ARCHIVED_QUERY_KEY = 'archived';
+
+function parsePersonId(raw: string | null): number | null {
+  if (!raw) return null;
+  const id = Number(raw);
+  if (!Number.isInteger(id) || id <= 0) return null;
+  return id;
+}
+
+function parseOverviewType(raw: string | null): CoherenceOverviewType | null {
+  const value = raw?.split(',')[0]?.trim() ?? '';
+  if ((COHERENCE_OVERVIEW_TYPES as readonly string[]).includes(value)) {
+    return value as CoherenceOverviewType;
+  }
+  return null;
+}
+
+function FeedPeopleLoader({
+  spaceSlug,
+  useMembers,
+  onPeople,
+}: {
+  spaceSlug: string;
+  useMembers: UseMembers;
+  onPeople: (people: SignalFeedPerson[]) => void;
+}) {
+  const t = useTranslations('CoherenceTab');
+  const { persons } = useMembers({
+    spaceSlug,
+    pageSize: 200,
+    paginationDisabled: true,
+  });
+  const people = React.useMemo(() => {
+    return [...(persons?.data ?? [])]
+      .map((person) => ({
+        id: person.id,
+        label: personRosterDisplayLabel(person, t('unknownMember')),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [persons?.data, t]);
+  React.useEffect(() => {
+    onPeople(people);
+  }, [onPeople, people]);
+  return null;
+}
 
 export type CoherenceBlockProps = {
   lang: Locale;
@@ -52,7 +113,11 @@ export type CoherenceBlockProps = {
   useMembers?: UseMembers;
 };
 
-export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
+export function CoherenceBlock({
+  lang,
+  spaceSlug,
+  useMembers,
+}: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
   const format = useFormatter();
   const router = useRouter();
@@ -68,6 +133,10 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
     spaceSlug,
     spaceId: space?.web3SpaceId ?? undefined,
   });
+  const { canUpdateTasks } = useCanUpdateSignalTasks({
+    spaceSlug,
+    web3SpaceId: space?.web3SpaceId ?? undefined,
+  });
   const { isNonMember, isMembershipPending } = signalSpaceMembership({
     space,
     isLoading: isMembershipLoading,
@@ -80,11 +149,30 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   } = useSignalVotingMode(signalVotingSpaceId(space));
   const provisioningNoticeLines = useSignalProvisioningNotice();
 
+  const [layout, setLayout] = React.useState<SignalFeedLayout>('list');
+  React.useLayoutEffect(() => {
+    setLayout(readStoredSignalFeedLayout());
+  }, []);
+  const handleLayoutChange = React.useCallback((next: SignalFeedLayout) => {
+    setLayout(next);
+    writeStoredSignalFeedLayout(next);
+  }, []);
+
   const sort = parseSignalSort(searchParams.get(SIGNAL_SORT_QUERY_KEY));
-  const timeFrame = parseSignalTimeFrame(
-    searchParams.get(SIGNAL_TIME_FRAME_QUERY_KEY) ??
-      searchParams.get(LEGACY_TOP_WINDOW_QUERY_KEY),
+  const personId = parsePersonId(searchParams.get(SIGNAL_PERSON_QUERY_KEY));
+  const signalType = parseOverviewType(searchParams.get(SIGNAL_TYPE_QUERY_KEY));
+  const domainSlug = searchParams.get(SIGNAL_DOMAIN_QUERY_KEY)?.trim() || null;
+  const { workflow } = useSignalWorkflow(spaceSlug);
+  const workflowConfig = workflow ?? DEFAULT_SIGNAL_WORKFLOW;
+  const domains = React.useMemo(
+    () =>
+      domainBoardChoices(workflowConfig, domainSlug).map((board) => ({
+        slug: board.slug,
+        name: board.name,
+      })),
+    [domainSlug, workflowConfig],
   );
+  const [people, setPeople] = React.useState<SignalFeedPerson[]>([]);
   React.useEffect(() => {
     if (!searchParams.has(ARCHIVED_QUERY_KEY)) return;
     const params = new URLSearchParams(searchParams.toString());
@@ -98,17 +186,6 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   const replaceQuery = React.useCallback(
     (key: string, value: string, defaultValue: string) => {
       const params = new URLSearchParams(searchParams.toString());
-      const legacyTop = params.get(LEGACY_TOP_WINDOW_QUERY_KEY);
-      if (legacyTop != null) {
-        params.delete(LEGACY_TOP_WINDOW_QUERY_KEY);
-        const legacyTimeFrame = parseSignalTimeFrame(legacyTop);
-        if (
-          !params.has(SIGNAL_TIME_FRAME_QUERY_KEY) &&
-          legacyTimeFrame !== DEFAULT_SIGNAL_TIME_FRAME
-        ) {
-          params.set(SIGNAL_TIME_FRAME_QUERY_KEY, legacyTimeFrame);
-        }
-      }
       if (value === defaultValue) params.delete(key);
       else params.set(key, value);
       const query = params.toString();
@@ -123,13 +200,23 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
       replaceQuery(SIGNAL_SORT_QUERY_KEY, next, DEFAULT_SIGNAL_SORT),
     [replaceQuery],
   );
-  const handleTimeFrameChange = React.useCallback(
-    (next: SignalTimeFrame) =>
+  const handlePersonChange = React.useCallback(
+    (next: number | null) =>
       replaceQuery(
-        SIGNAL_TIME_FRAME_QUERY_KEY,
-        next,
-        DEFAULT_SIGNAL_TIME_FRAME,
+        SIGNAL_PERSON_QUERY_KEY,
+        next == null ? '' : String(next),
+        '',
       ),
+    [replaceQuery],
+  );
+  const handleTypeChange = React.useCallback(
+    (next: CoherenceOverviewType | null) =>
+      replaceQuery(SIGNAL_TYPE_QUERY_KEY, next ?? '', ''),
+    [replaceQuery],
+  );
+  const handleDomainChange = React.useCallback(
+    (next: string | null) =>
+      replaceQuery(SIGNAL_DOMAIN_QUERY_KEY, next ?? '', ''),
     [replaceQuery],
   );
   const titleQuery = searchParams.get(SIGNAL_TITLE_QUERY_KEY) ?? '';
@@ -165,12 +252,38 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
   }, [refresh]);
 
   const ranked = React.useMemo(() => {
-    // `useFindCoherences` already concatenates every page. Filter titles on
-    // that full list, then rank, so sort and time frame apply to matches
-    // past the first page. The API `search` param also matches descriptions.
-    const matched = filterSignalsByTitle(signals ?? [], titleQuery);
-    return rankSignals(matched, { sort, timeFrame });
-  }, [signals, sort, timeFrame, titleQuery]);
+    // `useFindCoherences` already concatenates every page. Filter that full
+    // list, then rank across all time, so a match past page one is kept.
+    const matched = filterSignalsByTitle(signals ?? [], titleQuery).filter(
+      (signal) => {
+        if (personId != null) {
+          const assignees = signal.assigneeIds ?? [];
+          if (signal.creatorId !== personId && !assignees.includes(personId)) {
+            return false;
+          }
+        }
+        if (signalType && canonicalSignalType(signal.type) !== signalType) {
+          return false;
+        }
+        if (
+          domainSlug &&
+          resolveEffectiveBoard(signal.board, workflowConfig) !== domainSlug
+        ) {
+          return false;
+        }
+        return true;
+      },
+    );
+    return rankSignals(matched, { sort, timeFrame: 'all' });
+  }, [
+    domainSlug,
+    personId,
+    signalType,
+    signals,
+    sort,
+    titleQuery,
+    workflowConfig,
+  ]);
   const activity = useSignalRoomActivity(ranked);
   const upvoteSummaryState = signalListUpvoteSummaryState({
     hasSettledList: Boolean(signals),
@@ -199,11 +312,30 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
 
       <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
 
+      {useMembers ? (
+        <FeedPeopleLoader
+          spaceSlug={spaceSlug}
+          useMembers={useMembers}
+          onPeople={setPeople}
+        />
+      ) : null}
       <SignalFeedFilters
+        leading={
+          <SignalFeedLayoutToggle
+            layout={layout}
+            onChange={handleLayoutChange}
+          />
+        }
         sort={sort}
-        timeFrame={timeFrame}
         onSortChange={handleSortChange}
-        onTimeFrameChange={handleTimeFrameChange}
+        personId={personId}
+        people={people}
+        onPersonChange={handlePersonChange}
+        signalType={signalType}
+        onTypeChange={handleTypeChange}
+        domainSlug={domainSlug}
+        domains={domains}
+        onDomainChange={handleDomainChange}
         titleQuery={titleInput}
         onTitleQueryChange={onTitleChange}
         action={
@@ -229,12 +361,22 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
       />
 
       {isLoading ? (
-        <div className="flex flex-col gap-2">
+        <div
+          className={
+            layout === 'cards'
+              ? 'grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3'
+              : 'flex flex-col gap-2'
+          }
+        >
           {Array.from({ length: 4 }, (_, index) => (
             <Skeleton
               key={index}
               loading
-              className="h-[104px] w-full rounded-none"
+              className={
+                layout === 'cards'
+                  ? 'h-[280px] w-full rounded-none'
+                  : 'h-[104px] w-full rounded-none'
+              }
             />
           ))}
         </div>
@@ -258,32 +400,61 @@ export function CoherenceBlock({ lang, spaceSlug }: CoherenceBlockProps) {
           </Button>
         </div>
       ) : ranked.length === 0 ? (
-        <p className="craft-card px-4 py-8 text-center text-1 text-muted-foreground">
-          {titleQuery.trim() && hasSignals
-            ? t('signalTitleNoResults')
-            : t('listIsEmpty')}
-        </p>
+        hasSignals ? (
+          <p className="craft-card px-4 py-8 text-center text-1 text-muted-foreground">
+            {titleQuery.trim()
+              ? t('signalTitleNoResults')
+              : t('empty.filtered')}
+          </p>
+        ) : (
+          <SignalEmpty
+            action={
+              canMutate ? (
+                <ActionGate
+                  kind="create-signal"
+                  fullAppPath={`/${lang}/dho/${spaceSlug}/coherence/new-signal`}
+                  label={t('newSignal')}
+                >
+                  <SignalEmptyCreateButton
+                    href={`/${lang}/dho/${spaceSlug}/coherence/new-signal`}
+                  />
+                </ActionGate>
+              ) : null
+            }
+          />
+        )
       ) : (
-        <div className="flex flex-col gap-2">
-          {ranked.map((signal) =>
-            signal.slug ? (
-              <SignalFeedRow
-                key={signal.id}
-                signal={signal}
-                spaceSlug={spaceSlug}
-                href={getSignalPath(lang, spaceSlug, signal.slug)}
-                votingMode={votingMode}
-                votingModeStatus={votingModeStatus}
-                onRetryVotingMode={retryVotingMode}
-                isNonMember={isNonMember}
-                isMembershipPending={isMembershipPending}
-                activity={signal.roomId ? activity[signal.roomId] : undefined}
-                refresh={refresh}
-                sort={sort}
-                summaryState={upvoteSummaryState}
-              />
-            ) : null,
-          )}
+        <div
+          className={
+            layout === 'cards'
+              ? 'grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3'
+              : 'flex flex-col gap-2'
+          }
+        >
+          {ranked.map((signal) => {
+            if (!signal.slug) return null;
+            const itemProps = {
+              signal,
+              spaceSlug,
+              href: getSignalPath(lang, spaceSlug, signal.slug),
+              votingMode,
+              votingModeStatus,
+              onRetryVotingMode: retryVotingMode,
+              isNonMember,
+              isMembershipPending,
+              activity: signal.roomId ? activity[signal.roomId] : undefined,
+              refresh,
+              sort,
+              summaryState: upvoteSummaryState,
+              canEditDomain: canUpdateTasks,
+              spaceBanner: space?.leadImage,
+            };
+            return layout === 'cards' ? (
+              <SignalFeedCard key={signal.id} {...itemProps} />
+            ) : (
+              <SignalFeedRow key={signal.id} {...itemProps} />
+            );
+          })}
         </div>
       )}
     </div>

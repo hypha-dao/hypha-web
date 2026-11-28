@@ -20,6 +20,7 @@ import {
 } from '@hypha-platform/feature-flags';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
+import { Container } from '@hypha-platform/ui';
 
 import { LiveSpaceHero } from '@web/app/(main)/[lang]/dho/[id]/_components/live-space-hero';
 import {
@@ -111,8 +112,8 @@ export default async function WhiteLabelSpaceLayout({
   return (
     <SpaceAccentPortalBridge>
       <div className="flex w-full min-w-0">
-        <div className="mt-[2px] min-w-0 flex-1 px-4 md:mt-[6px] sm:px-5">
-          <div className="relative z-[1]">
+        <div className="mt-[2px] min-w-0 flex-1 md:mt-[6px]">
+          <Container className="relative z-[1]">
             <LiveSpaceHero
               spaceSlug={slug}
               title={space.title}
@@ -151,7 +152,7 @@ export default async function WhiteLabelSpaceLayout({
             />
             {showAuthControl ? <WhiteLabelAuthControl /> : null}
             {children}
-          </div>
+          </Container>
         </div>
       </div>
     </SpaceAccentPortalBridge>

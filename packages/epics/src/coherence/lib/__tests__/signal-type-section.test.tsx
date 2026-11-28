@@ -8,7 +8,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import {
-  COHERENCE_SIGNAL_TYPES,
+  COHERENCE_OVERVIEW_TYPES,
   COHERENCE_TYPE_OPTIONS,
 } from '../../../../../core/src/coherence/coherence-types';
 import type { LucideReactIcon } from '@hypha-platform/ui';
@@ -35,7 +35,7 @@ function lucideClass(icon: string): string {
 
 function pickerOptions(): SignalTypePickerOption[] {
   return COHERENCE_TYPE_OPTIONS.filter((option) =>
-    (COHERENCE_SIGNAL_TYPES as readonly string[]).includes(option.type),
+    (COHERENCE_OVERVIEW_TYPES as readonly string[]).includes(option.type),
   ).map((option) => ({
     icon: option.icon as LucideReactIcon,
     title: option.title,
@@ -59,7 +59,7 @@ function TypeModalSlice() {
         createElement('span', null, 'Type'),
         createElement(SignalTypePickerGrid, {
           options,
-          selected: 'Bug',
+          selected: 'Risk',
           onSelect: () => undefined,
         }),
       ),
@@ -128,13 +128,14 @@ const layoutCss = `
 `;
 
 describe('signal type section', () => {
-  it('maps every supported type to an icon and ends the modal grid on Issue', () => {
+  it('maps every supported type to an icon and ends the modal grid on Risk', () => {
     const formSource = readFileSync(
       join(here, '../../components/create-signal-form.tsx'),
       'utf8',
     );
     expect(formSource).toContain('<SignalTypeSection>');
     expect(formSource).toContain('<SignalTypePickerGrid');
+    expect(formSource).toContain('COHERENCE_OVERVIEW_TYPES');
     expect(SIGNAL_TYPE_SECTION_CLASS).toContain('pb-8');
 
     const view = render(createElement(TypeModalSlice));
@@ -142,9 +143,9 @@ describe('signal type section', () => {
     const options = within(grid).getAllByTestId(/signal-type-option-/);
     expect(
       options.map((node) => node.getAttribute('data-signal-type')),
-    ).toEqual([...COHERENCE_SIGNAL_TYPES]);
-    expect(options.at(-1)?.textContent).toContain('Issue');
-    expect(options.at(-1)?.getAttribute('data-signal-type')).toBe('Bug');
+    ).toEqual([...COHERENCE_OVERVIEW_TYPES]);
+    expect(options.at(-1)?.textContent).toContain('Risk');
+    expect(options.at(-1)?.getAttribute('data-signal-type')).toBe('Risk');
 
     for (const option of COHERENCE_TYPE_OPTIONS) {
       const icon = signalTypeIcon(option.type);
@@ -155,7 +156,9 @@ describe('signal type section', () => {
       expect(row?.querySelector('svg')?.getAttribute('class')).toContain(
         lucideClass(option.icon),
       );
-      if ((COHERENCE_SIGNAL_TYPES as readonly string[]).includes(option.type)) {
+      if (
+        (COHERENCE_OVERVIEW_TYPES as readonly string[]).includes(option.type)
+      ) {
         const card = view.getByTestId(`signal-type-option-${option.type}`);
         expect(card.querySelector('svg')?.getAttribute('class')).toContain(
           lucideClass(option.icon),

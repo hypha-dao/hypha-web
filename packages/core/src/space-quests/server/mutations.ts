@@ -61,6 +61,7 @@ import {
   questSuccessChange,
   questChangeIsVisible,
   questTargetDateChange,
+  questDomainChange,
 } from '../quest-edit-change';
 import type { QuestRecord } from '../types';
 import type {
@@ -387,6 +388,7 @@ export async function createSpaceQuest(
         (r) => r.amount.trim().length > 0 && r.token.trim().length > 0,
       ),
       status: 'proposed',
+      domain: input.domain?.trim() || null,
       targetDate: input.targetDate?.trim() || null,
       leadPersonId,
       leadName,
@@ -678,7 +680,7 @@ export async function updateSpaceQuest(
 
   // Permission enforcement (SPEC §5):
   // - Lead-only: status change, lead transfer
-  // - Any Quest member: content edits (name, goal, scope, success, milestones, members, deliverables, targetDate, rewards)
+  // - Any Quest member: content edits (name, goal, scope, success, milestones, members, deliverables, targetDate, rewards, domain)
   const isMember = canMemberEditQuest(actor, current);
   const isLead = isViewerQuestLead(actor, current);
 
@@ -816,6 +818,18 @@ export async function updateSpaceQuest(
         current.targetDate,
         patch.targetDate?.trim() || null,
       ),
+    });
+  }
+
+  if (
+    patch.domain !== undefined &&
+    (patch.domain?.trim() || null) !== (current.domain ?? null)
+  ) {
+    const nextDomain = patch.domain?.trim() || null;
+    updateFields.domain = nextDomain;
+    editEvents.push({
+      text: `Updated Domain to ${nextDomain ?? '—'}.`,
+      change: questDomainChange(current.domain, nextDomain),
     });
   }
 

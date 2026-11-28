@@ -8,6 +8,7 @@ import { Button } from '@hypha-platform/ui';
 import { CopyIcon, RadiobuttonIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { Empty } from '../../../common';
+import { SpaceEmptyCard } from '../../../common/space-empty-card';
 import { ActionGate } from '../../../common/action-capabilities';
 import { Input } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -19,7 +20,7 @@ import {
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
-import { SearchIcon } from 'lucide-react';
+import { SearchIcon, Wallet } from 'lucide-react';
 
 type AssetSectionProps = {
   basePath: string;
@@ -145,13 +146,21 @@ export const AssetsSection: FC<AssetSectionProps> = ({
     <div className="flex flex-col w-full justify-center items-center gap-4">
       <div className="w-full">{renderFilterAndButtons()}</div>
       {filteredAssets.length === 0 && !isLoading ? (
-        <Empty>
-          <p>
-            {searchTerm.trim()
-              ? tTreasury('emptyAssetsSearch')
-              : tTreasury('emptyAssetsTreasury')}
-          </p>
-        </Empty>
+        searchTerm.trim() || hideSmallBalances || activeFilter !== 'all' ? (
+          <Empty>
+            <p>
+              {searchTerm.trim()
+                ? tTreasury('emptyAssetsSearch')
+                : tTreasury('emptyAssetsTreasury')}
+            </p>
+          </Empty>
+        ) : (
+          <SpaceEmptyCard
+            icon={Wallet}
+            title={tTreasury('emptyCard.assetsTitle')}
+            description={tTreasury('emptyAssetsTreasury')}
+          />
+        )
       ) : (
         <AssetsList
           basePath={`${basePath}/token`}

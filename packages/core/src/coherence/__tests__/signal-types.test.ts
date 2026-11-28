@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   canonicalSignalType,
+  COHERENCE_OVERVIEW_TYPES,
   COHERENCE_SIGNAL_TYPES,
   COHERENCE_TYPE_OPTIONS,
   storedSignalTypes,
@@ -39,6 +40,14 @@ describe('signal types', () => {
       title: 'Issue',
       description: 'Something is broken',
     });
+    expect(COHERENCE_OVERVIEW_TYPES).toEqual([
+      'Need',
+      'Resource',
+      'Opportunity',
+      'Insight',
+      'Tension',
+      'Risk',
+    ]);
   });
 
   it('does not fold impact evidence into proof of action', () => {

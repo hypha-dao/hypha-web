@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Button, Input } from '@hypha-platform/ui';
 import { Empty } from '../../common';
+import { SpaceEmptyCard } from '../../common/space-empty-card';
 import { ActionGate } from '../../common/action-capabilities';
 import React from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -479,24 +480,51 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
                 className="narrow-scrollbar min-h-0 flex-1 overflow-visible lg:overflow-y-auto lg:overscroll-contain"
               >
                 {activeRows.length === 0 ? (
-                  <div className="px-4 py-6">
-                    <Empty>
-                      <p>
-                        {searchTerm.trim()
-                          ? t('spaceMemoryEmptySearch')
-                          : isLoadingMore ||
-                            (hasMore && categoryCounts[branch] > 0)
-                          ? t('spaceMemoryLoading')
-                          : branch === 'calls'
-                          ? t('spaceMemoryCallsEmpty')
-                          : branch === 'ai'
-                          ? t('spaceMemoryAiChatEmpty')
-                          : branch === 'files'
-                          ? t('spaceMemoryEmpty')
-                          : t('spaceMemoryConversationsEmpty')}
-                      </p>
-                    </Empty>
-                  </div>
+                  searchTerm.trim() ||
+                  isLoadingMore ||
+                  (hasMore && categoryCounts[branch] > 0) ? (
+                    <div className="px-4 py-6">
+                      <Empty>
+                        <p>
+                          {searchTerm.trim()
+                            ? t('spaceMemoryEmptySearch')
+                            : t('spaceMemoryLoading')}
+                        </p>
+                      </Empty>
+                    </div>
+                  ) : (
+                    <div className="p-3">
+                      <SpaceEmptyCard
+                        icon={
+                          branch === 'calls'
+                            ? Radio
+                            : branch === 'ai'
+                            ? Sparkles
+                            : branch === 'files'
+                            ? FileText
+                            : MessagesSquare
+                        }
+                        title={
+                          branch === 'calls'
+                            ? t('spaceMemoryCallsTitle')
+                            : branch === 'ai'
+                            ? t('spaceMemoryAiTitle')
+                            : branch === 'files'
+                            ? t('spaceMemoryFilesTitle')
+                            : t('spaceMemoryConversationsTitle')
+                        }
+                        description={
+                          branch === 'calls'
+                            ? t('spaceMemoryCallsEmpty')
+                            : branch === 'ai'
+                            ? t('spaceMemoryAiChatEmpty')
+                            : branch === 'files'
+                            ? t('spaceMemoryEmpty')
+                            : t('spaceMemoryConversationsEmpty')
+                        }
+                      />
+                    </div>
+                  )
                 ) : branch === 'files' ? (
                   <ul className="m-0 grid list-none grid-cols-1 items-stretch gap-2 p-3 md:grid-cols-2">
                     {files.map((row) => (

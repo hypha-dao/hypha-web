@@ -94,6 +94,55 @@ export function MemberHomeSpacesRail({
   );
   const canToggle = !embedded && (isLoading || spaceCount > 0);
   const tipSide = row ? 'bottom' : 'right';
+  const currentSpace =
+    ecosystemGroups
+      .flatMap((group) => group.spaces)
+      .find((space) => space.slug === activeSlug) ??
+    ecosystemGroups[0]?.spaces[0];
+  const currentIcon = currentSpace
+    ? resolveSpaceDisplayLogoUrl(currentSpace, logoVariant)
+    : null;
+
+  const allSpacesMark = hideSpacesListing ? null : (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Link
+          href={`/${lang}/my-spaces`}
+          prefetch={toLinkPrefetch(prefetchNav)}
+          aria-label={t('openMySpaces')}
+          className={cn(
+            'relative grid shrink-0 place-items-center overflow-hidden rounded-full text-neutral-11',
+            'hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+            row && currentSpace
+              ? 'bg-neutral-3 ring-1 ring-foreground'
+              : 'border border-border hover:border-foreground',
+            !row && 'mt-1',
+          )}
+          style={{ width: RAIL_ICON, height: RAIL_ICON }}
+        >
+          {row && currentSpace ? (
+            <OptimizedAvatarImage
+              src={currentIcon ?? undefined}
+              alt=""
+              pixelSize={RAIL_ICON}
+              className="h-full w-full object-cover"
+              fallback={
+                <span
+                  className="flex h-full w-full items-center justify-center text-1 font-medium text-foreground"
+                  aria-hidden
+                >
+                  {currentSpace.title.trim().charAt(0).toUpperCase() || '?'}
+                </span>
+              }
+            />
+          ) : (
+            <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden />
+          )}
+        </Link>
+      </TooltipTrigger>
+      <TooltipContent side={tipSide}>{t('openMySpaces')}</TooltipContent>
+    </Tooltip>
+  );
 
   const rail = (
     <TooltipProvider delayDuration={200}>
@@ -146,6 +195,15 @@ export function MemberHomeSpacesRail({
           )
         ) : (
           <>
+            {row && allSpacesMark ? (
+              <>
+                {allSpacesMark}
+                <span
+                  aria-hidden
+                  className="mx-0.5 h-4 w-px shrink-0 bg-border/80"
+                />
+              </>
+            ) : null}
             {ecosystemGroups.map((group, groupIndex) => (
               <div
                 key={group.rootId}
@@ -212,32 +270,7 @@ export function MemberHomeSpacesRail({
                 })}
               </div>
             ))}
-            {hideSpacesListing ? null : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Link
-                    href={`/${lang}/my-spaces`}
-                    prefetch={toLinkPrefetch(prefetchNav)}
-                    aria-label={t('openMySpaces')}
-                    className={cn(
-                      'grid shrink-0 place-items-center rounded-full border border-border text-neutral-11',
-                      'hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                      row ? null : 'mt-1',
-                    )}
-                    style={{ width: RAIL_ICON, height: RAIL_ICON }}
-                  >
-                    <LayoutGrid
-                      className="h-3.5 w-3.5"
-                      strokeWidth={1.5}
-                      aria-hidden
-                    />
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side={tipSide}>
-                  {t('openMySpaces')}
-                </TooltipContent>
-              </Tooltip>
-            )}
+            {row ? null : allSpacesMark}
           </>
         )}
       </nav>

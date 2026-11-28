@@ -6,8 +6,6 @@ import { useTranslations } from 'next-intl';
 import {
   DEFAULT_SIGNAL_WORKFLOW,
   type SignalBoardDefinition,
-  type SignalStatusCategory,
-  type SignalStatusDefinition,
   type SignalWorkflowConfig,
   sanitizeSignalWorkflowConfig,
   useSignalWorkflow,
@@ -22,25 +20,24 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Separator,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { Archive, ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
+import { SignalDomainDot } from './signal-domain';
 
 const WORKFLOW_COLORS = [
   'neutral',
   'accent',
+  'sky',
+  'teal',
+  'indigo',
+  'purple',
+  'pink',
+  'error',
+  'orange',
   'warn',
   'success',
-  'error',
 ] as const;
-
-const STATUS_CATEGORIES: SignalStatusCategory[] = [
-  'backlog',
-  'active',
-  'done',
-  'cancelled',
-];
 
 function reindexPositions<T extends { position: number }>(items: T[]): T[] {
   return items.map((item, index) => ({ ...item, position: index }));
@@ -100,35 +97,15 @@ export const SignalWorkflowSettings = React.forwardRef<
     setDraft(structuredClone(workflow));
   }, [workflow]);
 
-  const moveItem = React.useCallback(
-    <T extends SignalStatusDefinition | SignalBoardDefinition>(
-      key: 'statuses' | 'boards',
-      index: number,
-      direction: -1 | 1,
-    ) => {
-      setDraft((current) => {
-        const items = [...current[key]];
-        const target = index + direction;
-        if (target < 0 || target >= items.length) return current;
-        [items[index], items[target]] = [items[target]!, items[index]!];
-        return { ...current, [key]: reindexPositions(items) };
-      });
-    },
-    [],
-  );
-
-  const updateStatus = React.useCallback(
-    (index: number, patch: Partial<SignalStatusDefinition>) => {
-      setDraft((current) => {
-        const statuses = [...current.statuses];
-        const existing = statuses[index];
-        if (!existing) return current;
-        statuses[index] = { ...existing, ...patch };
-        return { ...current, statuses };
-      });
-    },
-    [],
-  );
+  const moveBoard = React.useCallback((index: number, direction: -1 | 1) => {
+    setDraft((current) => {
+      const boards = [...current.boards];
+      const target = index + direction;
+      if (target < 0 || target >= boards.length) return current;
+      [boards[index], boards[target]] = [boards[target]!, boards[index]!];
+      return { ...current, boards: reindexPositions(boards) };
+    });
+  }, []);
 
   const updateBoard = React.useCallback(
     (index: number, patch: Partial<SignalBoardDefinition>) => {
@@ -142,26 +119,6 @@ export const SignalWorkflowSettings = React.forwardRef<
     },
     [],
   );
-
-  const addStatus = React.useCallback(() => {
-    setDraft((current) => {
-      const slugs = new Set(current.statuses.map((item) => item.slug));
-      const slug = uniqueSlug('new_status', slugs);
-      return {
-        ...current,
-        statuses: reindexPositions([
-          ...current.statuses,
-          {
-            slug,
-            name: t('signalWorkflowNewStatus'),
-            color: 'neutral',
-            category: 'backlog',
-            position: current.statuses.length,
-          },
-        ]),
-      };
-    });
-  }, [t]);
 
   const addBoard = React.useCallback(() => {
     setDraft((current) => {
@@ -181,14 +138,6 @@ export const SignalWorkflowSettings = React.forwardRef<
       };
     });
   }, [t]);
-
-  const removeStatus = React.useCallback((index: number) => {
-    setDraft((current) => {
-      if (current.statuses.length <= 1) return current;
-      const statuses = current.statuses.filter((_, i) => i !== index);
-      return { ...current, statuses: reindexPositions(statuses) };
-    });
-  }, []);
 
   const removeBoard = React.useCallback((index: number) => {
     setDraft((current) => {
@@ -248,81 +197,6 @@ export const SignalWorkflowSettings = React.forwardRef<
         <div className="flex items-center justify-between gap-3">
           <div>
             <Label className="text-foreground">
-              {t('signalWorkflowStatuses')}
-            </Label>
-            <p className="text-1 text-neutral-11">
-              {t('signalFormStatusHint')}
-            </p>
-          </div>
-          <Button type="button" variant="outline" size="sm" onClick={addStatus}>
-            <Plus className="size-4" />
-            {t('signalWorkflowAddStatus')}
-          </Button>
-        </div>
-        <div className="flex flex-col gap-3">
-          {draft.statuses.map((status, index) => (
-            <WorkflowRow
-              key={status.slug}
-              index={index}
-              total={draft.statuses.length}
-              onMoveUp={() => moveItem('statuses', index, -1)}
-              onMoveDown={() => moveItem('statuses', index, 1)}
-              onRemove={() => removeStatus(index)}
-              disableRemove={draft.statuses.length <= 1}
-            >
-              <Input
-                value={status.name}
-                onChange={(event) =>
-                  updateStatus(index, { name: event.target.value })
-                }
-                placeholder={t('signalWorkflowNamePlaceholder')}
-                aria-label={t('signalFormStatus')}
-              />
-              <Select
-                value={status.color}
-                onValueChange={(value) => updateStatus(index, { color: value })}
-              >
-                <SelectTrigger aria-label={t('signalWorkflowColor')}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {WORKFLOW_COLORS.map((color) => (
-                    <SelectItem key={color} value={color}>
-                      {t(`signalWorkflowColors.${color}` as never)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={status.category}
-                onValueChange={(value) =>
-                  updateStatus(index, {
-                    category: value as SignalStatusCategory,
-                  })
-                }
-              >
-                <SelectTrigger aria-label={t('signalWorkflowCategory')}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_CATEGORIES.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {t(`signalWorkflowCategories.${category}` as never)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </WorkflowRow>
-          ))}
-        </div>
-      </div>
-
-      <Separator />
-
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <Label className="text-foreground">
               {t('signalWorkflowBoards')}
             </Label>
             <p className="text-1 text-neutral-11">{t('signalFormBoardHint')}</p>
@@ -338,8 +212,8 @@ export const SignalWorkflowSettings = React.forwardRef<
               key={board.slug}
               index={index}
               total={draft.boards.length}
-              onMoveUp={() => moveItem('boards', index, -1)}
-              onMoveDown={() => moveItem('boards', index, 1)}
+              onMoveUp={() => moveBoard(index, -1)}
+              onMoveDown={() => moveBoard(index, 1)}
               onRemove={() => removeBoard(index)}
               disableRemove={draft.boards.length <= 1}
               trailing={
@@ -358,15 +232,21 @@ export const SignalWorkflowSettings = React.forwardRef<
                 </Button>
               }
             >
-              <Input
-                value={board.name}
-                onChange={(event) =>
-                  updateBoard(index, { name: event.target.value })
-                }
-                placeholder={t('signalWorkflowNamePlaceholder')}
-                aria-label={t('signalFormBoard')}
-                className={cn(board.archived && 'opacity-60')}
-              />
+              <div className="flex items-center gap-2">
+                <SignalDomainDot color={board.color} />
+                <Input
+                  value={board.name}
+                  onChange={(event) =>
+                    updateBoard(index, { name: event.target.value })
+                  }
+                  placeholder={t('signalWorkflowNamePlaceholder')}
+                  aria-label={t('signalFormBoard')}
+                  className={cn(
+                    'min-w-0 flex-1',
+                    board.archived && 'opacity-60',
+                  )}
+                />
+              </div>
               <Select
                 value={board.color}
                 onValueChange={(value) => updateBoard(index, { color: value })}
@@ -377,7 +257,10 @@ export const SignalWorkflowSettings = React.forwardRef<
                 <SelectContent>
                   {WORKFLOW_COLORS.map((color) => (
                     <SelectItem key={color} value={color}>
-                      {t(`signalWorkflowColors.${color}` as never)}
+                      <span className="flex items-center gap-2">
+                        <SignalDomainDot color={color} />
+                        {t(`signalWorkflowColors.${color}` as never)}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -417,7 +300,7 @@ function WorkflowRow({
 
   return (
     <div className="grid grid-cols-1 gap-2 rounded-lg border border-border p-3 sm:grid-cols-[1fr_auto] sm:items-center">
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">{children}</div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{children}</div>
       <div className="flex items-center justify-end gap-1">
         {trailing}
         <Button

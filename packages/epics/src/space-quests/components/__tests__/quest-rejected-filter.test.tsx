@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { QuestRecord } from '@hypha-platform/core/client';
 import { SpaceQuestsSection } from '../space-quests-section';
@@ -167,49 +167,36 @@ afterEach(() => {
   cleanup();
 });
 
-function openQuestStatusFilter() {
-  const trigger = screen.getByTestId('quest-status-filter');
-  trigger.focus();
-  fireEvent.keyDown(trigger, { key: 'ArrowDown' });
-}
-
-describe('rejected quest filter', () => {
+describe('rejected quest column', () => {
   it('lists a rejected proposal under Rejected and not under Proposed', () => {
     render(<SpaceQuestsSection spaceSlug="sandbox" />);
 
-    const trigger = screen.getByTestId('quest-status-filter');
-    expect(trigger.textContent).toContain('filters.active');
-    openQuestStatusFilter();
-    const menu = screen.getByTestId('quest-status-filter-menu');
-    expect(menu.className).toContain('min-w-44');
-    expect(menu.className).toContain('rounded-none');
+    const board = screen.getByTestId('quest-board');
+    expect(board.getAttribute('data-layout')).toBe('kanban');
+    expect(screen.queryByTestId('quest-status-filter')).toBeNull();
     expect(
-      ['active', 'proposed', 'paused', 'completed', 'rejected', 'drafts'].map(
-        (key) => screen.getByTestId(`quest-filter-${key}`).textContent,
+      ['proposed', 'active', 'paused', 'completed', 'rejected'].map(
+        (key) => screen.getByTestId(`quest-column-${key}`).textContent,
       ),
     ).toEqual([
-      'filters.active',
-      'filters.proposed',
-      'filters.paused',
-      'filters.completed',
-      'filters.rejected',
-      'filters.drafts',
+      expect.stringContaining('filters.proposed'),
+      expect.stringContaining('filters.active'),
+      expect.stringContaining('filters.paused'),
+      expect.stringContaining('filters.completed'),
+      expect.stringContaining('filters.rejected'),
     ]);
-    expect(screen.getByTestId('quest-filter-active').className).toContain(
-      'uppercase',
-    );
 
-    fireEvent.click(screen.getByTestId('quest-filter-proposed'));
-    expect(screen.getByText('Voting quest')).toBeTruthy();
-    expect(screen.queryByText('Voted down')).toBeNull();
+    const proposed = screen.getByTestId('quest-column-proposed');
+    expect(proposed.textContent).toContain('Voting quest');
+    expect(proposed.textContent).not.toContain('Voted down');
     expect(screen.getByTestId('quest-card-voting').textContent).toContain(
       'Vlad · 3h ago: proposed, waiting for votes',
     );
 
-    openQuestStatusFilter();
-    fireEvent.click(screen.getByTestId('quest-filter-rejected'));
-    expect(screen.queryByText('Voting quest')).toBeNull();
     const card = screen.getByTestId('quest-card-voted-down');
+    expect(screen.getByTestId('quest-column-rejected').contains(card)).toBe(
+      true,
+    );
     expect(card.textContent).toContain('Voted down');
     expect(card.textContent).toContain('Rejected');
     expect(card.textContent).toContain('Vlad · 3h ago: proposal rejected');

@@ -2,7 +2,7 @@ import { cn } from '@hypha-platform/ui-utils';
 
 /**
  * Craft segmented controls for the Network map toolbar.
- * Switch track + raised active pill (TabsTrigger `switch` / outline selected).
+ * Switch track. The selected view is a filled foreground pill.
  * Densify to h-8 so projection / view tracks match Land·Water·Grid chips.
  */
 
@@ -13,8 +13,8 @@ export const segmentedListClass =
 /** Exclusive TabsTrigger inside a switch track. */
 export const segmentedTriggerClass = cn(
   'flex !h-7 !min-h-0 flex-initial items-center justify-center gap-1 rounded-md px-2.5 !py-0 !text-xs !leading-none font-medium shadow-none',
-  'text-neutral-11 transition-colors hover:text-foreground',
-  'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
+  '!border-b-0 text-neutral-11 transition-colors hover:text-foreground',
+  'data-[state=active]:!border-transparent data-[state=active]:!bg-foreground data-[state=active]:!text-background data-[state=active]:shadow-none',
   'data-[state=inactive]:bg-transparent',
   'sm:gap-1.5 sm:px-3',
 );

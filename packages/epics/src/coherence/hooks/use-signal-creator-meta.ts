@@ -2,10 +2,11 @@
 
 import React from 'react';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   type Coherence,
   isAiOrigin,
+  isPersistedPersonId,
   type OriginView,
   resolveSignalCreatorDisplayName,
   useMe,
@@ -156,17 +157,24 @@ export function useSignalCreatorMeta({
     ? relaySourceSpace?.title || relaySourceSpaceSlug
     : null;
 
+  const t = useTranslations('CoherenceTab');
+
   const creatorLabel = React.useMemo(() => {
     if (creatorKind === 'relay') {
-      return relaySourceSpace?.title || relaySourceSpaceSlug || 'Relay space';
+      return (
+        relaySourceSpace?.title ||
+        relaySourceSpaceSlug ||
+        t('signalCreatorRelay')
+      );
     }
-    if (creatorKind === 'backgroundJob') return 'AI Agent';
-    if (creatorKind === 'aiRole') return 'AI Agent';
+    if (creatorKind === 'backgroundJob' || creatorKind === 'aiRole') {
+      return t('signalCreatorAgent');
+    }
     return (
       [creatorPerson?.name, creatorPerson?.surname].filter(Boolean).join(' ') ||
-      'Member'
+      t('signalCreatorMember')
     );
-  }, [creatorKind, creatorPerson, relaySourceSpace, relaySourceSpaceSlug]);
+  }, [creatorKind, creatorPerson, relaySourceSpace, relaySourceSpaceSlug, t]);
 
   const creatorDisplayName = React.useMemo(() => {
     const currentUserName = [person?.name, person?.surname]
@@ -189,14 +197,13 @@ export function useSignalCreatorMeta({
       });
     }
 
-    const fromHelper = resolveSignalCreatorDisplayName({
-      viewerPersonId: person?.id,
-      creatorId,
-      viewerName: currentUserName,
-      creatorName: resolvedPersonName,
-      creatorKind: 'person',
-    });
-    if (fromHelper !== 'Member') return fromHelper;
+    const viewerId = person?.id;
+    const viewerIsCreator =
+      isPersistedPersonId(viewerId) &&
+      isPersistedPersonId(creatorId) &&
+      viewerId === creatorId;
+    if (viewerIsCreator) return currentUserName || t('signalCreatorYou');
+    if (resolvedPersonName) return resolvedPersonName;
 
     const raw = `${creatorId ?? ''}`.trim();
     if (!raw) return creatorLabel;
@@ -219,6 +226,7 @@ export function useSignalCreatorMeta({
     person?.id,
     person?.name,
     person?.surname,
+    t,
   ]);
 
   return {
