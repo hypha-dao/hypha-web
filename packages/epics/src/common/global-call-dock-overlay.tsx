@@ -58,6 +58,7 @@ import type { UseMembers } from '../spaces';
 import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { toCallBackgroundEffectControl } from './human-chat-panel/human-chat-panel-call-background-effect-menu';
+import { toCallCameraDeviceControl } from './human-chat-panel/human-chat-panel-call-camera-menu';
 import { useHumanChatPanel } from './human-chat-panel-context';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { useCallDockDocumentPip } from './use-call-dock-document-pip';
@@ -541,6 +542,13 @@ export function GlobalCallDockOverlay({
     retryScreenshareWithTabAudio,
     cameraAccessBlocked,
     dismissCameraAccessBlocked,
+    cameraDevices,
+    selectedCameraDeviceId,
+    cameraSwitching,
+    setCameraDevice,
+    refreshCameraDevices,
+    cameraDeviceNotice,
+    dismissCameraDeviceNotice,
     dismissCallError,
     retryFromError,
     isLocalVideoMuted,
@@ -1232,6 +1240,13 @@ export function GlobalCallDockOverlay({
     backgroundUploads,
     onBackgroundMenuOpen,
   });
+  const cameraDeviceControl = toCallCameraDeviceControl({
+    cameraDevices,
+    selectedCameraDeviceId,
+    cameraSwitching,
+    setCameraDevice,
+    refreshCameraDevices,
+  });
   const onCapturePreferenceChange = (
     mode: Exclude<SpaceGroupCallCaptureMode, 'none'>,
   ) => {
@@ -1268,6 +1283,7 @@ export function GlobalCallDockOverlay({
     showCallScaleWarning ||
     (!inDocumentPip && screenshareTabAudioMissing && isScreensharing) ||
     cameraAccessBlocked ||
+    cameraDeviceNotice != null ||
     sessionRefreshFailedDuringCall;
   const dockCallSessionActive =
     callState === 'connected' ||
@@ -1622,6 +1638,8 @@ export function GlobalCallDockOverlay({
                   }}
                   cameraAccessBlocked={cameraAccessBlocked}
                   onDismissCameraAccessBlocked={dismissCameraAccessBlocked}
+                  cameraDeviceNotice={cameraDeviceNotice}
+                  onDismissCameraDeviceNotice={dismissCameraDeviceNotice}
                   sessionRefreshFailedDuringCall={
                     sessionRefreshFailedDuringCall
                   }
@@ -1652,6 +1670,7 @@ export function GlobalCallDockOverlay({
                   voiceProcessingPreset={voiceProcessingPreset}
                   onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
                   backgroundEffect={backgroundEffectControl}
+                  cameraDevice={cameraDeviceControl}
                   unsupportedVoiceProcessingConstraints={
                     unsupportedVoiceProcessingConstraints
                   }
@@ -1699,6 +1718,8 @@ export function GlobalCallDockOverlay({
                     }}
                     cameraAccessBlocked={cameraAccessBlocked}
                     onDismissCameraAccessBlocked={dismissCameraAccessBlocked}
+                    cameraDeviceNotice={cameraDeviceNotice}
+                    onDismissCameraDeviceNotice={dismissCameraDeviceNotice}
                     sessionRefreshFailedDuringCall={
                       sessionRefreshFailedDuringCall
                     }
@@ -1727,6 +1748,7 @@ export function GlobalCallDockOverlay({
                       onVoiceProcessingPresetChange
                     }
                     backgroundEffect={backgroundEffectControl}
+                    cameraDevice={cameraDeviceControl}
                     unsupportedVoiceProcessingConstraints={
                       unsupportedVoiceProcessingConstraints
                     }
@@ -1774,6 +1796,7 @@ export function GlobalCallDockOverlay({
                 voiceProcessingPreset={voiceProcessingPreset}
                 onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
                 backgroundEffect={backgroundEffectControl}
+                cameraDevice={cameraDeviceControl}
                 unsupportedVoiceProcessingConstraints={
                   unsupportedVoiceProcessingConstraints
                 }

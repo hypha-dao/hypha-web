@@ -74,4 +74,20 @@ describe('requestLocalCameraAccess', () => {
     });
     expect(stop).toHaveBeenCalledTimes(1);
   });
+
+  it('asks for the chosen camera when one is given (#2789)', async () => {
+    const getUserMedia = vi.fn().mockResolvedValue({ getTracks: () => [] });
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: { getUserMedia },
+    });
+    await requestLocalCameraAccess('cam-2');
+    expect(getUserMedia).toHaveBeenCalledWith({
+      video: {
+        ...resolveMatrixCameraVideoConstraints(),
+        deviceId: { ideal: 'cam-2' },
+      },
+      audio: false,
+    });
+  });
 });

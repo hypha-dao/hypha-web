@@ -16,6 +16,10 @@ export {
   type CallBackgroundEffect,
   type CallBackgroundEffectStatus,
 } from './call-background-effect';
+export type {
+  CallCameraDevice,
+  CallCameraDeviceNotice,
+} from './call-camera-device';
 export {
   getCallControlsPhase,
   type SpaceGroupCallCaptureMode,

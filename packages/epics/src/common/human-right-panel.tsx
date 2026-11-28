@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { toCallBackgroundEffectControl } from './human-chat-panel/human-chat-panel-call-background-effect-menu';
+import { toCallCameraDeviceControl } from './human-chat-panel/human-chat-panel-call-camera-menu';
 import {
   ClientEvent,
   MatrixEventEvent,
@@ -1714,6 +1715,13 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
     retryScreenshareWithTabAudio: retrySpaceCallScreenshareWithTabAudio,
     cameraAccessBlocked: spaceCallCameraAccessBlocked,
     dismissCameraAccessBlocked: dismissSpaceCallCameraAccessBlocked,
+    cameraDevices: spaceCallCameraDevices,
+    selectedCameraDeviceId: spaceCallSelectedCameraDeviceId,
+    cameraSwitching: spaceCallCameraSwitching,
+    setCameraDevice: setSpaceCallCameraDevice,
+    refreshCameraDevices: refreshSpaceCallCameraDevices,
+    cameraDeviceNotice: spaceCallCameraDeviceNotice,
+    dismissCameraDeviceNotice: dismissSpaceCallCameraDeviceNotice,
     captureMode: spaceCallCaptureMode,
     capturePreference: spaceCallCapturePreference,
     capturePreferenceSelected: spaceCallCapturePreferenceSelected,
@@ -7042,6 +7050,8 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                 onDismissCameraAccessBlocked={
                   dismissSpaceCallCameraAccessBlocked
                 }
+                cameraDeviceNotice={spaceCallCameraDeviceNotice}
+                onDismissCameraDeviceNotice={dismissSpaceCallCameraDeviceNotice}
                 sessionRefreshFailedDuringCall={sessionRefreshFailedDuringCall}
                 onReconnectMatrixSession={() => {
                   void refreshSession();
@@ -7078,6 +7088,13 @@ function HumanChatRightPanel({ useMembers }: HumanRightPanelProps) {
                   callSpaceLogoUrl: spaceCallSpaceLogoUrl,
                   backgroundUploads: spaceCallBackgroundUploads,
                   onBackgroundMenuOpen: onSpaceCallBackgroundMenuOpen,
+                })}
+                cameraDevice={toCallCameraDeviceControl({
+                  cameraDevices: spaceCallCameraDevices,
+                  selectedCameraDeviceId: spaceCallSelectedCameraDeviceId,
+                  cameraSwitching: spaceCallCameraSwitching,
+                  setCameraDevice: setSpaceCallCameraDevice,
+                  refreshCameraDevices: refreshSpaceCallCameraDevices,
                 })}
                 onVoiceProcessingPresetChange={
                   handleCallVoiceProcessingPresetChange

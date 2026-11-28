@@ -10,7 +10,9 @@ import {
 import {
   AudioLines,
   Check,
+  Camera,
   ChevronLeft,
+  ChevronRight,
   ChevronUp,
   Circle,
   Disc,
@@ -23,6 +25,7 @@ import {
   Pause,
   Play,
   RefreshCw,
+  Settings,
   SlidersHorizontal,
   Square,
   Video,
@@ -34,6 +37,11 @@ import {
   type CallBackgroundEffectControl,
   CallBackgroundEffectTriggerIcon,
 } from './human-chat-panel-call-background-effect-menu';
+import {
+  CallCameraMenuBody,
+  type CallCameraDeviceControl,
+  useCallCameraName,
+} from './human-chat-panel-call-camera-menu';
 import { useTranslations } from 'next-intl';
 import {
   AlertDialog,
@@ -80,6 +88,8 @@ type HumanChatPanelInCallControlsProps = {
   ) => void;
   /** #2563: background effect on the local camera; no control when absent or unsupported. */
   backgroundEffect?: CallBackgroundEffectControl | null;
+  /** #2789: camera choice; listed in the Settings and More menus when present. */
+  cameraDevice?: CallCameraDeviceControl | null;
   /** Which audio constraints the local device/browser can't actually apply (detected via `getCapabilities()` at join). */
   unsupportedVoiceProcessingConstraints?: {
     autoGainControl: boolean;
@@ -142,6 +152,7 @@ export function HumanChatPanelInCallControls({
   voiceProcessingPreset,
   onVoiceProcessingPresetChange,
   backgroundEffect = null,
+  cameraDevice = null,
   unsupportedVoiceProcessingConstraints = null,
   captureMode,
   capturePreference,
@@ -186,8 +197,13 @@ export function HumanChatPanelInCallControls({
   /** Share toolbar overflow: record, mic setup and leave (they would not fit the narrow share dock / PiP). */
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [moreMenuView, setMoreMenuView] = useState<
-    'root' | 'capture' | 'audio' | 'effects'
+    'root' | 'capture' | 'audio' | 'effects' | 'camera'
   >('root');
+  /** #2789: the Settings menu (former mic setup) lists Camera and Voice setup. */
+  const [settingsMenuView, setSettingsMenuView] = useState<
+    'root' | 'audio' | 'camera'
+  >('root');
+  const cameraName = useCallCameraName();
   const [isEffectsMenuOpen, setIsEffectsMenuOpen] = useState(false);
   const effectsMenuRef = useRef<HTMLDivElement | null>(null);
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
@@ -543,6 +559,19 @@ export function HumanChatPanelInCallControls({
     if (!isMoreMenuOpen) setMoreMenuView('root');
   }, [isMoreMenuOpen]);
 
+  useEffect(() => {
+    if (!isAudioMenuOpen) setSettingsMenuView('root');
+  }, [isAudioMenuOpen]);
+
+  /** #2789: refresh the camera list whenever a camera list is on screen. */
+  const cameraMenuVisible =
+    (isAudioMenuOpen && settingsMenuView === 'camera') ||
+    (isMoreMenuOpen && moreMenuView === 'camera');
+  const onCameraMenuOpen = cameraDevice?.onMenuOpen;
+  useEffect(() => {
+    if (cameraMenuVisible) onCameraMenuOpen?.();
+  }, [cameraMenuVisible, onCameraMenuOpen]);
+
   const selectVoicePreset = (
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => {
@@ -620,6 +649,8 @@ export function HumanChatPanelInCallControls({
     ? t('callCaptureModeTranscriptOnly')
     : t('callCaptureModeRecordingWithTranscript');
 
+  const moreMenuItemClass =
+    'flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50';
   /** Overflow menu sub-views show their back arrow inline with the section heading. */
   const moreMenuBackButton =
     isMoreMenuOpen && moreMenuView !== 'root' ? (
@@ -633,14 +664,27 @@ export function HumanChatPanelInCallControls({
         <ChevronLeft className="h-4 w-4" />
       </button>
     ) : null;
-  const audioMenuBody = (
+  /** Settings menu sub-views: the same inline back arrow, back to the Settings list. */
+  const settingsMenuBackButton =
+    isAudioMenuOpen && settingsMenuView !== 'root' ? (
+      <button
+        type="button"
+        onClick={() => setSettingsMenuView('root')}
+        aria-label={t('callControlsMoreBack')}
+        title={t('callControlsMoreBack')}
+        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md hover:bg-muted/80"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+    ) : null;
+  const renderAudioMenuBody = (backButton: ReactNode) => (
     <>
       <div className="flex items-center gap-1">
-        {moreMenuBackButton}
+        {backButton}
         <p
           className={cn(
             'py-1.5 text-sm font-semibold',
-            moreMenuBackButton ? 'pr-2' : 'px-2',
+            backButton ? 'pr-2' : 'px-2',
           )}
         >
           {t('callVoiceProcessingLabel')}
@@ -868,13 +912,98 @@ export function HumanChatPanelInCallControls({
     </>
   );
 
+  const voicePresetLabel =
+    voiceProcessingPreset === 'voice_isolation'
+      ? t('callVoiceProcessingIsolation')
+      : voiceProcessingPreset === 'music'
+      ? t('callVoiceProcessingMusic')
+      : t('callVoiceProcessingStandard');
+  const selectedCameraName = cameraDevice
+    ? cameraName(cameraDevice.devices, cameraDevice.selectedDeviceId)
+    : null;
+  /** A row that opens a sub-view: icon + label, the current value and an arrow. */
+  const renderSubmenuItem = (
+    itemIcon: ReactNode,
+    label: string,
+    value: string | null,
+    onOpen: () => void,
+    disabled = false,
+  ) => (
+    <button
+      type="button"
+      role="menuitem"
+      disabled={disabled}
+      onClick={onOpen}
+      className={moreMenuItemClass}
+    >
+      <span className="inline-flex min-w-0 items-center gap-2">
+        {itemIcon}
+        <span className="shrink-0">{label}</span>
+      </span>
+      <span
+        className={cn(
+          'inline-flex min-w-0 items-center gap-1 text-[11px]',
+          isFull ? 'text-zinc-400' : 'text-muted-foreground',
+        )}
+      >
+        {value ? <span className="max-w-28 truncate">{value}</span> : null}
+        <ChevronRight className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      </span>
+    </button>
+  );
+  const closeAllCallMenus = () => {
+    setIsAudioMenuOpen(false);
+    setIsMoreMenuOpen(false);
+  };
+  const renderCameraMenuBody = (backButton: ReactNode) =>
+    cameraDevice ? (
+      <CallCameraMenuBody
+        control={cameraDevice}
+        dark={isFull}
+        backButton={backButton}
+        onDone={closeAllCallMenus}
+      />
+    ) : null;
+  /**
+   * #2789: Settings (former mic setup). With a camera control it lists Camera and Voice setup,
+   * each with its own sub-view; without one it opens Voice setup directly, as before.
+   */
+  const settingsMenuBody = !cameraDevice ? (
+    renderAudioMenuBody(null)
+  ) : settingsMenuView === 'camera' ? (
+    renderCameraMenuBody(settingsMenuBackButton)
+  ) : settingsMenuView === 'audio' ? (
+    renderAudioMenuBody(settingsMenuBackButton)
+  ) : (
+    <>
+      <p className="px-2 py-1.5 text-sm font-semibold">
+        {t('callSettingsLabel')}
+      </p>
+      <div className="-mx-0 my-1 h-px bg-neutral-6" />
+      {renderSubmenuItem(
+        <Camera className="h-4 w-4" />,
+        t('callCameraLabel'),
+        selectedCameraName,
+        () => setSettingsMenuView('camera'),
+      )}
+      {renderSubmenuItem(
+        <SlidersHorizontal className="h-4 w-4" />,
+        t('callVoiceProcessingLabel'),
+        voicePresetLabel,
+        () => setSettingsMenuView('audio'),
+      )}
+    </>
+  );
+  const settingsMenuLabel = cameraDevice
+    ? t('callSettingsLabel')
+    : t('callVoiceProcessingLabel');
   const renderAudioSettingsMenu = (
     <div className="relative" ref={audioMenuRef}>
       <button
         type="button"
         className={audioSettingsBtn}
-        title={t('callVoiceProcessingLabel')}
-        aria-label={t('callVoiceProcessingLabel')}
+        title={settingsMenuLabel}
+        aria-label={settingsMenuLabel}
         aria-haspopup="menu"
         aria-expanded={isAudioMenuOpen}
         onClick={() => {
@@ -882,7 +1011,11 @@ export function HumanChatPanelInCallControls({
           setIsAudioMenuOpen((open) => !open);
         }}
       >
-        <SlidersHorizontal className={icon} strokeWidth={lucideStroke} />
+        {cameraDevice ? (
+          <Settings className={icon} strokeWidth={lucideStroke} />
+        ) : (
+          <SlidersHorizontal className={icon} strokeWidth={lucideStroke} />
+        )}
         <ChevronUp className={menuChevronClass(isAudioMenuOpen)} aria-hidden />
       </button>
       {isAudioMenuOpen ? (
@@ -903,7 +1036,7 @@ export function HumanChatPanelInCallControls({
             isFull && 'border-zinc-700 bg-zinc-900 text-white',
           )}
         >
-          {audioMenuBody}
+          {settingsMenuBody}
         </div>
       ) : null}
     </div>
@@ -976,10 +1109,10 @@ export function HumanChatPanelInCallControls({
   }, [backgroundMenuVisible, onBackgroundMenuOpen]);
   const showBackgroundEffectControl =
     showAdvancedCallControls && backgroundEffectAvailable;
-  /** Narrow screens outside screenshare: a More menu holding Background (no Leave, it has a button). */
+  /** Narrow screens outside screenshare: a More menu holding Camera and Background (no Leave, it has a button). */
   const showCompactMoreMenu =
     !showAdvancedCallControls &&
-    backgroundEffectAvailable &&
+    (backgroundEffectAvailable || Boolean(cameraDevice)) &&
     !screenshareEssentialToolbar &&
     !leaveOnly;
   const renderEffectsMenuBody = (backButton?: ReactNode) =>
@@ -1045,8 +1178,6 @@ export function HumanChatPanelInCallControls({
         ) : null}
       </div>
     ) : null;
-  const moreMenuItemClass =
-    'flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50';
   /**
    * Share toolbar: record, mic setup, background and leave collapse into one
    * overflow trigger so the narrow share dock / Document PiP stays small
@@ -1128,6 +1259,14 @@ export function HumanChatPanelInCallControls({
                   </button>
                 </>
               ) : null}
+              {cameraDevice
+                ? renderSubmenuItem(
+                    <Camera className="h-4 w-4" />,
+                    t('callCameraLabel'),
+                    selectedCameraName,
+                    () => setMoreMenuView('camera'),
+                  )
+                : null}
               {backgroundEffectAvailable && backgroundEffect ? (
                 <button
                   type="button"
@@ -1147,7 +1286,9 @@ export function HumanChatPanelInCallControls({
               ) : null}
               {screenshareEssentialToolbar ? (
                 <>
-                  {showAdvancedCallControls || backgroundEffectAvailable ? (
+                  {showAdvancedCallControls ||
+                  backgroundEffectAvailable ||
+                  cameraDevice ? (
                     <div className="-mx-0 my-1 h-px bg-neutral-6" />
                   ) : null}
                   <button
@@ -1172,8 +1313,10 @@ export function HumanChatPanelInCallControls({
             captureMenuBody
           ) : moreMenuView === 'effects' ? (
             renderEffectsMenuBody(moreMenuBackButton)
+          ) : moreMenuView === 'camera' ? (
+            renderCameraMenuBody(moreMenuBackButton)
           ) : (
-            audioMenuBody
+            renderAudioMenuBody(moreMenuBackButton)
           )}
         </div>
       ) : null}
