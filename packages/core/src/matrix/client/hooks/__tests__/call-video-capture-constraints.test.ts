@@ -3,6 +3,8 @@ import {
   WEBKIT_CAMERA_CAPTURE_VIDEO_CONSTRAINTS,
   MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS,
   installMatrixCameraCaptureConstraints,
+  isMobileCameraDevice,
+  liveKitCameraCaptureDefaults,
   mergeMatrixCameraVideoConstraints,
   resolveMatrixCameraVideoConstraints,
 } from '../call-video-capture-constraints';
@@ -89,5 +91,41 @@ describe('installMatrixCameraCaptureConstraints', () => {
       width: { ideal: 640 },
       height: { ideal: 360 },
     });
+  });
+});
+
+describe('liveKitCameraCaptureDefaults', () => {
+  it('asks for the front camera on phones and tablets', () => {
+    expect(liveKitCameraCaptureDefaults(true)).toEqual({ facingMode: 'user' });
+  });
+
+  it('leaves desktop untouched', () => {
+    expect(liveKitCameraCaptureDefaults(false)).toEqual({});
+  });
+});
+
+describe('isMobileCameraDevice', () => {
+  it('detects phones and tablets by user agent', () => {
+    expect(
+      isMobileCameraDevice(
+        'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/131 Mobile Safari/537.36',
+      ),
+    ).toBe(true);
+    expect(
+      isMobileCameraDevice(
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15',
+      ),
+    ).toBe(true);
+  });
+
+  it('is false on desktop', () => {
+    vi.stubGlobal('navigator', {
+      userAgent:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36',
+      platform: 'Win32',
+      maxTouchPoints: 0,
+    });
+    expect(isMobileCameraDevice()).toBe(false);
+    vi.unstubAllGlobals();
   });
 });

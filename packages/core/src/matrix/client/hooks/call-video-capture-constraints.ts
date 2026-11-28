@@ -17,6 +17,28 @@ export const WEBKIT_CAMERA_CAPTURE_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
   facingMode: 'user',
 };
 
+/** Phones and tablets, where the browser's default camera can be the back one. */
+export function isMobileCameraDevice(
+  userAgent: string | undefined = typeof navigator === 'undefined'
+    ? undefined
+    : navigator.userAgent,
+): boolean {
+  if (!userAgent) return false;
+  if (/Android|iPhone|iPad|iPod/i.test(userAgent)) return true;
+  return isIOSTouchDevice();
+}
+
+/**
+ * livekit `videoCaptureDefaults` for call rooms: the front camera on phones and tablets (members
+ * reported calls opening on the back camera). `facingMode` is a preference, so a chosen camera
+ * (`deviceId`, #2789) still wins. Desktop gets nothing, so the browser default stays as it was.
+ */
+export function liveKitCameraCaptureDefaults(
+  mobile: boolean = isMobileCameraDevice(),
+): { facingMode?: 'user' } {
+  return mobile ? { facingMode: 'user' } : {};
+}
+
 /** @deprecated Use {@link WEBKIT_CAMERA_CAPTURE_VIDEO_CONSTRAINTS}. */
 export const IOS_TOUCH_CAMERA_CAPTURE_VIDEO_CONSTRAINTS =
   WEBKIT_CAMERA_CAPTURE_VIDEO_CONSTRAINTS;
