@@ -12,6 +12,12 @@ const LABEL_THEN_DASH = /^(.{1,48}?)(?:\s+[–—]\s+|\s+-\s+)(.+)$/;
 function emphasizeListLabel(body: string): string {
   const trimmed = body.trim();
   if (!trimmed || trimmed.includes('**')) return body;
+  const urlLabel = trimmed.match(/^(.{1,60}?):\s+(https?:\/\/\S+)$/);
+  if (urlLabel) {
+    const label = urlLabel[1]!.trim();
+    const url = urlLabel[2]!.trim();
+    if (label && url && !/[.;]/.test(label)) return `**${label}:** ${url}`;
+  }
   const match = trimmed.match(LABEL_THEN_DASH);
   if (!match) return body;
   const label = match[1]!.trim();
@@ -20,6 +26,56 @@ function emphasizeListLabel(body: string): string {
   // Keep plain sentences ("Do this - then that" mid-thought) from becoming titles.
   if (/\s{2,}/.test(label) || /[,:;]/.test(label)) return body;
   return `**${label}** – ${rest}`;
+}
+
+/** A line that is only a bold label, the way the editor stores a section title. */
+const SOLO_BOLD = /^\*\*([^*\n]+)\*\*$/;
+
+function promoteSoloBold(line: string): string {
+  const match = line.trim().match(SOLO_BOLD);
+  const title = match?.[1]?.trim();
+  if (!title || title.length > 80) return line;
+  return `### ${title}`;
+}
+
+function linkBareUrls(line: string): string {
+  let out = '';
+  let i = 0;
+  while (i < line.length) {
+    if (line[i] === '`') {
+      const end = line.indexOf('`', i + 1);
+      if (end === -1) return out + line.slice(i);
+      out += line.slice(i, end + 1);
+      i = end + 1;
+      continue;
+    }
+    const http =
+      line.startsWith('https://', i) || line.startsWith('http://', i);
+    if (!http) {
+      out += line[i];
+      i += 1;
+      continue;
+    }
+    const prev = i > 0 ? line[i - 1] : '';
+    if (prev === '(' || prev === '<') {
+      const close = prev === '(' ? ')' : '>';
+      const end = line.indexOf(close, i);
+      const stop = end === -1 ? line.length : end;
+      out += line.slice(i, stop);
+      i = stop;
+      continue;
+    }
+    let end = i;
+    while (end < line.length && !/\s/.test(line[end]!)) end += 1;
+    let url = line.slice(i, end);
+    const punct = url.match(/[.,;:!?]+$/);
+    const tail = punct?.[0] ?? '';
+    if (tail) url = url.slice(0, -tail.length);
+    out +=
+      url.length > 'https://x'.length ? `[${url}](${url})${tail}` : url + tail;
+    i = end;
+  }
+  return out;
 }
 
 function normalizeItemLine(line: string): string {
@@ -59,7 +115,9 @@ export function prepareSignalDescriptionMarkdown(source: string): string {
     if (inFence || /^(?: {4}|\t)/.test(line)) {
       return { text: line, literal: true };
     }
-    return { text: normalizeItemLine(line), literal: false };
+    const item = normalizeItemLine(line);
+    const titled = isListItem(item) ? item : promoteSoloBold(item);
+    return { text: linkBareUrls(titled), literal: false };
   });
   const out: string[] = [];
   const itemAt = (index: number) => {

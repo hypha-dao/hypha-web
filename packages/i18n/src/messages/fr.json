@@ -1447,7 +1447,11 @@
     "newProposal": "Nouvelle proposition",
     "searchDocuments": "Rechercher des documents",
     "listIsEmpty": "La liste est vide",
-    "listFailedToLoad": "Impossible de charger les documents. Essayez d’actualiser la page."
+    "listFailedToLoad": "Impossible de charger les documents. Essayez d’actualiser la page.",
+    "emptyCard": {
+      "title": "Aucun accord pour le moment",
+      "description": "Les discussions, propositions et accords acceptés de cet espace apparaissent ici."
+    }
   },
   "MembersTab": {
     "member": "Membre",
@@ -1487,6 +1491,11 @@
     },
     "aiAgents": "Agents IA",
     "aiAgentsEmptyState": "Aucun agent IA mobilisé pour le moment. Posez des questions stratégiques pour les activer.",
+    "emptyCard": {
+      "title": "Aucun membre pour le moment",
+      "description": "Les personnes et les espaces qui rejoignent apparaissent ici. Invite quelqu’un pour commencer.",
+      "aiTitle": "Aucun agent IA pour le moment"
+    },
     "aiAgentsMobilizedCount": "Mobilisé {count, plural, one {# fois} other {# fois}}",
     "aiAgentsLastActive": "Actif le {date}",
     "inviteMember": "Inviter",
@@ -1515,6 +1524,11 @@
     "emptyAssetsTreasury": "Votre trésorerie n'a pas encore d'actifs. Déposez des fonds ou créez un token d'espace pour commencer.",
     "emptyAssetsWallet": "Votre portefeuille n'a pas encore d'actifs. Achetez des tokens d'espace ou des HYPHA pour commencer à constituer votre solde.",
     "emptyAssetsSearch": "Aucun actif ne correspond à votre recherche.",
+    "emptyCard": {
+      "assetsTitle": "Aucun actif pour le moment",
+      "vaultsTitle": "Aucun coffre pour le moment",
+      "vaultsDescription": "Les coffres de garantie conservent le collatéral des tokens de cet espace. Ils apparaissent ici dès qu’un coffre existe."
+    },
     "loadMoreAssets": "Charger plus d'actifs",
     "transactions": "Transactions",
     "vaults": "Coffres",
@@ -3801,6 +3815,11 @@
     "backToCoherence": "Retour aux Signaux",
     "all": "Tous",
     "listIsEmpty": "La liste est vide",
+    "empty": {
+      "title": "Aucun signal pour le moment",
+      "description": "Partagez un besoin, une ressource ou quelque chose auquel cet espace devrait prêter attention. Les membres peuvent en discuter et en faire une proposition quand c'est prêt.",
+      "filtered": "Aucun signal ne correspond à cette vue."
+    },
     "loadMore": "Charger plus",
     "noMore": "Plus rien",
     "mostViews": "Plus vues",
@@ -3837,6 +3856,10 @@
     "searchSpaceMemory": "Rechercher dans la mémoire de l'espace...",
     "spaceMemoryLoading": "Chargement des fichiers…",
     "spaceMemoryEmpty": "Aucun fichier téléchargé pour l'instant. Les pièces jointes des propositions et accords apparaissent ici.",
+    "spaceMemoryFilesTitle": "Aucun fichier pour le moment",
+    "spaceMemoryConversationsTitle": "Aucune conversation pour le moment",
+    "spaceMemoryCallsTitle": "Aucun appel pour le moment",
+    "spaceMemoryAiTitle": "Aucune mémoire IA pour le moment",
     "spaceMemoryEmptySearch": "Aucun fichier ne correspond à votre recherche.",
     "spaceMemoryError": "Impossible de charger la mémoire de l'espace.",
     "spaceMemoryLoadMoreError": "Impossible de charger d'autres éléments. Veuillez réessayer.",
@@ -5459,6 +5482,11 @@
     "dealDetails": "Détails de {item}",
     "loading": "Chargement des {items}…",
     "configLoadFailed": "Impossible de charger la configuration du pipeline.",
+    "empty": {
+      "title": "Pas encore de {items}",
+      "description": "Suis le travail du premier contact jusqu’à une décision. Ajoute une carte lorsqu’il y a quelque chose à suivre.",
+      "filtered": "Rien ne correspond à cette vue."
+    },
     "retry": "Réessayer",
     "unassignedLane": "Non assigné",
     "notFound": "{item} introuvable",
@@ -5919,6 +5947,11 @@
     "title": "Quêtes",
     "subtitle": "Travail ciblé et limité dans le temps, avec un objectif clair, des membres et des jalons",
     "newQuest": "NOUVELLE QUÊTE",
+    "empty": {
+      "title": "Aucune quête pour le moment",
+      "description": "Les quêtes sont un travail ciblé, avec un objectif, des membres et des jalons. Propose-en une quand cet espace est prêt à s’engager.",
+      "filtered": "Aucune quête ne correspond à cette recherche."
+    },
     "searchPlaceholder": "Rechercher des quêtes",
     "domain": "Domaine",
     "board": {

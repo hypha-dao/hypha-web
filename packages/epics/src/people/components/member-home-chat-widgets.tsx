@@ -298,7 +298,7 @@ export function MemberHomeSpacesWidgetCard({
   );
 }
 
-const PEOPLE_PREVIEW = 5;
+const PEOPLE_PREVIEW = 3;
 
 export function MemberHomePeopleWidgetCard({
   people,

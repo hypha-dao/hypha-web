@@ -3414,7 +3414,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     return (
       <div className="flex h-full min-h-0 w-full flex-1">
         <div
-          className={`group hidden h-full w-(--sidebar-width-icon) shrink-0 flex-col overflow-hidden border-r border-border md:flex ${NAV_CHROME_SURFACE_CLASS}`}
+          className={`group hidden h-full w-(--sidebar-width-icon) shrink-0 flex-col overflow-hidden border-r border-border xl:flex ${NAV_CHROME_SURFACE_CLASS}`}
           data-collapsible="icon"
           data-state="collapsed"
         >

@@ -35,6 +35,7 @@ import {
   SignalFeedFilters,
   type SignalFeedPerson,
 } from './signal-feed-filters';
+import { SignalEmpty, SignalEmptyCreateButton } from './signal-empty';
 import { SignalFeedCard } from './signal-feed-card';
 import { SignalFeedLayoutToggle } from './signal-feed-layout-toggle';
 import { SignalFeedRow } from './signal-feed-row';
@@ -272,7 +273,6 @@ export function CoherenceBlock({
             </span>
           ) : null}
         </h1>
-        <SignalFeedLayoutToggle layout={layout} onChange={handleLayoutChange} />
       </header>
 
       <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
@@ -285,6 +285,12 @@ export function CoherenceBlock({
         />
       ) : null}
       <SignalFeedFilters
+        leading={
+          <SignalFeedLayoutToggle
+            layout={layout}
+            onChange={handleLayoutChange}
+          />
+        }
         sort={sort}
         onSortChange={handleSortChange}
         personId={personId}
@@ -356,11 +362,29 @@ export function CoherenceBlock({
           </Button>
         </div>
       ) : ranked.length === 0 ? (
-        <p className="craft-card px-4 py-8 text-center text-1 text-muted-foreground">
-          {titleQuery.trim() && hasSignals
-            ? t('signalTitleNoResults')
-            : t('listIsEmpty')}
-        </p>
+        hasSignals ? (
+          <p className="craft-card px-4 py-8 text-center text-1 text-muted-foreground">
+            {titleQuery.trim()
+              ? t('signalTitleNoResults')
+              : t('empty.filtered')}
+          </p>
+        ) : (
+          <SignalEmpty
+            action={
+              canMutate ? (
+                <ActionGate
+                  kind="create-signal"
+                  fullAppPath={`/${lang}/dho/${spaceSlug}/coherence/new-signal`}
+                  label={t('newSignal')}
+                >
+                  <SignalEmptyCreateButton
+                    href={`/${lang}/dho/${spaceSlug}/coherence/new-signal`}
+                  />
+                </ActionGate>
+              ) : null
+            }
+          />
+        )
       ) : (
         <div
           className={

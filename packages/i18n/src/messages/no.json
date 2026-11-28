@@ -1445,7 +1445,11 @@
     "newProposal": "Nytt forslag",
     "searchDocuments": "Søk i dokumenter",
     "listIsEmpty": "Listen er tom",
-    "listFailedToLoad": "Kunne ikke laste inn dokumenter. Prøv å oppdatere siden."
+    "listFailedToLoad": "Kunne ikke laste inn dokumenter. Prøv å oppdatere siden.",
+    "emptyCard": {
+      "title": "Ingen avtaler ennå",
+      "description": "Diskusjoner, forslag og godkjente avtaler for dette området vises her."
+    }
   },
   "MembersTab": {
     "member": "Medlem",
@@ -1485,6 +1489,11 @@
     },
     "aiAgents": "AI-agenter",
     "aiAgentsEmptyState": "Ingen AI-agenter er mobilisert ennå. Still strategiske spørsmål for å aktivere dem.",
+    "emptyCard": {
+      "title": "Ingen medlemmer ennå",
+      "description": "Personer og områder som blir med vises her. Inviter noen for å komme i gang.",
+      "aiTitle": "Ingen KI-agenter ennå"
+    },
     "aiAgentsMobilizedCount": "Mobilisert {count, plural, one {# gang} other {# ganger}}",
     "aiAgentsLastActive": "Sist aktiv {date}",
     "inviteMember": "Inviter",
@@ -2085,6 +2094,11 @@
     "emptyAssetsTreasury": "Kassen din har ingen eiendeler ennå. Sett inn midler eller opprett et romtoken for å komme i gang.",
     "emptyAssetsWallet": "Lommeboken din har ingen eiendeler ennå. Kjøp romtokener eller HYPHA for å begynne å bygge opp saldoen din.",
     "emptyAssetsSearch": "Ingen eiendeler samsvarer med søket ditt.",
+    "emptyCard": {
+      "assetsTitle": "Ingen eiendeler ennå",
+      "vaultsTitle": "Ingen hvelv ennå",
+      "vaultsDescription": "Sikkerhetshvelv holder sikkerheten bak tokenene i dette området. De vises her når et hvelv finnes."
+    },
     "loadMoreAssets": "Last inn flere eiendeler",
     "transactions": "Transaksjoner",
     "vaults": "Hvelv",
@@ -4376,6 +4390,11 @@
     "backToCoherence": "Tilbake til signaler",
     "all": "Alle",
     "listIsEmpty": "Listen er tom",
+    "empty": {
+      "title": "Ingen signaler ennå",
+      "description": "Del et behov, en ressurs eller noe dette spacet bør følge med på. Medlemmer kan diskutere det og gjøre det om til et forslag når det er klart.",
+      "filtered": "Ingen signaler passer til denne visningen."
+    },
     "loadMore": "Last inn flere",
     "noMore": "Ingen flere",
     "mostViews": "Flest visninger",
@@ -4412,6 +4431,10 @@
     "searchSpaceMemory": "Søk i romminnet...",
     "spaceMemoryLoading": "Laster ressurser…",
     "spaceMemoryEmpty": "Ingen opplastede filer ennå. Vedlegg fra forslag og avtaler vises her.",
+    "spaceMemoryFilesTitle": "Ingen filer ennå",
+    "spaceMemoryConversationsTitle": "Ingen samtaler ennå",
+    "spaceMemoryCallsTitle": "Ingen anrop ennå",
+    "spaceMemoryAiTitle": "Ingen KI-minner ennå",
     "spaceMemoryEmptySearch": "Ingen ressurser samsvarer med søket ditt.",
     "spaceMemoryError": "Kunne ikke laste romminnet.",
     "spaceMemoryLoadMoreError": "Kunne ikke laste flere elementer. Prøv igjen.",
@@ -5467,6 +5490,11 @@
     "dealDetails": "{item}-detaljer",
     "loading": "Laster {items}…",
     "configLoadFailed": "Kunne ikke laste pipeline-konfigurasjonen.",
+    "empty": {
+      "title": "Ingen {items} ennå",
+      "description": "Følg arbeid fra første kontakt til en beslutning. Legg til et kort når det er noe å følge.",
+      "filtered": "Ingenting samsvarer med denne visningen."
+    },
     "retry": "Prøv igjen",
     "unassignedLane": "Ikke tildelt",
     "notFound": "{item} ble ikke funnet",
@@ -5927,6 +5955,11 @@
     "title": "Oppdrag",
     "subtitle": "Fokusert, tidsavgrenset arbeid med tydelig mål, medlemmer og milepæler",
     "newQuest": "NYTT OPPDRAG",
+    "empty": {
+      "title": "Ingen oppdrag ennå",
+      "description": "Oppdrag er fokusert arbeid med et mål, medlemmer og milepæler. Foreslå ett når dette området er klart til å forplikte seg.",
+      "filtered": "Ingen oppdrag samsvarer med dette søket."
+    },
     "searchPlaceholder": "Søk i oppdrag",
     "domain": "Domene",
     "board": {

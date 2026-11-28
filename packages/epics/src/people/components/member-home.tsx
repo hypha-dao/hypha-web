@@ -435,7 +435,7 @@ export function MemberHome({
                 <ResourceList
                   isLoading={railsBusy}
                   empty={t('noNotifications')}
-                  maxItems={5}
+                  maxItems={3}
                   markSize={24}
                   items={
                     home
@@ -473,7 +473,7 @@ export function MemberHome({
                       : []
                   }
                 />
-                {home && home.notifications.length > 5 ? (
+                {home && home.notifications.length > 3 ? (
                   <Button asChild className="mt-4 w-full text-sm">
                     <Link href={`/${lang}/home/notifications`}>
                       {t('seeMoreNotifications')}
@@ -1049,7 +1049,7 @@ function Tile({
   );
 }
 
-const ATTENTION_PAGE = 5;
+const ATTENTION_PAGE = 3;
 
 function AttentionNeeded({
   lang,

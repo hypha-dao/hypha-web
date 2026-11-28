@@ -5,6 +5,7 @@ import { useVaults, type Vault } from '../../hooks/use-vaults';
 import { VaultCollateralCard } from './vault-collateral-card';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { Empty } from '../../../common';
+import { SpaceEmptyCard } from '../../../common/space-empty-card';
 import { ActionGate } from '../../../common/action-capabilities';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
@@ -14,6 +15,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { useIsDelegate, useSpaceBySlug } from '@hypha-platform/core/client';
 import { useSpaceMember } from '../../../spaces';
 import { useTranslations } from 'next-intl';
+import { Landmark } from 'lucide-react';
 
 const SingleVaultSection: FC<{
   vault: Vault;
@@ -127,11 +129,11 @@ export const VaultsSection: FC = () => {
 
   if (vaults.length === 0 && !isLoading) {
     return (
-      <div className="flex w-full flex-col items-center justify-center">
-        <Empty>
-          <p>{tTreasury('listIsEmpty')}</p>
-        </Empty>
-      </div>
+      <SpaceEmptyCard
+        icon={Landmark}
+        title={tTreasury('emptyCard.vaultsTitle')}
+        description={tTreasury('emptyCard.vaultsDescription')}
+      />
     );
   }
 

@@ -83,59 +83,80 @@ type MarkdownComponents = NonNullable<
 >;
 type MarkdownChildren = { children?: React.ReactNode };
 
+/** Section titles sit on a hairline so a long write-up reads as sections, not one block. */
+const SIGNAL_SECTION_TITLE_CLASS =
+  'mb-2 mt-7 border-t border-border/60 pt-5 font-medium leading-snug tracking-tight text-foreground first:mt-0 first:border-t-0 first:pt-0';
+
+const SIGNAL_LIST_CLASS =
+  'my-3 ml-0 list-outside space-y-2.5 pl-6 text-2 leading-[1.65] text-foreground marker:text-muted-foreground';
+
+function SignalDescriptionFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="max-w-[72ch] text-2 leading-[1.7] text-foreground/90 [overflow-wrap:anywhere]">
+      {children}
+    </div>
+  );
+}
+
+function SignalDescriptionLink({
+  children,
+  href,
+}: MarkdownChildren & { href?: string }) {
+  const external = !!href && /^https?:/i.test(href);
+  return (
+    <a
+      href={href}
+      className="text-foreground underline decoration-foreground/30 underline-offset-[3px] hover:decoration-foreground"
+      target={external ? '_blank' : undefined}
+      rel={external ? 'noreferrer' : undefined}
+    >
+      {children}
+    </a>
+  );
+}
+
 /** Body sized to sit with the page meta: 14px text, headings a step or two up. */
 const SIGNAL_DESCRIPTION_COMPONENTS: MarkdownComponents = {
   h1: ({ children }: MarkdownChildren) => (
-    <h1 className="mb-1.5 mt-4 text-4 font-semibold text-foreground first:mt-0">
-      {children}
-    </h1>
+    <h1 className={cn(SIGNAL_SECTION_TITLE_CLASS, 'text-4')}>{children}</h1>
   ),
   h2: ({ children }: MarkdownChildren) => (
-    <h2 className="mb-1.5 mt-4 text-3 font-semibold text-foreground first:mt-0">
-      {children}
-    </h2>
+    <h2 className={cn(SIGNAL_SECTION_TITLE_CLASS, 'text-3')}>{children}</h2>
   ),
   h3: ({ children }: MarkdownChildren) => (
-    <h3 className="mb-1 mt-3 text-2 font-semibold text-foreground first:mt-0">
-      {children}
-    </h3>
+    <h3 className={cn(SIGNAL_SECTION_TITLE_CLASS, 'text-2')}>{children}</h3>
   ),
   h4: ({ children }: MarkdownChildren) => (
-    <h4 className="mb-1 mt-3 text-2 font-semibold text-foreground first:mt-0">
-      {children}
-    </h4>
+    <h4 className={cn(SIGNAL_SECTION_TITLE_CLASS, 'text-2')}>{children}</h4>
   ),
   p: ({ children }: MarkdownChildren) => (
-    <p className="my-2 text-2 leading-relaxed text-foreground first:mt-0 last:mb-0">
+    <p className="my-3 text-2 leading-[1.7] text-foreground/90 first:mt-0 last:mb-0">
       {children}
     </p>
   ),
   ul: ({ children }: MarkdownChildren) => (
-    <ul className="my-2 ml-0 list-outside list-disc pl-4 text-2 leading-relaxed text-foreground">
-      {children}
-    </ul>
+    <ul className={cn(SIGNAL_LIST_CLASS, 'list-disc')}>{children}</ul>
   ),
   ol: ({ children }: MarkdownChildren) => (
-    <ol className="my-2 ml-0 list-outside list-decimal pl-4 text-2 leading-relaxed text-foreground">
-      {children}
-    </ol>
+    <ol className={cn(SIGNAL_LIST_CLASS, 'list-decimal')}>{children}</ol>
   ),
   li: ({ children }: MarkdownChildren) => (
-    <li className="my-0.5">{children}</li>
+    <li className="pl-1.5 [&>p]:my-0">{children}</li>
   ),
+  a: SignalDescriptionLink,
   blockquote: ({ children }: MarkdownChildren) => (
-    <blockquote className="my-2 border-l-2 border-border pl-3 text-2 italic text-muted-foreground">
+    <blockquote className="my-4 border-l-2 border-border pl-4 text-2 leading-[1.7] text-muted-foreground">
       {children}
     </blockquote>
   ),
   strong: ({ children }: MarkdownChildren) => (
-    <strong className="font-semibold">{children}</strong>
+    <strong className="font-semibold text-foreground">{children}</strong>
   ),
   em: ({ children }: MarkdownChildren) => (
     <em className="italic">{children}</em>
   ),
   u: ({ children }: MarkdownChildren) => (
-    <u className="underline">{children}</u>
+    <u className="underline underline-offset-2">{children}</u>
   ),
 };
 
@@ -166,6 +187,7 @@ const SignalDescriptionBody = React.memo(function SignalDescriptionBody({
   return (
     <MarkdownSuspense
       components={SIGNAL_DESCRIPTION_COMPONENTS}
+      ProseWrapper={SignalDescriptionFrame}
       FallBack={<SignalDescriptionFallback />}
     >
       {markdown}
@@ -550,11 +572,7 @@ export function SignalPage({
             )}
           </div>
 
-          {description ? (
-            <div className="text-2 text-foreground/90 [&_strong]:font-semibold [&_strong]:text-foreground">
-              <SignalDescriptionBody source={description} />
-            </div>
-          ) : null}
+          {description ? <SignalDescriptionBody source={description} /> : null}
 
           {documents.length > 0 ? (
             <ul className="m-0 flex list-none flex-col gap-2 border-t border-border/70 p-0 pt-5">

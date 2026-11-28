@@ -23,7 +23,7 @@ import {
   formatSignalDueDateLabel,
   isSignalDueOverdue,
   matchesDeadline,
-  NETWORK_FIELD_KINDS,
+  RECIPROCAL_EXCHANGE_TYPES,
   parseCapitalKeys,
   type CapitalKey,
   type NetworkFieldSignal,
@@ -685,7 +685,7 @@ function isFieldKind(
 ): value is NetworkFieldSignalKind {
   return (
     typeof value === 'string' &&
-    (NETWORK_FIELD_KINDS as readonly string[]).includes(value)
+    (RECIPROCAL_EXCHANGE_TYPES as readonly string[]).includes(value)
   );
 }
 
@@ -792,7 +792,7 @@ function ExchangeFilters({
       : deadline && 'date' in deadline
       ? deadline.date ?? ''
       : '';
-  const typeOptions = NETWORK_FIELD_KINDS.map((kind) => ({
+  const typeOptions = RECIPROCAL_EXCHANGE_TYPES.map((kind) => ({
     value: kind,
     label: typeLabel(kind, t),
     icon: signalTypeIcon(kind),
@@ -854,7 +854,9 @@ function ExchangeFilters({
               )}
               onValueChange={(values) =>
                 onTypes(
-                  NETWORK_FIELD_KINDS.filter((kind) => values.includes(kind)),
+                  RECIPROCAL_EXCHANGE_TYPES.filter((kind) =>
+                    values.includes(kind),
+                  ),
                 )
               }
             />

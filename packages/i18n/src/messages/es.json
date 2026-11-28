@@ -2241,7 +2241,11 @@
     "newProposal": "Nueva propuesta",
     "searchDocuments": "Buscar documentos",
     "listIsEmpty": "La lista está vacía",
-    "listFailedToLoad": "No se pudieron cargar los documentos. Prueba a actualizar la página."
+    "listFailedToLoad": "No se pudieron cargar los documentos. Prueba a actualizar la página.",
+    "emptyCard": {
+      "title": "Aún no hay acuerdos",
+      "description": "Las discusiones, propuestas y acuerdos aceptados de este espacio aparecen aquí."
+    }
   },
   "MembersTab": {
     "member": "Miembro",
@@ -2281,6 +2285,11 @@
     },
     "aiAgents": "Agentes de IA",
     "aiAgentsEmptyState": "Aún no hay agentes de IA movilizados. Haz preguntas estratégicas para activarlos.",
+    "emptyCard": {
+      "title": "Aún no hay miembros",
+      "description": "Las personas y los espacios que se unen aparecen aquí. Invita a alguien para empezar.",
+      "aiTitle": "Aún no hay agentes de IA"
+    },
     "aiAgentsMobilizedCount": "Movilizado {count, plural, one {# vez} other {# veces}}",
     "aiAgentsLastActive": "Activo el {date}",
     "inviteMember": "Invitar",
@@ -2309,6 +2318,11 @@
     "emptyAssetsTreasury": "Tu tesorería aún no tiene activos. Deposita fondos o crea un token del espacio para empezar.",
     "emptyAssetsWallet": "Tu billetera aún no tiene activos. Compra tokens del espacio o HYPHA para empezar a construir tu saldo.",
     "emptyAssetsSearch": "Ningún activo coincide con tu búsqueda.",
+    "emptyCard": {
+      "assetsTitle": "Aún no hay activos",
+      "vaultsTitle": "Aún no hay bóvedas",
+      "vaultsDescription": "Las bóvedas de respaldo guardan la garantía de los tokens de este espacio. Aparecen aquí cuando existe una bóveda."
+    },
     "loadMoreAssets": "Cargar más activos",
     "transactions": "Transacciones",
     "vaults": "Bóvedas",
@@ -3817,6 +3831,11 @@
     "backToCoherence": "Volver a Coherencia",
     "all": "Todos",
     "listIsEmpty": "La lista está vacía",
+    "empty": {
+      "title": "Aún no hay señales",
+      "description": "Comparte una necesidad, un recurso o algo a lo que este espacio debería prestar atención. Los miembros pueden comentarlo y convertirlo en una propuesta cuando esté listo.",
+      "filtered": "Ninguna señal coincide con esta vista."
+    },
     "loadMore": "Cargar más",
     "noMore": "No hay más",
     "mostViews": "Más vistas",
@@ -3853,6 +3872,10 @@
     "searchSpaceMemory": "Buscar en la memoria del espacio...",
     "spaceMemoryLoading": "Cargando archivos…",
     "spaceMemoryEmpty": "Aún no hay archivos subidos. Los adjuntos en propuestas y acuerdos aparecen aquí.",
+    "spaceMemoryFilesTitle": "Aún no hay archivos",
+    "spaceMemoryConversationsTitle": "Aún no hay conversaciones",
+    "spaceMemoryCallsTitle": "Aún no hay llamadas",
+    "spaceMemoryAiTitle": "Aún no hay memorias de IA",
     "spaceMemoryEmptySearch": "Ningún archivo coincide con tu búsqueda.",
     "spaceMemoryError": "No se pudo cargar la memoria del espacio.",
     "spaceMemoryLoadMoreError": "No se pudieron cargar más elementos. Inténtalo de nuevo.",
@@ -5476,6 +5499,11 @@
     "dealDetails": "Detalles de {item}",
     "loading": "Cargando {items}…",
     "configLoadFailed": "No se pudo cargar la configuración del pipeline.",
+    "empty": {
+      "title": "Aún no hay {items}",
+      "description": "Sigue el trabajo desde el primer contacto hasta una decisión. Añade una tarjeta cuando haya algo que seguir.",
+      "filtered": "Nada coincide con esta vista."
+    },
     "retry": "Reintentar",
     "unassignedLane": "Sin asignar",
     "notFound": "No se encontró {item}",
@@ -5936,6 +5964,11 @@
     "title": "Misiones",
     "subtitle": "Trabajo enfocado y con plazo, con un objetivo claro, miembros e hitos",
     "newQuest": "NUEVA MISIÓN",
+    "empty": {
+      "title": "Aún no hay misiones",
+      "description": "Las misiones son trabajo concreto con un objetivo, miembros e hitos. Propón una cuando este espacio esté listo para comprometerse.",
+      "filtered": "Ninguna misión coincide con esta búsqueda."
+    },
     "searchPlaceholder": "Buscar misiones",
     "domain": "Dominio",
     "board": {

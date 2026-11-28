@@ -9,6 +9,7 @@ import { SpaceMemberInviteButton } from './space-member-invite-button';
 import { useMembersSection } from '../hooks/use-members-section';
 import { ExitSpace, UseMembers, useSpaceMember } from '../../spaces';
 import { Empty } from '../../common';
+import { SpaceEmptyCard } from '../../common/space-empty-card';
 import { ActionGate } from '../../common/action-capabilities';
 import { Button, Input } from '@hypha-platform/ui';
 import {
@@ -20,7 +21,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
-import { SearchIcon } from 'lucide-react';
+import { Bot, SearchIcon, Users } from 'lucide-react';
 import { Tabs, ScrollableTabsList, TabsTrigger } from '@hypha-platform/ui';
 import {
   getAgentAvatarInitials,
@@ -188,9 +189,11 @@ export const MembersSection: FC<MemberSectionProps> = ({
       </div>
       {entityFilter === 'ai' ? (
         aiAgents.length === 0 ? (
-          <Empty>
-            <p>{tMembers('aiAgentsEmptyState')}</p>
-          </Empty>
+          <SpaceEmptyCard
+            icon={Bot}
+            title={tMembers('emptyCard.aiTitle')}
+            description={tMembers('aiAgentsEmptyState')}
+          />
         ) : (
           <div className="@container/members w-full">
             <div className="member-list grid w-full grid-cols-1 gap-3 @min-[40rem]/members:grid-cols-2 @min-[62rem]/members:grid-cols-3">
@@ -243,10 +246,18 @@ export const MembersSection: FC<MemberSectionProps> = ({
             </div>
           </div>
         )
-      ) : pagination?.total === 0 ? (
-        <Empty>
-          <p>{tMembers('listIsEmpty')}</p>
-        </Empty>
+      ) : !isLoading && pagination?.total === 0 ? (
+        searchTerm.trim() ? (
+          <Empty>
+            <p>{tMembers('listIsEmpty')}</p>
+          </Empty>
+        ) : (
+          <SpaceEmptyCard
+            icon={Users}
+            title={tMembers('emptyCard.title')}
+            description={tMembers('emptyCard.description')}
+          />
+        )
       ) : (
         <div className="@container/members w-full">
           <div className="member-list grid w-full grid-cols-1 gap-3 @min-[40rem]/members:grid-cols-2 @min-[62rem]/members:grid-cols-3">

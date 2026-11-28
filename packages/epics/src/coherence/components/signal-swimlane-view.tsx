@@ -145,6 +145,9 @@ export function SignalSwimlaneView({
         const laneBoard = lane.slug;
         const isCollapsed = collapsedLanes.includes(lane.slug);
         const laneBodyId = `signal-swimlane-${lane.slug}`;
+        // An empty domain is not a useful row. Keep it while dragging so a
+        // signal can still be moved onto that domain.
+        if (laneCount === 0 && !draggingSignal) return null;
 
         return (
           <section key={lane.slug} className="w-full border-b border-border/50">

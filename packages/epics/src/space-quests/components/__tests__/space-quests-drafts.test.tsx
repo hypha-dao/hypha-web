@@ -69,6 +69,10 @@ vi.mock('@hypha-platform/core/client', () => ({
     proposalStatus?: string | null;
   }) => quest.status === 'proposed' && quest.proposalStatus === 'rejected',
   useSpaceBySlug: () => ({ space: { slug: 'sandbox' } }),
+  useSpaceProposalsWeb3Rpc: () => ({ spaceProposalsIds: undefined }),
+  useWithdrawnProposalsWeb3Rpc: () => ({
+    withdrawnProposalsIds: undefined,
+  }),
   formatQuestCalendarDate: () => '',
   questHealthDisplay: () => ({
     dotClass: '',

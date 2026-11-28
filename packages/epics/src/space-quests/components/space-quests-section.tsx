@@ -7,6 +7,8 @@ import {
   questHealthDisplay,
   questListBucket,
   useSignalWorkflow,
+  useSpaceProposalsWeb3Rpc,
+  useWithdrawnProposalsWeb3Rpc,
   type QuestHealthState,
   type QuestRecord,
   useSpaceBySlug,
@@ -21,16 +23,18 @@ import {
   Skeleton,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { SearchIcon } from 'lucide-react';
+import { Flag, SearchIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { SpaceEmptyCard } from '../../common/space-empty-card';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { QuestStatusBadge } from './quest-status-badge';
 import { QuestBoard, type QuestBoardLayout } from './quest-board';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import {
   questDomainDotClass,
+  withChainRejectedProposals,
   type QuestDomainChoice,
 } from '../utils/quest-board-groups';
 import {
@@ -219,12 +223,14 @@ export function QuestCard({
   locale = 'en',
   spaceMembers = [],
   domain = null,
+  className,
 }: {
   quest: QuestRecord;
   href: string;
   locale?: string;
   spaceMembers?: readonly QuestSpaceMember[];
   domain?: QuestDomainChoice | null;
+  className?: string;
 }) {
   const t = useTranslations('SpaceQuests');
   const health = cardHealth(quest);
@@ -239,7 +245,10 @@ export function QuestCard({
     <Link
       href={href}
       data-testid={`quest-card-${quest.slug}`}
-      className="craft-card-interactive group flex h-full min-w-0 w-full max-w-full flex-col gap-2.5 p-3.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      className={cn(
+        'craft-card-interactive group flex h-full min-w-0 w-full max-w-full flex-col gap-2.5 p-3.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+        className,
+      )}
     >
       <div className="flex h-8 shrink-0 flex-nowrap items-center justify-between gap-2 overflow-hidden">
         <QuestStatusBadge quest={quest} />
@@ -361,6 +370,14 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
   const t = useTranslations('SpaceQuests');
   const { getAccessToken } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug);
+  const web3SpaceId =
+    typeof space?.web3SpaceId === 'number' ? space.web3SpaceId : null;
+  const { spaceProposalsIds } = useSpaceProposalsWeb3Rpc({
+    spaceId: web3SpaceId,
+  });
+  const { withdrawnProposalsIds } = useWithdrawnProposalsWeb3Rpc({
+    spaceId: web3SpaceId,
+  });
   const { canMutate } = useCanMutateInSpace({ spaceSlug, space });
   const { overview, isLoading, error, refresh } = useSpaceQuests(spaceSlug);
   const { workflow } = useSignalWorkflow(spaceSlug);
@@ -390,7 +407,15 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
     return () => window.clearTimeout(timer);
   }, [draftDeleteError]);
 
-  const quests = useMemo(() => overview?.quests ?? [], [overview]);
+  const quests = useMemo(
+    () =>
+      withChainRejectedProposals(
+        overview?.quests ?? [],
+        spaceProposalsIds?.rejected,
+        withdrawnProposalsIds,
+      ),
+    [overview, spaceProposalsIds, withdrawnProposalsIds],
+  );
   const counts = overview?.counts ?? {
     active: 0,
     proposed: 0,
@@ -591,14 +616,36 @@ export function SpaceQuestsSection({ spaceSlug }: { spaceSlug: string }) {
         </div>
       ) : null}
 
-      <QuestBoard
-        layout={layout}
-        quests={filtered}
-        workflow={workflow}
-        spaceSlug={spaceSlug}
-        spaceMembers={spaceMembers}
-        columnLabel={(column) => t(`filters.${column}`)}
-      />
+      {quests.length === 0 && !search.trim() ? (
+        <SpaceEmptyCard
+          icon={Flag}
+          title={t('empty.title')}
+          description={t('empty.description')}
+          action={
+            canMutate ? (
+              <Button
+                asChild
+                className="bg-foreground text-background hover:bg-foreground/90"
+              >
+                <Link href={newQuestHref}>{t('newQuest')}</Link>
+              </Button>
+            ) : null
+          }
+        />
+      ) : filtered.length === 0 ? (
+        <p className="px-1 py-6 text-center text-2 text-muted-foreground">
+          {t('empty.filtered')}
+        </p>
+      ) : (
+        <QuestBoard
+          layout={layout}
+          quests={filtered}
+          workflow={workflow}
+          spaceSlug={spaceSlug}
+          spaceMembers={spaceMembers}
+          columnLabel={(column) => t(`filters.${column}`)}
+        />
+      )}
 
       <Dialog
         open={draftToDelete != null}

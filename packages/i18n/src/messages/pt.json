@@ -2227,7 +2227,11 @@
     "newProposal": "Nova proposta",
     "searchDocuments": "Pesquisar documentos",
     "listIsEmpty": "A lista está vazia",
-    "listFailedToLoad": "Não foi possível carregar os documentos. Tente atualizar a página."
+    "listFailedToLoad": "Não foi possível carregar os documentos. Tente atualizar a página.",
+    "emptyCard": {
+      "title": "Ainda não há acordos",
+      "description": "Discussões, propostas e acordos aceitos deste espaço aparecem aqui."
+    }
   },
   "MembersTab": {
     "member": "Membro",
@@ -2267,6 +2271,11 @@
     },
     "aiAgents": "Agentes de IA",
     "aiAgentsEmptyState": "Ainda não há agentes de IA mobilizados. Faça perguntas estratégicas para os ativar.",
+    "emptyCard": {
+      "title": "Ainda não há membros",
+      "description": "Pessoas e espaços que entram aparecem aqui. Convide alguém para começar.",
+      "aiTitle": "Ainda não há agentes de IA"
+    },
     "aiAgentsMobilizedCount": "Mobilizado {count, plural, one {# vez} other {# vezes}}",
     "aiAgentsLastActive": "Ativo em {date}",
     "inviteMember": "Convidar",
@@ -2295,6 +2304,11 @@
     "emptyAssetsTreasury": "Seu tesouro ainda não tem ativos. Deposite fundos ou crie um token do espaço para começar.",
     "emptyAssetsWallet": "Sua carteira ainda não tem ativos. Compre tokens do espaço ou HYPHA para começar a construir seu saldo.",
     "emptyAssetsSearch": "Nenhum ativo corresponde à sua pesquisa.",
+    "emptyCard": {
+      "assetsTitle": "Ainda não há ativos",
+      "vaultsTitle": "Ainda não há cofres",
+      "vaultsDescription": "Os cofres de garantia guardam o colateral dos tokens deste espaço. Aparecem aqui quando existe um cofre."
+    },
     "loadMoreAssets": "Carregar mais ativos",
     "transactions": "Transações",
     "vaults": "Cofres",
@@ -3803,6 +3817,11 @@
     "backToCoherence": "Voltar à Coerência",
     "all": "Todos",
     "listIsEmpty": "A lista está vazia",
+    "empty": {
+      "title": "Ainda não há sinais",
+      "description": "Partilhe uma necessidade, um recurso ou algo a que este espaço deve prestar atenção. Os membros podem discutir e transformar isso numa proposta quando estiver pronto.",
+      "filtered": "Nenhum sinal corresponde a esta vista."
+    },
     "loadMore": "Carregar mais",
     "noMore": "Não há mais",
     "mostViews": "Mais visualizações",
@@ -3839,6 +3858,10 @@
     "searchSpaceMemory": "Pesquisar na memória do espaço...",
     "spaceMemoryLoading": "Carregando arquivos…",
     "spaceMemoryEmpty": "Ainda não há arquivos enviados. Anexos em propostas e acordos aparecem aqui.",
+    "spaceMemoryFilesTitle": "Ainda não há arquivos",
+    "spaceMemoryConversationsTitle": "Ainda não há conversas",
+    "spaceMemoryCallsTitle": "Ainda não há chamadas",
+    "spaceMemoryAiTitle": "Ainda não há memórias de IA",
     "spaceMemoryEmptySearch": "Nenhum arquivo corresponde à sua pesquisa.",
     "spaceMemoryError": "Não foi possível carregar a memória do espaço.",
     "spaceMemoryLoadMoreError": "Não foi possível carregar mais itens. Tente novamente.",
@@ -5461,6 +5484,11 @@
     "dealDetails": "Detalhes de {item}",
     "loading": "A carregar {items}…",
     "configLoadFailed": "Não foi possível carregar a configuração do pipeline.",
+    "empty": {
+      "title": "Ainda não há {items}",
+      "description": "Acompanhe o trabalho do primeiro contato até uma decisão. Adicione um cartão quando houver algo a seguir.",
+      "filtered": "Nada corresponde a esta vista."
+    },
     "retry": "Tentar novamente",
     "unassignedLane": "Não atribuído",
     "notFound": "Não foi possível encontrar {item}",
@@ -5921,6 +5949,11 @@
     "title": "Missões",
     "subtitle": "Trabalho focado e com prazo, com objetivo claro, membros e marcos",
     "newQuest": "NOVA MISSÃO",
+    "empty": {
+      "title": "Ainda não há missões",
+      "description": "As missões são trabalho focado, com um objetivo, membros e marcos. Proponha uma quando este espaço estiver pronto para se comprometer.",
+      "filtered": "Nenhuma missão corresponde a esta pesquisa."
+    },
     "searchPlaceholder": "Pesquisar missões",
     "domain": "Domínio",
     "board": {

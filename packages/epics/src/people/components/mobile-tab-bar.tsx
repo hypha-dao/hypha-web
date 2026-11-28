@@ -30,7 +30,6 @@ import {
   toLinkPrefetch,
   useEnergyOverviewIdleGate,
 } from '../../common/use-after-idle';
-import { useAiPanel } from '../../common/human-chat-panel-context';
 import { buildSpaceSectionNavItems } from '../../common/space-section-nav';
 import type { SpaceSectionNavKey } from '../../common/space-section-nav';
 import { SPACE_SECTION_NAV_ICONS } from '../../common/space-section-nav-icons';
@@ -58,8 +57,6 @@ import {
   shouldShowMessagesNav,
   shouldShowSpacesScreen,
 } from './app-nav-visibility';
-import { MobileSpacesSubnav } from './mobile-spaces-subnav';
-
 const OPEN_MOBILE_CREATE = 'hypha:open-mobile-create';
 
 const SPACE_SLIDE_KEY = 'hypha:mobile-space-slide';
@@ -78,26 +75,8 @@ function segmentActive(pathname: string, segment: string) {
   return pathname.split('/').includes(segment);
 }
 
-function shouldShowMobileSpacesRail(pathname: string) {
-  return (
-    segmentActive(pathname, 'connections') ||
-    segmentActive(pathname, 'messages') ||
-    segmentActive(pathname, 'my-wallet') ||
-    segmentActive(pathname, 'my-dashboard') ||
-    segmentActive(pathname, 'home') ||
-    Boolean(getDhoSpaceSlugFromPathname(pathname)) ||
-    isNetworkPath(pathname)
-  );
-}
-
 export function MobileContentFrame({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? '';
-  const params = useParams<{ lang?: string }>();
-  const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
-  const { open: isAiOpen } = useAiPanel();
-  const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
-  // Phones use the header dropdown. Wider screens keep this row.
-  const showSpacesRail = shouldShowMobileSpacesRail(pathname) && !isAiOpen;
   const [slideIn, setSlideIn] = useState(false);
 
   useEffect(() => {
@@ -126,19 +105,11 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   return (
     <div
       className={cn(
-        showSpacesRail && 'md:flex md:w-full md:min-w-0 md:flex-col xl:block',
         slideIn &&
           'max-md:animate-in max-md:slide-in-from-right max-md:duration-300 max-md:ease-out',
       )}
     >
-      {showSpacesRail ? (
-        <div className="hidden w-full shrink-0 md:block xl:hidden">
-          <MobileSpacesSubnav lang={lang} activeSlug={spaceSlug} layout="row" />
-        </div>
-      ) : null}
-      <div className={cn(showSpacesRail && 'md:min-w-0 md:flex-1')}>
-        {children}
-      </div>
+      {children}
     </div>
   );
 }

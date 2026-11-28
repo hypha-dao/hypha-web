@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuthentication } from '@hypha-platform/authentication';
 import {
   officialSectionMarkdown,
   splitLeadParagraph,
@@ -11,6 +12,7 @@ import {
 import type { Locale } from '@hypha-platform/i18n';
 import { Card, CardTitle } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { Trash2, Undo2 } from 'lucide-react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
@@ -27,7 +29,10 @@ import {
   MemoryProse,
 } from '../../coherence/components/memory-prose';
 import { getProposalPath } from '../../common/get-path-function';
-import { revalidateSpaceContext } from '../hooks/use-space-context';
+import {
+  revalidateSpaceContext,
+  setSpaceContextRemovalSuggestedRequest,
+} from '../hooks/use-space-context';
 import {
   SpaceContextChangeBadge,
   SpaceContextStatusChip,
@@ -45,16 +50,16 @@ export function SpaceContextCard({
   spaceSlug,
   selected,
   featured,
+  canMutate = false,
   onOpen,
-  onRead,
   onShowDraft,
 }: {
   section: SpaceContextSectionRecord;
   spaceSlug: string;
   selected?: boolean;
   featured?: boolean;
+  canMutate?: boolean;
   onOpen: (key: SpaceContextSectionKey) => void;
-  onRead: (key: SpaceContextSectionKey) => void;
   onShowDraft?: (key: SpaceContextSectionKey) => void;
 }) {
   const t = useTranslations('SpaceContext');
@@ -94,17 +99,22 @@ export function SpaceContextCard({
     return () => observer.disconnect();
   }, [empty, featured, lead, rest, unofficial]);
 
-  const readFromSurface = (event: MouseEvent<HTMLDivElement>) => {
+  const openFromSurface = (event: MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
     if (target.closest(NESTED_CONTROLS)) return;
-    // Dragging to select text should not open the reader.
+    // Dragging to select text should not open the section.
     if (window.getSelection()?.toString()) return;
-    onRead(section.sectionKey);
+    onOpen(section.sectionKey);
   };
+
+  const canSuggestRemoval =
+    canMutate &&
+    section.status !== 'proposed' &&
+    section.pendingChange !== 'add';
 
   return (
     <Card
-      onClick={readFromSurface}
+      onClick={openFromSurface}
       className={cn(
         'craft-card-interactive relative flex h-full cursor-pointer flex-col gap-3 p-3.5',
         !featured && 'min-h-[210px]',
@@ -118,8 +128,7 @@ export function SpaceContextCard({
             <button
               type="button"
               className="text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              onClick={() => onRead(section.sectionKey)}
-              aria-label={t('card.read', { section: title })}
+              onClick={() => onOpen(section.sectionKey)}
             >
               {title}
             </button>
@@ -131,6 +140,9 @@ export function SpaceContextCard({
         </div>
         {!featured && showStatus ? (
           <SpaceContextStatusChip status={section.status} />
+        ) : null}
+        {canSuggestRemoval ? (
+          <SuggestRemovalButton section={section} spaceSlug={spaceSlug} />
         ) : null}
       </div>
       <div className="flex-1">
@@ -221,6 +233,63 @@ export function SpaceContextCard({
         ) : null}
       </div>
     </Card>
+  );
+}
+
+function SuggestRemovalButton({
+  section,
+  spaceSlug,
+}: {
+  section: SpaceContextSectionRecord;
+  spaceSlug: string;
+}) {
+  const t = useTranslations('SpaceContext');
+  const { getAccessToken } = useAuthentication();
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const suggested = section.pendingChange === 'remove';
+  const label = suggested
+    ? t('reader.cancelRemoval')
+    : t('reader.suggestRemoval');
+  const errorLabel = t('error.change');
+
+  const toggle = async () => {
+    if (busy) return;
+    setBusy(true);
+    setFailed(false);
+    try {
+      await setSpaceContextRemovalSuggestedRequest({
+        spaceSlug,
+        sectionKey: section.sectionKey,
+        suggested: !suggested,
+        getAccessToken,
+      });
+      await revalidateSpaceContext(spaceSlug);
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      className={cn(
+        'inline-flex size-7 shrink-0 items-center justify-center border text-neutral-11 hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50',
+        failed ? 'border-error-8 text-error-11' : 'border-border',
+      )}
+      aria-label={failed ? errorLabel : label}
+      title={failed ? errorLabel : label}
+      disabled={busy}
+      onClick={() => void toggle()}
+    >
+      {suggested ? (
+        <Undo2 className="size-3.5" aria-hidden />
+      ) : (
+        <Trash2 className="size-3.5" aria-hidden />
+      )}
+    </button>
   );
 }
 

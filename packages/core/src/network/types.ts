@@ -15,6 +15,19 @@ export const NETWORK_FIELD_KINDS = [
   'Bug',
 ] as const;
 
+/**
+ * Types offered on reciprocal exchange. Proof of Action, Impact Evidence,
+ * and Issue stay valid on signals elsewhere.
+ */
+export const RECIPROCAL_EXCHANGE_TYPES = [
+  'Need',
+  'Resource',
+  'Opportunity',
+  'Insight',
+  'Tension',
+  'Risk',
+] as const satisfies readonly NetworkFieldSignalKind[];
+
 export type NetworkFieldSignalKind = (typeof NETWORK_FIELD_KINDS)[number];
 
 export type NetworkFieldPayout = {

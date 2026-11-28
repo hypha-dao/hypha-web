@@ -108,10 +108,10 @@ export function KanbanColumn({
     <div
       ref={columnRef}
       className={cn(
-        'flex flex-col border-r border-border/50 bg-transparent last:border-r-0',
+        'flex flex-col bg-transparent',
         wide
-          ? cn('min-w-[17.5rem] flex-1', PIPELINE_BOARD_COLUMN_SHELL_CLASS)
-          : cn(PIPELINE_SWIMLANE_STATUS_COLUMN_CLASS, 'min-h-[6rem]'),
+          ? PIPELINE_BOARD_COLUMN_SHELL_CLASS
+          : cn(PIPELINE_SWIMLANE_STATUS_COLUMN_CLASS, 'md:min-h-[6rem]'),
         isOver && 'bg-foreground/[0.03]',
       )}
       onWheel={handlePipelineColumnShellWheel}
@@ -121,7 +121,7 @@ export function KanbanColumn({
         <div className="truncate text-2 font-medium text-neutral-12">
           {label || status}
         </div>
-        <div className="text-1 text-neutral-11">
+        <div className="min-w-0 break-words text-1 text-neutral-11">
           {deals.length} · {formatTotals((totals) => totals.total)} ·{' '}
           {t('weightedAbbr')} {formatTotals((totals) => totals.weighted)}
         </div>

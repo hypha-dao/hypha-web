@@ -18,6 +18,9 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
   Input,
+  Tabs,
+  TabsList,
+  TabsTrigger,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
@@ -124,6 +127,8 @@ export type SignalFeedFiltersProps = {
   onTitleQueryChange: (titleQuery: string) => void;
   /** Sits at the end of the search row, the same slot as Agreements. */
   action?: React.ReactNode;
+  /** Sits at the start of the sort row, to the left of Sort by. */
+  leading?: React.ReactNode;
   className?: string;
 };
 
@@ -141,6 +146,7 @@ export function SignalFeedFilters({
   titleQuery,
   onTitleQueryChange,
   action,
+  leading,
   className,
 }: SignalFeedFiltersProps) {
   const t = useTranslations('CoherenceTab');
@@ -192,18 +198,32 @@ export function SignalFeedFilters({
         {action}
       </div>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+        {leading}
         <div className="flex items-center gap-2">
           <span className="text-1 font-medium uppercase tracking-[0.12em] text-muted-foreground">
             {t('signalSortBy')}
           </span>
-          <FilterPill
-            label={t(SORT_LABEL_KEY[sort])}
-            heading={t('signalSortBy')}
+          <Tabs
             value={sort}
-            options={sortOptions}
-            onChange={onSortChange}
-            testId="signal-sort-pill"
-          />
+            onValueChange={(value) => onSortChange(value as SignalSort)}
+            className="w-auto"
+          >
+            <TabsList
+              className="h-7"
+              aria-label={t('signalSortBy')}
+              data-testid="signal-sort-tabs"
+            >
+              {sortOptions.map((option) => (
+                <TabsTrigger
+                  key={option.value}
+                  value={option.value}
+                  className="h-7 px-2.5 py-0"
+                >
+                  {option.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-1 font-medium uppercase tracking-[0.12em] text-muted-foreground">

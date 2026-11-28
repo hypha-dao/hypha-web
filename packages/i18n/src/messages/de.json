@@ -1447,7 +1447,11 @@
     "newProposal": "Neuer Vorschlag",
     "searchDocuments": "Dokumente suchen",
     "listIsEmpty": "Liste ist leer",
-    "listFailedToLoad": "Dokumente konnten nicht geladen werden. Bitte Seite neu laden."
+    "listFailedToLoad": "Dokumente konnten nicht geladen werden. Bitte Seite neu laden.",
+    "emptyCard": {
+      "title": "Noch keine Vereinbarungen",
+      "description": "Diskussionen, Vorschläge und angenommene Vereinbarungen dieses Space erscheinen hier."
+    }
   },
   "MembersTab": {
     "member": "Mitglied",
@@ -1487,6 +1491,11 @@
     },
     "aiAgents": "KI-Agenten",
     "aiAgentsEmptyState": "Noch keine KI-Agenten mobilisiert. Stelle strategische Fragen, um sie zu aktivieren.",
+    "emptyCard": {
+      "title": "Noch keine Mitglieder",
+      "description": "Personen und Spaces, die beitreten, erscheinen hier. Lade jemanden ein, um zu beginnen.",
+      "aiTitle": "Noch keine KI-Agenten"
+    },
     "aiAgentsMobilizedCount": "{count, plural, one {# Mal mobilisiert} other {# Mal mobilisiert}}",
     "aiAgentsLastActive": "Zuletzt aktiv {date}",
     "inviteMember": "Einladen",
@@ -2087,6 +2096,11 @@
     "emptyAssetsTreasury": "Ihre Schatzkammer hat noch keine Assets. Zahlen Sie Mittel ein oder erstellen Sie einen Space-Token, um loszulegen.",
     "emptyAssetsWallet": "Ihre Wallet hat noch keine Assets. Kaufen Sie Space-Tokens oder HYPHA, um Ihr Guthaben aufzubauen.",
     "emptyAssetsSearch": "Keine Assets entsprechen Ihrer Suche.",
+    "emptyCard": {
+      "assetsTitle": "Noch keine Assets",
+      "vaultsTitle": "Noch keine Tresore",
+      "vaultsDescription": "Besicherungstresore halten die Sicherheiten hinter den Token dieses Space. Sie erscheinen hier, sobald ein Tresor besteht."
+    },
     "loadMoreAssets": "Mehr Assets laden",
     "transactions": "Transaktionen",
     "vaults": "Tresore",
@@ -4375,6 +4389,11 @@
     "backToCoherence": "Zurück zur Kohärenz",
     "all": "Alle",
     "listIsEmpty": "Liste ist leer",
+    "empty": {
+      "title": "Noch keine Signale",
+      "description": "Teile einen Bedarf, eine Ressource oder etwas, worauf dieser Space achten sollte. Mitglieder können darüber sprechen und daraus einen Vorschlag machen, wenn es so weit ist.",
+      "filtered": "Keine Signale passen zu dieser Ansicht."
+    },
     "loadMore": "Mehr laden",
     "noMore": "Nichts mehr",
     "mostViews": "Meiste Aufrufe",
@@ -4411,6 +4430,10 @@
     "searchSpaceMemory": "Space Memory durchsuchen…",
     "spaceMemoryLoading": "Assets werden geladen…",
     "spaceMemoryEmpty": "Noch keine hochgeladenen Dateien. Anhänge an Vorschlägen und Vereinbarungen erscheinen hier.",
+    "spaceMemoryFilesTitle": "Noch keine Dateien",
+    "spaceMemoryConversationsTitle": "Noch keine Gespräche",
+    "spaceMemoryCallsTitle": "Noch keine Anrufe",
+    "spaceMemoryAiTitle": "Noch keine KI-Erinnerungen",
     "spaceMemoryEmptySearch": "Keine Assets entsprechen Ihrer Suche.",
     "spaceMemoryError": "Space Memory konnte nicht geladen werden.",
     "spaceMemoryLoadMoreError": "Weitere Einträge konnten nicht geladen werden. Bitte erneut versuchen.",
@@ -5462,6 +5485,11 @@
     "dealDetails": "{item}-Details",
     "loading": "{items} werden geladen…",
     "configLoadFailed": "Die Pipeline-Konfiguration konnte nicht geladen werden.",
+    "empty": {
+      "title": "Noch keine {items}",
+      "description": "Verfolge Arbeit vom ersten Kontakt bis zur Entscheidung. Füge eine Karte hinzu, wenn es etwas zu verfolgen gibt.",
+      "filtered": "Nichts passt zu dieser Ansicht."
+    },
     "retry": "Erneut versuchen",
     "unassignedLane": "Nicht zugeordnet",
     "notFound": "{item} nicht gefunden",
@@ -5922,6 +5950,11 @@
     "title": "Quests",
     "subtitle": "Fokussierte, befristete Arbeit mit klarem Ziel, Mitgliedern und Meilensteinen",
     "newQuest": "NEUE QUEST",
+    "empty": {
+      "title": "Noch keine Quests",
+      "description": "Quests sind fokussierte Arbeit mit einem Ziel, Mitgliedern und Meilensteinen. Schlage eine vor, wenn dieser Space bereit ist, sich festzulegen.",
+      "filtered": "Keine Quests passen zu dieser Suche."
+    },
     "searchPlaceholder": "Quests suchen",
     "domain": "Domäne",
     "board": {

@@ -3,7 +3,6 @@
 import { FC } from 'react';
 import React from 'react';
 import { useParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { ErrorAlert } from '@hypha-platform/ui';
 import {
@@ -17,10 +16,10 @@ import {
   useSignalWorkflow,
 } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
-import { Empty } from '../../common';
 import { useCanMutateInSpace } from '../../spaces/hooks/use-can-mutate-in-space.web3.rpc';
 import { useCanUpdateSignalTasks } from '../hooks/use-can-update-signal-tasks';
 import { useSignalProvisioningNotice } from '../hooks/use-signal-provisioning-notice';
+import { SignalEmpty, SignalEmptyCreateButton } from './signal-empty';
 import { SignalBoardView } from './signal-board-view';
 import { SignalSwimlaneView } from './signal-swimlane-view';
 import { SignalListView } from './signal-list-view';
@@ -52,7 +51,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
   onSignalClick,
   activeSignalSlug,
 }) => {
-  const t = useTranslations('CoherenceTab');
   const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const provisioningNoticeLines = useSignalProvisioningNotice();
 
@@ -189,9 +187,13 @@ export const SignalSection: FC<SignalSectionProps> = ({
       ) : (
         <div className="animate-in fade-in duration-300">
           {visibleSignals.length === 0 ? (
-            <Empty>
-              <p>{t('listIsEmpty')}</p>
-            </Empty>
+            <SignalEmpty
+              action={
+                canMutate ? (
+                  <SignalEmptyCreateButton href={createSignalHref} />
+                ) : null
+              }
+            />
           ) : viewMode === 'board' ? (
             <SignalBoardView
               signals={visibleSignals}

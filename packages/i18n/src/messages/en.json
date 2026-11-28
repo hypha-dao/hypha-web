@@ -1474,7 +1474,11 @@
     "newProposal": "New Proposal",
     "searchDocuments": "Search documents",
     "listIsEmpty": "List is empty",
-    "listFailedToLoad": "Could not load documents. Try refreshing the page."
+    "listFailedToLoad": "Could not load documents. Try refreshing the page.",
+    "emptyCard": {
+      "title": "No agreements yet",
+      "description": "Discussions, proposals, and accepted agreements for this space show up here."
+    }
   },
   "MembersTab": {
     "member": "Member",
@@ -1514,6 +1518,11 @@
     },
     "aiAgents": "AI Agents",
     "aiAgentsEmptyState": "No AI agents mobilized yet. Ask strategic questions to activate them.",
+    "emptyCard": {
+      "title": "No members yet",
+      "description": "People and spaces that join show up here. Invite someone to get started.",
+      "aiTitle": "No AI agents yet"
+    },
     "aiAgentsMobilizedCount": "Mobilized {count, plural, one {# time} other {# times}}",
     "aiAgentsLastActive": "Last active {date}",
     "inviteMember": "Invite",
@@ -2114,6 +2123,11 @@
     "emptyAssetsTreasury": "Your treasury has no assets yet. Deposit funds or create a space token to get started.",
     "emptyAssetsWallet": "Your wallet has no assets yet. Buy space tokens or HYPHA to start building your balance.",
     "emptyAssetsSearch": "No assets match your search.",
+    "emptyCard": {
+      "assetsTitle": "No assets yet",
+      "vaultsTitle": "No vaults yet",
+      "vaultsDescription": "Backing vaults hold the collateral behind this space's tokens. They appear here once a vault exists."
+    },
     "loadMoreAssets": "Load more assets",
     "transactions": "Transactions",
     "vaults": "Vaults",
@@ -4407,6 +4421,11 @@
     "backToCoherence": "Back to Signals",
     "all": "All",
     "listIsEmpty": "List is empty",
+    "empty": {
+      "title": "No signals yet",
+      "description": "Share a need, a resource, or something this space should pay attention to. Members can discuss it and turn it into a proposal when it is ready.",
+      "filtered": "No signals match this view."
+    },
     "loadMore": "Load more",
     "noMore": "No more",
     "mostViews": "Most Views",
@@ -4443,6 +4462,10 @@
     "searchSpaceMemory": "Search space memory...",
     "spaceMemoryLoading": "Loading assets…",
     "spaceMemoryEmpty": "No uploaded files yet. Attachments on proposals and agreements appear here.",
+    "spaceMemoryFilesTitle": "No files yet",
+    "spaceMemoryConversationsTitle": "No conversations yet",
+    "spaceMemoryCallsTitle": "No calls yet",
+    "spaceMemoryAiTitle": "No AI memories yet",
     "spaceMemoryEmptySearch": "No assets match your search.",
     "spaceMemoryError": "Could not load space memory.",
     "spaceMemoryLoadMoreError": "Could not load more items. Try again.",
@@ -5498,6 +5521,11 @@
     "dealDetails": "{item} details",
     "loading": "Loading {items}…",
     "configLoadFailed": "Could not load pipeline configuration.",
+    "empty": {
+      "title": "No {items} yet",
+      "description": "Track work from first contact through to a decision. Add a card when there is something to follow.",
+      "filtered": "Nothing matches this view."
+    },
     "retry": "Retry",
     "unassignedLane": "Unassigned",
     "notFound": "{item} not found",
@@ -5944,6 +5972,11 @@
     "title": "Quests",
     "subtitle": "Focused, time-bound work with a clear goal, members and milestones",
     "newQuest": "New Quest",
+    "empty": {
+      "title": "No quests yet",
+      "description": "Quests are focused pieces of work with a goal, members, and milestones. Propose one when this space is ready to commit.",
+      "filtered": "No quests match this search."
+    },
     "searchPlaceholder": "Search quests",
     "domain": "Domain",
     "board": {

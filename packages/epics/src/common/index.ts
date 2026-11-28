@@ -6,6 +6,7 @@ export * from './button-close';
 export * from './app-navigation-session';
 export * from './modal-sticky-navigation';
 export * from './empty';
+export * from './space-empty-card';
 export * from './link-label';
 export * from './links';
 export * from './select-action';

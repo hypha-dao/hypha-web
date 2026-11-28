@@ -70,6 +70,36 @@ function emptyColumns(): QuestBoardColumns {
   };
 }
 
+/**
+ * A proposed quest whose vote was not accepted belongs in Rejected.
+ * The list stamp can miss that outcome; the chain's rejected set is the
+ * same list the agreements board uses. A withdrawal is in that set too,
+ * and stays Proposed.
+ */
+export function withChainRejectedProposals(
+  quests: readonly QuestRecord[],
+  rejectedIds: readonly (bigint | number)[] | null | undefined,
+  withdrawnIds: readonly (bigint | number)[] | null | undefined,
+): QuestRecord[] {
+  if (!rejectedIds?.length) return [...quests];
+  const rejected = new Set(rejectedIds.map((id) => Number(id)));
+  const withdrawn = new Set((withdrawnIds ?? []).map((id) => Number(id)));
+  return quests.map((quest) => {
+    if (quest.status !== 'proposed' || quest.proposalStatus === 'rejected') {
+      return quest;
+    }
+    const proposalId = quest.proposalWeb3Id;
+    if (
+      proposalId == null ||
+      !rejected.has(Number(proposalId)) ||
+      withdrawn.has(Number(proposalId))
+    ) {
+      return quest;
+    }
+    return { ...quest, proposalStatus: 'rejected' };
+  });
+}
+
 function columnOf(quest: QuestRecord): QuestBoardColumn | null {
   const bucket = questListBucket(quest);
   return (QUEST_LIST_FILTERS as readonly string[]).includes(bucket) &&

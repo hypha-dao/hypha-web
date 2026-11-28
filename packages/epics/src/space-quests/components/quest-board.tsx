@@ -50,6 +50,7 @@ function QuestBoardCard({
       locale={locale}
       spaceMembers={spaceMembers}
       domain={domain}
+      className="h-auto"
       href={`/${locale}/dho/${spaceSlug}/quests/${encodeURIComponent(
         quest.slug,
       )}`}
@@ -68,6 +69,7 @@ function Column({
   domains,
   showDomain,
   testId,
+  variant,
 }: {
   column: QuestBoardColumn;
   label: string;
@@ -79,20 +81,47 @@ function Column({
   domains: Map<string, QuestDomainChoice>;
   showDomain: boolean;
   testId: string;
+  variant: QuestBoardLayout;
 }) {
+  const swimlane = variant === 'swimlane';
   return (
     <section
       data-testid={testId}
       data-quest-column={column}
-      className="flex min-h-0 w-[17rem] shrink-0 flex-col border border-border bg-background-2"
+      className={cn(
+        'flex w-full min-w-0 flex-none flex-col overflow-visible border-b border-border/50 last:border-b-0',
+        'md:overflow-hidden md:border-b-0 md:border-r md:last:border-r-0',
+        swimlane
+          ? 'md:min-h-0 md:min-w-[15.5rem] md:flex-1'
+          : 'md:h-auto md:max-h-[min(calc(100dvh-13rem),56rem)] md:min-h-0 md:min-w-[17.5rem] md:flex-1',
+      )}
     >
-      <header className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
-        <h2 className="text-1 font-medium uppercase tracking-[0.12em] text-foreground">
+      <header
+        className={cn(
+          'flex shrink-0 items-center justify-between gap-2 border-b border-border/40',
+          swimlane ? 'px-2.5 py-2' : 'px-3 py-2.5',
+        )}
+      >
+        <h2
+          className={cn(
+            'truncate font-semibold uppercase tracking-wide',
+            swimlane
+              ? 'text-[11px] text-muted-foreground'
+              : 'text-xs text-foreground',
+          )}
+        >
           {label}
         </h2>
-        <span className="text-1 text-neutral-11">{quests.length}</span>
+        <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
+          {quests.length}
+        </span>
       </header>
-      <div className="flex min-h-[8rem] flex-col gap-2 overflow-y-auto p-2 [&>*]:shrink-0">
+      <div
+        className={cn(
+          'flex min-h-0 flex-col gap-2 p-2 [&>*]:shrink-0',
+          'md:grow md:overflow-y-auto md:overscroll-y-auto md:touch-pan-y md:[scrollbar-gutter:stable] md:[scrollbar-width:thin] md:narrow-scrollbar',
+        )}
+      >
         {quests.map((quest) => (
           <QuestBoardCard
             key={quest.slug}
@@ -130,10 +159,12 @@ export function QuestBoard({
   const domains = new Map(domainList.map((domain) => [domain.slug, domain]));
 
   if (layout === 'swimlane') {
-    const lanes = groupQuestsByLane(quests, workflow);
+    const lanes = groupQuestsByLane(quests, workflow).filter((lane) =>
+      QUEST_BOARD_COLUMNS.some((column) => lane.columns[column].length > 0),
+    );
     return (
       <div
-        className="space-y-3"
+        className="flex w-full flex-col"
         data-testid="quest-board"
         data-layout="swimlane"
       >
@@ -141,9 +172,9 @@ export function QuestBoard({
           <section
             key={lane.domain.slug}
             data-testid={`quest-lane-${lane.domain.slug}`}
-            className="border border-border bg-background"
+            className="w-full border-b border-border/50"
           >
-            <header className="flex items-center gap-2 border-b border-border px-3 py-2">
+            <header className="flex items-center gap-2.5 px-1 py-3">
               <span
                 className={cn(
                   'size-2 shrink-0 rounded-full',
@@ -153,11 +184,11 @@ export function QuestBoard({
                 data-domain-color={lane.domain.color}
                 aria-hidden
               />
-              <h2 className="text-2 font-medium text-foreground">
+              <h2 className="truncate text-sm font-semibold tracking-tight text-foreground">
                 {lane.domain.name}
               </h2>
             </header>
-            <div className="flex gap-3 overflow-x-auto p-3">
+            <div className="flex w-full min-h-0 flex-col overflow-visible md:h-auto md:max-h-[min(calc(100dvh-13rem),46rem)] md:min-h-0 md:flex-row md:overflow-x-auto md:overflow-y-hidden">
               {QUEST_BOARD_COLUMNS.map((column) => (
                 <Column
                   key={column}
@@ -170,6 +201,7 @@ export function QuestBoard({
                   workflow={workflow}
                   domains={domains}
                   showDomain={false}
+                  variant="swimlane"
                   testId={`quest-lane-${lane.domain.slug}-column-${column}`}
                 />
               ))}
@@ -183,7 +215,7 @@ export function QuestBoard({
   const columns = groupQuestsByColumn(quests);
   return (
     <div
-      className="flex gap-3 overflow-x-auto pb-2"
+      className="flex w-full flex-col overflow-visible pb-3 pt-0.5 md:flex-row md:items-start md:overflow-x-auto"
       data-testid="quest-board"
       data-layout="kanban"
     >
@@ -199,6 +231,7 @@ export function QuestBoard({
           workflow={workflow}
           domains={domains}
           showDomain
+          variant="kanban"
           testId={`quest-column-${column}`}
         />
       ))}

@@ -7,6 +7,7 @@ import {
   groupQuestsByColumn,
   groupQuestsByLane,
   questDomainDotClass,
+  withChainRejectedProposals,
 } from '../quest-board-groups';
 
 function quest(
@@ -91,6 +92,44 @@ describe('quest board groups', () => {
     expect(columns.proposed.map((item) => item.slug)).toEqual(['voting']);
     expect(columns.rejected.map((item) => item.slug)).toEqual(['down']);
     expect(columns.active).toEqual([]);
+  });
+
+  it('moves a proposed quest to Rejected when the chain vote was not accepted', () => {
+    const open = quest({
+      slug: 'open',
+      name: 'Open',
+      status: 'proposed',
+      proposalWeb3Id: 4,
+      proposalStatus: 'onVoting',
+    });
+    const lost = quest({
+      slug: 'lost',
+      name: 'Lost',
+      status: 'proposed',
+      proposalWeb3Id: 9,
+      proposalStatus: null,
+    });
+    const withdrawn = quest({
+      slug: 'pulled',
+      name: 'Pulled',
+      status: 'proposed',
+      proposalWeb3Id: 9,
+      proposalStatus: 'onVoting',
+    });
+
+    const stamped = withChainRejectedProposals([open, lost], [9n], []);
+    expect(
+      groupQuestsByColumn(stamped).rejected.map((item) => item.slug),
+    ).toEqual(['lost']);
+    expect(
+      groupQuestsByColumn(stamped).proposed.map((item) => item.slug),
+    ).toEqual(['open']);
+
+    const kept = withChainRejectedProposals([withdrawn], [9n], [9n]);
+    expect(groupQuestsByColumn(kept).proposed.map((item) => item.slug)).toEqual(
+      ['pulled'],
+    );
+    expect(groupQuestsByColumn(kept).rejected).toEqual([]);
   });
 
   it('lanes quests by domain and sends a missing domain to the default board', () => {

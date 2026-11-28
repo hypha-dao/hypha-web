@@ -37,6 +37,28 @@ describe('prepareSignalDescriptionMarkdown', () => {
     expect(prepareSignalDescriptionMarkdown(input)).toBe(input);
   });
 
+  it('turns a bold-only line into a section title and links bare urls', () => {
+    const input = [
+      '**What this is**',
+      '',
+      'A **Residence Belvedere** note with https://lovable.dev/projects/demo.',
+      '',
+      '- Lovable editor: https://lovable.dev/projects/demo',
+      '- Already linked: [preview](https://id-preview.lovable.app)',
+    ].join('\n');
+
+    expect(prepareSignalDescriptionMarkdown(input)).toBe(
+      [
+        '### What this is',
+        '',
+        'A **Residence Belvedere** note with [https://lovable.dev/projects/demo](https://lovable.dev/projects/demo).',
+        '',
+        '- **Lovable editor:** [https://lovable.dev/projects/demo](https://lovable.dev/projects/demo)',
+        '- Already linked: [preview](https://id-preview.lovable.app)',
+      ].join('\n'),
+    );
+  });
+
   it('leaves ordinary paragraphs alone', () => {
     expect(
       prepareSignalDescriptionMarkdown(

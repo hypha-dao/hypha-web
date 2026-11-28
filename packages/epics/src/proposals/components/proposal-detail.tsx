@@ -819,7 +819,11 @@ export const ProposalDetail = ({
     if (proposalDetails?.executed || proposalDetails?.expired) {
       setIsActionCompleted(true);
     }
-    if (proposalDetails?.executed && label === 'Quest' && spaceSlug) {
+    if (
+      (proposalDetails?.executed || proposalDetails?.expired) &&
+      label === 'Quest' &&
+      spaceSlug
+    ) {
       void revalidateSpaceQuests(spaceSlug);
     }
   }, [proposalDetails?.executed, proposalDetails?.expired, label, spaceSlug]);

@@ -109,7 +109,7 @@ function showsMobileSpaceSwitcher(pathname: string) {
   );
 }
 
-/** Phone and tablet: the current space opens the spaces list. */
+/** Phone and iPad: the current space opens the spaces list. */
 function MemberMobileSpaceSwitcher() {
   const pathname = usePathname() ?? '';
   const slug = getDhoSpaceSlugFromPathname(pathname);
@@ -153,8 +153,8 @@ function MemberMobileSpaceSwitcher() {
 
 /**
  * Top bar, below the wide layout.
- * A dropdown of spaces, in place of the icon row.
- * The circle remains for any screen that still mounts the rail.
+ * Phone and iPad get the space dropdown. The circle is only for a mounted
+ * rail on a page that does not use that dropdown, and it leaves at xl.
  */
 export function SpacesRailTopToggle() {
   const pathname = usePathname() ?? '';
@@ -167,17 +167,14 @@ export function SpacesRailTopToggle() {
   return (
     <>
       {dropdown ? (
-        <div className="md:hidden">
+        <div className="xl:hidden">
           <MemberMobileSpaceSwitcher />
         </div>
       ) : null}
-      {active ? (
+      {active && !dropdown ? (
         <button
           type="button"
-          className={cn(
-            APP_CHROME_ICON_TRIGGER,
-            dropdown ? 'hidden md:inline-flex xl:hidden' : 'xl:hidden',
-          )}
+          className={cn(APP_CHROME_ICON_TRIGGER, 'xl:hidden')}
           aria-label={t('spacesRail')}
           aria-expanded={open}
           aria-controls={SPACES_RAIL_ID}
