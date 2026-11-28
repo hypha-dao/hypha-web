@@ -149,10 +149,15 @@ export function signalUpvoteCellMeasure({
     votingMode !== 'one-member-one-vote' &&
     (votingMode === 'token' || (votingMode == null && sort === 'top-power'));
   if (!showVoice) {
-    return {
-      kind: 'count',
-      count: upvotes?.netVoteCount ?? upvotes?.upvoteCount ?? 0,
-    };
+    if (upvotes != null) {
+      return {
+        kind: 'count',
+        count: upvotes.netVoteCount ?? upvotes.upvoteCount ?? 0,
+      };
+    }
+    if (summaryState === 'loading') return { kind: 'loading' };
+    if (summaryState === 'error') return { kind: 'error' };
+    return { kind: 'count', count: 0 };
   }
   if (upvotes != null) {
     return {

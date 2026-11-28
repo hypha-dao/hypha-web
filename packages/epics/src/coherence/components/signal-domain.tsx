@@ -71,6 +71,21 @@ export function domainBoardChoices(
   return archived ? [...active, archived] : active;
 }
 
+/** The board the picker shows. An archived board already on the signal stays selected. */
+export function selectedDomainSlug(
+  board: string | null | undefined,
+  workflow: SignalWorkflowConfig,
+): string {
+  const stored = board?.trim();
+  if (
+    stored &&
+    domainBoardChoices(workflow, stored).some((item) => item.slug === stored)
+  ) {
+    return stored;
+  }
+  return resolveEffectiveBoard(board, workflow);
+}
+
 export function SignalDomainMark({
   name,
   color,
@@ -108,18 +123,54 @@ export function SignalDomainCards({
   disabled?: boolean;
   ariaLabel: string;
 }) {
+  const groupRef = React.useRef<HTMLDivElement>(null);
   if (boards.length === 0) return null;
   const selected =
     boards.find((board) => board.slug === value)?.slug ?? boards[0]?.slug;
 
+  const moveSelection = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) => {
+    if (disabled) return;
+    const key = event.key;
+    if (
+      key !== 'ArrowRight' &&
+      key !== 'ArrowDown' &&
+      key !== 'ArrowLeft' &&
+      key !== 'ArrowUp' &&
+      key !== 'Home' &&
+      key !== 'End'
+    ) {
+      return;
+    }
+    event.preventDefault();
+    const last = boards.length - 1;
+    const nextIndex =
+      key === 'Home'
+        ? 0
+        : key === 'End'
+        ? last
+        : key === 'ArrowRight' || key === 'ArrowDown'
+        ? (index + 1) % boards.length
+        : (index - 1 + boards.length) % boards.length;
+    const next = boards[nextIndex];
+    if (!next) return;
+    onChange(next.slug);
+    groupRef.current
+      ?.querySelectorAll<HTMLButtonElement>('button')
+      [nextIndex]?.focus();
+  };
+
   return (
     <div
+      ref={groupRef}
       role="radiogroup"
       aria-label={ariaLabel}
       data-testid="signal-domain-cards"
       className="flex flex-wrap gap-2"
     >
-      {boards.map((board) => {
+      {boards.map((board, index) => {
         const active = board.slug === selected;
         return (
           <button
@@ -127,9 +178,11 @@ export function SignalDomainCards({
             type="button"
             role="radio"
             aria-checked={active}
+            tabIndex={disabled || !active ? -1 : 0}
             disabled={disabled}
             data-testid={`signal-domain-card-${board.slug}`}
             onClick={() => onChange(board.slug)}
+            onKeyDown={(event) => moveSelection(event, index)}
             className={cn(
               'inline-flex h-8 min-w-0 items-center gap-1.5 border px-2.5 text-1 leading-none',
               'disabled:pointer-events-none disabled:opacity-50',
@@ -228,7 +281,7 @@ export function SignalDomainControl({
   const [saving, setSaving] = React.useState(false);
 
   if (!workflow) return null;
-  const slug = resolveEffectiveBoard(board, workflow);
+  const slug = selectedDomainSlug(board, workflow);
   const selected = workflow.boards.find((item) => item.slug === slug) ?? null;
   const choices = domainBoardChoices(workflow, board);
   if (!selected || choices.length === 0) return null;
@@ -267,7 +320,11 @@ export function SignalDomainControl({
           });
           void patchTask({ slug: signalSlugTrimmed, board: next })
             .then(async () => {
-              await refresh?.();
+              try {
+                await refresh?.();
+              } catch {
+                // The board is already saved. A failed refresh must not restore the previous one.
+              }
             })
             .catch(() => {
               applyPendingCoherenceTaskPatch(spaceSlug, signalSlugTrimmed, {

@@ -490,10 +490,15 @@ export const CreateSignalForm = ({
     form.reset(formDefaults);
   }, [form, formDefaults, mode, signalSlug]);
   React.useEffect(() => {
-    if (!workflow || form.getValues('board')) return;
-    form.setValue('board', resolveDefaultBoard(workflow), {
-      shouldDirty: false,
-    });
+    if (!workflow) return;
+    const current = form.getValues('board');
+    const choices = domainBoardChoices(workflow, current);
+    const shown =
+      current && choices.some((board) => board.slug === current)
+        ? current
+        : resolveDefaultBoard(workflow);
+    if (current === shown) return;
+    form.setValue('board', shown, { shouldDirty: false });
   }, [form, workflow]);
   React.useEffect(() => {
     if (mode === 'edit' || !person?.id) return;

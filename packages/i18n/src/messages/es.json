@@ -4314,6 +4314,7 @@
     "signalConvert": "Convertir",
     "signalConvertQuest": "Misión",
     "signalConvertProposal": "Propuesta",
+    "signalConvertStorageError": "No se pudo guardar la conversión en este navegador. Libera espacio e inténtalo de nuevo.",
     "signalAttachmentsLabel": "Adjuntos",
     "signalNotFound": "No se encontró esta señal.",
     "signalFormVoteWithPercent": "Decide cuánto poder de voto darle a esta señal",
@@ -5967,6 +5968,7 @@
     },
     "deliverableUrl": "Introduce un enlace que empiece por http:// o https://",
     "deliverableSaveError": "No se pudieron guardar los entregables. Inténtalo de nuevo.",
+    "draftReady": "Tu borrador de quest está listo. Pulsa {action} cuando quieras enviarlo como propuesta para votación.",
     "activity": {
       "proposalRejected": "propuesta rechazada"
     },

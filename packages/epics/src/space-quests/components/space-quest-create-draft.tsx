@@ -1090,7 +1090,7 @@ export function SpaceQuestCreateDraft({
           successCriteria: draftPayload.successCriteria,
           rewards: draftPayload.rewards,
           targetDate: draftPayload.targetDate,
-          domain: draftPayload.domain,
+          domain: draftPayload.domain?.trim() ? draftPayload.domain : null,
           leadPersonId: draftPayload.leadPersonId,
           leadName: draftPayload.leadName,
           status: 'proposed',

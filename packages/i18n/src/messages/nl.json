@@ -4874,6 +4874,7 @@
     "signalConvert": "Omzetten",
     "signalConvertQuest": "Quest",
     "signalConvertProposal": "Voorstel",
+    "signalConvertStorageError": "De omzetting kon niet in deze browser worden opgeslagen. Maak ruimte vrij en probeer het opnieuw.",
     "signalAttachmentsLabel": "Bijlagen",
     "signalNotFound": "Dit signaal is niet gevonden.",
     "signalFormVoteWithPercent": "Bepaal hoeveel stemkracht dit signaal krijgt",
@@ -5959,6 +5960,7 @@
     },
     "deliverableUrl": "Voer een link in die begint met http:// of https://",
     "deliverableSaveError": "Deliverables konden niet worden opgeslagen. Probeer het opnieuw.",
+    "draftReady": "Je quest-concept is klaar. Klik op {action} wanneer je het als voorstel wilt indienen om over te stemmen.",
     "activity": {
       "proposalRejected": "voorstel afgewezen"
     },

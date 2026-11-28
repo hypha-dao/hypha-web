@@ -9,6 +9,7 @@ import {
 import type { z } from 'zod';
 import type { QuestSpaceMember } from '../hooks/use-space-quests';
 import {
+  LEGACY_QUEST_DRAFT_READY_REPLY,
   QUEST_DRAFT_READY_REPLY,
   QUEST_EDIT_NOT_FILED_REPLY,
   formatPendingQuestPatch,
@@ -227,6 +228,8 @@ function withoutCreateFlowQuestions(reply: string, message: string): string {
     if (!text) continue;
     if (
       text === QUEST_DRAFT_READY_REPLY ||
+      text.includes(QUEST_DRAFT_READY_REPLY) ||
+      text === LEGACY_QUEST_DRAFT_READY_REPLY ||
       text.includes('CREATE QUEST') ||
       text.includes('CREATE PROPOSAL') ||
       text.includes('SUBMIT FOR VOTING')

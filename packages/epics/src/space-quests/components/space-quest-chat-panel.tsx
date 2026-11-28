@@ -39,6 +39,7 @@ import { PersonAvatar } from '../../people/components/person-avatar';
 import type { UseMembers } from '../../spaces/hooks/types';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 import { useQuestSpaceMembers } from '../hooks/use-space-quests';
+import { presentQuestDraftReadyReply } from '../utils/quest-draft-assistant';
 
 const FALLBACK_AGENT_MXID = '@hypha_bot_preview:matrix.hypha.earth';
 
@@ -73,6 +74,10 @@ export function SpaceQuestChatBody({
 }) {
   const tChat = useTranslations('HumanChatPanel');
   const tCoherence = useTranslations('CoherenceTab');
+  const tQuests = useTranslations('SpaceQuests');
+  const readyLabel = tQuests('draftReady', {
+    action: tQuests('confirm.submit'),
+  });
   const { resolvedTheme } = useTheme();
   const { person: me } = useMe();
   const { space } = useSpaceBySlug(session.spaceSlug);
@@ -106,7 +111,12 @@ export function SpaceQuestChatBody({
       session.messages.map((msg) => ({
         id: msg.id,
         role: msg.role,
-        parts: [{ type: 'text' as const, text: msg.text }],
+        parts: [
+          {
+            type: 'text' as const,
+            text: presentQuestDraftReadyReply(msg.text, readyLabel),
+          },
+        ],
         senderName:
           msg.role === 'member'
             ? msg.senderName?.trim() || agentLabel
@@ -117,7 +127,7 @@ export function SpaceQuestChatBody({
         ...(msg.avatarUrl ? { avatarUrl: msg.avatarUrl } : {}),
         timestamp: msg.timestamp,
       })),
-    [agentLabel, botMxid, session.messages],
+    [agentLabel, botMxid, readyLabel, session.messages],
   );
 
   const mentionCandidates = useMemo((): ChatMentionCandidate[] => {

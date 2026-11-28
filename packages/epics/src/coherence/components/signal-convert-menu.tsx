@@ -35,50 +35,63 @@ export function SignalConvertMenu({
 }) {
   const t = useTranslations('CoherenceTab');
   const router = useRouter();
+  const [storageError, setStorageError] = React.useState<string | null>(null);
 
   const convert = (kind: 'quest' | 'proposal') => {
     if (typeof window === 'undefined') return;
-    if (kind === 'quest') {
-      writeQuestFromSignal(window.sessionStorage, spaceSlug, source);
-      router.push(questPathFromSignal(lang, spaceSlug));
-      return;
+    setStorageError(null);
+    try {
+      if (kind === 'quest') {
+        writeQuestFromSignal(window.sessionStorage, spaceSlug, source);
+        router.push(questPathFromSignal(lang, spaceSlug));
+        return;
+      }
+      writeProposalFromSignal(window.sessionStorage, source);
+      router.push(proposalPathFromSignal(lang, spaceSlug));
+    } catch {
+      setStorageError(t('signalConvertStorageError'));
     }
-    writeProposalFromSignal(window.sessionStorage, source);
-    router.push(proposalPathFromSignal(lang, spaceSlug));
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          data-testid="signal-convert"
-          className={TRIGGER_CLASS}
+    <div className="flex flex-col items-start gap-1">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            data-testid="signal-convert"
+            className={TRIGGER_CLASS}
+          >
+            {t('signalConvert')}
+            <ChevronDown className="size-3.5 shrink-0" aria-hidden />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="start"
+          sideOffset={6}
+          className="min-w-36 rounded-none border border-border bg-background p-1 text-foreground shadow-none"
         >
-          {t('signalConvert')}
-          <ChevronDown className="size-3.5 shrink-0" aria-hidden />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        sideOffset={6}
-        className="min-w-36 rounded-none border border-border bg-background p-1 text-foreground shadow-none"
-      >
-        <DropdownMenuItem
-          className={ITEM_CLASS}
-          data-testid="signal-convert-quest"
-          onSelect={() => convert('quest')}
-        >
-          {t('signalConvertQuest')}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          className={ITEM_CLASS}
-          data-testid="signal-convert-proposal"
-          onSelect={() => convert('proposal')}
-        >
-          {t('signalConvertProposal')}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuItem
+            className={ITEM_CLASS}
+            data-testid="signal-convert-quest"
+            onSelect={() => convert('quest')}
+          >
+            {t('signalConvertQuest')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className={ITEM_CLASS}
+            data-testid="signal-convert-proposal"
+            onSelect={() => convert('proposal')}
+          >
+            {t('signalConvertProposal')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {storageError ? (
+        <p role="alert" className="text-1 text-error-11">
+          {storageError}
+        </p>
+      ) : null}
+    </div>
   );
 }

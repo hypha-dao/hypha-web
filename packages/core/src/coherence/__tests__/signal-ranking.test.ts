@@ -392,6 +392,28 @@ describe('signalUpvoteCellMeasure', () => {
     ).toEqual(['whole', 'half']);
   });
 
+  it('shows loading and error when the voter count has not arrived', () => {
+    expect(
+      signalUpvoteCellMeasure({
+        sort: 'top-voters',
+        summaryState: 'loading',
+      }),
+    ).toEqual({ kind: 'loading' });
+    expect(
+      signalUpvoteCellMeasure({
+        sort: 'new',
+        votingMode: 'one-member-one-vote',
+        summaryState: 'error',
+      }),
+    ).toEqual({ kind: 'error' });
+    expect(
+      signalUpvoteCellMeasure({
+        sort: 'top-voters',
+        summaryState: 'ready',
+      }),
+    ).toEqual({ kind: 'count', count: 0 });
+  });
+
   it('keeps a cached summary while a later refresh is loading or has failed', () => {
     expect(
       signalUpvoteCellMeasure({

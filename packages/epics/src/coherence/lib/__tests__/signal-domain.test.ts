@@ -3,6 +3,7 @@ import type { SignalWorkflowConfig } from '../../../../../core/src/coherence/sig
 import {
   domainBoardChoices,
   domainDotClass,
+  selectedDomainSlug,
 } from '../../components/signal-domain';
 
 const workflow: SignalWorkflowConfig = {
@@ -37,5 +38,10 @@ describe('signal domain', () => {
     expect(
       domainBoardChoices(workflow, 'old').map((board) => board.slug),
     ).toEqual(['general', 'outreach', 'old']);
+  });
+
+  it('keeps an archived domain selected when it is still on the signal', () => {
+    expect(selectedDomainSlug('old', workflow)).toBe('old');
+    expect(selectedDomainSlug('missing', workflow)).toBe('general');
   });
 });

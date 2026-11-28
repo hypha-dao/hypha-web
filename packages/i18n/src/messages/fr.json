@@ -4297,6 +4297,7 @@
     "signalConvert": "Convertir",
     "signalConvertQuest": "Quête",
     "signalConvertProposal": "Proposition",
+    "signalConvertStorageError": "La conversion n’a pas pu être enregistrée dans ce navigateur. Libère de l’espace et réessaie.",
     "signalAttachmentsLabel": "Pièces jointes",
     "signalNotFound": "Ce signal est introuvable.",
     "signalFormVoteWithPercent": "Décidez quelle part du pouvoir de vote accorder à ce signal",
@@ -5950,6 +5951,7 @@
     },
     "deliverableUrl": "Saisissez un lien commençant par http:// ou https://",
     "deliverableSaveError": "Impossible d’enregistrer les livrables. Réessayez.",
+    "draftReady": "Ton brouillon de quête est prêt. Clique sur {action} quand tu veux le soumettre comme proposition au vote.",
     "activity": {
       "proposalRejected": "proposition rejetée"
     },

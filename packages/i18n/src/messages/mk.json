@@ -4855,6 +4855,7 @@
     "signalConvert": "Претвори",
     "signalConvertQuest": "Мисија",
     "signalConvertProposal": "Предлог",
+    "signalConvertStorageError": "Конверзијата не можеше да се зачува во овој прелистувач. Ослободи простор и обиди се повторно.",
     "signalAttachmentsLabel": "Прилози",
     "signalNotFound": "Овој сигнал не може да се најде.",
     "signalFormVoteWithPercent": "Одлучете колку гласачка моќ да му дадете на овој сигнал",
@@ -5940,6 +5941,7 @@
     },
     "deliverableUrl": "Внесете врска што започнува со http:// или https://",
     "deliverableSaveError": "Испораките не може да се зачуваат. Обидете се повторно.",
+    "draftReady": "Нацртот на квестов е готов. Кликни {action} кога сакаш да го поднесеш како предлог за гласање.",
     "activity": {
       "proposalRejected": "предлогот е одбиен"
     },

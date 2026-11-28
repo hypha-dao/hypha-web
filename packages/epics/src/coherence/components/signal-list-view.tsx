@@ -7,7 +7,6 @@ import {
   COHERENCE_PRIORITIES,
   Coherence,
   SignalWorkflowConfig,
-  resolveEffectiveBoard,
 } from '@hypha-platform/core/client';
 import {
   Select,
@@ -27,6 +26,7 @@ import { SignalIndicativeAmounts } from './signal-indicative-amounts';
 import { SignalCategoryTag } from './signal-category-tag';
 import {
   domainBoardChoices,
+  selectedDomainSlug,
   SignalDomainMark,
   SignalDomainSelect,
 } from './signal-domain';
@@ -168,11 +168,10 @@ export function SignalListView({
             )?.name ??
             signal.progressStatus ??
             '—';
+          const boardSlug = selectedDomainSlug(signal.board, workflow);
           const boardName =
-            workflow.boards.find(
-              (board) =>
-                board.slug === resolveEffectiveBoard(signal.board, workflow),
-            )?.name ?? resolveEffectiveBoard(signal.board, workflow);
+            workflow.boards.find((board) => board.slug === boardSlug)?.name ??
+            boardSlug;
           const isActive = isSignalSlugActive(signal.slug, activeSignalSlug);
           const priorityLabel = t(
             `priorities.${signal.priority}` as
@@ -367,15 +366,13 @@ export function SignalListView({
                         name={boardName}
                         color={
                           workflow.boards.find(
-                            (board) =>
-                              board.slug ===
-                              resolveEffectiveBoard(signal.board, workflow),
+                            (board) => board.slug === boardSlug,
                           )?.color
                         }
                       />
                     ) : (
                       <SignalDomainSelect
-                        value={resolveEffectiveBoard(signal.board, workflow)}
+                        value={boardSlug}
                         boards={domainBoardChoices(workflow, signal.board)}
                         onChange={(value) =>
                           onPatch(signal, {

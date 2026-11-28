@@ -4873,6 +4873,7 @@
     "signalConvert": "Konverter",
     "signalConvertQuest": "Oppdrag",
     "signalConvertProposal": "Forslag",
+    "signalConvertStorageError": "Omgjøringen kunne ikke lagres i denne nettleseren. Frigjør plass og prøv igjen.",
     "signalAttachmentsLabel": "Vedlegg",
     "signalNotFound": "Fant ikke dette signalet.",
     "signalFormVoteWithPercent": "Bestem hvor mye stemmekraft dette signalet skal få",
@@ -5958,6 +5959,7 @@
     },
     "deliverableUrl": "Skriv inn en lenke som starter med http:// eller https://",
     "deliverableSaveError": "Kunne ikke lagre leveransene. Prøv igjen.",
+    "draftReady": "Quest-utkastet ditt er klart. Klikk {action} når du vil sende det inn som et forslag til avstemning.",
     "activity": {
       "proposalRejected": "forslag avvist"
     },

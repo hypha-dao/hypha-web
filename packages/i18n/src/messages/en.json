@@ -4904,6 +4904,7 @@
     "signalConvert": "Convert",
     "signalConvertQuest": "Quest",
     "signalConvertProposal": "Proposal",
+    "signalConvertStorageError": "The conversion could not be saved in this browser. Free some space and try again.",
     "signalAttachmentsLabel": "Attachments",
     "signalNotFound": "This signal could not be found.",
     "signalFormVoteWithPercent": "Decide how much voting power to give this signal",
@@ -5975,6 +5976,7 @@
     },
     "deliverableUrl": "Enter a link starting with http:// or https://",
     "deliverableSaveError": "Could not save deliverables. Try again.",
+    "draftReady": "Your quest draft is ready. Click {action} whenever you're ready to submit it as a proposal for voting.",
     "activity": {
       "proposalRejected": "proposal rejected"
     },

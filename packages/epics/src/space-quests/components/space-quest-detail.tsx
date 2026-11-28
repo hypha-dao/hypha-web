@@ -1329,13 +1329,16 @@ export function SpaceQuestDetail({
   const autoOpenedDiscussionRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // A failed refresh can keep the previous quest while `error` is set.
+    // Recording the slug then blocks the open once the error clears.
+    if (error) return;
     // Proposed and rejected quests have no discussion room.
     if (!quest || quest.status === 'proposed') return;
     if (!quest.chatRoomId?.trim()) return;
     if (autoOpenedDiscussionRef.current === quest.slug) return;
     autoOpenedDiscussionRef.current = quest.slug;
     openDiscussionRef.current();
-  }, [quest]);
+  }, [error, quest]);
   const sendDetailRef = useRef<(overridePrompt?: string) => void>(() => {});
   const triggerDetailSend = useCallback(() => {
     sendDetailRef.current();
