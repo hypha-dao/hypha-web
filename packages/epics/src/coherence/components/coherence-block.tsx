@@ -330,7 +330,7 @@ export function CoherenceBlock({
               loading
               className={
                 layout === 'cards'
-                  ? 'h-[180px] w-full rounded-none'
+                  ? 'h-[280px] w-full rounded-none'
                   : 'h-[104px] w-full rounded-none'
               }
             />

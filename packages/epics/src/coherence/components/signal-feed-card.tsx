@@ -60,18 +60,22 @@ export function SignalFeedCard({
       data-signal-layout="cards"
       className="craft-card-interactive relative flex h-full min-w-0 flex-col"
     >
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-neutral-3">
-        {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={image}
-            alt=""
-            data-testid="signal-card-image"
-            className="h-full w-full object-cover"
-          />
-        ) : null}
-      </div>
-      <div className="flex flex-1 flex-col gap-2 px-4 pt-4">
+      {image ? (
+        <div className="px-4 pt-4">
+          <div className="relative aspect-video w-full overflow-hidden bg-neutral-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={image}
+              alt=""
+              data-testid="signal-card-image"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          </div>
+        </div>
+      ) : null}
+      <div
+        className={`flex flex-1 flex-col gap-2 px-4 ${image ? 'pt-3' : 'pt-4'}`}
+      >
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <SignalCardTypeLabel type={signal.type} />
           <SignalDomainControl
@@ -91,7 +95,7 @@ export function SignalFeedCard({
           </Link>
         </h3>
         {about ? (
-          <p className="mb-0 line-clamp-3 text-1 leading-relaxed text-muted-foreground">
+          <p className="mb-0 line-clamp-2 text-1 leading-relaxed text-muted-foreground">
             {about}
           </p>
         ) : null}

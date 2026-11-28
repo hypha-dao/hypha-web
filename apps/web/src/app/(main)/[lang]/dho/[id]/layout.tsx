@@ -23,6 +23,7 @@ import {
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { getTranslations } from 'next-intl/server';
+import { Container } from '@hypha-platform/ui';
 import { LiveSpaceHeroBanner } from './_components/live-space-hero-with-counts';
 import { DhoStickySpaceChrome } from './_components/dho-sticky-space-chrome';
 import { SpaceMainNav } from './_components/space-main-nav';
@@ -99,9 +100,8 @@ export default async function DhoLayout({
   return (
     <SpaceAccentPortalBridge>
       {/*
-        Main column must span the full width next to side panels: `Container` max-width + `mx-auto`
-        centers content and leaves empty gutters — very visible when the Human chat panel narrows
-        the column (reads as a dead strip beside the hero / secondary chrome). Use padding only.
+        Same side inset as the wallet: `Container` centers the space and caps
+        its width. The ground stays on the full column, behind that inset.
       */}
       <div className="flex w-full min-w-0">
         {/*
@@ -112,7 +112,7 @@ export default async function DhoLayout({
         */}
         <div
           data-space-scroll-hold=""
-          className="mt-[2px] min-w-0 flex-1 px-4 md:mt-[6px] sm:px-5"
+          className="mt-[2px] min-w-0 flex-1 md:mt-[6px]"
           style={{ minHeight: 'var(--hypha-space-scroll-hold, 0px)' }}
         >
           {/* Overview portals the mycelium into this host. It stays behind the column:
@@ -122,7 +122,7 @@ export default async function DhoLayout({
             data-space-ground=""
             className="pointer-events-none sticky top-0 z-0 h-0"
           />
-          <div className="relative z-[1]">
+          <Container className="relative z-[1]">
             {/* React 19+: link rel="preload" is hoisted to document head.
                 Sized /_next/image URL only — never the UploadThing original. */}
             {showSpaceBanner
@@ -254,7 +254,7 @@ export default async function DhoLayout({
             </div>
             {tab}
             {children}
-          </div>
+          </Container>
         </div>
         {aside}
       </div>

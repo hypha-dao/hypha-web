@@ -10,17 +10,22 @@ import {
   getRootSpace,
   isSafeImageUrl,
   toNextImageOptimizerSrc,
-  useAiPanel,
   AiPanelTrigger,
   SpacesRailTopToggle,
   useSpacesRailControl,
 } from '@hypha-platform/epics';
 import useSWR from 'swr';
-import { Space } from '@hypha-platform/core/client';
+import { fetchJson, type Space } from '@hypha-platform/core/client';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { Pencil } from 'lucide-react';
+
+/** Shared marks. A stored copy of either is not this space's own icon. */
+const HYPHA_PLACEHOLDER_LOGOS = new Set([
+  '/placeholder/space-avatar-image.svg',
+  '/placeholder/space-lead-image.webp',
+]);
 
 type ConnectedMenuTopProps = {
   children?: ReactNode;
@@ -34,8 +39,40 @@ type ConnectedMenuTopProps = {
   aiChatEnabled: boolean;
 };
 
+const EMPTY_SPACES: Space[] = [];
+
 function hasCustomRootLogo(logoUrl: string): boolean {
-  return logoUrl.trim().length > 0;
+  const trimmed = logoUrl.trim();
+  return trimmed.length > 0 && !HYPHA_PLACEHOLDER_LOGOS.has(trimmed);
+}
+
+function RootSpaceLogoImage({
+  rootLogoUrl,
+  alt,
+}: {
+  rootLogoUrl: string;
+  alt: string;
+}) {
+  const [failedOptimized, setFailedOptimized] = useState(false);
+  const optimized = toNextImageOptimizerSrc(rootLogoUrl, 384, 70);
+  return (
+    <Image
+      src={failedOptimized ? rootLogoUrl : optimized}
+      alt={alt}
+      width={192}
+      height={28}
+      sizes="192px"
+      quality={70}
+      priority
+      unoptimized
+      className="max-h-[28px] w-auto bg-transparent object-contain"
+      onError={() => {
+        if (!failedOptimized && optimized !== rootLogoUrl) {
+          setFailedOptimized(true);
+        }
+      }}
+    />
+  );
 }
 
 export function ConnectedMenuTop({
@@ -50,14 +87,6 @@ export function ConnectedMenuTop({
   aiChatEnabled,
 }: ConnectedMenuTopProps) {
   const pathname = usePathname();
-  const [isMobileBar, setIsMobileBar] = useState(false);
-  useEffect(() => {
-    const query = window.matchMedia('(max-width: 767px)');
-    const apply = () => setIsMobileBar(query.matches);
-    apply();
-    query.addEventListener('change', apply);
-    return () => query.removeEventListener('change', apply);
-  }, []);
   const router = useRouter();
   const tNavigation = useTranslations('Navigation');
   const { resolvedTheme } = useTheme();
@@ -68,50 +97,33 @@ export function ConnectedMenuTop({
     [pathname],
   );
   const isSpaceRoute = Boolean(activeSpaceSlug);
-  const { data: activeSpace } = useSWR<Space | null>(
+  const {
+    data: activeSpace,
+    isLoading: spaceLoading,
+    error: spaceError,
+  } = useSWR<Space>(
     activeSpaceSlug ? `/api/v1/spaces/${activeSpaceSlug}` : null,
-    async (url: string) => {
-      const response = await fetch(url, {
-        headers: { Accept: 'application/json' },
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        console.warn('[ConnectedMenuTop] spaces fetch failed', {
-          status: response.status,
-          url,
-        });
-        return null;
-      }
-      return (await response.json()) as Space;
-    },
+    (url: string) => fetchJson<Space>(url, { cache: 'no-store' }, 'space'),
   );
-  const { data: organisationSpaces = [] } = useSWR<Space[]>(
+  const {
+    data: organisationSpaces,
+    isLoading: organisationLoading,
+    error: organisationError,
+  } = useSWR<Space[]>(
     activeSpaceSlug ? `/api/v1/spaces/${activeSpaceSlug}/organisation` : null,
-    async (url: string) => {
-      const response = await fetch(url, {
-        headers: { Accept: 'application/json' },
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        console.warn('[ConnectedMenuTop] organisation spaces fetch failed', {
-          status: response.status,
-          url,
-        });
-        return [];
-      }
-      return (await response.json()) as Space[];
-    },
+    (url: string) =>
+      fetchJson<Space[]>(url, { cache: 'no-store' }, 'organisation spaces'),
   );
+  const organisationList = organisationSpaces ?? EMPTY_SPACES;
   const rootSpace = useMemo(() => {
     if (!activeSpaceSlug) return null;
     const activeSpaceFromOrg =
-      organisationSpaces.find((space) => space.slug === activeSpaceSlug) ??
-      null;
+      organisationList.find((space) => space.slug === activeSpaceSlug) ?? null;
     return getRootSpace(
       activeSpace ?? activeSpaceFromOrg ?? undefined,
-      organisationSpaces,
+      organisationList,
     );
-  }, [activeSpace, activeSpaceSlug, organisationSpaces]);
+  }, [activeSpace, activeSpaceSlug, organisationList]);
   const rootSpaceHref =
     rootSpace?.slug != null
       ? `/${lang}/dho/${rootSpace.slug}/agreements/space-configuration`
@@ -130,7 +142,12 @@ export function ConnectedMenuTop({
   // Prefer ecosystem logos so new uploads immediately replace generic placeholders.
   const rootLogoUrl = [preferredThemeLogo, fallbackThemeLogo, rootPrimaryLogo]
     .map((candidate) => candidate.trim())
-    .find((candidate) => candidate && isSafeImageUrl(candidate));
+    .find(
+      (candidate) =>
+        candidate &&
+        isSafeImageUrl(candidate) &&
+        !HYPHA_PLACEHOLDER_LOGOS.has(candidate),
+    );
   const rootTitle = rootSpace?.title?.trim() || '';
   const ecosystemLogoLabel = tNavigation('ecosystemLogo');
   const logoA11yLabel = rootTitle
@@ -138,7 +155,15 @@ export function ConnectedMenuTop({
     : ecosystemLogoLabel;
   const rootHasCustomLogo = hasCustomRootLogo(rootLogoUrl ?? '');
   const suppressDefaultLogo = aiChatEnabled && isSpaceRoute;
-  const { overlayVisible } = useAiPanel();
+  // A failed lookup used to be stored as "no space", which left the Hypha
+  // wordmark in place. Keep that wordmark off while the root icon is in flight.
+  const rootLogoPending =
+    suppressDefaultLogo &&
+    !rootSpace &&
+    (spaceLoading ||
+      organisationLoading ||
+      Boolean(spaceError) ||
+      Boolean(organisationError));
 
   const secondaryLeading = aiChatEnabled ? <AiPanelTrigger /> : leadingAction;
   const { active: spacesRailActive } = useSpacesRailControl();
@@ -166,16 +191,9 @@ export function ConnectedMenuTop({
           aria-label={logoA11yLabel}
           title={logoA11yLabel}
         >
-          <Image
-            src={toNextImageOptimizerSrc(rootLogoUrl, 384, 70)}
+          <RootSpaceLogoImage
+            rootLogoUrl={rootLogoUrl}
             alt={rootTitle || tNavigation('ecosystemLogo')}
-            width={192}
-            height={28}
-            sizes="192px"
-            quality={70}
-            priority
-            unoptimized
-            className="max-h-[28px] w-auto bg-transparent object-contain"
           />
           <span className="pointer-events-none absolute bottom-0.5 right-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-border/70 bg-background/85 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
             <Pencil className="h-2.5 w-2.5" />
@@ -200,13 +218,24 @@ export function ConnectedMenuTop({
         </Link>
       )
     ) : undefined;
-  const useReplacementLogoNode =
-    Boolean(logoNode) && !(overlayVisible && isSpaceRoute) && !isMobileBar;
+  const pendingLogoNode = rootLogoPending ? (
+    <span
+      className="inline-flex h-[36px] w-[7.5rem]"
+      aria-hidden
+      title={tNavigation('ecosystemLogo')}
+    />
+  ) : undefined;
+  // The Hypha wordmark is the brand mark. Inside a space the header shows
+  // that space's root icon instead, including while the icon is still loading
+  // and when the left menu is open.
+  const useReplacementLogoNode = Boolean(logoNode) || Boolean(pendingLogoNode);
 
   return (
     <MenuTop
       logoHref={useReplacementLogoNode ? undefined : logoHref}
-      logoNode={useReplacementLogoNode ? logoNode : undefined}
+      logoNode={
+        useReplacementLogoNode ? logoNode ?? pendingLogoNode : undefined
+      }
       hrefTarget={hrefTarget}
       openMenuLabel={openMenuLabel}
       closeMenuLabel={closeMenuLabel}

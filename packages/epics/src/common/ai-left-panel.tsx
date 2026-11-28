@@ -3287,10 +3287,23 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     <button
       type="button"
       onClick={handleTriggerClick}
-      className={MENU_TRIGGER_CANVAS_CLASS}
+      className={
+        assistantAvatarUrl
+          ? 'box-border flex h-[36px] w-[36px] shrink-0 items-center justify-center overflow-hidden rounded-full border-0 bg-transparent p-0 shadow-none outline-none ring-0'
+          : MENU_TRIGGER_CANVAS_CLASS
+      }
       aria-label={shouldCloseFromTrigger ? t('closePanel') : t('openPanel')}
     >
-      <Menu className="craft-icon pointer-events-none" />
+      {assistantAvatarUrl ? (
+        <OptimizedAvatarImage
+          src={assistantAvatarUrl}
+          alt=""
+          pixelSize={72}
+          className="pointer-events-none h-full w-full object-cover"
+        />
+      ) : (
+        <Menu className="craft-icon pointer-events-none" />
+      )}
     </button>
   );
   const closeButton = shouldCloseFromTrigger ? (

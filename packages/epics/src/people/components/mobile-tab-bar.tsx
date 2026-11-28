@@ -96,7 +96,7 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   const lang = (typeof params.lang === 'string' ? params.lang : 'en') as Locale;
   const { open: isAiOpen } = useAiPanel();
   const spaceSlug = getDhoSpaceSlugFromPathname(pathname);
-  // While the AI panel is open the spaces list takes the left menu slot.
+  // Phones use the header dropdown. Wider screens keep this row.
   const showSpacesRail = shouldShowMobileSpacesRail(pathname) && !isAiOpen;
   const [slideIn, setSlideIn] = useState(false);
 
@@ -126,20 +126,19 @@ export function MobileContentFrame({ children }: { children: ReactNode }) {
   return (
     <div
       className={cn(
-        showSpacesRail &&
-          'max-xl:flex max-xl:w-full max-xl:min-w-0 max-xl:flex-col',
+        showSpacesRail && 'md:flex md:w-full md:min-w-0 md:flex-col xl:block',
         slideIn &&
           'max-md:animate-in max-md:slide-in-from-right max-md:duration-300 max-md:ease-out',
       )}
     >
       {showSpacesRail ? (
-        // One row under the header circle — same chrome as the top toggle,
-        // not a side column that floats next to the page.
-        <div className="w-full shrink-0 xl:hidden">
+        <div className="hidden w-full shrink-0 md:block xl:hidden">
           <MobileSpacesSubnav lang={lang} activeSlug={spaceSlug} layout="row" />
         </div>
       ) : null}
-      <div className={cn(showSpacesRail && 'min-w-0 flex-1')}>{children}</div>
+      <div className={cn(showSpacesRail && 'md:min-w-0 md:flex-1')}>
+        {children}
+      </div>
     </div>
   );
 }
