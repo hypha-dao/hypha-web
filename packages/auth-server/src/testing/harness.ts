@@ -74,12 +74,13 @@ export async function makeServer(
   deps: Parameters<typeof createAuthServer>[1] = {},
 ) {
   const config = testConfig(over);
-  const pool = createAuthDbPool(config.databaseUrl);
+  // One pool for the server and the test: an injected one is also the one the test closes.
+  const pool = deps.pool ?? createAuthDbPool(config.databaseUrl);
   const server = createAuthServer(config, {
-    pool,
     providers: { privy: fakeProvider('privy'), other: fakeProvider('other') },
     fetchClientMetadataResource: fakeMetadataFetch,
     ...deps,
+    pool,
   });
   return {
     ...server,

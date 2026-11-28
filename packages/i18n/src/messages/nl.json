@@ -6030,7 +6030,7 @@
       "connectedOn": "Verbonden op {date}",
       "lastActive": "laatst actief op {date}",
       "changeSpaces": "Spaces wijzigen",
-      "whenApplied": "De app gebruikt de nieuwe keuze vanaf zijn volgende aanmelding, uiterlijk binnen 10 minuten.",
+      "whenApplied": "De app krijgt de nieuwe keuze zodra hij zijn toegang de volgende keer vernieuwt, uiterlijk binnen 10 minuten.",
       "save": "Opslaan",
       "cancel": "Annuleren",
       "saved": "Opgeslagen. De app gebruikt de nieuwe spaces binnen 10 minuten.",

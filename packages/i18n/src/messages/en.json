@@ -6046,7 +6046,7 @@
       "connectedOn": "Connected on {date}",
       "lastActive": "last active {date}",
       "changeSpaces": "Change spaces",
-      "whenApplied": "The app uses the new choice from its next sign-in, at the latest within 10 minutes.",
+      "whenApplied": "The app gets the new choice the next time it renews its access, within 10 minutes at the latest.",
       "save": "Save",
       "cancel": "Cancel",
       "saved": "Saved. The app uses the new spaces within 10 minutes.",

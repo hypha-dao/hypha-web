@@ -48,19 +48,29 @@ export function ConnectedAppsList({
   const [apps, setApps] = React.useState(initialApps);
   const [notice, setNotice] = React.useState<Notice>(null);
 
-  const post = async (path: string, body: Record<string, unknown>) => {
-    const res = await fetch(`${AUTH_SERVER_API_BASE_PATH}${path}`, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        accept: 'application/json',
-      },
-      credentials: 'same-origin',
-      // The account this page showed: an action from another session is refused.
-      body: JSON.stringify({ ...body, expected_person: personId }),
-    });
-    const parsed = (await res.json().catch(() => ({}))) as { error?: string };
-    return { ok: res.ok, error: parsed.error };
+  /** Never throws: a network failure is reported like any other failed action. */
+  const post = async (
+    path: string,
+    body: Record<string, unknown>,
+  ): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const res = await fetch(`${AUTH_SERVER_API_BASE_PATH}${path}`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          accept: 'application/json',
+        },
+        credentials: 'same-origin',
+        // The account this page showed: an action from another session is refused.
+        body: JSON.stringify({ ...body, expected_person: personId }),
+      });
+      const parsed = (await res.json().catch(() => ({}))) as {
+        error?: string;
+      };
+      return { ok: res.ok, error: parsed.error };
+    } catch {
+      return { ok: false };
+    }
   };
 
   const failure = (error: string | undefined) =>
@@ -121,7 +131,8 @@ export function ConnectedAppsList({
                           initialSpaces: {
                             mode: value === 'all' ? 'all' : 'spaces',
                             chosen: value === 'all' ? [] : value,
-                            keptUnlisted: false,
+                            // Spaces not loaded: the saved list stays selectable.
+                            keptUnlisted: value !== 'all' && !pickerSpaces,
                           },
                         },
                   ),
@@ -247,11 +258,14 @@ function AppCard({
               disabled={busy || (mode === 'spaces' && chosen.size === 0)}
               onClick={async () => {
                 setBusy(true);
-                const saved = await onSaveSpaces(
-                  mode === 'all' ? 'all' : [...chosen],
-                );
-                setBusy(false);
-                if (saved) setEditing(false);
+                try {
+                  const saved = await onSaveSpaces(
+                    mode === 'all' ? 'all' : [...chosen],
+                  );
+                  if (saved) setEditing(false);
+                } finally {
+                  setBusy(false);
+                }
               }}
             >
               {t('apps.save')}
@@ -275,8 +289,11 @@ function AppCard({
               disabled={busy}
               onClick={async () => {
                 setBusy(true);
-                await onDisconnect();
-                setBusy(false);
+                try {
+                  await onDisconnect();
+                } finally {
+                  setBusy(false);
+                }
               }}
             >
               {t('apps.disconnect')}

@@ -6024,7 +6024,7 @@
       "connectedOn": "Verbunden am {date}",
       "lastActive": "zuletzt aktiv am {date}",
       "changeSpaces": "Spaces ändern",
-      "whenApplied": "Die App nutzt die neue Auswahl ab ihrer nächsten Anmeldung, spätestens nach 10 Minuten.",
+      "whenApplied": "Die App erhält die neue Auswahl, sobald sie ihren Zugriff das nächste Mal erneuert, spätestens nach 10 Minuten.",
       "save": "Speichern",
       "cancel": "Abbrechen",
       "saved": "Gespeichert. Die App nutzt die neuen Spaces innerhalb von 10 Minuten.",

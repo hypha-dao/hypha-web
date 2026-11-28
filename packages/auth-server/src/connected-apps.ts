@@ -184,8 +184,8 @@ export type ChangeSpacesResult = 'ok' | 'not_found' | 'no_read_scope';
  * choice) and reaches the app at its next token (refresh or re-authorization); access tokens
  * already issued keep the old list until they expire. Only an app of this person that was
  * approved with `spaces:read` can be changed: without it there is nothing to limit. The consent
- * row is locked while the grant is written, so a disconnect at the same time cannot leave a
- * grant behind.
+ * row is locked exclusively while the grant is written, so two changes at the same time run one
+ * after the other, and a disconnect at the same time cannot leave a grant behind.
  */
 export async function changeConnectedAppSpaces(
   pool: AuthDbPool,
@@ -195,7 +195,7 @@ export async function changeConnectedAppSpaces(
 ): Promise<ChangeSpacesResult> {
   return inTransaction(pool, async (tx) => {
     const { rows } = await tx.query<{ clientId: string; scopes: unknown }>(
-      'select "clientId", scopes from as_oauth_consent where id = $1 and "userId" = $2 for share',
+      'select "clientId", scopes from as_oauth_consent where id = $1 and "userId" = $2 for update',
       [appId, personId],
     );
     const row = rows[0];

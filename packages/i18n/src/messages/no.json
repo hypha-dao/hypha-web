@@ -6029,7 +6029,7 @@
       "connectedOn": "Koblet til {date}",
       "lastActive": "sist aktiv {date}",
       "changeSpaces": "Endre områder",
-      "whenApplied": "Appen bruker det nye valget fra neste innlogging, senest innen 10 minutter.",
+      "whenApplied": "Appen får det nye valget neste gang den fornyer tilgangen sin, senest innen 10 minutter.",
       "save": "Lagre",
       "cancel": "Avbryt",
       "saved": "Lagret. Appen bruker de nye områdene innen 10 minutter.",

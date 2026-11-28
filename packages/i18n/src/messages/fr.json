@@ -6021,7 +6021,7 @@
       "connectedOn": "Connectée le {date}",
       "lastActive": "dernière activité le {date}",
       "changeSpaces": "Changer les espaces",
-      "whenApplied": "L’application utilise le nouveau choix dès sa prochaine connexion, au plus tard dans 10 minutes.",
+      "whenApplied": "L’application reçoit le nouveau choix la prochaine fois qu’elle renouvelle son accès, au plus tard dans 10 minutes.",
       "save": "Enregistrer",
       "cancel": "Annuler",
       "saved": "Enregistré. L’application utilisera les nouveaux espaces dans 10 minutes au plus.",

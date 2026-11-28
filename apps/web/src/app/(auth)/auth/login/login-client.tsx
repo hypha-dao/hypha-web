@@ -74,10 +74,12 @@ export function LoginClient({
       const params = new URLSearchParams(original);
       const hasLang = params.has('lang');
       params.delete('lang');
-      // `next` is a page setting too; without an app asking there is no signed query at all.
+      // `next` is a page setting too; without an app asking there is no signed query at all. An
+      // app may also send its own `next` inside the signed query: then the whole query is sent.
+      const hasNext = params.has('next');
       params.delete('next');
       let { res, body } = await post(params.toString());
-      if (hasLang && body.error === 'invalid_signature') {
+      if ((hasLang || hasNext) && body.error === 'invalid_signature') {
         ({ res, body } = await post(original));
       }
       if (res.ok && body.url) {

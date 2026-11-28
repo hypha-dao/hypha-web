@@ -6023,7 +6023,7 @@
       "connectedOn": "Ligada em {date}",
       "lastActive": "última atividade em {date}",
       "changeSpaces": "Alterar espaços",
-      "whenApplied": "A app usa a nova escolha a partir do próximo início de sessão, no máximo em 10 minutos.",
+      "whenApplied": "A app recebe a nova escolha da próxima vez que renovar o seu acesso, no máximo em 10 minutos.",
       "save": "Guardar",
       "cancel": "Cancelar",
       "saved": "Guardado. A app usará os novos espaços no máximo em 10 minutos.",

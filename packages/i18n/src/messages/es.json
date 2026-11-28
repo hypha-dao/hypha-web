@@ -6038,7 +6038,7 @@
       "connectedOn": "Conectada el {date}",
       "lastActive": "última actividad el {date}",
       "changeSpaces": "Cambiar espacios",
-      "whenApplied": "La app usa la nueva elección desde su próximo inicio de sesión, como máximo en 10 minutos.",
+      "whenApplied": "La app recibe la nueva elección la próxima vez que renueve su acceso, como máximo en 10 minutos.",
       "save": "Guardar",
       "cancel": "Cancelar",
       "saved": "Guardado. La app usará los nuevos espacios en un máximo de 10 minutos.",
