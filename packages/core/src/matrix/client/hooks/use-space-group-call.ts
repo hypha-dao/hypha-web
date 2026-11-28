@@ -1770,6 +1770,7 @@ export function useSpaceGroupCall(
     async (lkRoom: LiveKitRoom): Promise<boolean> => {
       const participant = lkRoom.localParticipant;
       backgroundRoomRef.current = lkRoom;
+      const requestEpoch = cameraRequestEpochRef.current;
       const existing = participant.getTrackPublication(Track.Source.Camera)
         ?.track as LocalVideoTrack | undefined;
       const wanted =
@@ -1779,6 +1780,13 @@ export function useSpaceGroupCall(
         await existing.stopProcessor().catch(() => undefined);
       }
       await prepareCameraDeviceForEnable(lkRoom);
+      // A camera-off (or leave) while the devices were read wins: it runs its own path.
+      if (
+        cameraRequestEpochRef.current !== requestEpoch ||
+        !cameraRequestedOnRef.current
+      ) {
+        return false;
+      }
       try {
         await participant.setCameraEnabled(true);
       } catch (err) {

@@ -231,6 +231,8 @@ export function HumanChatPanelCallBanner({
   includeReactionsWhenLeaveOnly = false,
 }: HumanChatPanelCallBannerProps) {
   const t = useTranslations('HumanChatPanel');
+  // Before the early returns below: hooks must run on every render.
+  const cameraNoticeText = useCallCameraNoticeText();
   const isPipAlertDensity = alertDensity === 'pip';
   const alertRowClassName = isPipAlertDensity
     ? callAccentAlertCompactRowClassName
@@ -326,7 +328,6 @@ export function HumanChatPanelCallBanner({
     cameraAccessBlocked && callState === 'connected';
   const showCameraDeviceNoticeAlert =
     cameraDeviceNotice != null && callState === 'connected';
-  const cameraNoticeText = useCallCameraNoticeText();
   const showCaptureConsentAlert =
     callState === 'connected' && captureConsent != null;
 
