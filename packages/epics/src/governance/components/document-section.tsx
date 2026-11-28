@@ -54,7 +54,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
     pageSize,
   });
   const showRecordEmpty =
-    !isLoading && !error && pagination?.totalPages === 0 && !searchTerm.trim();
+    !isLoading && !error && pagination?.totalPages === 0 && !searchTerm?.trim();
 
   return (
     <div className="flex flex-col justify-around items-center gap-4">
@@ -101,7 +101,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
           <Empty>
             <p>{tAgreements('listFailedToLoad')}</p>
           </Empty>
-        ) : searchTerm.trim() ? (
+        ) : searchTerm?.trim() ? (
           <Empty>
             <p>{tAgreements('listIsEmpty')}</p>
           </Empty>

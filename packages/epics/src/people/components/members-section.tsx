@@ -247,7 +247,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
           </div>
         )
       ) : !isLoading && pagination?.total === 0 ? (
-        searchTerm.trim() ? (
+        searchTerm?.trim() ? (
           <Empty>
             <p>{tMembers('listIsEmpty')}</p>
           </Empty>

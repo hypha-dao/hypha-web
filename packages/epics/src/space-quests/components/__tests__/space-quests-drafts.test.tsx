@@ -169,7 +169,7 @@ describe('quest list drafts', () => {
     );
     expect(
       screen
-        .getByRole('heading', { name: /title/ })
+        .getByRole('heading', { level: 1 })
         .closest('header')
         ?.contains(create),
     ).toBe(false);
@@ -221,6 +221,9 @@ describe('quest list drafts', () => {
     harness.visible = false;
     render(<SpaceQuestsSection spaceSlug="sandbox" />);
     expect(screen.queryByTestId('quest-drafts-list')).toBeNull();
-    expect(screen.getByTestId('quest-column-paused')).toBeTruthy();
+    expect(screen.queryByTestId('quest-column-paused')).toBeNull();
+    expect(screen.getByRole('heading', { level: 2 }).textContent).toBe(
+      'empty.title',
+    );
   });
 });
