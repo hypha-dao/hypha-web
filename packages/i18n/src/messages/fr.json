@@ -6002,6 +6002,34 @@
       "invalid": "Ce lien d’approbation n’est pas valide. Retournez dans l’application et recommencez.",
       "accountChanged": "Votre compte a changé dans un autre onglet, cette approbation n’a donc pas été enregistrée. Pour utiliser un autre compte, déconnectez-vous d’abord, puis recommencez depuis l’application."
     },
+    "apps": {
+      "title": "Applications d’IA connectées",
+      "intro": "Ces applications peuvent utiliser votre compte Hypha. Vous pouvez changer les espaces que chacune peut utiliser, ou la déconnecter.",
+      "signInTitle": "Vos applications d’IA connectées",
+      "signInIntro": "Connectez-vous avec votre compte Hypha pour voir et gérer les applications d’IA qui y sont connectées.",
+      "empty": "Aucune application d’IA n’est connectée à votre compte.",
+      "unnamed": "Application sans nom",
+      "kind": {
+        "cimd": "Exécutée depuis {host}",
+        "registered": "Ajoutée par Hypha",
+        "registeredWithHost": "Ajoutée par Hypha, exécutée depuis {host}",
+        "dcr": "Enregistrée par elle-même ; son nom n’a pas été vérifié"
+      },
+      "mayDo": "Ce qu’elle peut faire",
+      "spaces": "Espaces",
+      "spacesNone": "Aucun espace",
+      "connectedOn": "Connectée le {date}",
+      "lastActive": "dernière activité le {date}",
+      "changeSpaces": "Changer les espaces",
+      "whenApplied": "L’application reçoit le nouveau choix la prochaine fois qu’elle renouvelle son accès, au plus tard dans 10 minutes.",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "saved": "Enregistré. L’application utilisera les nouveaux espaces dans 10 minutes au plus.",
+      "disconnect": "Déconnecter",
+      "confirmDisconnect": "Déconnecter {name} ? Elle ne pourra plus utiliser votre compte Hypha. L’accès qu’elle a déjà prend fin dans 10 minutes au plus. Pour l’utiliser à nouveau, reconnectez-la depuis l’application.",
+      "disconnected": "{name} est déconnectée.",
+      "failed": "Un problème est survenu et rien n’a été modifié. Veuillez réessayer."
+    },
     "consent": {
       "title": "Approuver {name} ?",
       "signedInAs": "Connecté en tant que {name}. Cette application demande à :",

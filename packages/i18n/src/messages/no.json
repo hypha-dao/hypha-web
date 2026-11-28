@@ -6010,6 +6010,34 @@
       "invalid": "Denne godkjenningslenken er ikke gyldig. Gå tilbake til appen og start på nytt.",
       "accountChanged": "Kontoen din ble endret i en annen fane, så denne godkjenningen ble ikke lagret. Logg ut først for å bruke en annen konto, og start deretter på nytt fra appen."
     },
+    "apps": {
+      "title": "Tilkoblede KI-apper",
+      "intro": "Disse appene kan bruke Hypha-kontoen din. Du kan endre hvilke områder hver app kan bruke, eller koble den fra.",
+      "signInTitle": "Dine tilkoblede KI-apper",
+      "signInIntro": "Logg inn med Hypha-kontoen din for å se og administrere KI-appene som er koblet til den.",
+      "empty": "Ingen KI-apper er koblet til kontoen din.",
+      "unnamed": "App uten navn",
+      "kind": {
+        "cimd": "Kjøres fra {host}",
+        "registered": "Lagt til av Hypha",
+        "registeredWithHost": "Lagt til av Hypha, kjøres fra {host}",
+        "dcr": "Registrerte seg selv; navnet er ikke kontrollert"
+      },
+      "mayDo": "Hva den kan gjøre",
+      "spaces": "Områder",
+      "spacesNone": "Ingen områder",
+      "connectedOn": "Koblet til {date}",
+      "lastActive": "sist aktiv {date}",
+      "changeSpaces": "Endre områder",
+      "whenApplied": "Appen får det nye valget neste gang den fornyer tilgangen sin, senest innen 10 minutter.",
+      "save": "Lagre",
+      "cancel": "Avbryt",
+      "saved": "Lagret. Appen bruker de nye områdene innen 10 minutter.",
+      "disconnect": "Koble fra",
+      "confirmDisconnect": "Koble fra {name}? Den kan ikke lenger bruke Hypha-kontoen din. Tilgang den allerede har, slutter innen 10 minutter. For å bruke den igjen, koble den til på nytt fra appen.",
+      "disconnected": "{name} er koblet fra.",
+      "failed": "Noe gikk galt, og ingenting ble endret. Prøv igjen."
+    },
     "consent": {
       "title": "Godkjenn {name}?",
       "signedInAs": "Innlogget som {name}. Denne appen ber om å:",

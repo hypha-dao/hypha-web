@@ -6019,6 +6019,34 @@
       "invalid": "Este enlace de aprobación no es válido. Vuelve a la app y empieza de nuevo.",
       "accountChanged": "Tu cuenta cambió en otra pestaña, así que esta aprobación no se guardó. Para usar otra cuenta, cierra sesión primero y vuelve a empezar desde la app."
     },
+    "apps": {
+      "title": "Apps de IA conectadas",
+      "intro": "Estas apps pueden usar tu cuenta de Hypha. Puedes cambiar los espacios que puede usar cada una o desconectarla.",
+      "signInTitle": "Tus apps de IA conectadas",
+      "signInIntro": "Inicia sesión con tu cuenta de Hypha para ver y gestionar las apps de IA conectadas a ella.",
+      "empty": "No hay apps de IA conectadas a tu cuenta.",
+      "unnamed": "App sin nombre",
+      "kind": {
+        "cimd": "Se ejecuta desde {host}",
+        "registered": "Añadida por Hypha",
+        "registeredWithHost": "Añadida por Hypha, se ejecuta desde {host}",
+        "dcr": "Se registró a sí misma; su nombre no se ha comprobado"
+      },
+      "mayDo": "Qué puede hacer",
+      "spaces": "Espacios",
+      "spacesNone": "Ningún espacio",
+      "connectedOn": "Conectada el {date}",
+      "lastActive": "última actividad el {date}",
+      "changeSpaces": "Cambiar espacios",
+      "whenApplied": "La app recibe la nueva elección la próxima vez que renueve su acceso, como máximo en 10 minutos.",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "saved": "Guardado. La app usará los nuevos espacios en un máximo de 10 minutos.",
+      "disconnect": "Desconectar",
+      "confirmDisconnect": "¿Desconectar {name}? Ya no podrá usar tu cuenta de Hypha. El acceso que ya tiene termina en un máximo de 10 minutos. Para volver a usarla, conéctala de nuevo desde la app.",
+      "disconnected": "{name} está desconectada.",
+      "failed": "Algo salió mal y no se cambió nada. Inténtalo de nuevo."
+    },
     "consent": {
       "title": "¿Aprobar {name}?",
       "signedInAs": "Sesión iniciada como {name}. Esta app solicita:",

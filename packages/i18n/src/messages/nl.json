@@ -6011,6 +6011,34 @@
       "invalid": "Deze goedkeuringslink is niet geldig. Ga terug naar de app en begin opnieuw.",
       "accountChanged": "Je account is in een ander tabblad gewijzigd, dus deze goedkeuring is niet opgeslagen. Meld je eerst af om een ander account te gebruiken en begin daarna opnieuw vanuit de app."
     },
+    "apps": {
+      "title": "Verbonden AI-apps",
+      "intro": "Deze apps kunnen je Hypha-account gebruiken. Je kunt per app wijzigen welke spaces hij mag gebruiken, of hem loskoppelen.",
+      "signInTitle": "Je verbonden AI-apps",
+      "signInIntro": "Log in met je Hypha-account om de AI-apps die ermee verbonden zijn te zien en te beheren.",
+      "empty": "Er zijn geen AI-apps met je account verbonden.",
+      "unnamed": "Naamloze app",
+      "kind": {
+        "cimd": "Draait vanaf {host}",
+        "registered": "Toegevoegd door Hypha",
+        "registeredWithHost": "Toegevoegd door Hypha, draait vanaf {host}",
+        "dcr": "Heeft zichzelf geregistreerd; de naam is niet gecontroleerd"
+      },
+      "mayDo": "Wat hij mag doen",
+      "spaces": "Spaces",
+      "spacesNone": "Geen spaces",
+      "connectedOn": "Verbonden op {date}",
+      "lastActive": "laatst actief op {date}",
+      "changeSpaces": "Spaces wijzigen",
+      "whenApplied": "De app krijgt de nieuwe keuze zodra hij zijn toegang de volgende keer vernieuwt, uiterlijk binnen 10 minuten.",
+      "save": "Opslaan",
+      "cancel": "Annuleren",
+      "saved": "Opgeslagen. De app gebruikt de nieuwe spaces binnen 10 minuten.",
+      "disconnect": "Loskoppelen",
+      "confirmDisconnect": "{name} loskoppelen? De app kan je Hypha-account dan niet meer gebruiken. Toegang die hij al heeft, eindigt binnen 10 minuten. Om hem weer te gebruiken, verbind je hem opnieuw vanuit de app.",
+      "disconnected": "{name} is losgekoppeld.",
+      "failed": "Er ging iets mis en er is niets gewijzigd. Probeer het opnieuw."
+    },
     "consent": {
       "title": "{name} goedkeuren?",
       "signedInAs": "Ingelogd als {name}. Deze app vraagt om:",

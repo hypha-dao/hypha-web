@@ -154,6 +154,12 @@ export const AUTH_SERVER_API_BASE_PATH = '/api/auth';
 export const AUTH_SERVER_JWKS_PATH = '/jwks.json';
 export const AUTH_SERVER_LOGIN_PATH = '/auth/login';
 export const AUTH_SERVER_CONSENT_PATH = '/auth/consent';
+/**
+ * Actions of the connected-apps page, under the API base path. Served by this package's handler,
+ * never by the library (see `handleConnectedApps` in handler.ts).
+ */
+export const CONNECTED_APPS_DISCONNECT_PATH = '/connected-apps/disconnect';
+export const CONNECTED_APPS_SPACES_PATH = '/connected-apps/spaces';
 
 export type AuthServerConfig = {
   enabled: true;

@@ -2,21 +2,15 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  Button,
-  Checkbox,
-} from '@hypha-platform/ui';
+import { Button, Checkbox } from '@hypha-platform/ui';
 import {
   AUTH_SERVER_API_BASE_PATH,
-  MAX_SPACE_GRANTS,
   SCOPES_REQUIRING_SPACES_READ,
   describeClient,
   type ClientKind,
   type ScopeCopyKey,
 } from '@hypha-platform/auth-server/client';
+import { SpacePicker, type PickerSpace } from '../_lib/space-picker';
 
 type Scope = {
   scope: string;
@@ -28,13 +22,6 @@ type Scope = {
 /** Scopes that act in the spaces chosen under `spaces:read`: only offered while it is ticked. */
 const needsSpacesRead = (scope: string) =>
   (SCOPES_REQUIRING_SPACES_READ as readonly string[]).includes(scope);
-
-type PickerSpace = {
-  id: number;
-  title: string;
-  slug: string;
-  logoUrl: string | null;
-};
 
 export function ConsentForm({
   oauthQuery,
@@ -78,10 +65,6 @@ export function ConsentForm({
   const [chosen, setChosen] = React.useState<Set<number>>(
     () => new Set(initialSpaces.chosen),
   );
-  // The explicit choice stays available without the list when the stored one is being kept.
-  const canChooseSpaces = Boolean(pickerSpaces) || initialSpaces.keptUnlisted;
-  const [filter, setFilter] = React.useState('');
-  const overLimit = (pickerSpaces?.length ?? 0) > MAX_SPACE_GRANTS;
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState('');
 
@@ -94,15 +77,6 @@ export function ConsentForm({
       if (!on && scope === 'spaces:read')
         for (const other of prev)
           if (needsSpacesRead(other)) next.delete(other);
-      return next;
-    });
-
-  const toggleSpace = (id: number, on: boolean) =>
-    setChosen((prev) => {
-      if (on && prev.size >= MAX_SPACE_GRANTS) return prev;
-      const next = new Set(prev);
-      if (on) next.add(id);
-      else next.delete(id);
       return next;
     });
 
@@ -163,13 +137,6 @@ export function ConsentForm({
   );
   const showPicker = granted.has('spaces:read');
   const needsSpaces = showPicker && mode === 'spaces' && chosen.size === 0;
-  const needle = filter.trim().toLowerCase();
-  const visibleSpaces = (pickerSpaces ?? []).filter(
-    (x) =>
-      !needle ||
-      x.title.toLowerCase().includes(needle) ||
-      x.slug.toLowerCase().includes(needle),
-  );
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-4 px-4 py-12">
@@ -219,136 +186,20 @@ export function ConsentForm({
         ))}
       </ul>
       {showPicker ? (
-        <fieldset className="flex flex-col gap-3">
-          <legend className="text-2 font-medium">
-            {[...granted].some(needsSpacesRead)
+        <SpacePicker
+          name="space-mode"
+          title={
+            [...granted].some(needsSpacesRead)
               ? t('consent.spaces.titleWithWrite')
-              : t('consent.spaces.title')}
-          </legend>
-          <label className="flex items-start gap-3 border p-3">
-            <input
-              type="radio"
-              name="space-mode"
-              className="mt-1"
-              checked={mode === 'all'}
-              onChange={() => setMode('all')}
-            />
-            <span className="flex flex-col">
-              <span className="text-2 font-medium">
-                {t('consent.spaces.all.title')}
-              </span>
-              <span className="text-1 text-neutral-11">
-                {t('consent.spaces.all.detail')}
-              </span>
-            </span>
-          </label>
-          <label
-            className={`flex items-start gap-3 border p-3 ${
-              canChooseSpaces ? '' : 'opacity-60'
-            }`}
-          >
-            <input
-              type="radio"
-              name="space-mode"
-              className="mt-1"
-              checked={mode === 'spaces'}
-              disabled={!canChooseSpaces}
-              onChange={() => setMode('spaces')}
-            />
-            <span className="flex flex-col">
-              <span className="text-2 font-medium">
-                {t('consent.spaces.explicit.title')}
-              </span>
-              <span className="text-1 text-neutral-11">
-                {t('consent.spaces.explicit.detail')}
-              </span>
-            </span>
-          </label>
-          {mode === 'spaces' && pickerSpaces ? (
-            <div className="flex flex-col gap-2 pl-6">
-              {pickerSpaces.length === 0 ? (
-                <p className="text-1 text-neutral-11">
-                  {t('consent.spaces.none')}
-                </p>
-              ) : (
-                <>
-                  <input
-                    type="search"
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                    placeholder={t('consent.spaces.filter')}
-                    aria-label={t('consent.spaces.filter')}
-                    className="border p-2 text-2"
-                  />
-                  <div className="flex flex-wrap items-center gap-3 text-1">
-                    <button
-                      type="button"
-                      className="underline"
-                      onClick={() =>
-                        setChosen(
-                          new Set(
-                            pickerSpaces
-                              .slice(0, MAX_SPACE_GRANTS)
-                              .map((x) => x.id),
-                          ),
-                        )
-                      }
-                    >
-                      {t('consent.spaces.selectAll')}
-                    </button>
-                    <button
-                      type="button"
-                      className="underline"
-                      onClick={() => setChosen(new Set())}
-                    >
-                      {t('consent.spaces.selectNone')}
-                    </button>
-                  </div>
-                  {overLimit ? (
-                    <p role="note" className="text-1 text-warning-11">
-                      {t('consent.spaces.limit', { max: MAX_SPACE_GRANTS })}
-                    </p>
-                  ) : null}
-                  <ul className="flex max-h-64 flex-col gap-2 overflow-y-auto">
-                    {visibleSpaces.map((space) => (
-                      <li key={space.id} className="flex items-start gap-3">
-                        <Checkbox
-                          id={`space-${space.id}`}
-                          checked={chosen.has(space.id)}
-                          onCheckedChange={(v) =>
-                            toggleSpace(space.id, v === true)
-                          }
-                        />
-                        <Avatar className="h-6 w-6">
-                          {space.logoUrl ? (
-                            <AvatarImage src={space.logoUrl} alt="" />
-                          ) : null}
-                          <AvatarFallback className="text-1">
-                            {(space.title || '?').slice(0, 1).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <label htmlFor={`space-${space.id}`} className="text-2">
-                          {space.title}{' '}
-                          <span className="text-1 text-neutral-11">
-                            {space.slug}
-                          </span>
-                        </label>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </div>
-          ) : null}
-          {!pickerSpaces ? (
-            <p role="note" className="text-1 text-neutral-11">
-              {initialSpaces.keptUnlisted && mode === 'spaces'
-                ? t('consent.spaces.unavailableKept')
-                : t('consent.spaces.unavailable')}
-            </p>
-          ) : null}
-          <p className="text-1 text-neutral-11">{t('consent.spaces.note')}</p>
-        </fieldset>
+              : t('consent.spaces.title')
+          }
+          pickerSpaces={pickerSpaces}
+          mode={mode}
+          onModeChange={setMode}
+          chosen={chosen}
+          onChosenChange={setChosen}
+          keptUnlisted={initialSpaces.keptUnlisted}
+        />
       ) : null}
       {error ? (
         <p role="alert" className="text-2">

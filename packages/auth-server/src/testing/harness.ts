@@ -74,12 +74,13 @@ export async function makeServer(
   deps: Parameters<typeof createAuthServer>[1] = {},
 ) {
   const config = testConfig(over);
-  const pool = createAuthDbPool(config.databaseUrl);
+  // One pool for the server and the test: an injected one is also the one the test closes.
+  const pool = deps.pool ?? createAuthDbPool(config.databaseUrl);
   const server = createAuthServer(config, {
-    pool,
     providers: { privy: fakeProvider('privy'), other: fakeProvider('other') },
     fetchClientMetadataResource: fakeMetadataFetch,
     ...deps,
+    pool,
   });
   return {
     ...server,
@@ -236,6 +237,21 @@ export async function tokenRequest(s: Harness, params: Record<string, string>) {
   return { res, body: await json(res) };
 }
 
+/** A token request through the app's handler, as production serves it (checks after issuance). */
+export async function appTokenRequest(
+  s: Harness,
+  params: Record<string, string>,
+) {
+  const res = await s.appHandler(
+    req('/api/auth/oauth2/token', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(params).toString(),
+    }),
+  );
+  return { res, body: await json(res) };
+}
+
 /** Full happy path: authorize -> login -> consent -> code exchange. Returns tokens and the jar. */
 export async function fullFlow(
   s: Harness,
@@ -244,6 +260,10 @@ export async function fullFlow(
     scope?: string;
     resource?: string;
     spaceGrants?: unknown;
+    /** Leave `resource` out of the requests (the library then issues an opaque access token). */
+    noResource?: boolean;
+    /** Exchange the code through the app's handler instead of the library directly. */
+    tokenViaApp?: boolean;
   } = {},
 ) {
   const scope = opts.scope ?? 'spaces:read offline_access';
@@ -251,6 +271,7 @@ export async function fullFlow(
   const pkce = makePkce();
   const jar = new CookieJar();
   const u = authorizeUrl(pkce, { scope, resource });
+  if (opts.noResource) u.searchParams.delete('resource');
   const a = await s.handler(req(u.pathname + u.search));
   const loginLoc = new URL(a.headers.get('location')!, ISSUER);
   const login = await signIn(s, jar, loginLoc.search.slice(1), opts.person);
@@ -275,13 +296,13 @@ export async function fullFlow(
     cbUrl = new URL(c.body.url);
   }
   const code = cbUrl.searchParams.get('code')!;
-  const t = await tokenRequest(s, {
+  const t = await (opts.tokenViaApp ? appTokenRequest : tokenRequest)(s, {
     grant_type: 'authorization_code',
     code,
     code_verifier: pkce.verifier,
     client_id: CLIENT_ID,
     redirect_uri: REDIRECT_URI,
-    resource,
+    ...(opts.noResource ? {} : { resource }),
   });
   return {
     pkce,
