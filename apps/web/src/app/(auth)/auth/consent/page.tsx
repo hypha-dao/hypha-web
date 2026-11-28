@@ -2,6 +2,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import {
   decideConsentEntry,
+  initialSpaceChoice,
   inspectConsentQuery,
   loadConsentRequest,
   separatePageLang,
@@ -90,6 +91,12 @@ export default async function AuthServerConsentPage({
   const pickerSpaces = asksToRead
     ? await loadPickerSpaces(request.person.id)
     : null;
+  // An app that is already connected opens the picker on the spaces it has now, so approving a
+  // new scope without touching the picker never widens what it may read.
+  const initialSpaces = initialSpaceChoice(
+    request.currentGrant,
+    pickerSpaces ? pickerSpaces.map((space) => space.id) : null,
+  );
   return (
     <AuthIntlProvider intl={intl}>
       <ConsentForm
@@ -101,10 +108,15 @@ export default async function AuthServerConsentPage({
           name: clip(request.client.name, 80),
           // Never clipped: a cut-off host would show an address that is not the real one.
           host: request.client.host,
-          redirectHost: request.client.redirectHost,
+          // A loopback address is an app on the person's own computer: worded, never a port.
+          redirectHost:
+            request.client.redirectKind === 'local'
+              ? t('consent.client.localRedirect')
+              : request.client.redirectHost,
         }}
         scopes={request.scopes}
         pickerSpaces={pickerSpaces}
+        initialSpaces={initialSpaces}
       />
     </AuthIntlProvider>
   );

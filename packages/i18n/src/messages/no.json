@@ -6031,7 +6031,8 @@
         "cimd": "Hypha har ikke godkjent denne appen. Den kjøres fra <strong>{host}</strong>: Hypha leste opplysningene fra den adressen, så adressen er ekte. Ingenting annet om appen er kontrollert. Den kaller seg <strong>{name}</strong>. Etter at du har godkjent, sendes du tilbake til <strong>{redirectHost}</strong>. Godkjenn bare apper du har startet selv.",
         "dcr": "Hypha har ikke godkjent denne appen. Den har registrert seg selv og valgt sitt eget navn, <strong>{name}</strong>, som Hypha ikke har kontrollert: hvem som helst kan registrere et hvilket som helst navn, og Hypha kan ikke se hvem som står bak appen. Etter at du har godkjent, sendes du tilbake til <strong>{redirectHost}</strong>. Godkjenn bare apper du har startet selv.",
         "registered": "Hypha har ikke verifisert denne appen. Den kaller seg <strong>{name}</strong>. Etter at du har godkjent, sendes du tilbake til <strong>{redirectHost}</strong>. Godkjenn bare apper du har startet selv.",
-        "registeredWithHost": "Hypha har ikke verifisert denne appen. Den kaller seg <strong>{name}</strong> og identifiserer seg fra <strong>{host}</strong>. Etter at du har godkjent, sendes du tilbake til <strong>{redirectHost}</strong>. Godkjenn bare apper du har startet selv."
+        "registeredWithHost": "Hypha har ikke verifisert denne appen. Den kaller seg <strong>{name}</strong> og identifiserer seg fra <strong>{host}</strong>. Etter at du har godkjent, sendes du tilbake til <strong>{redirectHost}</strong>. Godkjenn bare apper du har startet selv.",
+        "localRedirect": "en app på denne datamaskinen (en lokal tilkobling)"
       },
       "scopes": {
         "spacesRead": {
@@ -6073,7 +6074,8 @@
         "selectNone": "Fjern alle valg",
         "limit": "Du er med i mer enn {max} områder, så bare de første {max} er valgt. Velg «Alle områdene mine» for å inkludere alle.",
         "none": "Du er ikke medlem av noe område ennå. Velg «Alle områdene mine» i stedet, eller bli med i et område først.",
-        "unavailable": "Områdene dine kunne ikke lastes akkurat nå. Du kan fortsatt velge «Alle områdene mine»."
+        "unavailable": "Områdene dine kunne ikke lastes akkurat nå. Du kan fortsatt velge «Alle områdene mine».",
+        "unavailableKept": "Områdene dine kunne ikke lastes akkurat nå, så områdene du valgte tidligere forblir som de er. Du kan også velge «Alle områdene mine»."
       }
     }
   }

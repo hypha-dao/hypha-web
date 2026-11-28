@@ -204,6 +204,45 @@ run(
       expect(await readGrant(s.pool, h.PERSON, h.CLIENT_ID)).toEqual([spaceA]);
     });
 
+    /** A new authorization by the same person and app, up to the consent view (or the callback). */
+    const consentViewFor = async (scope: string) => {
+      const pkce = h.makePkce();
+      const jar = new h.CookieJar();
+      const u = h.authorizeUrl(pkce, { scope, resource: h.RESOURCE });
+      const a = await s.handler(h.req(u.pathname + u.search, { jar }));
+      const loc = new URL(a.headers.get('location')!, h.ISSUER);
+      const login = await h.signIn(s, jar, loc.search.slice(1));
+      const next = new URL(login.body.url, h.ISSUER);
+      return loadConsentRequest(
+        s,
+        new Headers({ cookie: jar.header() }),
+        next.search,
+      );
+    };
+
+    it('a new connection opens the picker with no stored choice', async () => {
+      const view = await consentViewFor('spaces:read offline_access');
+      expect(view!.currentGrant).toBeNull();
+    });
+
+    it('asked again for a new scope, the consent page carries the stored list (the picker never opens on "all")', async () => {
+      const f = await h.fullFlow(s, { spaceGrants: [spaceA] });
+      expect(f.stage).toBe('done');
+      const view = await consentViewFor(
+        'spaces:read agreements:vote offline_access',
+      );
+      expect(view!.scopes.map((x) => x.scope)).toContain('agreements:vote');
+      expect(view!.currentGrant).toEqual([spaceA]);
+    });
+
+    it('a stored "all" is carried as "all"', async () => {
+      await h.fullFlow(s, { spaceGrants: 'all' });
+      const view = await consentViewFor(
+        'spaces:read agreements:vote offline_access',
+      );
+      expect(view!.currentGrant).toBe('all');
+    });
+
     it('the consent page offers only the scopes the MCP resource accepts', async () => {
       const pkce = h.makePkce();
       const jar = new h.CookieJar();

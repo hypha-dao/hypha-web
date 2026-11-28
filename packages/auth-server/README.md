@@ -47,7 +47,7 @@ No resource is protected yet. A resource (for example the MCP server or the API)
 
 - **Metadata-document clients (CIMD):** the `client_id` is an HTTPS URL; the consent page shows the proven host.
 - **Registered clients:** pre-approved by Hypha. A row counts as registered only when it is marked `metadata.registration = 'registered'`; a row with no marker and no metadata-document id is treated like a dynamically registered client (least trusted).
-  The list of registered clients is `src/registered-clients.ts` (Cursor: client id `hypha-cursor`, redirect `cursor://anysphere.cursor-mcp/oauth/callback`, scopes `spaces:read`, `signals:write` and `offline_access`; public client, PKCE, no secret). A change to a client's scopes takes effect only after the list is applied again. Nothing creates the rows at runtime: a person applies the list with `seedRegisteredClients({ db })` (one idempotent upsert per client) against the database they choose. To add a redirect an app is known to send, add it to that client's `redirectUris` and apply again. Dynamic registration is separate and still accepts only https or loopback redirects.
+  Registered clients are database rows in `as_oauth_client`, created and changed by hand with a reviewed statement (environment data, not code): nothing in this package creates or overwrites them. The row decides the exact redirect URIs (https, loopback `http`, or a documented app scheme), the scopes the client may ask for (its ceiling), `tokenEndpointAuthMethod = 'none'` (public client), `requirePKCE = true`, `skipConsent = false` and the `registered` marker. A change to a row applies at the next authorization. Dynamic registration is separate and still accepts only https or loopback redirects.
 - **Onboarding log lines:** one line per authorize, consent and token step: `[auth-server:onboarding] client_kind=... step=... error=... redirect_host=...`. Built from an allow-list (`onboardingLogLine` in `src/redact.ts`): no token, code, free text, full redirect URL or email.
 - **Dynamically registered clients (optional):** anonymous public clients, capped, cleaned up after 7 days; the consent page shows the name as claimed, not proven.
 
@@ -63,6 +63,11 @@ registered client `DCR_ALLOWED_SCOPES` (no `signals:write`). The library stores 
 it registers itself (`CLIENT_REGISTRATION_CEILING_SCOPES`, the union); dynamic registrations are
 narrowed to their list when created, and the consent page offers and accepts only the scopes of the
 client's kind.
+
+The consent page names a loopback redirect (`127.0.0.1`, `localhost`, `[::1]`) as an app on the
+person's own computer and never shows its port; an https redirect shows its host and a custom app
+scheme its scheme. When the page is shown again for an app that is already connected (it asks for a
+new scope), the space picker opens on the spaces the app has now, never on "all my spaces" by default.
 
 Access tokens carry `space_grants` (the chosen spaces) and `client_name` (the name the client
 declared for itself, cleaned and capped at 120 characters, unverified). Access tokens last 10 minutes; refresh tokens

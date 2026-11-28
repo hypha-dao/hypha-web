@@ -8,14 +8,29 @@ describe('describeRedirect: how the consent page names where the person is sent 
     );
   });
 
-  it('loopback http: host and port', () => {
-    expect(describeRedirect('http://127.0.0.1:33418/callback')).toEqual({
+  it('loopback: an app on this computer, never a host or a port', () => {
+    for (const value of [
+      'http://127.0.0.1:33418/callback',
+      'http://127.0.0.1/callback',
+      'http://localhost:6274/cb',
+      'http://LOCALHOST:8787/callback',
+      'http://[::1]:43554/callback',
+      'https://localhost:3000/cb',
+    ]) {
+      expect(describeRedirect(value)).toEqual({ kind: 'local', display: '' });
+    }
+  });
+
+  it('a host that only looks local stays a website, with its port', () => {
+    expect(describeRedirect('http://localhost.evil.example:80/cb')).toEqual({
       kind: 'web',
-      display: '127.0.0.1:33418',
+      display: 'localhost.evil.example',
     });
-    expect(describeRedirect('http://localhost:6274/cb').display).toBe(
-      'localhost:6274',
-    );
+    expect(describeRedirect('https://127.0.0.1.nip.io/cb').kind).toBe('web');
+    expect(describeRedirect('https://app.example:8443/cb')).toEqual({
+      kind: 'web',
+      display: 'app.example:8443',
+    });
   });
 
   it('custom scheme with a host: scheme and host, never empty', () => {

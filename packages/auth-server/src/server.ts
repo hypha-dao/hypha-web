@@ -9,6 +9,5 @@ export * from './connected-apps';
 export * from './protected';
 export * from './consent';
 export * from './redirect-display';
-export * from './registered-clients';
 export * from './onboarding-log';
 export * from './grants';
