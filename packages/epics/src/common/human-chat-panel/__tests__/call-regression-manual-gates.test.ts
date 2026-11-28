@@ -446,7 +446,10 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
       'human-chat-panel/human-chat-panel-in-call-controls.tsx',
     );
     expect(source).toContain('useSymmetricalDockToolbar');
-    expect(source).toContain('grid-cols-[1fr_auto_1fr]');
+    // #2789: side groups never shrink below their buttons (no one-sided overflow).
+    expect(source).toContain(
+      'grid-cols-[minmax(max-content,1fr)_auto_minmax(max-content,1fr)]',
+    );
     expect(source).toContain('justify-end');
     expect(source).toContain('justify-start');
     expect(source).toContain(

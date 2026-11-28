@@ -9,6 +9,7 @@ import {
   type RemoteParticipant,
 } from 'livekit-client';
 import { isMatrixCallDebugEnabled } from '../matrix-webrtc-env';
+import { liveKitCameraCaptureDefaults } from './call-video-capture-constraints';
 import {
   MATRIX_RTC_SESSION_EVENT,
   type MatrixRtcSessionLike,
@@ -74,6 +75,8 @@ export function createLiveKitRoom(): Room {
     // smaller layer than its tile needs, e.g. a 720p screenshare in a 1080p-sized window.
     adaptiveStream: { pixelDensity: 'screen' },
     dynacast: true,
+    // Phones open the front camera; desktop keeps the browser default (empty).
+    videoCaptureDefaults: liveKitCameraCaptureDefaults(),
   });
 }
 

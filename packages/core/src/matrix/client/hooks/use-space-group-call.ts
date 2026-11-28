@@ -5,7 +5,26 @@ import * as MatrixSdk from 'matrix-js-sdk';
 import { ClientEvent, RoomEvent } from 'matrix-js-sdk';
 import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import type { LocalVideoTrack, Room as LiveKitRoom } from 'livekit-client';
-import { LocalAudioTrack, Track } from 'livekit-client';
+import {
+  LocalAudioTrack,
+  RoomEvent as LiveKitRoomEvent,
+  Track,
+  TrackEvent,
+} from 'livekit-client';
+import {
+  type CallCameraDevice,
+  type CallCameraDeviceNotice,
+  constraintDeviceId,
+  listCallCameras,
+  persistSavedCallCamera,
+  pickFallbackCamera,
+  preferredCameraForCapture,
+  readSavedCallCamera,
+  resolvePreferredCamera,
+  sameCallCameras,
+  type SavedCallCamera,
+  waitForCameraRecovery,
+} from './call-camera-device';
 import {
   CALL_BACKGROUND_EFFECT_NONE,
   CALL_BACKGROUND_FALLBACK_BLUR,
@@ -527,6 +546,23 @@ export function useSpaceGroupCall(
       { epoch: () => cameraRequestEpochRef.current },
     ),
   );
+  /** #2789: the cameras on this device (ids and labels once camera permission is granted). */
+  const [cameraDevices, setCameraDevices] = useState<CallCameraDevice[]>([]);
+  const cameraDevicesRef = useRef<CallCameraDevice[]>([]);
+  /** The device the camera track captures from; null without a camera track. */
+  const [activeCameraDeviceId, setActiveCameraDeviceId] = useState<
+    string | null
+  >(null);
+  /** The member's stored camera; null = browser default. Only the member changes it. */
+  const [savedCamera, setSavedCamera] = useState<SavedCallCamera | null>(null);
+  const savedCameraRef = useRef<SavedCallCamera | null>(null);
+  const [cameraSwitching, setCameraSwitching] = useState(false);
+  const [cameraDeviceNotice, setCameraDeviceNotice] =
+    useState<CallCameraDeviceNotice | null>(null);
+  /** Camera switches and device-change handling run one at a time, in order. */
+  const cameraDeviceChainRef = useRef<Promise<unknown>>(Promise.resolve());
+  /** A camera that failed to open; not retried automatically until the device list changes. */
+  const failedCameraDeviceIdRef = useRef<string | null>(null);
   const [
     unsupportedVoiceProcessingConstraints,
     setUnsupportedVoiceProcessingConstraints,
@@ -1426,6 +1462,8 @@ export function useSpaceGroupCall(
       cameraRequestedOnRef.current = false;
       backgroundRoomRef.current = null;
       backgroundReconcilerRef.current.invalidate();
+      setCameraDeviceNotice(null);
+      setCameraSwitching(false);
       lateBackgroundStartsRef.current = 0;
       setBackgroundEffectStatus('idle');
       backgroundFrameDropDetectorRef.current.reset();
@@ -1465,6 +1503,83 @@ export function useSpaceGroupCall(
     }
     setLocalPreviewStream(localPreviewStreamFromRoom(lkRoom));
   }, []);
+
+  /** #2789: re-reads the cameras without asking for permission (no ids before it is granted). */
+  const refreshCameraDevices = useCallback(async (): Promise<
+    CallCameraDevice[]
+  > => {
+    if (
+      typeof navigator === 'undefined' ||
+      !navigator.mediaDevices?.enumerateDevices
+    ) {
+      return cameraDevicesRef.current;
+    }
+    try {
+      const cameras = listCallCameras(
+        await navigator.mediaDevices.enumerateDevices(),
+      );
+      if (!sameCallCameras(cameras, cameraDevicesRef.current)) {
+        cameraDevicesRef.current = cameras;
+        setCameraDevices(cameras);
+      }
+      return cameras;
+    } catch {
+      return cameraDevicesRef.current;
+    }
+  }, []);
+
+  /** #2789: the device the camera captures from (the capture, not the processed output). */
+  const readActiveCameraDeviceId = useCallback(
+    async (lkRoom: LiveKitRoom | null): Promise<string | null> => {
+      const track = lkRoom?.localParticipant.getTrackPublication(
+        Track.Source.Camera,
+      )?.track as LocalVideoTrack | undefined;
+      const id = track
+        ? (await track.getDeviceId(false).catch(() => undefined)) ?? null
+        : null;
+      setActiveCameraDeviceId(id);
+      return id;
+    },
+    [],
+  );
+
+  /**
+   * #2789: points the next camera capture at the right device before the camera turns on. A new
+   * track uses the room defaults (the stored camera; none stored = browser default as before).
+   * A muted track keeps its old device: if that camera is gone, it moves to another one first,
+   * else unmuting would fail.
+   */
+  const prepareCameraDeviceForEnable = useCallback(
+    async (lkRoom: LiveKitRoom) => {
+      const saved = savedCameraRef.current;
+      const existing = lkRoom.localParticipant.getTrackPublication(
+        Track.Source.Camera,
+      )?.track as LocalVideoTrack | undefined;
+      if (!saved && !existing) return;
+      const cameras = await refreshCameraDevices();
+      const preferred = preferredCameraForCapture(cameras, saved);
+      if (!existing) {
+        if (preferred) {
+          lkRoom.options.videoCaptureDefaults = {
+            ...lkRoom.options.videoCaptureDefaults,
+            deviceId: preferred,
+          };
+        }
+        return;
+      }
+      if (!existing.isMuted || cameras.length === 0) return;
+      const wanted = constraintDeviceId(existing.constraints.deviceId);
+      if (wanted && cameras.some((camera) => camera.deviceId === wanted)) {
+        return;
+      }
+      const next = preferred ?? cameras[0]!.deviceId;
+      // Muted: only recorded on the track, applied by the unmute below.
+      await lkRoom
+        .switchActiveDevice('videoinput', next, false)
+        .catch(() => undefined);
+    },
+    [refreshCameraDevices],
+  );
 
   /** Late-finishing starts removed for the current choice (see `onLateStartRemoved`). */
   const lateBackgroundStartsRef = useRef(0);
@@ -1655,6 +1770,7 @@ export function useSpaceGroupCall(
     async (lkRoom: LiveKitRoom): Promise<boolean> => {
       const participant = lkRoom.localParticipant;
       backgroundRoomRef.current = lkRoom;
+      const requestEpoch = cameraRequestEpochRef.current;
       const existing = participant.getTrackPublication(Track.Source.Camera)
         ?.track as LocalVideoTrack | undefined;
       const wanted =
@@ -1662,6 +1778,14 @@ export function useSpaceGroupCall(
         isCallBackgroundEffectActive(backgroundEffectRef.current);
       if (existing && getCallBackgroundProcessor(existing) && !wanted) {
         await existing.stopProcessor().catch(() => undefined);
+      }
+      await prepareCameraDeviceForEnable(lkRoom);
+      // A camera-off (or leave) while the devices were read wins: it runs its own path.
+      if (
+        cameraRequestEpochRef.current !== requestEpoch ||
+        !cameraRequestedOnRef.current
+      ) {
+        return false;
       }
       try {
         await participant.setCameraEnabled(true);
@@ -1685,9 +1809,17 @@ export function useSpaceGroupCall(
         return cameraOn;
       }
       void reconcileBackgroundEffect('camera-on');
+      // Permission is granted now: the picker gets ids and labels (#2789).
+      void refreshCameraDevices();
+      void readActiveCameraDeviceId(lkRoom);
       return true;
     },
-    [reconcileBackgroundEffect],
+    [
+      prepareCameraDeviceForEnable,
+      readActiveCameraDeviceId,
+      reconcileBackgroundEffect,
+      refreshCameraDevices,
+    ],
   );
 
   const applyScreenshareContentHints = useCallback(
@@ -2447,7 +2579,13 @@ export function useSpaceGroupCall(
           status === 'applying' || status === 'failed' ? 'idle' : status,
         );
       } else {
-        const access = await requestLocalCameraAccess();
+        setCameraDeviceNotice(null);
+        const access = await requestLocalCameraAccess(
+          preferredCameraForCapture(
+            cameraDevicesRef.current,
+            savedCameraRef.current,
+          ),
+        );
         // A newer camera request (e.g. a mute while the permission prompt was open) wins.
         if (cameraRequestEpochRef.current !== requestEpoch) return;
         if (!access.ok) {
@@ -2485,6 +2623,306 @@ export function useSpaceGroupCall(
       syncLocalMuteState,
     ],
   );
+
+  /** #2789: runs camera device work one task at a time (switches, unplug, device changes). */
+  const runCameraDeviceTask = useCallback(
+    <T>(task: () => Promise<T>): Promise<T> => {
+      const run = cameraDeviceChainRef.current.then(task, task);
+      cameraDeviceChainRef.current = run.catch(() => undefined);
+      return run;
+    },
+    [],
+  );
+
+  const cameraLabel = useCallback(
+    (deviceId: string | null) =>
+      cameraDevicesRef.current.find((camera) => camera.deviceId === deviceId)
+        ?.label ?? '',
+    [],
+  );
+
+  /**
+   * #2789: switches the camera live. livekit keeps the track, its publication (no republish) and
+   * the background processor (`restartTrack` restarts it with the new capture). It stops the old
+   * capture before opening the new one, so a failure leaves no camera: the previous camera comes
+   * back, or the camera turns off when that fails too.
+   */
+  const switchCameraDevice = useCallback(
+    async (
+      lkRoom: LiveKitRoom,
+      deviceId: string,
+      previousId: string | null,
+    ): Promise<'switched' | 'reverted' | 'off'> => {
+      try {
+        await lkRoom.switchActiveDevice('videoinput', deviceId);
+        failedCameraDeviceIdRef.current = null;
+        return 'switched';
+      } catch (err) {
+        logCallDebug('camera-device:switch-failed', {
+          message: err instanceof Error ? err.message : String(err),
+        });
+        failedCameraDeviceIdRef.current = deviceId;
+      }
+      const track = lkRoom.localParticipant.getTrackPublication(
+        Track.Source.Camera,
+      )?.track as LocalVideoTrack | undefined;
+      if (!track || track.isMuted) return 'reverted';
+      // A capture opened before the processor failed to restart is not stopped by livekit.
+      for (const capture of track.mediaStream?.getVideoTracks() ?? []) {
+        if (capture.readyState === 'live') capture.stop();
+      }
+      if (previousId && previousId !== deviceId) {
+        try {
+          await lkRoom.switchActiveDevice('videoinput', previousId);
+          return 'reverted';
+        } catch (err) {
+          logCallDebug('camera-device:revert-failed', {
+            message: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+      cameraRequestEpochRef.current += 1;
+      cameraRequestedOnRef.current = false;
+      await lkRoom.localParticipant
+        .setCameraEnabled(false)
+        .catch(() => undefined);
+      return 'off';
+    },
+    [],
+  );
+
+  const afterCameraDeviceChange = useCallback(
+    async (lkRoom: LiveKitRoom) => {
+      await readActiveCameraDeviceId(lkRoom);
+      syncLocalMuteState(lkRoom);
+      refreshLocalPreview();
+      scheduleFeedBatched();
+    },
+    [
+      readActiveCameraDeviceId,
+      refreshLocalPreview,
+      scheduleFeedBatched,
+      syncLocalMuteState,
+    ],
+  );
+
+  /**
+   * #2789: the member picks a camera. Stored on this device and used for later calls; switched
+   * live when the camera is on (when it is off, the next camera-on uses it). A camera that cannot
+   * be opened keeps the previous choice and shows a notice.
+   */
+  const setCameraDevice = useCallback(
+    (deviceId: string) =>
+      runCameraDeviceTask(async () => {
+        const previousSaved = savedCameraRef.current;
+        const next: SavedCallCamera = {
+          deviceId,
+          label: cameraLabel(deviceId),
+        };
+        savedCameraRef.current = next;
+        setSavedCamera(next);
+        persistSavedCallCamera(next);
+        setCameraDeviceNotice(null);
+        const lkRoom = liveKitRoomRef.current;
+        if (!lkRoom) return;
+        const track = lkRoom.localParticipant.getTrackPublication(
+          Track.Source.Camera,
+        )?.track as LocalVideoTrack | undefined;
+        const previousId = track
+          ? (await track.getDeviceId(false).catch(() => undefined)) ?? null
+          : null;
+        if (track && !track.isMuted && previousId === deviceId) return;
+        setCameraSwitching(true);
+        try {
+          const outcome = await switchCameraDevice(
+            lkRoom,
+            deviceId,
+            previousId,
+          );
+          if (outcome !== 'switched') {
+            savedCameraRef.current = previousSaved;
+            setSavedCamera(previousSaved);
+            persistSavedCallCamera(previousSaved);
+            setCameraDeviceNotice({
+              kind: outcome === 'off' ? 'switch_failed_off' : 'switch_failed',
+              label: next.label,
+            });
+          }
+        } finally {
+          setCameraSwitching(false);
+          await afterCameraDeviceChange(lkRoom);
+        }
+      }),
+    [
+      afterCameraDeviceChange,
+      cameraLabel,
+      runCameraDeviceTask,
+      switchCameraDevice,
+    ],
+  );
+
+  /**
+   * #2789: the camera in use stopped (unplugged). livekit first restarts it with the old
+   * constraints: a camera without a stored choice usually comes back on another camera that way.
+   * A stored (exact) camera cannot, so livekit mutes it; then another camera is used (stored
+   * choice first), else the camera stays off. Both end with a notice (Ger, 2026-11-27).
+   */
+  const handleCameraCaptureEnded = useCallback(
+    (lkRoom: LiveKitRoom, track: LocalVideoTrack) =>
+      runCameraDeviceTask(async () => {
+        const lostId =
+          (await track.getDeviceId(false).catch(() => undefined)) ?? null;
+        const outcome = await waitForCameraRecovery(track, 5_000);
+        if (liveKitRoomRef.current !== lkRoom) return;
+        if (!cameraRequestedOnRef.current) return;
+        const cameras = await refreshCameraDevices();
+        if (!track.isMuted) {
+          const nowId = await readActiveCameraDeviceId(lkRoom);
+          if (outcome === 'restarted' && nowId && nowId !== lostId) {
+            setCameraDeviceNotice({
+              kind: 'disconnected_switched',
+              label: cameraLabel(nowId),
+            });
+          }
+          return;
+        }
+        if (await isLocalCameraPermissionDenied()) {
+          cameraRequestedOnRef.current = false;
+          setCameraAccessBlocked(true);
+          await afterCameraDeviceChange(lkRoom);
+          return;
+        }
+        const fallback = pickFallbackCamera(
+          cameras,
+          lostId,
+          savedCameraRef.current,
+        );
+        let cameraOn = false;
+        if (fallback) {
+          await lkRoom
+            .switchActiveDevice('videoinput', fallback)
+            .catch(() => undefined);
+          cameraOn = await enableLocalCamera(lkRoom).catch(() => false);
+        }
+        if (cameraOn) {
+          setCameraDeviceNotice({
+            kind: 'disconnected_switched',
+            label: cameraLabel(fallback),
+          });
+        } else {
+          cameraRequestEpochRef.current += 1;
+          cameraRequestedOnRef.current = false;
+          await lkRoom.localParticipant
+            .setCameraEnabled(false)
+            .catch(() => undefined);
+          setCameraDeviceNotice({ kind: 'disconnected_off' });
+        }
+        await afterCameraDeviceChange(lkRoom);
+      }),
+    [
+      afterCameraDeviceChange,
+      cameraLabel,
+      enableLocalCamera,
+      readActiveCameraDeviceId,
+      refreshCameraDevices,
+      runCameraDeviceTask,
+    ],
+  );
+
+  /**
+   * #2789: cameras were plugged in or out. livekit may move the camera to a newly plugged one
+   * (`Room.selectDefaultDevices`); the member's stored choice wins while it is plugged in (Ger,
+   * 2026-11-27). Without a stored choice livekit's behaviour stays as it was. An unplugged camera
+   * in use is handled by `handleCameraCaptureEnded`.
+   */
+  const handleCameraDevicesChanged = useCallback(
+    (lkRoom: LiveKitRoom) =>
+      runCameraDeviceTask(async () => {
+        failedCameraDeviceIdRef.current = null;
+        const cameras = await refreshCameraDevices();
+        if (liveKitRoomRef.current !== lkRoom) return;
+        const activeId = await readActiveCameraDeviceId(lkRoom);
+        const track = lkRoom.localParticipant.getTrackPublication(
+          Track.Source.Camera,
+        )?.track as LocalVideoTrack | undefined;
+        if (!track || track.isMuted || !cameraRequestedOnRef.current) return;
+        if (!cameras.some((camera) => camera.deviceId === activeId)) return;
+        const preferred = resolvePreferredCamera(
+          cameras,
+          savedCameraRef.current,
+        );
+        if (!preferred || preferred === activeId) return;
+        logCallDebug('camera-device:restore-choice', {});
+        await switchCameraDevice(lkRoom, preferred, activeId);
+        await afterCameraDeviceChange(lkRoom);
+      }),
+    [
+      afterCameraDeviceChange,
+      readActiveCameraDeviceId,
+      refreshCameraDevices,
+      runCameraDeviceTask,
+      switchCameraDevice,
+    ],
+  );
+
+  /** #2789: device events of the call's LiveKit room and its camera track. */
+  useEffect(() => {
+    if (!room) {
+      setActiveCameraDeviceId(null);
+      return;
+    }
+    let watchedTrack: LocalVideoTrack | null = null;
+    const onEnded = () => {
+      if (watchedTrack) void handleCameraCaptureEnded(room, watchedTrack);
+    };
+    const watchCameraTrack = () => {
+      const track =
+        (room.localParticipant.getTrackPublication(Track.Source.Camera)
+          ?.track as LocalVideoTrack | undefined) ?? null;
+      if (track !== watchedTrack) {
+        watchedTrack?.off(TrackEvent.Ended, onEnded);
+        watchedTrack = track;
+        watchedTrack?.on(TrackEvent.Ended, onEnded);
+      }
+      void readActiveCameraDeviceId(room);
+    };
+    const onDevicesChanged = () => void handleCameraDevicesChanged(room);
+    const onActiveDeviceChanged = (kind: MediaDeviceKind) => {
+      if (kind === 'videoinput') void readActiveCameraDeviceId(room);
+    };
+    room.on(LiveKitRoomEvent.MediaDevicesChanged, onDevicesChanged);
+    room.on(LiveKitRoomEvent.ActiveDeviceChanged, onActiveDeviceChanged);
+    room.on(LiveKitRoomEvent.LocalTrackPublished, watchCameraTrack);
+    room.on(LiveKitRoomEvent.LocalTrackUnpublished, watchCameraTrack);
+    watchCameraTrack();
+    void refreshCameraDevices();
+    return () => {
+      room.off(LiveKitRoomEvent.MediaDevicesChanged, onDevicesChanged);
+      room.off(LiveKitRoomEvent.ActiveDeviceChanged, onActiveDeviceChanged);
+      room.off(LiveKitRoomEvent.LocalTrackPublished, watchCameraTrack);
+      room.off(LiveKitRoomEvent.LocalTrackUnpublished, watchCameraTrack);
+      watchedTrack?.off(TrackEvent.Ended, onEnded);
+    };
+  }, [
+    room,
+    handleCameraCaptureEnded,
+    handleCameraDevicesChanged,
+    readActiveCameraDeviceId,
+    refreshCameraDevices,
+  ]);
+
+  /** #2789: the camera the picker marks: the one in use, else the one the next camera-on uses. */
+  const selectedCameraDeviceId = useMemo(
+    () =>
+      (!isLocalVideoMuted ? activeCameraDeviceId : null) ??
+      resolvePreferredCamera(cameraDevices, savedCamera) ??
+      activeCameraDeviceId,
+    [activeCameraDeviceId, cameraDevices, isLocalVideoMuted, savedCamera],
+  );
+
+  const dismissCameraDeviceNotice = useCallback(() => {
+    setCameraDeviceNotice(null);
+  }, []);
 
   /**
    * #2563: chooses the background effect. Stored on this device and used for the next camera
@@ -2730,6 +3168,9 @@ export function useSpaceGroupCall(
     const stored = readStoredCallBackgroundEffect();
     backgroundEffectRef.current = stored;
     setBackgroundEffectState(stored);
+    const camera = readSavedCallCamera();
+    savedCameraRef.current = camera;
+    setSavedCamera(camera);
   }, []);
 
   useEffect(() => {
@@ -3536,6 +3977,18 @@ export function useSpaceGroupCall(
     backgroundEffectSlow,
     /** False where the browser cannot run the effect; the control is hidden then. */
     backgroundEffectSupported,
+    /** #2789: the cameras on this device; labels once camera permission is granted. */
+    cameraDevices,
+    /** The camera in use, else the one the next camera-on uses; null = browser default. */
+    selectedCameraDeviceId,
+    /** Picks a camera: stored on this device, switched live when the camera is on. */
+    setCameraDevice,
+    /** Re-reads the cameras (e.g. when the picker opens). */
+    refreshCameraDevices,
+    cameraSwitching,
+    /** A failed switch or an unplugged camera; the UI shows it until dismissed. */
+    cameraDeviceNotice,
+    dismissCameraDeviceNotice,
     /** Drawn background of the call's space (`blob:` URL) and its setter (UI layer draws it). */
     spaceBackgroundImage,
     setSpaceBackgroundImage,

@@ -28,7 +28,10 @@ export async function isLocalCameraPermissionDenied(): Promise<boolean> {
  * Prompt for camera access when the user turns the camera on mid-call.
  * Avoid calling this before `GroupCall.enter()` — it causes a duplicate prompt.
  */
-export async function requestLocalCameraAccess(): Promise<LocalCameraAccessResult> {
+export async function requestLocalCameraAccess(
+  /** #2789: the chosen camera, so the probe does not open a different one. */
+  preferredDeviceId?: string | null,
+): Promise<LocalCameraAccessResult> {
   if (
     typeof navigator === 'undefined' ||
     !navigator.mediaDevices?.getUserMedia
@@ -37,7 +40,12 @@ export async function requestLocalCameraAccess(): Promise<LocalCameraAccessResul
   }
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: resolveMatrixCameraVideoConstraints(),
+      video: preferredDeviceId
+        ? {
+            ...resolveMatrixCameraVideoConstraints(),
+            deviceId: { ideal: preferredDeviceId },
+          }
+        : resolveMatrixCameraVideoConstraints(),
       audio: false,
     });
     for (const track of stream.getTracks()) {

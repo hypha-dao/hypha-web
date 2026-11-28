@@ -2,6 +2,11 @@
 
 import { Loader2, X } from 'lucide-react';
 import type { CallBackgroundEffectControl } from './human-chat-panel-call-background-effect-menu';
+import {
+  type CallCameraDeviceControl,
+  useCallCameraNoticeText,
+} from './human-chat-panel-call-camera-menu';
+import type { CallCameraDeviceNotice } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 import {
@@ -44,6 +49,9 @@ type HumanChatPanelCallBannerProps = {
   /** Camera permission denied when unmuting video mid audio call. */
   cameraAccessBlocked?: boolean;
   onDismissCameraAccessBlocked?: () => void;
+  /** #2789: a failed camera switch or an unplugged camera. */
+  cameraDeviceNotice?: CallCameraDeviceNotice | null;
+  onDismissCameraDeviceNotice?: () => void;
   /** Matrix token refresh failed mid-call — blocking reconnect (WCUX-SESSION-3). */
   sessionRefreshFailedDuringCall?: boolean;
   onReconnectMatrixSession?: () => void;
@@ -74,6 +82,8 @@ type HumanChatPanelCallBannerProps = {
   voiceProcessingPreset: 'standard' | 'voice_isolation' | 'music';
   /** #2563: background effect control, forwarded to the in-call controls. */
   backgroundEffect?: CallBackgroundEffectControl | null;
+  /** #2789: camera choice (Settings and More menus). */
+  cameraDevice?: CallCameraDeviceControl | null;
   onVoiceProcessingPresetChange: (
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => void;
@@ -165,6 +175,8 @@ export function HumanChatPanelCallBanner({
   onRetryScreenshareWithTabAudio,
   cameraAccessBlocked = false,
   onDismissCameraAccessBlocked,
+  cameraDeviceNotice = null,
+  onDismissCameraDeviceNotice,
   sessionRefreshFailedDuringCall = false,
   onReconnectMatrixSession,
   isMicrophoneMuted,
@@ -186,6 +198,7 @@ export function HumanChatPanelCallBanner({
   voiceProcessingPreset,
   onVoiceProcessingPresetChange,
   backgroundEffect = null,
+  cameraDevice = null,
   unsupportedVoiceProcessingConstraints = null,
   captureMode,
   capturePreference,
@@ -218,6 +231,8 @@ export function HumanChatPanelCallBanner({
   includeReactionsWhenLeaveOnly = false,
 }: HumanChatPanelCallBannerProps) {
   const t = useTranslations('HumanChatPanel');
+  // Before the early returns below: hooks must run on every render.
+  const cameraNoticeText = useCallCameraNoticeText();
   const isPipAlertDensity = alertDensity === 'pip';
   const alertRowClassName = isPipAlertDensity
     ? callAccentAlertCompactRowClassName
@@ -311,6 +326,8 @@ export function HumanChatPanelCallBanner({
     callState === 'connected';
   const showCameraAccessBlockedAlert =
     cameraAccessBlocked && callState === 'connected';
+  const showCameraDeviceNoticeAlert =
+    cameraDeviceNotice != null && callState === 'connected';
   const showCaptureConsentAlert =
     callState === 'connected' && captureConsent != null;
 
@@ -324,6 +341,7 @@ export function HumanChatPanelCallBanner({
       showScreenshareErrorAlert ||
       showScreenshareTabAudioAlert ||
       showCameraAccessBlockedAlert ||
+      showCameraDeviceNoticeAlert ||
       showCaptureConsentAlert;
     if (!hasDockAlerts) {
       return null;
@@ -503,6 +521,22 @@ export function HumanChatPanelCallBanner({
           ) : null}
         </div>
       ) : null}
+      {showCameraDeviceNoticeAlert && cameraDeviceNotice ? (
+        <div role="alert" className={alertRowClassName()}>
+          <p className={cn('min-w-0 flex-1', alertTextClassName)}>
+            {cameraNoticeText(cameraDeviceNotice)}
+          </p>
+          {onDismissCameraDeviceNotice ? (
+            <button
+              type="button"
+              onClick={onDismissCameraDeviceNotice}
+              className={callAccentAlertDismissClassName}
+            >
+              {t('callScreenshareDismiss')}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       {showCaptureConsentAlert ? (
         <HumanChatPanelCaptureConsentBanner
           consent={captureConsent}
@@ -587,6 +621,7 @@ export function HumanChatPanelCallBanner({
                 voiceProcessingPreset={voiceProcessingPreset}
                 onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
                 backgroundEffect={backgroundEffect}
+                cameraDevice={cameraDevice}
                 unsupportedVoiceProcessingConstraints={
                   unsupportedVoiceProcessingConstraints
                 }
